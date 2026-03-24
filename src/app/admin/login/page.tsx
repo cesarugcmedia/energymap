@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex flex-col justify-center min-h-screen bg-[#0a0a0f] px-6">
+    <div className="flex flex-col justify-center min-h-[100dvh] bg-[#0a0a0f] px-6" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="mb-10">
         <p className="text-2xl font-black text-white">🔧 Admin Login</p>
         <p className="text-sm text-white/40 mt-1">Sign in to manage store submissions</p>

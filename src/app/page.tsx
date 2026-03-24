@@ -85,9 +85,12 @@ export default function MapPage() {
   }
 
   return (
-    <div className="relative h-screen bg-[#0a0a0f]">
+    <div className="relative bg-[#0a0a0f]" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 pt-14 px-5 pb-4 pointer-events-none">
+      <div
+        className="absolute top-0 left-0 right-0 z-10 px-5 pb-4 pointer-events-none"
+        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
+      >
         <p className="text-xl font-black text-white">⚡ EnergyMap</p>
         <p className="text-xs text-white/45 mt-0.5">
           {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}

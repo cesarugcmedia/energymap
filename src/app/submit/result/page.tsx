@@ -54,8 +54,8 @@ function ResultContent() {
     <div className="min-h-screen bg-[#0a0a0f] overflow-y-auto pb-16">
       {/* Banner */}
       <div
-        className="flex items-center gap-3.5 mx-5 mt-16 rounded-2xl p-4"
-        style={{ backgroundColor: config?.bg, border: `1px solid ${config?.border}` }}
+        className="flex items-center gap-3.5 mx-5 rounded-2xl p-4"
+        style={{ marginTop: 'calc(64px + env(safe-area-inset-top))', backgroundColor: config?.bg, border: `1px solid ${config?.border}` }}
       >
         <span style={{ fontSize: 32 }}>⚡</span>
         <div>

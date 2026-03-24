@@ -94,7 +94,7 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-6 pt-16">
+    <div className="min-h-screen bg-[#0a0a0f] px-6" style={{ paddingTop: "calc(64px + env(safe-area-inset-top))" }}>
       <p
         className="text-xs font-bold mb-3"
         style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}

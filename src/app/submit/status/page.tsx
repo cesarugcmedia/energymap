@@ -39,7 +39,7 @@ function StatusContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-6 pt-14">
+    <div className="min-h-screen bg-[#0a0a0f] px-6" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
       <button
         onClick={() => router.back()}
         className="w-9 h-9 rounded-xl flex items-center justify-center mb-10"

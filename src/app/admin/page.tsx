@@ -121,7 +121,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-14 pb-4">
+      <div className="flex items-center justify-between px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
         <div>
           <p className="text-2xl font-black text-white">🔧 Admin</p>
           <p className="text-xs text-white/40 mt-0.5">

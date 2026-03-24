@@ -6,7 +6,20 @@ html,
 body {
   background-color: #0a0a0f;
   color: white;
-  height: 100%;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS input zoom — all inputs must be at least 16px */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* Smooth scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Leaflet overrides */
@@ -15,10 +28,9 @@ body {
 }
 
 .leaflet-tile-pane {
-  filter: brightness(0.85) saturate(0.9);
+  filter: brightness(0.9) saturate(0.95);
 }
 
-/* Hide default Leaflet attribution styling conflicts */
 .leaflet-control-attribution {
   font-size: 9px;
   background: rgba(0, 0, 0, 0.5) !important;
