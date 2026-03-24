@@ -58,6 +58,8 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
 export default function AccountPage() {
   const { user, profile, loading } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [reports, setReports] = useState<any[]>([])
+  const [reportsLoading, setReportsLoading] = useState(false)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -116,6 +118,22 @@ export default function AccountPage() {
     setSubmitting(false)
   }
 
+  useEffect(() => {
+    if (user) fetchReports(user.id)
+  }, [user])
+
+  async function fetchReports(userId: string) {
+    setReportsLoading(true)
+    const { data } = await supabase
+      .from('stock_reports')
+      .select('*, drink:drinks(name, brand, flavor), store:stores(name)')
+      .eq('user_id', userId)
+      .order('reported_at', { ascending: false })
+      .limit(50)
+    if (data) setReports(data)
+    setReportsLoading(false)
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut()
   }
@@ -134,48 +152,126 @@ export default function AccountPage() {
   }
 
   if (user && profile) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] px-5" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-        <p className="text-2xl font-black text-white mb-1">Account</p>
-        <p className="text-xs text-white/40 mb-6">Your EnergyMap profile</p>
+    const uniqueStores = new Set(reports.map((r) => r.store_id)).size
+    const freshReports = reports.filter((r) => {
+      const hrs = (Date.now() - new Date(r.reported_at).getTime()) / 3600000
+      return hrs < 2
+    }).length
 
-        <div
-          className="rounded-2xl p-5 mb-4"
-          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)', boxShadow: '0 0 0 1px rgba(34,197,94,0.08)' }}
-        >
-          <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}
-            >
-              <span className="text-2xl font-black" style={{ color: '#22c55e' }}>
-                {profile.username[0].toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-lg font-black text-white">@{profile.username}</p>
-                {profile.is_admin && (
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
-                  >
-                    ADMIN
+    return (
+      <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+
+        {/* Profile card */}
+        <div className="px-5 mb-5">
+          <div
+            className="rounded-2xl p-5"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)', boxShadow: '0 0 0 1px rgba(34,197,94,0.08)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}
+                >
+                  <span className="text-2xl font-black" style={{ color: '#22c55e' }}>
+                    {profile.username[0].toUpperCase()}
                   </span>
-                )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-black text-white">@{profile.username}</p>
+                    {profile.is_admin && (
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
+                      >
+                        ADMIN
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/40 mt-0.5">{user.email}</p>
+                </div>
               </div>
-              <p className="text-xs text-white/40 mt-0.5">{user.email}</p>
+              <button
+                onClick={handleSignOut}
+                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}
+              >
+                Sign Out
+              </button>
             </div>
           </div>
         </div>
 
-        <button
-          onClick={handleSignOut}
-          className="w-full rounded-2xl p-3.5 font-bold text-sm"
-          style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
-        >
-          Sign Out
-        </button>
+        {/* Stats */}
+        <div className="px-5 mb-5">
+          <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>YOUR STATS</p>
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              { label: 'Reports', value: reports.length },
+              { label: 'Stores', value: uniqueStores },
+              { label: 'Fresh Today', value: freshReports },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl p-4 flex flex-col items-center justify-center"
+                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <p className="text-2xl font-black text-white">{stat.value}</p>
+                <p className="text-[10px] text-white/40 mt-1 font-semibold">{stat.label.toUpperCase()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Report history */}
+        <div className="px-5 mb-2">
+          <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>REPORT HISTORY</p>
+        </div>
+
+        {reportsLoading ? (
+          <div className="flex justify-center mt-6">
+            <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 mt-10 px-5">
+            <span style={{ fontSize: 36 }}>⚡</span>
+            <p className="text-base font-bold text-white">No reports yet</p>
+            <p className="text-sm text-white/40 text-center">Head to a store and report some stock!</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 px-5 pb-6 mt-3">
+            {reports.map((r) => {
+              const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+                out:    { label: 'OUT',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.25)'  },
+                low:    { label: 'LOW',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.25)' },
+                medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.25)' },
+                full:   { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)'  },
+              }
+              const q = QUANTITY_CONFIG[r.quantity]
+              const mins = Math.floor((Date.now() - new Date(r.reported_at).getTime()) / 60000)
+              const timeStr = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.floor(mins/60)}h ago` : `${Math.floor(mins/1440)}d ago`
+              return (
+                <div
+                  key={r.id}
+                  className="rounded-2xl p-4 flex items-center gap-3"
+                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{r.drink?.flavor ?? r.drink?.name}</p>
+                    <p className="text-xs text-white/40 mt-0.5 truncate">{r.store?.name} · {timeStr}</p>
+                  </div>
+                  <div
+                    className="px-2.5 py-1 rounded-full shrink-0"
+                    style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}
+                  >
+                    <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     )
   }
