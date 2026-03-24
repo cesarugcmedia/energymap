@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
+import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Quantity, Store } from '@/lib/types'
 
@@ -67,6 +68,12 @@ const RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
 
 export default function StoresPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/account')
+  }, [user, authLoading])
+
   const { location, loading: locLoading } = useLocation()
   const lat = location?.coords.latitude ?? 35.3015
   const lng = location?.coords.longitude ?? -81.0694

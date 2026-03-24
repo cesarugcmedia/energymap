@@ -25,12 +25,10 @@ export default function RootLayout({
       <body className="bg-[#0a0a0f] text-white">
         <AuthProvider>
           <div className="relative flex flex-col max-w-md mx-auto min-h-[100dvh]">
-            <AuthGate>
-              <main className="flex-1" style={{ paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
-                {children}
-              </main>
-              <BottomNav />
-            </AuthGate>
+            <main className="flex-1" style={{ paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+              {children}
+            </main>
+            <BottomNav />
           </div>
         </AuthProvider>
       </body>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Store } from '@/lib/types'
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
@@ -18,6 +19,12 @@ const TYPE_ICON: Record<string, string> = {
 
 export default function MapPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/account')
+  }, [user, authLoading])
+
   const { location, loading: locLoading, error: locError, retry } = useLocation()
   const lat = location?.coords.latitude ?? 35.3015
   const lng = location?.coords.longitude ?? -81.0694
@@ -31,6 +38,14 @@ export default function MapPage() {
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [refetch])
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   if (locLoading) {
     return (

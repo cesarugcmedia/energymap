@@ -4,6 +4,57 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
+function SetupProfile({ userId, email }: { userId: string; email: string }) {
+  const [username, setUsername] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (username.length < 3) { setError('Username must be at least 3 characters.'); return }
+    setSubmitting(true)
+    const { data: existing } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle()
+    if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
+    await supabase.from('profiles').insert({ id: userId, username })
+    // Reload to refresh auth context
+    window.location.reload()
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] px-5 flex flex-col justify-center" style={{ paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+      <p className="text-2xl font-black text-white mb-1">One more step</p>
+      <p className="text-xs text-white/40 mb-6">Pick a username for your account ({email})</p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div>
+          <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>USERNAME</p>
+          <input
+            type="text"
+            className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+            placeholder="yourname"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+            autoFocus
+          />
+          <p className="text-[10px] text-white/25 mt-1.5">Lowercase letters, numbers, underscores only</p>
+        </div>
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-2xl p-4 font-bold text-white flex items-center justify-center"
+          style={{ backgroundColor: submitting ? 'rgba(34,197,94,0.5)' : '#22c55e' }}
+        >
+          {submitting
+            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : 'Save Username →'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export default function AccountPage() {
   const { user, profile, loading } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
@@ -66,6 +117,11 @@ export default function AccountPage() {
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
+  }
+
+  // User is logged in but has no profile yet — let them set a username
+  if (user && !profile) {
+    return <SetupProfile userId={user.id} email={user.email} />
   }
 
   if (user && profile) {
