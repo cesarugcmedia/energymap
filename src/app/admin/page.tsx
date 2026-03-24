@@ -87,19 +87,36 @@ export default function AdminPage() {
 
   async function rejectStore(id: string) {
     if (!window.confirm('Reject this store submission?')) return
-    const { error: updateError } = await supabase
+
+    // Try update first; use .select() so we can detect silent RLS blocks (0 rows returned = blocked)
+    const { data: updated, error: updateError } = await supabase
       .from('stores')
       .update({ status: 'rejected' })
       .eq('id', id)
-    if (updateError) {
-      // RLS may block update — fall back to delete
-      const { error: deleteError } = await supabase.from('stores').delete().eq('id', id)
-      if (deleteError) {
-        window.alert(`Failed to reject store: ${deleteError.message}`)
-        return
-      }
+      .select('id')
+
+    if (!updateError && updated && updated.length > 0) {
+      setStores((prev) => prev.filter((s) => s.id !== id))
+      return
     }
-    setStores((prev) => prev.filter((s) => s.id !== id))
+
+    // Update was silently blocked or errored — try delete
+    const { data: deleted, error: deleteError } = await supabase
+      .from('stores')
+      .delete()
+      .eq('id', id)
+      .select('id')
+
+    if (!deleteError && deleted && deleted.length > 0) {
+      setStores((prev) => prev.filter((s) => s.id !== id))
+      return
+    }
+
+    window.alert(
+      `Could not reject store — Supabase RLS is blocking this action.\n\n` +
+      `Go to: Supabase Dashboard → Table Editor → stores → RLS Policies\n` +
+      `Add an UPDATE and DELETE policy that allows authenticated users.`
+    )
   }
 
   function openEdit(store: any) {
