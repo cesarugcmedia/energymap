@@ -19,31 +19,34 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed bottom-0 z-50 flex w-full"
+      className="fixed bottom-0 z-50 w-full"
       style={{
         maxWidth: '448px',
         left: '50%',
         transform: 'translateX(-50%)',
         backgroundColor: '#0a0a0f',
         borderTop: '1px solid rgba(255,255,255,0.07)',
-        height: '70px',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        // Total height = 70px tab area + safe area below (for iPhone home indicator)
+        height: 'calc(70px + env(safe-area-inset-bottom))',
       }}
     >
-      {TABS.map((tab) => {
-        const isActive = pathname === tab.href
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className="flex flex-col items-center justify-center flex-1 gap-1 no-underline"
-            style={{ color: isActive ? '#22c55e' : 'rgba(255,255,255,0.35)' }}
-          >
-            <span style={{ fontSize: 20 }}>{tab.icon}</span>
-            <span style={{ fontSize: 11, fontWeight: 600 }}>{tab.label}</span>
-          </Link>
-        )
-      })}
+      {/* Tab buttons sit in the fixed 70px area, safe area is just empty space below */}
+      <div className="flex" style={{ height: '70px' }}>
+        {TABS.map((tab) => {
+          const isActive = pathname === tab.href
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className="flex flex-col items-center justify-center flex-1 gap-1 no-underline"
+              style={{ color: isActive ? '#22c55e' : 'rgba(255,255,255,0.35)' }}
+            >
+              <span style={{ fontSize: 20 }}>{tab.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>{tab.label}</span>
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
