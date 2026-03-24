@@ -33,14 +33,6 @@ export default function MapPage() {
     )
   }
 
-  if (locError) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
-        <p className="text-red-400 text-sm">📍 {locError}</p>
-      </div>
-    )
-  }
-
   return (
     <div className="relative h-screen bg-[#0a0a0f]">
       {/* Header */}
@@ -49,6 +41,14 @@ export default function MapPage() {
         <p className="text-xs text-white/45 mt-0.5">
           {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
         </p>
+        {locError && (
+          <div
+            className="mt-2 px-3 py-1.5 rounded-xl text-xs font-semibold pointer-events-auto"
+            style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+          >
+            📍 Location unavailable — showing default area
+          </div>
+        )}
       </div>
 
       {/* Map */}
