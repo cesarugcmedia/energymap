@@ -168,7 +168,10 @@ export default function StoresPage() {
             className="w-full rounded-2xl p-4 text-left"
             style={{
               backgroundColor: isAtStore ? 'rgba(34,197,94,0.08)' : '#1a1a24',
-              border: `1px solid ${isAtStore ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              border: `1px solid ${isAtStore ? 'rgba(34,197,94,0.4)' : 'rgba(34,197,94,0.25)'}`,
+              boxShadow: isAtStore
+                ? '0 0 0 1px rgba(34,197,94,0.15), 0 2px 16px rgba(34,197,94,0.15)'
+                : '0 0 0 1px rgba(34,197,94,0.08), 0 2px 12px rgba(0,0,0,0.4)',
             }}
             onClick={() =>
               router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)
@@ -293,7 +296,8 @@ export default function StoresPage() {
                 className="rounded-2xl p-4 text-left w-full"
                 style={{
                   backgroundColor: '#1a1a24',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(34,197,94,0.25)',
+                  boxShadow: '0 0 0 1px rgba(34,197,94,0.08), 0 2px 12px rgba(0,0,0,0.4)',
                 }}
                 onClick={() =>
                   router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
