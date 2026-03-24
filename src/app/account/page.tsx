@@ -64,6 +64,7 @@ export default function AccountPage() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [confirmEmail, setConfirmEmail] = useState(false)
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
@@ -103,6 +104,14 @@ export default function AccountPage() {
 
     if (data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim() })
+      // If email confirmation is still enabled, session won't exist yet
+      if (!data.session) {
+        setError(null)
+        setSubmitting(false)
+        // Show a message — repurpose error state with a success style flag
+        setConfirmEmail(true)
+        return
+      }
     }
     setSubmitting(false)
   }
@@ -244,9 +253,20 @@ export default function AccountPage() {
 
         {error && <p className="text-sm text-red-400">{error}</p>}
 
+        {confirmEmail && (
+          <div
+            className="rounded-xl p-3.5"
+            style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)' }}
+          >
+            <p className="text-sm font-semibold" style={{ color: '#22c55e' }}>
+              Check your email to confirm your account, then sign in.
+            </p>
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || confirmEmail}
           className="w-full rounded-2xl p-4 font-bold text-white text-base flex items-center justify-center mt-2"
           style={{ backgroundColor: submitting ? 'rgba(34,197,94,0.5)' : '#22c55e' }}
         >
