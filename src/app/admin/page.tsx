@@ -81,7 +81,19 @@ export default function AdminPage() {
   }
 
   async function approveStore(id: string) {
-    await supabase.from('stores').update({ status: 'approved' }).eq('id', id)
+    const { data, error } = await supabase
+      .from('stores')
+      .update({ status: 'approved' })
+      .eq('id', id)
+      .select('id')
+    if (error || !data || data.length === 0) {
+      window.alert(
+        `Could not approve store — Supabase RLS is blocking this action.\n\n` +
+        `Go to: Supabase Dashboard → Authentication → Policies → stores\n` +
+        `Make sure there is an UPDATE policy allowing authenticated users.`
+      )
+      return
+    }
     setStores((prev) => prev.filter((s) => s.id !== id))
   }
 
