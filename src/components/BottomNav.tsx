@@ -15,8 +15,9 @@ const TAB_PATHS = ['/', '/stores', '/account', '/admin', '/admin/login']
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const { profile } = useAuth()
+  const { user, profile } = useAuth()
 
+  if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
 
   const tabs = ALL_TABS.filter((t) => !t.adminOnly || profile?.is_admin)

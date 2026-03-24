@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import BottomNav from '@/components/BottomNav'
+import MainWrapper from '@/components/MainWrapper'
 import { AuthProvider } from '@/contexts/AuthContext'
-import AuthGate from '@/components/AuthGate'
 
 export const metadata: Metadata = {
   title: 'EnergyMap',
@@ -25,9 +25,7 @@ export default function RootLayout({
       <body className="bg-[#0a0a0f] text-white">
         <AuthProvider>
           <div className="relative flex flex-col max-w-md mx-auto min-h-[100dvh]">
-            <main className="flex-1" style={{ paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
-              {children}
-            </main>
+            <MainWrapper>{children}</MainWrapper>
             <BottomNav />
           </div>
         </AuthProvider>
