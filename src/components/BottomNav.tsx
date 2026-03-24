@@ -2,20 +2,24 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 
-const TABS = [
-  { href: '/', label: 'Map', icon: '🗺️' },
-  { href: '/stores', label: 'Stores', icon: '📋' },
-  { href: '/account', label: 'Account', icon: '👤' },
-  { href: '/admin', label: 'Admin', icon: '🔧' },
+const ALL_TABS = [
+  { href: '/', label: 'Map', icon: '🗺️', adminOnly: false },
+  { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false },
+  { href: '/account', label: 'Account', icon: '👤', adminOnly: false },
+  { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true },
 ]
 
 const TAB_PATHS = ['/', '/stores', '/account', '/admin', '/admin/login']
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { profile } = useAuth()
 
   if (!TAB_PATHS.includes(pathname)) return null
+
+  const tabs = ALL_TABS.filter((t) => !t.adminOnly || profile?.is_admin)
 
   return (
     <div
@@ -26,13 +30,11 @@ export default function BottomNav() {
         transform: 'translateX(-50%)',
         backgroundColor: '#0a0a0f',
         borderTop: '1px solid rgba(255,255,255,0.07)',
-        // Total height = 70px tab area + safe area below (for iPhone home indicator)
         height: 'calc(70px + env(safe-area-inset-bottom))',
       }}
     >
-      {/* Tab buttons sit in the fixed 70px area, safe area is just empty space below */}
       <div className="flex" style={{ height: '70px' }}>
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = pathname === tab.href || (tab.href === '/admin' && pathname === '/admin/login')
           return (
             <Link

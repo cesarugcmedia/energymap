@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function AccountPage() {
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, profile, loading } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
 
   const [email, setEmail] = useState('')
@@ -15,35 +14,14 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        fetchProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-  }, [])
-
-  async function fetchProfile(userId: string) {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    if (data) setProfile(data)
-    setLoading(false)
-  }
-
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
     if (authError) {
       setError('Invalid email or password.')
-      setSubmitting(false)
-      return
     }
-    setUser(data.user)
-    fetchProfile(data.user!.id)
     setSubmitting(false)
   }
 
@@ -74,19 +52,12 @@ export default function AccountPage() {
 
     if (data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim() })
-      setUser(data.user)
-      setProfile({ username: username.trim() })
     }
     setSubmitting(false)
   }
 
   async function handleSignOut() {
     await supabase.auth.signOut()
-    setUser(null)
-    setProfile(null)
-    setEmail('')
-    setPassword('')
-    setUsername('')
   }
 
   if (loading) {
@@ -117,7 +88,17 @@ export default function AccountPage() {
               </span>
             </div>
             <div>
-              <p className="text-lg font-black text-white">@{profile.username}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-lg font-black text-white">@{profile.username}</p>
+                {profile.is_admin && (
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
+                  >
+                    ADMIN
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-white/40 mt-0.5">{user.email}</p>
             </div>
           </div>

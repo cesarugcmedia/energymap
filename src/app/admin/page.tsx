@@ -43,20 +43,29 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
-        router.replace('/admin/login')
-      } else {
-        setAuthed(true)
-        setAuthLoading(false)
-        fetchPending()
+        router.replace('/account')
+        return
       }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single()
+      if (!profile?.is_admin) {
+        router.replace('/')  // logged in but not admin — send home
+        return
+      }
+      setAuthed(true)
+      setAuthLoading(false)
+      fetchPending()
     })
   }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.replace('/admin/login')
+    router.replace('/account')
   }
 
   if (authLoading) {
