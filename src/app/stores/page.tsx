@@ -50,19 +50,16 @@ function stalenessColor(dateStr: string) {
   return '#ef4444'
 }
 
-function openDirections(destLat: number, destLng: number, userLat?: number, userLng?: number) {
+function openDirections(destLat: number, destLng: number) {
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
-  const origin = userLat != null && userLng != null ? `${userLat},${userLng}` : ''
+  // No origin passed — both apps use device GPS automatically, avoiding duplicate stop
   if (isIOS) {
-    const url = origin
-      ? `https://maps.apple.com/?saddr=${origin}&daddr=${destLat},${destLng}&dirflg=d`
-      : `https://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=d`
-    window.open(url, '_blank')
+    window.open(`https://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=d`, '_blank')
   } else {
-    const url = origin
-      ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destLat},${destLng}&travelmode=driving`
-      : `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`
-    window.open(url, '_blank')
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`,
+      '_blank'
+    )
   }
 }
 
@@ -90,6 +87,14 @@ export default function StoresPage() {
         setStoreStock(grouped)
       })
   }, [stores])
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') window.location.reload()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
 
   const loading = locLoading || storesLoading
 
@@ -199,7 +204,7 @@ export default function StoresPage() {
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
-                    openDirections(nearest.lat, nearest.lng, lat, lng)
+                    openDirections(nearest.lat, nearest.lng)
                   }}
                 >
                   🧭 Directions
@@ -314,7 +319,7 @@ export default function StoresPage() {
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
-                    openDirections(store.lat, store.lng, lat, lng)
+                    openDirections(store.lat, store.lng)
                   }}
                 >
                   🧭 Directions
