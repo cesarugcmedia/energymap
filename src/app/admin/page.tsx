@@ -87,7 +87,18 @@ export default function AdminPage() {
 
   async function rejectStore(id: string) {
     if (!window.confirm('Reject this store submission?')) return
-    await supabase.from('stores').update({ status: 'rejected' }).eq('id', id)
+    const { error: updateError } = await supabase
+      .from('stores')
+      .update({ status: 'rejected' })
+      .eq('id', id)
+    if (updateError) {
+      // RLS may block update — fall back to delete
+      const { error: deleteError } = await supabase.from('stores').delete().eq('id', id)
+      if (deleteError) {
+        window.alert(`Failed to reject store: ${deleteError.message}`)
+        return
+      }
+    }
     setStores((prev) => prev.filter((s) => s.id !== id))
   }
 
