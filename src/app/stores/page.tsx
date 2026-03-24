@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { supabase } from '@/lib/supabase'
-import type { Quantity } from '@/lib/types'
+import type { Quantity, Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
   gas_station: '⛽',
@@ -30,7 +30,7 @@ function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
     Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2
-  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 function timeAgo(dateStr: string) {
@@ -77,17 +77,22 @@ export default function StoresPage() {
 
   const loading = locLoading || storesLoading
 
-  const sorted = [...stores].sort((a, b) => {
-    return (
-      parseFloat(getDistance(lat, lng, a.lat, a.lng)) -
-      parseFloat(getDistance(lat, lng, b.lat, b.lng))
-    )
-  })
+  const sorted = [...stores].sort((a, b) =>
+    getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)
+  )
+
+  const nearest = sorted[0] ?? null
+  const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
+  // "You're at" if within ~0.15 miles (~240m), otherwise "Nearest store"
+  const isAtStore = nearestDist !== null && nearestDist < 0.15
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
+      <div
+        className="flex items-center justify-between px-5 pb-4"
+        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
+      >
         <div>
           <p className="text-2xl font-black text-white">Nearby Stores</p>
           <p className="text-xs text-white/40 mt-0.5">Sorted by distance</p>
@@ -105,12 +110,98 @@ export default function StoresPage() {
         </button>
       </div>
 
+      {/* You're At / Nearest Store card */}
+      {!loading && nearest && (
+        <div className="px-4 mb-4">
+          <p
+            className="text-[10px] font-bold mb-2"
+            style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}
+          >
+            {isAtStore ? "YOU'RE AT" : 'NEAREST TO YOU'}
+          </p>
+          <button
+            className="w-full rounded-2xl p-4 text-left"
+            style={{
+              backgroundColor: isAtStore ? 'rgba(34,197,94,0.08)' : '#1a1a24',
+              border: `1px solid ${isAtStore ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
+            }}
+            onClick={() =>
+              router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)
+            }
+          >
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 28 }}>{TYPE_ICON[nearest.type]}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-bold text-white truncate">{nearest.name}</p>
+                <p className="text-xs text-white/40 mt-0.5 truncate">{nearest.address}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p
+                  className="text-xs font-bold"
+                  style={{ color: isAtStore ? '#22c55e' : 'rgba(255,255,255,0.5)' }}
+                >
+                  {isAtStore ? '● Here' : `${nearestDist!.toFixed(1)} mi`}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            <div className="flex gap-2 mt-3">
+              <button
+                className="flex-1 rounded-xl py-2 text-xs font-bold text-white"
+                style={{ backgroundColor: '#22c55e' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(
+                    `/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`
+                  )
+                }}
+              >
+                ⚡ Report Stock
+              </button>
+              <button
+                className="flex-1 rounded-xl py-2 text-xs font-semibold"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'rgba(255,255,255,0.6)',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)
+                }}
+              >
+                View Stock
+              </button>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Loading skeleton for nearest card */}
+      {loading && (
+        <div className="px-4 mb-4">
+          <div className="h-3 w-20 rounded mb-2" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
+          <div className="rounded-2xl p-4 h-24 animate-pulse" style={{ backgroundColor: '#1a1a24' }} />
+        </div>
+      )}
+
+      {/* All stores list */}
+      <div className="px-4 mb-2">
+        <p
+          className="text-[10px] font-bold"
+          style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}
+        >
+          ALL STORES
+        </p>
+      </div>
+
       {loading ? (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-40">
           <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : stores.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="flex flex-col items-center justify-center h-40 gap-3">
           <span style={{ fontSize: 40 }}>🏪</span>
           <p className="text-lg font-bold text-white">No stores found</p>
           <p className="text-sm text-white/40">Tap + Add Store to add one!</p>
@@ -119,7 +210,7 @@ export default function StoresPage() {
         <div className="flex flex-col gap-2.5 px-4 pb-6">
           {sorted.map((store) => {
             const stock = storeStock[store.id] ?? []
-            const dist = getDistance(lat, lng, store.lat, store.lng)
+            const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
             const latestReport = stock.reduce<any>((latest, item) => {
               if (!latest) return item
               return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
@@ -147,7 +238,6 @@ export default function StoresPage() {
                   router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
                 }
               >
-                {/* Top row */}
                 <div className="flex items-center justify-between mb-2.5">
                   <div className="flex items-center gap-3 flex-1">
                     <span style={{ fontSize: 26 }}>{TYPE_ICON[store.type]}</span>
@@ -159,14 +249,13 @@ export default function StoresPage() {
                   <p className="text-sm font-bold text-white ml-2">{dist} mi</p>
                 </div>
 
-                {/* Progress bar */}
                 <div className="flex items-center gap-2.5 mb-2">
                   <div
                     className="flex-1 h-1.5 rounded-full overflow-hidden"
                     style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
                   >
                     <div
-                      className="h-full rounded-full transition-all"
+                      className="h-full rounded-full"
                       style={{ width: `${pct}%`, backgroundColor: barColor }}
                     />
                   </div>
@@ -175,20 +264,15 @@ export default function StoresPage() {
                   </p>
                 </div>
 
-                {/* Staleness */}
                 {latestReport && (
                   <div className="flex items-center gap-1.5 mb-2">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: stalenessColor(latestReport.reported_at) }}
-                    />
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stalenessColor(latestReport.reported_at) }} />
                     <p className="text-xs font-semibold" style={{ color: stalenessColor(latestReport.reported_at) }}>
                       Updated {timeAgo(latestReport.reported_at)}
                     </p>
                   </div>
                 )}
 
-                {/* Drink badges */}
                 {stock.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {stock.slice(0, 4).map((item) => {
@@ -197,27 +281,17 @@ export default function StoresPage() {
                         <div
                           key={item.drink_id}
                           className="flex items-center gap-1 rounded-lg px-2 py-1"
-                          style={{
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.07)',
-                          }}
+                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
                         >
-                          <span className="text-xs text-white/60 max-w-[80px] truncate">
-                            {item.drink?.flavor}
-                          </span>
-                          <span className="text-[10px] font-bold" style={{ color: q?.color }}>
-                            {q?.label}
-                          </span>
+                          <span className="text-xs text-white/60 max-w-[80px] truncate">{item.drink?.flavor}</span>
+                          <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
                         </div>
                       )
                     })}
                     {stock.length > 4 && (
                       <div
                         className="rounded-lg px-2 py-1 flex items-center"
-                        style={{
-                          backgroundColor: 'rgba(255,255,255,0.04)',
-                          border: '1px solid rgba(255,255,255,0.07)',
-                        }}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
                       >
                         <span className="text-xs text-white/30">+{stock.length - 4} more</span>
                       </div>
