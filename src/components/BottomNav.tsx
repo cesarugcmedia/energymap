@@ -10,7 +10,7 @@ const TABS = [
   { href: '/admin', label: 'Admin', icon: '🔧' },
 ]
 
-const TAB_PATHS = ['/', '/stores', '/submit', '/admin']
+const TAB_PATHS = ['/', '/stores', '/submit', '/admin', '/admin/login']
 
 export default function BottomNav() {
   const pathname = usePathname()
@@ -33,7 +33,7 @@ export default function BottomNav() {
       {/* Tab buttons sit in the fixed 70px area, safe area is just empty space below */}
       <div className="flex" style={{ height: '70px' }}>
         {TABS.map((tab) => {
-          const isActive = pathname === tab.href
+          const isActive = pathname === tab.href || (tab.href === '/admin' && pathname === '/admin/login')
           return (
             <Link
               key={tab.href}

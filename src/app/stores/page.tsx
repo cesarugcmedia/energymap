@@ -173,6 +173,25 @@ export default function StoresPage() {
               >
                 View Stock
               </button>
+              {!isAtStore && (
+                <button
+                  className="flex-1 rounded-xl py-2 text-xs font-semibold"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.6)',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(
+                      `https://www.google.com/maps/dir/?api=1&destination=${nearest.lat},${nearest.lng}`,
+                      '_blank'
+                    )
+                  }}
+                >
+                  🧭 Directions
+                </button>
+              )}
             </div>
           </button>
         </div>
@@ -272,6 +291,24 @@ export default function StoresPage() {
                     </p>
                   </div>
                 )}
+
+                <button
+                  className="w-full rounded-xl py-2 text-xs font-semibold mb-2"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.55)',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(
+                      `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`,
+                      '_blank'
+                    )
+                  }}
+                >
+                  🧭 Directions
+                </button>
 
                 {stock.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-1">
