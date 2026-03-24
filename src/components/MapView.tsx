@@ -29,23 +29,46 @@ const userIcon = L.divIcon({
 function createStoreIcon(store: Store, isSelected: boolean) {
   const emoji = TYPE_ICON[store.type] ?? '📍'
   const name = store.name.length > 14 ? store.name.slice(0, 14) + '…' : store.name
+  const bg = isSelected ? '#0f0f17' : '#1a1a24'
+  const border = isSelected ? '#22c55e' : 'rgba(255,255,255,0.18)'
+  const shadow = isSelected
+    ? '0 2px 12px rgba(34,197,94,0.35), 0 1px 4px rgba(0,0,0,0.6)'
+    : '0 2px 8px rgba(0,0,0,0.6)'
+
   return L.divIcon({
     className: '',
-    html: `<div style="
-      background:${isSelected ? '#0a0a0f' : '#1a1a24'};
-      border:1.5px solid ${isSelected ? '#22c55e' : 'rgba(255,255,255,0.15)'};
-      border-radius:12px;
-      padding:6px 10px;
-      display:flex;align-items:center;gap:5px;
-      font-family:system-ui,sans-serif;
-      white-space:nowrap;
-      box-shadow:0 2px 8px rgba(0,0,0,0.5);
-      cursor:pointer;
-    ">
-      <span style="font-size:14px;">${emoji}</span>
-      <span style="font-size:11px;font-weight:700;color:#fff;">${name}</span>
-    </div>`,
-    iconAnchor: [0, 10],
+    html: `
+      <div style="
+        position:relative;
+        display:inline-flex;
+        flex-direction:column;
+        align-items:center;
+        transform:translate(-50%, -100%);
+      ">
+        <div style="
+          background:${bg};
+          border:1.5px solid ${border};
+          border-radius:10px;
+          padding:5px 9px;
+          display:flex;align-items:center;gap:5px;
+          font-family:system-ui,sans-serif;
+          white-space:nowrap;
+          box-shadow:${shadow};
+          cursor:pointer;
+        ">
+          <span style="font-size:13px;line-height:1;">${emoji}</span>
+          <span style="font-size:11px;font-weight:700;color:#fff;letter-spacing:0.01em;">${name}</span>
+        </div>
+        <div style="
+          width:0;height:0;
+          border-left:5px solid transparent;
+          border-right:5px solid transparent;
+          border-top:5px solid ${border};
+          margin-top:-1px;
+        "></div>
+      </div>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
   })
 }
 
