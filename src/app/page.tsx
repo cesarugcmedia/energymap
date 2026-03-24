@@ -18,7 +18,7 @@ const TYPE_ICON: Record<string, string> = {
 
 export default function MapPage() {
   const router = useRouter()
-  const { location, loading: locLoading, error: locError } = useLocation()
+  const { location, loading: locLoading, error: locError, retry } = useLocation()
   const lat = location?.coords.latitude ?? 35.3015
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
@@ -33,6 +33,57 @@ export default function MapPage() {
     )
   }
 
+  if (locError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-[#0a0a0f] px-8 text-center gap-5">
+        <span style={{ fontSize: 48 }}>📍</span>
+        <div>
+          <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
+          <p className="text-sm text-white/45 leading-relaxed">
+            EnergyMap uses your location to show nearby stores. Please allow location access to continue.
+          </p>
+        </div>
+
+        <button
+          onClick={retry}
+          className="w-full rounded-2xl p-4 font-bold text-white"
+          style={{ backgroundColor: '#22c55e' }}
+        >
+          Enable Location →
+        </button>
+
+        <div
+          className="w-full rounded-2xl p-4 text-left"
+          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
+            HOW TO ENABLE IN YOUR BROWSER
+          </p>
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-start gap-2.5">
+              <span className="text-sm mt-0.5">🔒</span>
+              <p className="text-xs text-white/50 leading-relaxed">
+                <span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon in the address bar → Site settings → Location → Allow
+              </p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="text-sm mt-0.5">🧭</span>
+              <p className="text-xs text-white/50 leading-relaxed">
+                <span className="text-white/70 font-semibold">Safari:</span> Settings → Safari → Location → Allow
+              </p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="text-sm mt-0.5">🦊</span>
+              <p className="text-xs text-white/50 leading-relaxed">
+                <span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Access Your Location → Allow
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative h-screen bg-[#0a0a0f]">
       {/* Header */}
@@ -41,14 +92,6 @@ export default function MapPage() {
         <p className="text-xs text-white/45 mt-0.5">
           {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
         </p>
-        {locError && (
-          <div
-            className="mt-2 px-3 py-1.5 rounded-xl text-xs font-semibold pointer-events-auto"
-            style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
-          >
-            📍 Location unavailable — showing default area
-          </div>
-        )}
       </div>
 
       {/* Map */}

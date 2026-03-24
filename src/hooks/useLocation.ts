@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react'
-
-interface LocationCoords {
-  latitude: number
-  longitude: number
-}
+import { useCallback, useEffect, useState } from 'react'
 
 interface LocationObject {
-  coords: LocationCoords
+  coords: {
+    latitude: number
+    longitude: number
+  }
 }
 
 export function useLocation() {
@@ -14,7 +12,10 @@ export function useLocation() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const request = useCallback(() => {
+    setLoading(true)
+    setError(null)
+
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser')
       setLoading(false)
@@ -32,11 +33,15 @@ export function useLocation() {
         setLoading(false)
       },
       () => {
-        setError('Location permission denied')
+        setError('denied')
         setLoading(false)
       }
     )
   }, [])
 
-  return { location, error, loading }
+  useEffect(() => {
+    request()
+  }, [request])
+
+  return { location, error, loading, retry: request }
 }
