@@ -38,6 +38,8 @@ export default function AdminPage() {
   const [editName, setEditName] = useState('')
   const [editAddress, setEditAddress] = useState('')
   const [editType, setEditType] = useState('')
+  const [editLat, setEditLat] = useState('')
+  const [editLng, setEditLng] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -84,8 +86,8 @@ export default function AdminPage() {
   }
 
   async function rejectStore(id: string) {
-    if (!window.confirm('This will permanently delete the store submission. Continue?')) return
-    await supabase.from('stores').delete().eq('id', id)
+    if (!window.confirm('Reject this store submission?')) return
+    await supabase.from('stores').update({ status: 'rejected' }).eq('id', id)
     setStores((prev) => prev.filter((s) => s.id !== id))
   }
 
@@ -94,6 +96,8 @@ export default function AdminPage() {
     setEditName(store.name)
     setEditAddress(store.address ?? '')
     setEditType(store.type)
+    setEditLat(store.lat?.toString() ?? '')
+    setEditLng(store.lng?.toString() ?? '')
   }
 
   async function saveEdit() {
@@ -101,16 +105,22 @@ export default function AdminPage() {
       window.alert('Store name is required.')
       return
     }
+    const lat = parseFloat(editLat)
+    const lng = parseFloat(editLng)
+    if (isNaN(lat) || isNaN(lng)) {
+      window.alert('Latitude and longitude must be valid numbers.')
+      return
+    }
     setSaving(true)
     await supabase
       .from('stores')
-      .update({ name: editName.trim(), address: editAddress.trim(), type: editType })
+      .update({ name: editName.trim(), address: editAddress.trim(), type: editType, lat, lng })
       .eq('id', editStore.id)
 
     setStores((prev) =>
       prev.map((s) =>
         s.id === editStore.id
-          ? { ...s, name: editName.trim(), address: editAddress.trim(), type: editType }
+          ? { ...s, name: editName.trim(), address: editAddress.trim(), type: editType, lat, lng }
           : s
       )
     )
@@ -255,6 +265,32 @@ export default function AdminPage() {
               value={editAddress}
               onChange={(e) => setEditAddress(e.target.value)}
             />
+
+            <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>COORDINATES</p>
+            <div className="flex gap-2 mb-4">
+              <div className="flex-1">
+                <p className="text-[10px] text-white/25 mb-1">Latitude</p>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  value={editLat}
+                  onChange={(e) => setEditLat(e.target.value)}
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] text-white/25 mb-1">Longitude</p>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  value={editLng}
+                  onChange={(e) => setEditLng(e.target.value)}
+                />
+              </div>
+            </div>
 
             <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>STORE TYPE</p>
             <div className="flex flex-wrap gap-2 mb-5">
