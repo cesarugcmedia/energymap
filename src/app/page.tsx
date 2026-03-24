@@ -1,0 +1,127 @@
+'use client'
+
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useLocation } from '@/hooks/useLocation'
+import { useNearbyStores } from '@/hooks/useNearbyStores'
+import type { Store } from '@/lib/types'
+
+const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
+
+const TYPE_ICON: Record<string, string> = {
+  gas_station: '⛽',
+  convenience: '🏪',
+  grocery: '🛒',
+  other: '📍',
+}
+
+export default function MapPage() {
+  const router = useRouter()
+  const { location, loading: locLoading, error: locError } = useLocation()
+  const lat = location?.coords.latitude ?? 35.3015
+  const lng = location?.coords.longitude ?? -81.0694
+  const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
+  const [selected, setSelected] = useState<Store | null>(null)
+
+  if (locLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-3 bg-[#0a0a0f]">
+        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <p className="text-white/40 text-sm">Finding your location…</p>
+      </div>
+    )
+  }
+
+  if (locError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+        <p className="text-red-400 text-sm">📍 {locError}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative h-screen bg-[#0a0a0f]">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 pt-14 px-5 pb-4 pointer-events-none">
+        <p className="text-xl font-black text-white">⚡ EnergyMap</p>
+        <p className="text-xs text-white/45 mt-0.5">
+          {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
+        </p>
+      </div>
+
+      {/* Map */}
+      <div className="absolute inset-0" style={{ zIndex: 0 }}>
+        <MapView
+          lat={lat}
+          lng={lng}
+          stores={stores}
+          selected={selected}
+          onSelectStore={setSelected}
+        />
+      </div>
+
+      {/* Bottom sheet when store selected */}
+      {selected && (
+        <div
+          className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-5"
+          style={{
+            backgroundColor: '#1a1a24',
+            border: '1px solid rgba(255,255,255,0.08)',
+            paddingBottom: 36,
+          }}
+        >
+          <div
+            className="w-9 h-1 rounded-sm mx-auto mb-4"
+            style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+          />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 flex-1">
+              <span style={{ fontSize: 28 }}>{TYPE_ICON[selected.type]}</span>
+              <div>
+                <p className="text-lg font-bold text-white">{selected.name}</p>
+                <p className="text-xs text-white/40 mt-0.5">{selected.address}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelected(null)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
+            >
+              <span className="text-white/50 text-xs">✕</span>
+            </button>
+          </div>
+          <div className="flex gap-2.5">
+            <button
+              className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
+              style={{ backgroundColor: '#22c55e' }}
+              onClick={() =>
+                router.push(
+                  `/submit/drinks?storeId=${selected.id}&storeName=${encodeURIComponent(selected.name)}`
+                )
+              }
+            >
+              ⚡ Report Stock
+            </button>
+            <button
+              className="flex-1 rounded-xl py-3 font-semibold text-sm"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.6)',
+              }}
+              onClick={() =>
+                router.push(
+                  `/store/${selected.id}?name=${encodeURIComponent(selected.name)}`
+                )
+              }
+            >
+              View Stock
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
