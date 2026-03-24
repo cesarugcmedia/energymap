@@ -13,10 +13,21 @@ const TYPE_ICON: Record<string, string> = {
 }
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
-  out: { label: 'OUT', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)' },
-  low: { label: 'LOW', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
-  medium: { label: 'MED', color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' },
-  full: { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)' },
+  out:    { label: 'OUT',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)'  },
+  low:    { label: 'LOW',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
+  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' },
+  full:   { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',  border: 'rgba(34,197,94,0.25)'  },
+}
+
+const BRAND_COLORS: Record<string, string> = {
+  Monster: '#00cc44',
+  'Red Bull': '#e63946',
+  Celsius: '#7c3aed',
+  Ghost: '#06b6d4',
+  Reign: '#f97316',
+  Rockstar: '#facc15',
+  Bang: '#ec4899',
+  NOS: '#3b82f6',
 }
 
 function timeAgo(dateStr: string) {
@@ -52,6 +63,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [profileMap, setProfileMap] = useState<Record<string, string>>({})
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchStore()
@@ -93,26 +105,31 @@ function StoreDetailContent({ id }: { id: string }) {
     setLoading(false)
   }
 
-  const inStockItems = stock.filter((s) => s.quantity !== 'out')
-  const outOfStockItems = stock.filter((s) => s.quantity === 'out')
+  function toggleBrand(brand: string) {
+    setExpandedBrands((prev) => {
+      const next = new Set(prev)
+      next.has(brand) ? next.delete(brand) : next.add(brand)
+      return next
+    })
+  }
 
   const latestReport = stock.reduce<any>((latest, item) => {
     if (!latest) return item
     return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
   }, null)
 
-  const grouped = (items: any[]) =>
-    items.reduce<Record<string, any[]>>((acc, item) => {
-      const brand = item.drink?.brand ?? 'Other'
-      if (!acc[brand]) acc[brand] = []
-      acc[brand].push(item)
-      return acc
-    }, {})
+  // Group all stock by brand
+  const byBrand = stock.reduce<Record<string, any[]>>((acc, item) => {
+    const brand = item.drink?.brand ?? 'Other'
+    if (!acc[brand]) acc[brand] = []
+    acc[brand].push(item)
+    return acc
+  }, {})
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
-      <div className="px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
+      <div className="px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <button
           onClick={() => router.back()}
           className="w-9 h-9 rounded-xl flex items-center justify-center mb-4"
@@ -134,10 +151,7 @@ function StoreDetailContent({ id }: { id: string }) {
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
             style={{ border: `1px solid ${stalenessColor(latestReport.reported_at)}` }}
           >
-            <div
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: stalenessColor(latestReport.reported_at) }}
-            />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stalenessColor(latestReport.reported_at) }} />
             <span className="text-xs font-semibold" style={{ color: stalenessColor(latestReport.reported_at) }}>
               {stalenessLabel(latestReport.reported_at)} · {timeAgo(latestReport.reported_at)}
             </span>
@@ -147,11 +161,9 @@ function StoreDetailContent({ id }: { id: string }) {
 
       {/* Report button */}
       <button
-        className="mx-4 mb-4 w-[calc(100%-32px)] rounded-2xl p-3.5 font-bold text-white text-base"
+        className="mx-4 mb-5 w-[calc(100%-32px)] rounded-2xl p-3.5 font-bold text-white text-base"
         style={{ backgroundColor: '#22c55e' }}
-        onClick={() =>
-          router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)
-        }
+        onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
       >
         ⚡ Report Stock Here
       </button>
@@ -168,94 +180,103 @@ function StoreDetailContent({ id }: { id: string }) {
         </div>
       ) : (
         <div className="px-4 pb-16">
-          {inStockItems.length > 0 && (
-            <div className="mb-6">
-              <p className="text-xs font-bold text-white/40 mb-2.5" style={{ letterSpacing: 1 }}>
-                ✅ AVAILABLE ({inStockItems.length})
-              </p>
-              {Object.entries(grouped(inStockItems)).map(([brand, items]) => (
-                <div key={brand} className="mb-3">
-                  <p className="text-[10px] font-bold text-white/25 mb-1.5" style={{ letterSpacing: 1 }}>
-                    {brand.toUpperCase()}
-                  </p>
-                  {items.map((item) => {
-                    const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                    const freshColor = stalenessColor(item.reported_at)
-                    return (
-                      <div
-                        key={item.drink_id}
-                        className="flex items-center rounded-xl p-3.5 mb-1.5"
-                        style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.06)' }}
-                      >
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-white">{item.drink?.flavor}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <div className="w-1 h-1 rounded-full" style={{ backgroundColor: freshColor }} />
-                            <p className="text-xs font-semibold" style={{ color: freshColor }}>
-                              {timeAgo(item.reported_at)}
-                            </p>
-                            {profileMap[item.user_id] && (
-                              <p className="text-xs text-white/30">· @{profileMap[item.user_id]}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div
-                          className="px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}
-                        >
-                          <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
+          <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+            BRANDS · {Object.keys(byBrand).length} found
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {Object.entries(byBrand).map(([brand, items]) => {
+              const inStock = items.filter((i) => i.quantity !== 'out').length
+              const total = items.length
+              const pct = total > 0 ? inStock / total : 0
+              const barColor = pct === 0 ? '#ef4444' : pct >= 0.75 ? '#22c55e' : '#f59e0b'
+              const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.5)'
+              const isExpanded = expandedBrands.has(brand)
 
-          {outOfStockItems.length > 0 && (
-            <div className="mb-6">
-              <p className="text-xs font-bold text-white/40 mb-2.5" style={{ letterSpacing: 1 }}>
-                ❌ OUT OF STOCK ({outOfStockItems.length})
-              </p>
-              {Object.entries(grouped(outOfStockItems)).map(([brand, items]) => (
-                <div key={brand} className="mb-3">
-                  <p className="text-[10px] font-bold text-white/25 mb-1.5" style={{ letterSpacing: 1 }}>
-                    {brand.toUpperCase()}
-                  </p>
-                  {items.map((item) => {
-                    const freshColor = stalenessColor(item.reported_at)
-                    return (
-                      <div
-                        key={item.drink_id}
-                        className="flex items-center rounded-xl p-3.5 mb-1.5"
-                        style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.06)' }}
-                      >
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-white">{item.drink?.flavor}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <div className="w-1 h-1 rounded-full" style={{ backgroundColor: freshColor }} />
-                            <p className="text-xs font-semibold" style={{ color: freshColor }}>
-                              {timeAgo(item.reported_at)}
-                            </p>
-                            {profileMap[item.user_id] && (
-                              <p className="text-xs text-white/30">· @{profileMap[item.user_id]}</p>
-                            )}
-                          </div>
-                        </div>
+              return (
+                <div
+                  key={brand}
+                  className="rounded-2xl overflow-hidden"
+                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  {/* Brand header — tap to expand */}
+                  <button
+                    className="w-full flex items-center gap-3 p-4 text-left"
+                    onClick={() => toggleBrand(brand)}
+                  >
+                    {/* Brand color dot */}
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: brandColor }}
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-black text-white">{brand}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {/* Progress bar */}
                         <div
-                          className="px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: QUANTITY_CONFIG.out.bg, border: `1px solid ${QUANTITY_CONFIG.out.border}` }}
+                          className="flex-1 h-1 rounded-full overflow-hidden"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
                         >
-                          <span className="text-[10px] font-bold" style={{ color: QUANTITY_CONFIG.out.color }}>OUT</span>
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${pct * 100}%`, backgroundColor: barColor }}
+                          />
                         </div>
+                        <p className="text-xs font-semibold shrink-0" style={{ color: barColor }}>
+                          {inStock}/{total} in stock
+                        </p>
                       </div>
-                    )
-                  })}
+                    </div>
+
+                    {/* Chevron */}
+                    <span
+                      className="text-white/30 text-sm transition-transform"
+                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    >
+                      ▾
+                    </span>
+                  </button>
+
+                  {/* Flavors — shown when expanded */}
+                  {isExpanded && (
+                    <div className="px-4 pb-3 flex flex-col gap-2">
+                      <div className="h-px mb-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      {items.map((item) => {
+                        const q = QUANTITY_CONFIG[item.quantity as Quantity]
+                        const freshColor = stalenessColor(item.reported_at)
+                        return (
+                          <div
+                            key={item.drink_id}
+                            className="flex items-center rounded-xl p-3"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">
+                                {item.drink?.flavor ?? item.drink?.name}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: freshColor }} />
+                                <p className="text-xs" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
+                                {profileMap[item.user_id] && (
+                                  <p className="text-xs text-white/30">· @{profileMap[item.user_id]}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div
+                              className="px-2.5 py-1 rounded-full shrink-0"
+                              style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}
+                            >
+                              <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
