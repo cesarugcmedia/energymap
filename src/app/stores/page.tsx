@@ -63,6 +63,8 @@ function openDirections(destLat: number, destLng: number) {
   }
 }
 
+const RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
+
 export default function StoresPage() {
   const router = useRouter()
   const { location, loading: locLoading } = useLocation()
@@ -70,6 +72,7 @@ export default function StoresPage() {
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
+  const [radius, setRadius] = useState<number | null>(25)
 
   useEffect(() => {
     if (stores.length === 0) return
@@ -98,9 +101,9 @@ export default function StoresPage() {
 
   const loading = locLoading || storesLoading
 
-  const sorted = [...stores].sort((a, b) =>
-    getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)
-  )
+  const sorted = [...stores]
+    .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))
+    .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
 
   const nearest = sorted[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
@@ -129,6 +132,27 @@ export default function StoresPage() {
         >
           + Add Store
         </button>
+      </div>
+
+      {/* Radius selector */}
+      <div className="flex gap-2 px-4 mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {RADIUS_OPTIONS.map((r) => {
+          const active = radius === r
+          return (
+            <button
+              key={r ?? 'all'}
+              onClick={() => setRadius(r)}
+              className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold"
+              style={{
+                backgroundColor: active ? '#22c55e' : 'rgba(255,255,255,0.06)',
+                color: active ? '#000' : 'rgba(255,255,255,0.45)',
+                border: active ? 'none' : '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              {r === null ? 'All' : `${r} mi`}
+            </button>
+          )
+        })}
       </div>
 
       {/* You're At / Nearest Store card */}
