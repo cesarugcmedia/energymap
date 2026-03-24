@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const TYPE_ICON: Record<string, string> = {
@@ -28,6 +29,9 @@ function timeAgo(dateStr: string) {
 }
 
 export default function AdminPage() {
+  const router = useRouter()
+  const [authed, setAuthed] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editStore, setEditStore] = useState<any | null>(null)
@@ -37,8 +41,31 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetchPending()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.replace('/admin/login')
+      } else {
+        setAuthed(true)
+        setAuthLoading(false)
+        fetchPending()
+      }
+    })
   }, [])
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.replace('/admin/login')
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!authed) return null
 
   async function fetchPending() {
     setLoading(true)
@@ -101,13 +128,22 @@ export default function AdminPage() {
             {loading ? 'Loading…' : `${stores.length} pending store${stores.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button
-          onClick={fetchPending}
-          className="text-xs font-bold px-3 py-1.5 rounded-full"
-          style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
-        >
-          ↻ Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchPending}
+            className="text-xs font-bold px-3 py-1.5 rounded-full"
+            style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+          >
+            ↻ Refresh
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-xs font-bold px-3 py-1.5 rounded-full"
+            style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {loading ? (
