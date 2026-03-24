@@ -6,11 +6,11 @@ import { usePathname } from 'next/navigation'
 const TABS = [
   { href: '/', label: 'Map', icon: '🗺️' },
   { href: '/stores', label: 'Stores', icon: '📋' },
-  { href: '/submit', label: 'Report', icon: '⚡' },
+  { href: '/account', label: 'Account', icon: '👤' },
   { href: '/admin', label: 'Admin', icon: '🔧' },
 ]
 
-const TAB_PATHS = ['/', '/stores', '/submit', '/admin', '/admin/login']
+const TAB_PATHS = ['/', '/stores', '/account', '/admin', '/admin/login']
 
 export default function BottomNav() {
   const pathname = usePathname()

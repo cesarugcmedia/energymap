@@ -32,7 +32,8 @@ function StatusContent() {
 
   async function submitReport(quantity: Quantity) {
     setSubmitting(true)
-    await supabase.from('stock_reports').insert({ store_id: storeId, drink_id: drinkId, quantity })
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('stock_reports').insert({ store_id: storeId, drink_id: drinkId, quantity, user_id: user?.id ?? null })
     router.replace(
       `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&drinkName=${encodeURIComponent(drinkName)}&drinkFlavor=${encodeURIComponent(drinkFlavor)}&quantity=${quantity}`
     )

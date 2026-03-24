@@ -51,6 +51,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [profileMap, setProfileMap] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchStore()
@@ -74,7 +75,21 @@ function StoreDetailContent({ id }: { id: string }) {
       .from('latest_stock')
       .select('*, drink:drinks(name, brand, flavor)')
       .eq('store_id', id)
-    if (data) setStock(data)
+    if (data) {
+      setStock(data)
+      const userIds = [...new Set(data.map((d) => d.user_id).filter(Boolean))]
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', userIds)
+        if (profiles) {
+          const map: Record<string, string> = {}
+          profiles.forEach((p) => { map[p.id] = p.username })
+          setProfileMap(map)
+        }
+      }
+    }
     setLoading(false)
   }
 
@@ -179,6 +194,9 @@ function StoreDetailContent({ id }: { id: string }) {
                             <p className="text-xs font-semibold" style={{ color: freshColor }}>
                               {timeAgo(item.reported_at)}
                             </p>
+                            {profileMap[item.user_id] && (
+                              <p className="text-xs text-white/30">· @{profileMap[item.user_id]}</p>
+                            )}
                           </div>
                         </div>
                         <div
@@ -220,6 +238,9 @@ function StoreDetailContent({ id }: { id: string }) {
                             <p className="text-xs font-semibold" style={{ color: freshColor }}>
                               {timeAgo(item.reported_at)}
                             </p>
+                            {profileMap[item.user_id] && (
+                              <p className="text-xs text-white/30">· @{profileMap[item.user_id]}</p>
+                            )}
                           </div>
                         </div>
                         <div
