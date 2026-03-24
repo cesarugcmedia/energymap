@@ -7,11 +7,12 @@ import { useAuth } from '@/contexts/AuthContext'
 const ALL_TABS = [
   { href: '/', label: 'Map', icon: '🗺️', adminOnly: false },
   { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false },
+  { href: '/leaderboard', label: 'Ranks', icon: '🏆', adminOnly: false },
   { href: '/account', label: 'Account', icon: '👤', adminOnly: false },
   { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true },
 ]
 
-const TAB_PATHS = ['/', '/stores', '/account', '/admin', '/admin/login']
+const TAB_PATHS = ['/', '/stores', '/leaderboard', '/account', '/admin', '/admin/login']
 
 export default function BottomNav() {
   const pathname = usePathname()

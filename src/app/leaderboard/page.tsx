@@ -1,0 +1,187 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+
+const MEDAL = ['🥇', '🥈', '🥉']
+
+const RANK_COLORS = [
+  { border: 'rgba(250,204,21,0.35)', bg: 'rgba(250,204,21,0.08)', text: '#facc15' },
+  { border: 'rgba(148,163,184,0.35)', bg: 'rgba(148,163,184,0.08)', text: '#94a3b8' },
+  { border: 'rgba(251,146,60,0.35)', bg: 'rgba(251,146,60,0.08)', text: '#fb923c' },
+]
+
+export default function LeaderboardPage() {
+  const router = useRouter()
+  const { user, profile, loading: authLoading } = useAuth()
+  const [entries, setEntries] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/account')
+  }, [user, authLoading])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('leaderboard_view')
+      .select('*')
+      .order('points', { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        if (data) setEntries(data)
+        setLoading(false)
+      })
+  }, [user])
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  const myRank = entries.findIndex((e) => e.id === user.id)
+  const top3 = entries.slice(0, 3)
+  const rest = entries.slice(3)
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+
+      {/* Header */}
+      <div className="px-5 pb-4">
+        <p className="text-2xl font-black text-white">🏆 Leaderboard</p>
+        <p className="text-xs text-white/40 mt-0.5">Top reporters this season</p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center mt-16">
+          <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          {/* Your rank banner */}
+          {myRank >= 0 && (
+            <div className="px-5 mb-5">
+              <div
+                className="rounded-2xl px-4 py-3 flex items-center justify-between"
+                style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black" style={{ color: '#22c55e', minWidth: 28 }}>
+                    #{myRank + 1}
+                  </span>
+                  <p className="text-sm font-bold text-white">You · @{profile?.username}</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span style={{ fontSize: 14 }}>⚡</span>
+                  <p className="text-sm font-black" style={{ color: '#22c55e' }}>
+                    {entries[myRank]?.points ?? 0} pts
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Top 3 podium */}
+          {top3.length > 0 && (
+            <div className="px-5 mb-4">
+              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+                TOP REPORTERS
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {top3.map((entry, i) => {
+                  const colors = RANK_COLORS[i]
+                  const isMe = entry.id === user.id
+                  return (
+                    <div
+                      key={entry.id}
+                      className="rounded-2xl px-4 py-4 flex items-center gap-3"
+                      style={{
+                        backgroundColor: isMe ? 'rgba(34,197,94,0.06)' : '#1a1a24',
+                        border: `1px solid ${isMe ? 'rgba(34,197,94,0.3)' : colors.border}`,
+                      }}
+                    >
+                      <span style={{ fontSize: 28 }}>{MEDAL[i]}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-black text-white truncate">
+                          @{entry.username}
+                          {isMe && <span className="text-xs text-white/40 font-normal ml-2">· you</span>}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: colors.text }}>
+                          Rank #{i + 1}
+                        </p>
+                      </div>
+                      <div
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                        style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
+                      >
+                        <span style={{ fontSize: 12 }}>⚡</span>
+                        <span className="text-sm font-black" style={{ color: colors.text }}>
+                          {entry.points}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Rest of the list */}
+          {rest.length > 0 && (
+            <div className="px-5 mb-6">
+              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+                ALL REPORTERS
+              </p>
+              <div className="flex flex-col gap-2">
+                {rest.map((entry, i) => {
+                  const rank = i + 4
+                  const isMe = entry.id === user.id
+                  return (
+                    <div
+                      key={entry.id}
+                      className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                      style={{
+                        backgroundColor: isMe ? 'rgba(34,197,94,0.06)' : '#1a1a24',
+                        border: `1px solid ${isMe ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                      }}
+                    >
+                      <p
+                        className="text-sm font-black w-7 shrink-0 text-center"
+                        style={{ color: 'rgba(255,255,255,0.3)' }}
+                      >
+                        {rank}
+                      </p>
+                      <p className="text-sm font-bold text-white flex-1 truncate">
+                        @{entry.username}
+                        {isMe && <span className="text-xs text-white/40 font-normal ml-2">· you</span>}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <span style={{ fontSize: 11 }}>⚡</span>
+                        <span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                          {entry.points}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {entries.length === 0 && (
+            <div className="flex flex-col items-center gap-3 mt-20">
+              <span style={{ fontSize: 48 }}>🏆</span>
+              <p className="text-lg font-bold text-white">No reporters yet</p>
+              <p className="text-sm text-white/40">Be the first to submit a report!</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
