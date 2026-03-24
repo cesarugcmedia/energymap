@@ -19,15 +19,15 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 flex"
+      className="fixed bottom-0 z-50 flex w-full"
       style={{
         maxWidth: '448px',
-        margin: '0 auto',
         left: '50%',
         transform: 'translateX(-50%)',
         backgroundColor: '#0a0a0f',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         height: '70px',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       {TABS.map((tab) => {
