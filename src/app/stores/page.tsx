@@ -50,6 +50,22 @@ function stalenessColor(dateStr: string) {
   return '#ef4444'
 }
 
+function openDirections(destLat: number, destLng: number, userLat?: number, userLng?: number) {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  const origin = userLat != null && userLng != null ? `${userLat},${userLng}` : ''
+  if (isIOS) {
+    const url = origin
+      ? `https://maps.apple.com/?saddr=${origin}&daddr=${destLat},${destLng}&dirflg=d`
+      : `https://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=d`
+    window.open(url, '_blank')
+  } else {
+    const url = origin
+      ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destLat},${destLng}&travelmode=driving`
+      : `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`
+    window.open(url, '_blank')
+  }
+}
+
 export default function StoresPage() {
   const router = useRouter()
   const { location, loading: locLoading } = useLocation()
@@ -183,10 +199,7 @@ export default function StoresPage() {
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
-                    window.open(
-                      `https://www.google.com/maps/dir/?api=1&destination=${nearest.lat},${nearest.lng}`,
-                      '_blank'
-                    )
+                    openDirections(nearest.lat, nearest.lng, lat, lng)
                   }}
                 >
                   🧭 Directions
@@ -301,10 +314,7 @@ export default function StoresPage() {
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
-                    window.open(
-                      `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`,
-                      '_blank'
-                    )
+                    openDirections(store.lat, store.lng, lat, lng)
                   }}
                 >
                   🧭 Directions
