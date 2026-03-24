@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import type { Store } from '@/lib/types'
@@ -21,8 +21,16 @@ export default function MapPage() {
   const { location, loading: locLoading, error: locError, retry } = useLocation()
   const lat = location?.coords.latitude ?? 35.3015
   const lng = location?.coords.longitude ?? -81.0694
-  const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
+  const { stores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
   const [selected, setSelected] = useState<Store | null>(null)
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refetch()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [refetch])
 
   if (locLoading) {
     return (
