@@ -6,7 +6,37 @@ import { useState, useEffect } from 'react'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import type { Store } from '@/lib/types'
+
+function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 3958.8
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+function openDirections(destLat: number, destLng: number) {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  if (isIOS) {
+    window.open(`https://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=d`, '_blank')
+  } else {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`, '_blank')
+  }
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
 
 const LEGEND_ITEMS = [
   { icon: '⛽', label: 'Gas Station' },
@@ -38,6 +68,18 @@ export default function MapPage() {
   const { stores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
   const [selected, setSelected] = useState<Store | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!selected) { setLastUpdated(null); return }
+    supabase
+      .from('latest_stock')
+      .select('reported_at')
+      .eq('store_id', selected.id)
+      .order('reported_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => setLastUpdated(data?.[0]?.reported_at ?? null))
+  }, [selected])
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -187,38 +229,52 @@ export default function MapPage() {
             paddingBottom: 36,
           }}
         >
-          <div
-            className="w-9 h-1 rounded-sm mx-auto mb-4"
-            style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-          />
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3 flex-1">
+          <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+
+          {/* Store name + close */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <span style={{ fontSize: 28 }}>{TYPE_ICON[selected.type]}</span>
-              <div>
-                <p className="text-lg font-bold text-white">{selected.name}</p>
-                <p className="text-xs text-white/40 mt-0.5">{selected.address}</p>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-white truncate">{selected.name}</p>
+                <p className="text-xs text-white/40 mt-0.5 truncate">{selected.address}</p>
               </div>
             </div>
             <button
               onClick={() => setSelected(null)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-2"
               style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
             >
               <span className="text-white/50 text-xs">✕</span>
             </button>
           </div>
-          <div className="flex gap-2.5">
-            <button
-              className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
-              style={{ backgroundColor: '#22c55e' }}
-              onClick={() =>
-                router.push(
-                  `/submit/drinks?storeId=${selected.id}&storeName=${encodeURIComponent(selected.name)}`
-                )
-              }
+
+          {/* Distance + last updated */}
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              ⚡ Report Stock
-            </button>
+              <span style={{ fontSize: 11 }}>📍</span>
+              <span className="text-xs font-semibold text-white/60">
+                {getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away
+              </span>
+            </div>
+            {lastUpdated && (
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <span style={{ fontSize: 11 }}>🕐</span>
+                <span className="text-xs font-semibold text-white/60">
+                  Updated {timeAgo(lastUpdated)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2.5">
             <button
               className="flex-1 rounded-xl py-3 font-semibold text-sm"
               style={{
@@ -226,11 +282,14 @@ export default function MapPage() {
                 border: '1px solid rgba(255,255,255,0.08)',
                 color: 'rgba(255,255,255,0.6)',
               }}
-              onClick={() =>
-                router.push(
-                  `/store/${selected.id}?name=${encodeURIComponent(selected.name)}`
-                )
-              }
+              onClick={() => openDirections(selected.lat, selected.lng)}
+            >
+              🧭 Directions
+            </button>
+            <button
+              className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
+              style={{ backgroundColor: '#22c55e' }}
+              onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}
             >
               View Stock
             </button>
