@@ -57,6 +57,47 @@ export default function LeaderboardPage() {
         <p className="text-xs text-white/40 mt-0.5">Top reporters this season</p>
       </div>
 
+      {/* How points work */}
+      <div className="px-5 mb-5">
+        <div
+          className="rounded-2xl p-4"
+          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+            HOW POINTS WORK
+          </p>
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.2)' }}
+              >
+                <span style={{ fontSize: 16 }}>⚡</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Report a drink</p>
+                <p className="text-xs text-white/40">Each drink you report at a store</p>
+              </div>
+              <span className="text-sm font-black" style={{ color: '#22c55e' }}>+2 pts</span>
+            </div>
+            <div className="h-px" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} />
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.2)' }}
+              >
+                <span style={{ fontSize: 16 }}>🏪</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Add a store</p>
+                <p className="text-xs text-white/40">Awarded after admin approval</p>
+              </div>
+              <span className="text-sm font-black" style={{ color: '#facc15' }}>+5 pts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center mt-16">
           <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />

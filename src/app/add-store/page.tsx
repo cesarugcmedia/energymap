@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 const STORE_TYPES = [
   { value: 'gas_station', label: 'Gas Station', icon: '⛽' },
@@ -13,6 +14,7 @@ const STORE_TYPES = [
 
 export default function AddStorePage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [type, setType] = useState<string | null>(null)
@@ -68,6 +70,7 @@ export default function AddStorePage() {
       lat: coords.lat,
       lng: coords.lng,
       status: 'pending',
+      submitted_by: user?.id ?? null,
     })
 
     if (dbError) {
