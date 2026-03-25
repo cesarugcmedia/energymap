@@ -73,6 +73,16 @@ function createStoreIcon(store: Store, isSelected: boolean) {
   })
 }
 
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 3958.8
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 function FitStores({ lat, lng, stores }: { lat: number; lng: number; stores: Store[] }) {
   const map = useMap()
   const fitted = useRef(false)
@@ -81,7 +91,8 @@ function FitStores({ lat, lng, stores }: { lat: number; lng: number; stores: Sto
     if (fitted.current || stores.length === 0) return
     fitted.current = true
 
-    const points: [number, number][] = [[lat, lng], ...stores.map((s) => [s.lat, s.lng] as [number, number])]
+    const nearby = stores.filter((s) => haversine(lat, lng, s.lat, s.lng) <= 25)
+    const points: [number, number][] = [[lat, lng], ...(nearby.length > 0 ? nearby : stores).map((s) => [s.lat, s.lng] as [number, number])]
     const bounds = L.latLngBounds(points)
     map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 })
   }, [stores, lat, lng, map])
