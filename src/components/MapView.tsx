@@ -30,10 +30,11 @@ function createStoreIcon(store: Store, isSelected: boolean) {
   const emoji = TYPE_ICON[store.type] ?? '📍'
   const name = store.name.length > 14 ? store.name.slice(0, 14) + '…' : store.name
   const bg = isSelected ? '#0f0f17' : '#1a1a24'
-  const border = isSelected ? '#22c55e' : 'rgba(255,255,255,0.18)'
-  const shadow = isSelected
-    ? '0 2px 12px rgba(34,197,94,0.35), 0 1px 4px rgba(0,0,0,0.6)'
-    : '0 2px 8px rgba(0,0,0,0.6)'
+  const border = isSelected ? '#22c55e' : 'rgba(34,197,94,0.5)'
+  const glow = isSelected
+    ? '0 0 0 3px rgba(34,197,94,0.2), 0 0 16px rgba(34,197,94,0.55), 0 2px 8px rgba(0,0,0,0.7)'
+    : '0 0 0 2px rgba(34,197,94,0.12), 0 0 10px rgba(34,197,94,0.3), 0 2px 6px rgba(0,0,0,0.6)'
+  const tipColor = isSelected ? '#22c55e' : 'rgba(34,197,94,0.5)'
 
   return L.divIcon({
     className: '',
@@ -53,7 +54,7 @@ function createStoreIcon(store: Store, isSelected: boolean) {
           display:flex;align-items:center;gap:5px;
           font-family:system-ui,sans-serif;
           white-space:nowrap;
-          box-shadow:${shadow};
+          box-shadow:${glow};
           cursor:pointer;
         ">
           <span style="font-size:13px;line-height:1;">${emoji}</span>
@@ -63,7 +64,7 @@ function createStoreIcon(store: Store, isSelected: boolean) {
           width:0;height:0;
           border-left:5px solid transparent;
           border-right:5px solid transparent;
-          border-top:5px solid ${border};
+          border-top:5px solid ${tipColor};
           margin-top:-1px;
         "></div>
       </div>`,
