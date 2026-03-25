@@ -113,28 +113,34 @@ export default function LeaderboardPage() {
                   return (
                     <div
                       key={entry.id}
-                      className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                      className="rounded-2xl px-4 flex items-center gap-3"
                       style={{
-                        backgroundColor: isMe ? 'rgba(34,197,94,0.06)' : '#1a1a24',
-                        border: `1px solid ${isMe ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                        backgroundColor: isMe ? 'rgba(34,197,94,0.1)' : '#1a1a24',
+                        border: `1px solid ${isMe ? '#22c55e' : 'rgba(255,255,255,0.07)'}`,
+                        boxShadow: isMe ? '0 0 12px rgba(34,197,94,0.2)' : 'none',
+                        padding: isMe ? '14px 16px' : '10px 16px',
                       }}
                     >
                       <div className="w-7 shrink-0 flex items-center justify-center">
                         {MEDAL[rank]
                           ? <span style={{ fontSize: 18 }}>{MEDAL[rank]}</span>
-                          : <p className="text-sm font-black text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>{rank}</p>
+                          : <p className="text-sm font-black text-center" style={{ color: isMe ? '#22c55e' : 'rgba(255,255,255,0.3)' }}>{rank}</p>
                         }
                       </div>
                       <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
-                        <p className="text-sm font-bold text-white truncate">@{entry.username}</p>
+                        <p className={`truncate font-black ${isMe ? 'text-base' : 'text-sm font-bold'}`} style={{ color: isMe ? '#22c55e' : '#fff' }}>
+                          @{entry.username}
+                        </p>
                         {entry.is_verified_reporter && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                         )}
-                        {isMe && <span className="text-xs text-white/40 font-normal">· you</span>}
+                        {isMe && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}>YOU</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
-                        <span style={{ fontSize: 11 }}>⚡</span>
-                        <span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <span style={{ fontSize: isMe ? 13 : 11 }}>⚡</span>
+                        <span className="font-black" style={{ fontSize: isMe ? 15 : 13, color: isMe ? '#22c55e' : 'rgba(255,255,255,0.5)' }}>
                           {entry.points}
                         </span>
                       </div>
