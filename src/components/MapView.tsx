@@ -73,16 +73,18 @@ function createStoreIcon(store: Store, isSelected: boolean) {
   })
 }
 
-function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
+function FitStores({ lat, lng, stores }: { lat: number; lng: number; stores: Store[] }) {
   const map = useMap()
-  const centered = useRef(false)
+  const fitted = useRef(false)
 
   useEffect(() => {
-    if (!centered.current) {
-      map.setView([lat, lng], 14)
-      centered.current = true
-    }
-  }, [lat, lng, map])
+    if (fitted.current || stores.length === 0) return
+    fitted.current = true
+
+    const points: [number, number][] = [[lat, lng], ...stores.map((s) => [s.lat, s.lng] as [number, number])]
+    const bounds = L.latLngBounds(points)
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 })
+  }, [stores, lat, lng, map])
 
   return null
 }
@@ -107,7 +109,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore }: M
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
-      <RecenterMap lat={lat} lng={lng} />
+      <FitStores lat={lat} lng={lng} stores={stores} />
       <Marker position={[lat, lng]} icon={userIcon} />
       {stores.map((store) => (
         <Marker
