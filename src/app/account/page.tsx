@@ -143,9 +143,18 @@ export default function AccountPage() {
     )
   }
 
-  // User is logged in but has no profile yet — let them set a username
-  if (user && !profile) {
+  // User is logged in but has no profile — only show setup after loading is confirmed done
+  if (user && !profile && !loading) {
     return <SetupProfile userId={user.id} email={user.email} />
+  }
+
+  // Still resolving profile — show spinner
+  if (user && !profile) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   const TYPE_ICON: Record<string, string> = {
