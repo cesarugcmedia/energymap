@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import NotificationBell from '@/components/NotificationBell'
 
 const MEDAL = ['🥇', '🥈', '🥉']
 
@@ -52,9 +53,12 @@ export default function LeaderboardPage() {
     <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
 
       {/* Header */}
-      <div className="px-5 pb-4">
-        <p className="text-2xl font-black text-white">🏆 Leaderboard</p>
-        <p className="text-xs text-white/40 mt-0.5">Top reporters this season</p>
+      <div className="flex items-center justify-between px-5 pb-4">
+        <div>
+          <p className="text-2xl font-black text-white">🏆 Leaderboard</p>
+          <p className="text-xs text-white/40 mt-0.5">Top reporters this season</p>
+        </div>
+        <NotificationBell />
       </div>
 
       {/* How points work */}

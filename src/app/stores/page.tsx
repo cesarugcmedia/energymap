@@ -6,6 +6,7 @@ import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import NotificationBell from '@/components/NotificationBell'
 import type { Quantity, Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
@@ -128,17 +129,20 @@ export default function StoresPage() {
           <p className="text-2xl font-black text-white">Nearby Stores</p>
           <p className="text-xs text-white/40 mt-0.5">Sorted by distance</p>
         </div>
-        <button
-          onClick={() => router.push('/add-store')}
-          className="text-xs font-bold px-3 py-1.5 rounded-full"
-          style={{
-            color: '#22c55e',
-            backgroundColor: 'rgba(34,197,94,0.15)',
-            border: '1px solid rgba(34,197,94,0.3)',
-          }}
-        >
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <button
+            onClick={() => router.push('/add-store')}
+            className="text-xs font-bold px-3 py-1.5 rounded-full"
+            style={{
+              color: '#22c55e',
+              backgroundColor: 'rgba(34,197,94,0.15)',
+              border: '1px solid rgba(34,197,94,0.3)',
+            }}
+          >
           + Add Store
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Radius selector */}
