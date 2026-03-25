@@ -12,7 +12,7 @@ const ALL_TABS = [
   { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true },
 ]
 
-const TAB_PATHS = ['/', '/stores', '/leaderboard', '/account', '/admin', '/admin/login']
+const TAB_PATHS = ['/', '/stores', '/leaderboard', '/notifications', '/account', '/admin', '/admin/login']
 
 export default function BottomNav() {
   const pathname = usePathname()

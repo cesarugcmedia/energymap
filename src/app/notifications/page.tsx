@@ -9,6 +9,8 @@ const TYPE_ICON: Record<string, string> = {
   stock_update: '⚡',
   store_approved: '✅',
   store_rejected: '❌',
+  new_store: '🏪',
+  new_drink: '🥤',
 }
 
 function timeAgo(dateStr: string) {
@@ -97,7 +99,7 @@ export default function NotificationsPage() {
         <div className="flex flex-col items-center gap-3 mt-20 px-5">
           <span style={{ fontSize: 48 }}>🔔</span>
           <p className="text-lg font-bold text-white">No notifications yet</p>
-          <p className="text-sm text-white/40 text-center">You'll be notified when stock is updated at your favorite stores.</p>
+          <p className="text-sm text-white/40 text-center">You'll be notified about stock updates, new stores, and new drinks.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2.5 px-4 pb-8">
