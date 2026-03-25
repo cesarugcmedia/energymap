@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { Store } from '@/lib/types'
 
 const LEGEND_ITEMS = [
-  { icon: '🔵', label: 'You are here' },
   { icon: '⛽', label: 'Gas Station' },
   { icon: '🏪', label: 'Convenience' },
   { icon: '🛒', label: 'Grocery' },
