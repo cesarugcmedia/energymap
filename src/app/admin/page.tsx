@@ -32,8 +32,11 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
+  const [tab, setTab] = useState<'stores' | 'users'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState<any[]>([])
+  const [usersLoading, setUsersLoading] = useState(false)
   const [editStore, setEditStore] = useState<any | null>(null)
   const [editName, setEditName] = useState('')
   const [editAddress, setEditAddress] = useState('')
@@ -87,6 +90,21 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
     if (data) setStores(data)
     setLoading(false)
+  }
+
+  async function fetchUsers() {
+    setUsersLoading(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, is_verified_reporter, is_admin, created_at')
+      .order('created_at', { ascending: false })
+    if (data) setUsers(data)
+    setUsersLoading(false)
+  }
+
+  async function toggleVerified(userId: string, current: boolean) {
+    await supabase.from('profiles').update({ is_verified_reporter: !current }).eq('id', userId)
+    setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_verified_reporter: !current } : u))
   }
 
   async function approveStore(id: string) {
@@ -180,32 +198,98 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
-        <div>
-          <p className="text-2xl font-black text-white">🔧 Admin</p>
-          <p className="text-xs text-white/40 mt-0.5">
-            {loading ? 'Loading…' : `${stores.length} pending store${stores.length !== 1 ? 's' : ''}`}
-          </p>
+      <div className="px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-2xl font-black text-white">🔧 Admin</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { tab === 'stores' ? fetchPending() : fetchUsers() }}
+              className="text-xs font-bold px-3 py-1.5 rounded-full"
+              style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+            >
+              ↻ Refresh
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-xs font-bold px-3 py-1.5 rounded-full"
+              style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={fetchPending}
-            className="text-xs font-bold px-3 py-1.5 rounded-full"
-            style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
-          >
-            ↻ Refresh
-          </button>
-          <button
-            onClick={handleLogout}
-            className="text-xs font-bold px-3 py-1.5 rounded-full"
-            style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
-          >
-            Sign Out
-          </button>
+
+        {/* Tab switcher */}
+        <div className="flex rounded-xl p-1" style={{ backgroundColor: '#1a1a24' }}>
+          {(['stores', 'users'] as const).map((t) => (
+            <button
+              key={t}
+              className="flex-1 rounded-lg py-2.5 text-sm font-bold"
+              style={{
+                backgroundColor: tab === t ? '#22c55e' : 'transparent',
+                color: tab === t ? '#000' : 'rgba(255,255,255,0.4)',
+              }}
+              onClick={() => {
+                setTab(t)
+                if (t === 'users' && users.length === 0) fetchUsers()
+              }}
+            >
+              {t === 'stores' ? `🏪 Stores${!loading ? ` (${stores.length})` : ''}` : '👤 Users'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {loading ? (
+      {tab === 'users' ? (
+        usersLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5 px-4 pb-6">
+            {users.map((u) => (
+              <div
+                key={u.id}
+                className="rounded-2xl px-4 py-3.5 flex items-center gap-3"
+                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.2)' }}
+                >
+                  <span className="text-sm font-black" style={{ color: '#22c55e' }}>
+                    {u.username?.[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-bold text-white">@{u.username}</p>
+                    {u.is_admin && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>ADMIN</span>
+                    )}
+                    {u.is_verified_reporter && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/30 mt-0.5">Joined {timeAgo(u.created_at)}</p>
+                </div>
+                <button
+                  onClick={() => toggleVerified(u.id, u.is_verified_reporter)}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
+                  style={u.is_verified_reporter
+                    ? { backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }
+                    : { backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#60a5fa' }
+                  }
+                >
+                  {u.is_verified_reporter ? 'Revoke' : '✓ Verify'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      ) : loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
         </div>

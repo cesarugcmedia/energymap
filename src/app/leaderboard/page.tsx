@@ -148,10 +148,13 @@ export default function LeaderboardPage() {
                     >
                       <span style={{ fontSize: 28 }}>{MEDAL[i]}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-base font-black text-white truncate">
-                          @{entry.username}
-                          {isMe && <span className="text-xs text-white/40 font-normal ml-2">· you</span>}
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-base font-black text-white truncate">@{entry.username}</p>
+                          {entry.is_verified_reporter && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
+                          )}
+                          {isMe && <span className="text-xs text-white/40 font-normal">· you</span>}
+                        </div>
                         <p className="text-xs mt-0.5" style={{ color: colors.text }}>
                           Rank #{i + 1}
                         </p>
@@ -197,10 +200,13 @@ export default function LeaderboardPage() {
                       >
                         {rank}
                       </p>
-                      <p className="text-sm font-bold text-white flex-1 truncate">
-                        @{entry.username}
-                        {isMe && <span className="text-xs text-white/40 font-normal ml-2">· you</span>}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
+                        <p className="text-sm font-bold text-white truncate">@{entry.username}</p>
+                        {entry.is_verified_reporter && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
+                        )}
+                        {isMe && <span className="text-xs text-white/40 font-normal">· you</span>}
+                      </div>
                       <div className="flex items-center gap-1">
                         <span style={{ fontSize: 11 }}>⚡</span>
                         <span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>

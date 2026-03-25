@@ -64,7 +64,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [profileMap, setProfileMap] = useState<Record<string, string>>({})
+  const [profileMap, setProfileMap] = useState<Record<string, { username: string; verified: boolean }>>({})
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
@@ -117,11 +117,11 @@ function StoreDetailContent({ id }: { id: string }) {
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, username')
+          .select('id, username, is_verified_reporter')
           .in('id', userIds)
         if (profiles) {
-          const map: Record<string, string> = {}
-          profiles.forEach((p) => { map[p.id] = p.username })
+          const map: Record<string, { username: string; verified: boolean }> = {}
+          profiles.forEach((p) => { map[p.id] = { username: p.username, verified: p.is_verified_reporter } })
           setProfileMap(map)
         }
       }
@@ -297,7 +297,12 @@ function StoreDetailContent({ id }: { id: string }) {
                                 <div className="w-1 h-1 rounded-full" style={{ backgroundColor: freshColor }} />
                                 <p className="text-xs" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
                                 {profileMap[item.user_id] && (
-                                  <p className="text-xs text-white/30">· @{profileMap[item.user_id]}</p>
+                                  <div className="flex items-center gap-1">
+                                    <p className="text-xs text-white/30">· @{profileMap[item.user_id].username}</p>
+                                    {profileMap[item.user_id].verified && (
+                                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>
