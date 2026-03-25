@@ -2,17 +2,32 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Store } from '@/lib/types'
 
-export function useNearbyStores(lat: number, lng: number) {
-  const [stores, setStores] = useState<Store[]>([])
-  const [loading, setLoading] = useState(true)
+const CACHE_TTL = 60_000 // 60 seconds
 
-  const fetchStores = useCallback(async () => {
+let cachedStores: Store[] | null = null
+let cacheTime = 0
+
+export function useNearbyStores(lat: number, lng: number) {
+  const [stores, setStores] = useState<Store[]>(cachedStores ?? [])
+  const [loading, setLoading] = useState(cachedStores === null)
+
+  const fetchStores = useCallback(async (force = false) => {
+    const now = Date.now()
+    if (!force && cachedStores && now - cacheTime < CACHE_TTL) {
+      setStores(cachedStores)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     const { data, error } = await supabase
       .from('stores')
       .select('*')
       .eq('status', 'approved')
-    if (!error && data) setStores(data)
+    if (!error && data) {
+      cachedStores = data
+      cacheTime = Date.now()
+      setStores(data)
+    }
     setLoading(false)
   }, [])
 
@@ -20,5 +35,5 @@ export function useNearbyStores(lat: number, lng: number) {
     fetchStores()
   }, [fetchStores])
 
-  return { stores, loading, refetch: fetchStores }
+  return { stores, loading, refetch: () => fetchStores(true) }
 }
