@@ -100,6 +100,29 @@ function FitStores({ lat, lng, stores }: { lat: number; lng: number; stores: Sto
   return null
 }
 
+function ZoomControls() {
+  const map = useMap()
+  const btnStyle = {
+    backgroundColor: 'rgba(10,10,15,0.92)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(12px)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 300,
+    lineHeight: 1,
+  }
+  return (
+    <div
+      className="absolute z-[1000] flex flex-col gap-2"
+      style={{ bottom: 'calc(150px + env(safe-area-inset-bottom))', right: 16 }}
+    >
+      <button onClick={() => map.zoomIn()} className="w-10 h-10 rounded-full flex items-center justify-center" style={btnStyle}>+</button>
+      <button onClick={() => map.zoomOut()} className="w-10 h-10 rounded-full flex items-center justify-center" style={btnStyle}>−</button>
+    </div>
+  )
+}
+
 interface MapViewProps {
   lat: number
   lng: number
@@ -121,6 +144,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore }: M
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       <FitStores lat={lat} lng={lng} stores={stores} />
+      <ZoomControls />
       <Marker position={[lat, lng]} icon={userIcon} />
       {stores.map((store) => (
         <Marker
