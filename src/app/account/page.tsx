@@ -162,53 +162,54 @@ export default function AccountPage() {
       <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
 
         {/* Profile card */}
-        <div className="px-5 mb-5">
+        <div className="px-5 mb-6">
           <div
             className="rounded-2xl p-5"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)', boxShadow: '0 0 0 1px rgba(34,197,94,0.08)' }}
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)' }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}
-                >
-                  <span className="text-2xl font-black" style={{ color: '#22c55e' }}>
-                    {profile.username[0].toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-lg font-black text-white">@{profile.username}</p>
-                    {profile.is_admin && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
-                        ADMIN
-                      </span>
-                    )}
-                    {profile.is_verified_reporter && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
-                        ✓ VERIFIED
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-white/40 mt-0.5">{user.email}</p>
+            {/* Avatar + info row */}
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}
+              >
+                <span className="text-2xl font-black" style={{ color: '#22c55e' }}>
+                  {profile.username[0].toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-lg font-black text-white truncate">@{profile.username}</p>
+                <p className="text-xs text-white/40 mt-0.5 truncate">{user.email}</p>
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  {profile.is_admin && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
+                      ADMIN
+                    </span>
+                  )}
+                  {profile.is_verified_reporter && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
+                      ✓ VERIFIED
+                    </span>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={handleSignOut}
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}
-              >
-                Sign Out
-              </button>
             </div>
+
+            {/* Sign out button — full width below */}
+            <button
+              onClick={handleSignOut}
+              className="w-full rounded-xl py-2.5 text-sm font-bold"
+              style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 
         {/* Favorite Stores */}
         <div className="px-5 mb-3">
           <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
-            FAVORITE STORES ❤️
+            FAVORITE STORES
           </p>
         </div>
 
@@ -217,13 +218,16 @@ export default function AccountPage() {
             <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : favorites.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 mt-8 px-5">
-            <span style={{ fontSize: 36 }}>🤍</span>
-            <p className="text-base font-bold text-white">No favorites yet</p>
-            <p className="text-sm text-white/40 text-center">Tap ❤️ on any store to save it here.</p>
+          <div
+            className="mx-5 rounded-2xl p-6 flex flex-col items-center gap-2"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <span style={{ fontSize: 32 }}>🤍</span>
+            <p className="text-sm font-bold text-white">No favorites yet</p>
+            <p className="text-xs text-white/40 text-center">Tap ❤️ on any store to save it here.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5 px-5 pb-8 mt-3">
+          <div className="flex flex-col gap-2.5 px-5 pb-8">
             {favorites.map((fav) => {
               const store = fav.store
               if (!store) return null
@@ -231,9 +235,14 @@ export default function AccountPage() {
                 <div
                   key={fav.id}
                   className="rounded-2xl p-4 flex items-center gap-3"
-                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.2)' }}
+                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
                 >
-                  <span style={{ fontSize: 26 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+                  >
+                    <span style={{ fontSize: 20 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-white truncate">{store.name}</p>
                     {store.address && (
@@ -242,8 +251,8 @@ export default function AccountPage() {
                   </div>
                   <a
                     href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}
+                    className="text-xs font-bold px-3 py-2 rounded-xl shrink-0"
+                    style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e' }}
                   >
                     View Stock
                   </a>
