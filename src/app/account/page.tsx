@@ -56,7 +56,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
 }
 
 export default function AccountPage() {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, refreshProfile } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [favorites, setFavorites] = useState<any[]>([])
   const [favLoading, setFavLoading] = useState(false)
@@ -106,14 +106,12 @@ export default function AccountPage() {
 
     if (data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim() })
-      // If email confirmation is still enabled, session won't exist yet
       if (!data.session) {
-        setError(null)
         setSubmitting(false)
-        // Show a message — repurpose error state with a success style flag
         setConfirmEmail(true)
         return
       }
+      await refreshProfile()
     }
     setSubmitting(false)
   }
