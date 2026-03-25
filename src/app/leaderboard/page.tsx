@@ -6,13 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import NotificationBell from '@/components/NotificationBell'
 
-const MEDAL = ['🥇', '🥈', '🥉']
-
-const RANK_COLORS = [
-  { border: 'rgba(250,204,21,0.35)', bg: 'rgba(250,204,21,0.08)', text: '#facc15' },
-  { border: 'rgba(148,163,184,0.35)', bg: 'rgba(148,163,184,0.08)', text: '#94a3b8' },
-  { border: 'rgba(251,146,60,0.35)', bg: 'rgba(251,146,60,0.08)', text: '#fb923c' },
-]
+const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 export default function LeaderboardPage() {
   const router = useRouter()
@@ -46,8 +40,6 @@ export default function LeaderboardPage() {
   }
 
   const myRank = entries.findIndex((e) => e.id === user.id)
-  const top3 = entries.slice(0, 3)
-  const rest = entries.slice(3)
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
@@ -131,63 +123,15 @@ export default function LeaderboardPage() {
             </div>
           )}
 
-          {/* Top 3 podium */}
-          {top3.length > 0 && (
-            <div className="px-5 mb-4">
-              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
-                TOP REPORTERS
-              </p>
-              <div className="flex flex-col gap-2.5">
-                {top3.map((entry, i) => {
-                  const colors = RANK_COLORS[i]
-                  const isMe = entry.id === user.id
-                  return (
-                    <div
-                      key={entry.id}
-                      className="rounded-2xl px-4 py-4 flex items-center gap-3"
-                      style={{
-                        backgroundColor: isMe ? 'rgba(34,197,94,0.06)' : '#1a1a24',
-                        border: `1px solid ${isMe ? 'rgba(34,197,94,0.3)' : colors.border}`,
-                      }}
-                    >
-                      <span style={{ fontSize: 28 }}>{MEDAL[i]}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="text-base font-black text-white truncate">@{entry.username}</p>
-                          {entry.is_verified_reporter && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
-                          )}
-                          {isMe && <span className="text-xs text-white/40 font-normal">· you</span>}
-                        </div>
-                        <p className="text-xs mt-0.5" style={{ color: colors.text }}>
-                          Rank #{i + 1}
-                        </p>
-                      </div>
-                      <div
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
-                      >
-                        <span style={{ fontSize: 12 }}>⚡</span>
-                        <span className="text-sm font-black" style={{ color: colors.text }}>
-                          {entry.points}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Rest of the list */}
-          {rest.length > 0 && (
+          {/* Full ranked list */}
+          {entries.length > 0 && (
             <div className="px-5 mb-6">
               <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
                 ALL REPORTERS
               </p>
               <div className="flex flex-col gap-2">
-                {rest.map((entry, i) => {
-                  const rank = i + 4
+                {entries.map((entry, i) => {
+                  const rank = i + 1
                   const isMe = entry.id === user.id
                   return (
                     <div
@@ -198,12 +142,12 @@ export default function LeaderboardPage() {
                         border: `1px solid ${isMe ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.07)'}`,
                       }}
                     >
-                      <p
-                        className="text-sm font-black w-7 shrink-0 text-center"
-                        style={{ color: 'rgba(255,255,255,0.3)' }}
-                      >
-                        {rank}
-                      </p>
+                      <div className="w-7 shrink-0 flex items-center justify-center">
+                        {MEDAL[rank]
+                          ? <span style={{ fontSize: 18 }}>{MEDAL[rank]}</span>
+                          : <p className="text-sm font-black text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>{rank}</p>
+                        }
+                      </div>
                       <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
                         <p className="text-sm font-bold text-white truncate">@{entry.username}</p>
                         {entry.is_verified_reporter && (
