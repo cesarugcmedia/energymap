@@ -6,7 +6,7 @@ import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import type { Quantity, Store } from '@/lib/types'
+import type { Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
   gas_station: '⛽',
@@ -345,46 +345,36 @@ export default function StoresPage() {
                   </div>
                 )}
 
-                <button
-                  className="w-full rounded-xl py-2 text-xs font-semibold mb-2"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.55)',
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openDirections(store.lat, store.lng)
-                  }}
-                >
-                  🧭 Directions
-                </button>
-
-                {stock.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {stock.slice(0, 4).map((item) => {
-                      const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                      return (
-                        <div
-                          key={item.drink_id}
-                          className="flex items-center gap-1 rounded-lg px-2 py-1"
-                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
-                        >
-                          <span className="text-xs text-white/60 max-w-[80px] truncate">{item.drink?.flavor}</span>
-                          <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                        </div>
-                      )
-                    })}
-                    {stock.length > 4 && (
-                      <div
-                        className="rounded-lg px-2 py-1 flex items-center"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                      >
-                        <span className="text-xs text-white/30">+{stock.length - 4} more</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    className="flex-1 rounded-xl py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: 'rgba(255,255,255,0.55)',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openDirections(store.lat, store.lng)
+                    }}
+                  >
+                    🧭 Directions
+                  </button>
+                  <button
+                    className="flex-1 rounded-xl py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: 'rgba(255,255,255,0.55)',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
+                    }}
+                  >
+                    View Stock
+                  </button>
+                </div>
               </button>
             )
           })}
