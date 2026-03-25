@@ -6,7 +6,7 @@ import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import type { Store } from '@/lib/types'
+import type { Quantity, Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
   gas_station: '⛽',
