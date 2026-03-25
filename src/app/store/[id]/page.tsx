@@ -151,7 +151,7 @@ function StoreDetailContent({ id }: { id: string }) {
   }, {})
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="bg-[#0a0a0f]">
       {/* Header */}
       <div className="px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <div className="flex items-center justify-between mb-4">

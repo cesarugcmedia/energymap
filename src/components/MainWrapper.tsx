@@ -6,7 +6,7 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
   const { user } = useAuth()
   return (
     <main
-      className="flex-1"
+      className="flex-1 overflow-y-auto"
       style={user ? { paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' } : {}}
     >
       {children}

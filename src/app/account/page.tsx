@@ -22,7 +22,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-5 flex flex-col justify-center" style={{ paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+    <div className="h-full bg-[#0a0a0f] px-5 flex flex-col justify-center" style={{ paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <p className="text-2xl font-black text-white mb-1">One more step</p>
       <p className="text-xs text-white/40 mb-6">Pick a username for your account ({email})</p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -166,7 +166,7 @@ export default function AccountPage() {
 
   if (user && profile) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+      <div className="bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
 
         {/* Profile card */}
         <div className="px-5 mb-6">
@@ -273,7 +273,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-5" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div className="h-full bg-[#0a0a0f] px-5" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <p className="text-2xl font-black text-white mb-1">
         {mode === 'signin' ? 'Welcome back' : 'Join EnergyMap'}
       </p>

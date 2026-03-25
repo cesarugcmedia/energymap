@@ -42,7 +42,7 @@ export default function LeaderboardPage() {
   const myRank = entries.findIndex((e) => e.id === user.id)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div className="bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 pb-4">

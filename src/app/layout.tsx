@@ -24,7 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-[#0a0a0f] text-white">
         <AuthProvider>
-          <div className="relative flex flex-col max-w-md mx-auto min-h-[100dvh]">
+          <div className="relative flex flex-col max-w-md mx-auto h-[100dvh] overflow-hidden">
             <MainWrapper>{children}</MainWrapper>
             <BottomNav />
           </div>

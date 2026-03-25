@@ -85,7 +85,7 @@ export default function AddStorePage() {
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0f] px-8 text-center">
+      <div className="flex flex-col items-center justify-center bg-[#0a0a0f] px-8 text-center">
         <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
         <p className="text-2xl font-black text-white mb-2.5">Store Submitted!</p>
         <p className="text-sm text-white/45 mb-10 leading-relaxed">
@@ -116,7 +116,7 @@ export default function AddStorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] overflow-y-auto pb-16">
+    <div className="bg-[#0a0a0f] overflow-y-auto pb-16">
       {/* Header */}
       <div className="flex items-center gap-3.5 px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
         <button
