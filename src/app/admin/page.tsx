@@ -32,11 +32,14 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'users'>('stores')
+  const [tab, setTab] = useState<'stores' | 'users' | 'locations'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<any[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
+  const [locations, setLocations] = useState<any[]>([])
+  const [locationsLoading, setLocationsLoading] = useState(false)
+  const [locationSearch, setLocationSearch] = useState('')
   const [editStore, setEditStore] = useState<any | null>(null)
   const [editName, setEditName] = useState('')
   const [editAddress, setEditAddress] = useState('')
@@ -100,6 +103,17 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
     if (data) setUsers(data)
     setUsersLoading(false)
+  }
+
+  async function fetchLocations() {
+    setLocationsLoading(true)
+    const { data } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('status', 'approved')
+      .order('name', { ascending: true })
+    if (data) setLocations(data)
+    setLocationsLoading(false)
   }
 
   async function toggleVerified(userId: string, current: boolean) {
@@ -205,7 +219,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : fetchUsers() }}
+              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : fetchUsers() }}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
             >
@@ -223,10 +237,10 @@ export default function AdminPage() {
 
         {/* Tab switcher */}
         <div className="flex rounded-xl p-1" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'users'] as const).map((t) => (
+          {(['stores', 'locations', 'users'] as const).map((t) => (
             <button
               key={t}
-              className="flex-1 rounded-lg py-2.5 text-sm font-bold"
+              className="flex-1 rounded-lg py-2.5 text-xs font-bold"
               style={{
                 backgroundColor: tab === t ? '#22c55e' : 'transparent',
                 color: tab === t ? '#000' : 'rgba(255,255,255,0.4)',
@@ -234,15 +248,66 @@ export default function AdminPage() {
               onClick={() => {
                 setTab(t)
                 if (t === 'users' && users.length === 0) fetchUsers()
+                if (t === 'locations' && locations.length === 0) fetchLocations()
               }}
             >
-              {t === 'stores' ? `🏪 Stores${!loading ? ` (${stores.length})` : ''}` : '👤 Users'}
+              {t === 'stores' ? `🕐 Pending${!loading ? ` (${stores.length})` : ''}` : t === 'locations' ? '📍 Locations' : '👤 Users'}
             </button>
           ))}
         </div>
       </div>
 
-      {tab === 'users' ? (
+      {tab === 'locations' ? (
+        locationsLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="px-4 pb-6">
+            <input
+              type="text"
+              placeholder="Search locations..."
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              className="w-full rounded-xl p-3 text-sm text-white outline-none mb-4"
+              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+            />
+            <div className="flex flex-col gap-2.5">
+              {locations
+                .filter((s) => s.name.toLowerCase().includes(locationSearch.toLowerCase()) || s.address?.toLowerCase().includes(locationSearch.toLowerCase()))
+                .map((store) => (
+                  <div
+                    key={store.id}
+                    className="rounded-2xl p-4 flex items-center gap-3"
+                    style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                  >
+                    <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{store.name}</p>
+                      <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                        {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => openEdit(store)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
+                ))}
+              {locations.filter((s) => s.name.toLowerCase().includes(locationSearch.toLowerCase()) || s.address?.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+                <div className="flex flex-col items-center gap-2 mt-10">
+                  <span style={{ fontSize: 36 }}>🔍</span>
+                  <p className="text-sm font-bold text-white">No locations found</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      ) : tab === 'users' ? (
         usersLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
