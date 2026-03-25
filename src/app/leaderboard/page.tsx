@@ -100,29 +100,6 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <>
-          {/* Your rank banner */}
-          {myRank >= 0 && (
-            <div className="px-5 mb-5">
-              <div
-                className="rounded-2xl px-4 py-3 flex items-center justify-between"
-                style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-black" style={{ color: '#22c55e', minWidth: 28 }}>
-                    #{myRank + 1}
-                  </span>
-                  <p className="text-sm font-bold text-white">You · @{profile?.username}</p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span style={{ fontSize: 14 }}>⚡</span>
-                  <p className="text-sm font-black" style={{ color: '#22c55e' }}>
-                    {entries[myRank]?.points ?? 0} pts
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Full ranked list */}
           {entries.length > 0 && (
             <div className="px-5 mb-6">
