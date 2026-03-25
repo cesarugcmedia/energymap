@@ -69,6 +69,7 @@ export default function MapPage() {
   const [selected, setSelected] = useState<Store | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [leafletMap, setLeafletMap] = useState<any>(null)
 
   useEffect(() => {
     if (!selected) { setLastUpdated(null); return }
@@ -178,8 +179,35 @@ export default function MapPage() {
           stores={stores}
           selected={selected}
           onSelectStore={setSelected}
+          onMapReady={setLeafletMap}
         />
       </div>
+
+      {/* Zoom controls */}
+      {leafletMap && (
+        <div
+          className="absolute z-10 flex flex-col gap-2"
+          style={{ bottom: 'calc(160px + env(safe-area-inset-bottom))', right: 16 }}
+        >
+          {[{ label: '+', fn: () => leafletMap.zoomIn() }, { label: '−', fn: () => leafletMap.zoomOut() }].map(({ label, fn }) => (
+            <button
+              key={label}
+              onClick={fn}
+              className="w-10 h-10 rounded-full flex items-center justify-center font-light"
+              style={{
+                backgroundColor: 'rgba(10,10,15,0.92)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                color: '#fff',
+                fontSize: 22,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Map legend */}
       <div
