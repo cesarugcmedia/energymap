@@ -8,6 +8,14 @@ import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Store } from '@/lib/types'
 
+const LEGEND_ITEMS = [
+  { icon: '🔵', label: 'You are here' },
+  { icon: '⛽', label: 'Gas Station' },
+  { icon: '🏪', label: 'Convenience' },
+  { icon: '🛒', label: 'Grocery' },
+  { icon: '📍', label: 'Other' },
+]
+
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
 
 const TYPE_ICON: Record<string, string> = {
@@ -30,6 +38,7 @@ export default function MapPage() {
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
   const [selected, setSelected] = useState<Store | null>(null)
+  const [legendOpen, setLegendOpen] = useState(false)
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -129,6 +138,44 @@ export default function MapPage() {
           selected={selected}
           onSelectStore={setSelected}
         />
+      </div>
+
+      {/* Map legend */}
+      <div
+        className="absolute z-10"
+        style={{ bottom: 'calc(90px + env(safe-area-inset-bottom))', right: 16 }}
+      >
+        {legendOpen && (
+          <div
+            className="mb-2 rounded-2xl p-3 flex flex-col gap-2"
+            style={{
+              backgroundColor: 'rgba(10,10,15,0.92)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(12px)',
+              minWidth: 150,
+            }}
+          >
+            <p className="text-[10px] font-bold text-white/40" style={{ letterSpacing: '1.5px' }}>MAP KEY</p>
+            {LEGEND_ITEMS.map((item) => (
+              <div key={item.label} className="flex items-center gap-2.5">
+                <span style={{ fontSize: 14 }}>{item.icon}</span>
+                <span className="text-xs font-semibold text-white/70">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() => setLegendOpen((o) => !o)}
+          className="w-10 h-10 rounded-full flex items-center justify-center ml-auto"
+          style={{
+            backgroundColor: legendOpen ? '#22c55e' : 'rgba(10,10,15,0.92)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>{legendOpen ? '✕' : '🗺️'}</span>
+        </button>
       </div>
 
       {/* Bottom sheet when store selected */}
