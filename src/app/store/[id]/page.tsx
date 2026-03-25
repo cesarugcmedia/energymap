@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
@@ -58,16 +59,20 @@ function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()
   const params = useSearchParams()
   const name = params.get('name') ?? ''
+  const { user } = useAuth()
 
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [profileMap, setProfileMap] = useState<Record<string, string>>({})
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
 
   useEffect(() => {
     fetchStore()
     fetchStock()
+    if (user) checkFavorite()
 
     const channel = supabase
       .channel(`store-detail:${id}`)
@@ -80,6 +85,25 @@ function StoreDetailContent({ id }: { id: string }) {
   async function fetchStore() {
     const { data } = await supabase.from('stores').select('*').eq('id', id).single()
     if (data) setStore(data)
+  }
+
+  async function checkFavorite() {
+    if (!user) return
+    const { data } = await supabase.from('favorites').select('id').eq('user_id', user.id).eq('store_id', id).maybeSingle()
+    setIsFavorited(!!data)
+  }
+
+  async function toggleFavorite() {
+    if (!user || favLoading) return
+    setFavLoading(true)
+    if (isFavorited) {
+      await supabase.from('favorites').delete().eq('user_id', user.id).eq('store_id', id)
+      setIsFavorited(false)
+    } else {
+      await supabase.from('favorites').insert({ user_id: user.id, store_id: id })
+      setIsFavorited(true)
+    }
+    setFavLoading(false)
   }
 
   async function fetchStock() {
@@ -130,13 +154,28 @@ function StoreDetailContent({ id }: { id: string }) {
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
       <div className="px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-        <button
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-xl flex items-center justify-center mb-4"
-          style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
-        >
-          <span className="text-white text-lg">←</span>
-        </button>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
+          >
+            <span className="text-white text-lg">←</span>
+          </button>
+          {user && (
+            <button
+              onClick={toggleFavorite}
+              disabled={favLoading}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{
+                backgroundColor: isFavorited ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.07)',
+                border: isFavorited ? '1px solid rgba(239,68,68,0.3)' : '1px solid transparent',
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{isFavorited ? '❤️' : '🤍'}</span>
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-3 mb-3">
           <span style={{ fontSize: 32 }}>{store ? TYPE_ICON[store.type] : '📍'}</span>
