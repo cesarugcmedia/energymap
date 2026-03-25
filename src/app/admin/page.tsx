@@ -193,19 +193,25 @@ export default function AdminPage() {
       return
     }
     setSaving(true)
-    await supabase
-      .from('stores')
-      .update({ name: editName.trim(), address: editAddress.trim(), type: editType, lat, lng })
-      .eq('id', editStore.id)
 
-    setStores((prev) =>
-      prev.map((s) =>
-        s.id === editStore.id
-          ? { ...s, name: editName.trim(), address: editAddress.trim(), type: editType, lat, lng }
-          : s
-      )
-    )
+    const updates = { name: editName.trim(), address: editAddress.trim(), type: editType, lat, lng }
+    const { data, error } = await supabase
+      .from('stores')
+      .update(updates)
+      .eq('id', editStore.id)
+      .select('id')
+
     setSaving(false)
+
+    if (error || !data || data.length === 0) {
+      window.alert('Could not save changes — RLS may be blocking this.\n\nGo to Supabase → Authentication → Policies → stores and ensure there is an UPDATE policy for authenticated users.')
+      return
+    }
+
+    // Update both pending and approved lists in state
+    const patch = (list: any[]) => list.map((s) => s.id === editStore.id ? { ...s, ...updates } : s)
+    setStores(patch)
+    setLocations(patch)
     setEditStore(null)
   }
 
