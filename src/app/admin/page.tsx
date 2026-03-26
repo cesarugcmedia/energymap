@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -48,16 +48,21 @@ export default function AdminPage() {
   const [editLng, setEditLng] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Lock the scroll container behind the modal so iOS doesn't intercept taps on inputs
+  const backdropRef = useRef<HTMLDivElement>(null)
+
+  // Block background scroll when modal is open using a non-passive listener
+  // (React synthetic events are passive by default and can't preventDefault)
   useEffect(() => {
-    const main = document.querySelector('main') as HTMLElement | null
-    if (!main) return
-    if (editStore) {
-      main.style.overflow = 'hidden'
-    } else {
-      main.style.overflow = ''
+    const el = backdropRef.current
+    if (!el) return
+    const prevent = (e: TouchEvent) => {
+      // Allow scrolling inside the modal sheet itself
+      const sheet = el.firstElementChild
+      if (sheet && sheet.contains(e.target as Node)) return
+      e.preventDefault()
     }
-    return () => { if (main) main.style.overflow = '' }
+    el.addEventListener('touchmove', prevent, { passive: false })
+    return () => el.removeEventListener('touchmove', prevent)
   }, [editStore])
 
   useEffect(() => {
@@ -492,6 +497,7 @@ export default function AdminPage() {
       {/* Edit Modal */}
       {editStore && (
         <div
+          ref={backdropRef}
           className="fixed inset-0 flex flex-col justify-end z-50"
           style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setEditStore(null) }}
