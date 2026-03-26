@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import BrandLogo from '@/components/BrandLogo'
 import type { Quantity } from '@/lib/types'
 
 // Canonical brand names — any alias maps to the authoritative spelling
@@ -42,59 +43,7 @@ const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: stri
   full:   { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',  border: 'rgba(34,197,94,0.25)'  },
 }
 
-const BRAND_COLORS: Record<string, string> = {
-  Monster: '#00cc44',
-  'Red Bull': '#e63946',
-  Celsius: '#7c3aed',
-  Ghost: '#06b6d4',
-  Reign: '#f97316',
-  Rockstar: '#facc15',
-  Bang: '#ec4899',
-  NOS: '#3b82f6',
-  'Alani Nu': '#f472b6',
-}
-
-const BRAND_DOMAINS: Record<string, string> = {
-  Monster:    'monsterenergy.com',
-  'Red Bull': 'redbull.com',
-  Celsius:    'celsius.com',
-  Ghost:      'ghostlifestyle.com',
-  Reign:      'reignbodyfuel.com',
-  Rockstar:   'rockstarenergy.com',
-  Bang:       'bangenergy.com',
-  NOS:        'drinknos.com',
-  'Alani Nu': 'alaninu.com',
-}
-
 const STOCK_ORDER: Record<string, number> = { full: 0, medium: 1, low: 2, out: 3 }
-
-function BrandLogo({ brand, color }: { brand: string; color: string }) {
-  const domain = BRAND_DOMAINS[brand]
-  const [failed, setFailed] = useState(false)
-
-  if (!domain || failed) {
-    return (
-      <div
-        className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center"
-        style={{ backgroundColor: `${color}22`, border: `1.5px solid ${color}55` }}
-      >
-        <span className="text-[10px] font-black" style={{ color }}>
-          {brand.slice(0, 2).toUpperCase()}
-        </span>
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={`https://logo.clearbit.com/${domain}`}
-      alt={brand}
-      onError={() => setFailed(true)}
-      className="w-8 h-8 rounded-xl shrink-0 object-contain"
-      style={{ backgroundColor: '#fff', padding: 2 }}
-    />
-  )
-}
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -403,7 +352,6 @@ function StoreDetailContent({ id }: { id: string }) {
               const total = items.length
               const pct = total > 0 ? inStock / total : 0
               const barColor = pct === 0 ? '#ef4444' : pct >= 0.75 ? '#22c55e' : '#f59e0b'
-              const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.5)'
               const isExpanded = isSearching || expandedBrands.has(brand)
 
               return (
@@ -417,7 +365,7 @@ function StoreDetailContent({ id }: { id: string }) {
                     className="w-full flex items-center gap-3 p-4 text-left"
                     onClick={() => toggleBrand(brand)}
                   >
-                    <BrandLogo brand={brand} color={brandColor} />
+                    <BrandLogo brand={brand} />
 
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-black text-white">{brand}</p>

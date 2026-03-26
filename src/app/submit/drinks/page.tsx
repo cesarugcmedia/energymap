@@ -3,18 +3,8 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import BrandLogo, { BRAND_COLORS } from '@/components/BrandLogo'
 import type { Drink, Quantity } from '@/lib/types'
-
-const BRAND_COLORS: Record<string, string> = {
-  Monster: '#00cc44',
-  'Red Bull': '#e63946',
-  Celsius: '#7c3aed',
-  Ghost: '#06b6d4',
-  Reign: '#f97316',
-  Rockstar: '#facc15',
-  Bang: '#ec4899',
-  NOS: '#3b82f6',
-}
 
 const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
   { value: 'out',    label: 'Out',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
@@ -197,7 +187,7 @@ function DrinksContent() {
                   className="w-full flex items-center gap-3 p-4 text-left"
                   onClick={() => toggleBrand(brand)}
                 >
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <BrandLogo brand={brand} size={32} />
                   <div className="flex-1">
                     <p className="text-base font-black text-white">{brand}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
