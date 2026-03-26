@@ -33,7 +33,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'users' | 'locations'>('stores')
+  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<any[]>([])
@@ -48,6 +48,16 @@ export default function AdminPage() {
   const [editLat, setEditLat] = useState('')
   const [editLng, setEditLng] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // Drinks state
+  const [drinks, setDrinks] = useState<any[]>([])
+  const [drinksLoading, setDrinksLoading] = useState(false)
+  const [drinkSearch, setDrinkSearch] = useState('')
+  const [newBrand, setNewBrand] = useState('')
+  const [newName, setNewName] = useState('')
+  const [newFlavor, setNewFlavor] = useState('')
+  const [addingDrink, setAddingDrink] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
 
 
   useEffect(() => {
@@ -247,6 +257,43 @@ export default function AdminPage() {
     setEditStore(null)
   }
 
+  async function fetchDrinks() {
+    setDrinksLoading(true)
+    const { data } = await supabase.from('drinks').select('*').order('brand').order('name')
+    if (data) setDrinks(data)
+    setDrinksLoading(false)
+  }
+
+  async function addDrink() {
+    if (!newBrand.trim() || !newName.trim()) {
+      window.alert('Brand and name are required.')
+      return
+    }
+    setAddingDrink(true)
+    const { data, error } = await supabase
+      .from('drinks')
+      .insert({ brand: newBrand.trim(), name: newName.trim(), flavor: newFlavor.trim() || null })
+      .select()
+    if (error || !data) {
+      window.alert('Could not add drink. Check RLS policies on the drinks table.')
+      setAddingDrink(false)
+      return
+    }
+    setDrinks((prev) => [...prev, data[0]].sort((a, b) => a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)))
+    setNewBrand('')
+    setNewName('')
+    setNewFlavor('')
+    setShowAddForm(false)
+    setAddingDrink(false)
+  }
+
+  async function deleteDrink(id: string) {
+    if (!window.confirm('Delete this drink? This will also remove all stock reports for it.')) return
+    const { error } = await supabase.from('drinks').delete().eq('id', id)
+    if (error) { window.alert('Could not delete drink. Check RLS policies.'); return }
+    setDrinks((prev) => prev.filter((d) => d.id !== id))
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
@@ -257,7 +304,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : fetchUsers() }}
+              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : fetchUsers() }}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
             >
@@ -274,11 +321,11 @@ export default function AdminPage() {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex rounded-xl p-1" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'locations', 'users'] as const).map((t) => (
+        <div className="flex rounded-xl p-1 gap-0.5" style={{ backgroundColor: '#1a1a24' }}>
+          {(['stores', 'locations', 'drinks', 'users'] as const).map((t) => (
             <button
               key={t}
-              className="flex-1 rounded-lg py-2.5 text-xs font-bold"
+              className="flex-1 rounded-lg py-2.5 text-[11px] font-bold"
               style={{
                 backgroundColor: tab === t ? '#22c55e' : 'transparent',
                 color: tab === t ? '#000' : 'rgba(255,255,255,0.4)',
@@ -287,9 +334,10 @@ export default function AdminPage() {
                 setTab(t)
                 if (t === 'users' && users.length === 0) fetchUsers()
                 if (t === 'locations' && locations.length === 0) fetchLocations()
+                if (t === 'drinks' && drinks.length === 0) fetchDrinks()
               }}
             >
-              {t === 'stores' ? `🕐 Pending${!loading ? ` (${stores.length})` : ''}` : t === 'locations' ? '📍 Locations' : '👤 Users'}
+              {t === 'stores' ? `🕐 Pending` : t === 'locations' ? '📍 Locations' : t === 'drinks' ? '🥤 Drinks' : '👤 Users'}
             </button>
           ))}
         </div>
@@ -352,6 +400,130 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          </div>
+        )
+      ) : tab === 'drinks' ? (
+        drinksLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="px-4 pb-6">
+            {/* Search + Add */}
+            <div className="flex gap-2 mb-4">
+              <div
+                className="flex-1 flex items-center gap-2 rounded-xl px-3.5 py-2.5"
+                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <span className="text-white/30 text-sm">🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search drinks..."
+                  value={drinkSearch}
+                  onChange={(e) => setDrinkSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+                />
+                {drinkSearch && <button onClick={() => setDrinkSearch('')} className="text-white/30 text-xs">✕</button>}
+              </div>
+              <button
+                onClick={() => setShowAddForm((v) => !v)}
+                className="px-3.5 rounded-xl text-sm font-bold"
+                style={{ backgroundColor: showAddForm ? 'rgba(255,255,255,0.06)' : '#22c55e', color: showAddForm ? 'rgba(255,255,255,0.5)' : '#000' }}
+              >
+                {showAddForm ? '✕' : '+ Add'}
+              </button>
+            </div>
+
+            {/* Add drink form */}
+            {showAddForm && (
+              <div
+                className="rounded-2xl p-4 mb-4 flex flex-col gap-3"
+                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)' }}
+              >
+                <p className="text-xs font-bold text-white/40" style={{ letterSpacing: '1.5px' }}>NEW DRINK</p>
+                <input
+                  type="text"
+                  placeholder="Brand (e.g. Monster)"
+                  value={newBrand}
+                  onChange={(e) => setNewBrand(e.target.value)}
+                  className="w-full rounded-xl p-3 text-sm text-white outline-none"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Name (e.g. Monster Energy)"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="w-full rounded-xl p-3 text-sm text-white outline-none"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Flavor (e.g. Ultra White) — optional"
+                  value={newFlavor}
+                  onChange={(e) => setNewFlavor(e.target.value)}
+                  className="w-full rounded-xl p-3 text-sm text-white outline-none"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                />
+                <button
+                  onClick={addDrink}
+                  disabled={addingDrink}
+                  className="w-full rounded-xl p-3 font-bold text-white text-sm flex items-center justify-center"
+                  style={{ backgroundColor: addingDrink ? 'rgba(34,197,94,0.4)' : '#22c55e' }}
+                >
+                  {addingDrink ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Add Drink'}
+                </button>
+              </div>
+            )}
+
+            {/* Drinks grouped by brand */}
+            {(() => {
+              const filtered = drinks.filter((d) => {
+                const q = drinkSearch.toLowerCase()
+                return !q || d.brand.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || (d.flavor ?? '').toLowerCase().includes(q)
+              })
+              const grouped = filtered.reduce<Record<string, any[]>>((acc, d) => {
+                if (!acc[d.brand]) acc[d.brand] = []
+                acc[d.brand].push(d)
+                return acc
+              }, {})
+
+              if (filtered.length === 0) return (
+                <div className="flex flex-col items-center gap-2 mt-8">
+                  <span style={{ fontSize: 36 }}>🥤</span>
+                  <p className="text-sm font-bold text-white">{drinkSearch ? 'No drinks found' : 'No drinks yet'}</p>
+                </div>
+              )
+
+              return Object.entries(grouped).map(([brand, brandDrinks]) => (
+                <div key={brand} className="mb-4">
+                  <p className="text-[10px] font-bold mb-2" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+                    {brand.toUpperCase()} · {brandDrinks.length}
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {brandDrinks.map((drink) => (
+                      <div
+                        key={drink.id}
+                        className="flex items-center gap-3 rounded-xl px-3.5 py-3"
+                        style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{drink.flavor ?? drink.name}</p>
+                          {drink.flavor && <p className="text-xs text-white/35 mt-0.5">{drink.name}</p>}
+                        </div>
+                        <button
+                          onClick={() => deleteDrink(drink.id)}
+                          className="text-xs font-bold px-2.5 py-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            })()}
           </div>
         )
       ) : tab === 'users' ? (
