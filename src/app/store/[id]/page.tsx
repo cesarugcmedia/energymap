@@ -292,7 +292,7 @@ function StoreDetailContent({ id }: { id: string }) {
         </button>
         <button
           className="flex-1 rounded-2xl p-3.5 font-bold text-sm"
-          style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.35)', color: 'rgba(255,255,255,0.85)' }}
+          style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.5)', color: 'rgba(255,255,255,0.9)', boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)' }}
           onClick={() => setShowAddDrink(true)}
         >
           + Add Drink
