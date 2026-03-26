@@ -90,6 +90,7 @@ export default function StoresPage() {
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [radius, setRadius] = useState<number | null>(25)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     if (stores.length === 0) return
@@ -122,6 +123,11 @@ export default function StoresPage() {
     .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))
     .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
     .filter((s) => typeFilter === null || s.type === typeFilter)
+    .filter((s) => {
+      if (!search.trim()) return true
+      const q = search.toLowerCase()
+      return s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q)
+    })
 
   const nearest = sorted[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
@@ -152,6 +158,26 @@ export default function StoresPage() {
           >
           + Add Store
           </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="px-4 mb-3">
+        <div
+          className="flex items-center gap-2.5 rounded-xl px-3.5 py-3"
+          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <span className="text-white/30 text-sm">🔍</span>
+          <input
+            type="text"
+            placeholder="Search stores..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+          />
+          {search.length > 0 && (
+            <button onClick={() => setSearch('')} className="text-white/30 text-xs">✕</button>
+          )}
         </div>
       </div>
 

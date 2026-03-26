@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
@@ -70,6 +70,7 @@ export default function MapPage() {
   const [legendOpen, setLegendOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [leafletMap, setLeafletMap] = useState<any>(null)
+  const swipeStartY = useRef<number | null>(null)
 
   useEffect(() => {
     if (!selected) { setLastUpdated(null); return }
@@ -255,6 +256,13 @@ export default function MapPage() {
             backgroundColor: '#1a1a24',
             border: '1px solid rgba(255,255,255,0.08)',
             paddingBottom: 36,
+          }}
+          onTouchStart={(e) => { swipeStartY.current = e.touches[0].clientY }}
+          onTouchEnd={(e) => {
+            if (swipeStartY.current === null) return
+            const delta = e.changedTouches[0].clientY - swipeStartY.current
+            if (delta > 60) setSelected(null)
+            swipeStartY.current = null
           }}
         >
           <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
