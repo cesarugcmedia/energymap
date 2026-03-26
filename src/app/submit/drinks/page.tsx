@@ -179,7 +179,10 @@ function DrinksContent() {
                 className="rounded-2xl overflow-hidden"
                 style={{
                   backgroundColor: '#1a1a24',
-                  border: `1px solid ${hasBrandSelection ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                  border: `1.5px solid ${hasBrandSelection ? 'rgba(34,197,94,0.6)' : `${color}55`}`,
+                  boxShadow: hasBrandSelection
+                    ? '0 0 12px rgba(34,197,94,0.2), 0 0 24px rgba(34,197,94,0.08)'
+                    : `0 0 12px ${color}22, 0 0 24px ${color}0d`,
                 }}
               >
                 {/* Brand header */}
@@ -228,8 +231,11 @@ function DrinksContent() {
                             className="flex items-center w-full rounded-xl text-left"
                             style={{
                               backgroundColor: selected ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
-                              border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'rgba(255,255,255,0.06)') : 'rgba(255,255,255,0.06)'}`,
+                              border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'rgba(255,255,255,0.06)') : `${color}44`}`,
                               borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
+                              boxShadow: selected
+                                ? `0 0 10px ${selectedOpt?.color ?? color}33`
+                                : `0 0 8px ${color}1a`,
                             }}
                             onClick={() => toggleDrink(drink.id)}
                           >
