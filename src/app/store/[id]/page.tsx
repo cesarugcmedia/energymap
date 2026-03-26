@@ -51,6 +51,49 @@ const BRAND_COLORS: Record<string, string> = {
   Rockstar: '#facc15',
   Bang: '#ec4899',
   NOS: '#3b82f6',
+  'Alani Nu': '#f472b6',
+}
+
+const BRAND_DOMAINS: Record<string, string> = {
+  Monster:    'monsterenergy.com',
+  'Red Bull': 'redbull.com',
+  Celsius:    'celsius.com',
+  Ghost:      'ghostlifestyle.com',
+  Reign:      'reignbodyfuel.com',
+  Rockstar:   'rockstarenergy.com',
+  Bang:       'bangenergy.com',
+  NOS:        'drinknos.com',
+  'Alani Nu': 'alaninu.com',
+}
+
+const STOCK_ORDER: Record<string, number> = { full: 0, medium: 1, low: 2, out: 3 }
+
+function BrandLogo({ brand, color }: { brand: string; color: string }) {
+  const domain = BRAND_DOMAINS[brand]
+  const [failed, setFailed] = useState(false)
+
+  if (!domain || failed) {
+    return (
+      <div
+        className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center"
+        style={{ backgroundColor: `${color}22`, border: `1.5px solid ${color}55` }}
+      >
+        <span className="text-[10px] font-black" style={{ color }}>
+          {brand.slice(0, 2).toUpperCase()}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={`https://logo.clearbit.com/${domain}`}
+      alt={brand}
+      onError={() => setFailed(true)}
+      className="w-8 h-8 rounded-xl shrink-0 object-contain"
+      style={{ backgroundColor: '#fff', padding: 2 }}
+    />
+  )
 }
 
 function timeAgo(dateStr: string) {
@@ -374,11 +417,7 @@ function StoreDetailContent({ id }: { id: string }) {
                     className="w-full flex items-center gap-3 p-4 text-left"
                     onClick={() => toggleBrand(brand)}
                   >
-                    {/* Brand color dot */}
-                    <div
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: brandColor }}
-                    />
+                    <BrandLogo brand={brand} color={brandColor} />
 
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-black text-white">{brand}</p>
@@ -412,7 +451,7 @@ function StoreDetailContent({ id }: { id: string }) {
                   {isExpanded && (
                     <div className="px-4 pb-3 flex flex-col gap-2">
                       <div className="h-px mb-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-                      {items.map((item) => {
+                      {[...items].sort((a, b) => (STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)).map((item) => {
                         const q = QUANTITY_CONFIG[item.quantity as Quantity]
                         const freshColor = stalenessColor(item.reported_at)
                         return (
