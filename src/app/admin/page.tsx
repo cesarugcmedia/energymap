@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { BRAND_COLORS } from '@/components/BrandLogo'
 
 const TYPE_ICON: Record<string, string> = {
   gas_station: '⛽',
@@ -495,9 +496,11 @@ export default function AdminPage() {
                 </div>
               )
 
-              return Object.entries(grouped).map(([brand, brandDrinks]) => (
+              return Object.entries(grouped).map(([brand, brandDrinks]) => {
+                const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
+                return (
                 <div key={brand} className="mb-4">
-                  <p className="text-[10px] font-bold mb-2" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+                  <p className="text-[10px] font-bold mb-2" style={{ color: brandColor, letterSpacing: '1.5px' }}>
                     {brand.toUpperCase()} · {brandDrinks.length}
                   </p>
                   <div className="flex flex-col gap-1.5">
@@ -505,7 +508,11 @@ export default function AdminPage() {
                       <div
                         key={drink.id}
                         className="flex items-center gap-3 rounded-xl px-3.5 py-3"
-                        style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                        style={{
+                          backgroundColor: '#1a1a24',
+                          border: `1.5px solid ${brandColor}55`,
+                          boxShadow: `0 0 10px ${brandColor}22, 0 0 20px ${brandColor}0d`,
+                        }}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate">{drink.flavor ?? drink.name}</p>
@@ -522,7 +529,7 @@ export default function AdminPage() {
                     ))}
                   </div>
                 </div>
-              ))
+              )})
             })()}
           </div>
         )

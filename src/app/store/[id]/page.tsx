@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
+import { BRAND_COLORS } from '@/components/BrandLogo'
 
 // Canonical brand names — any alias maps to the authoritative spelling
 const BRAND_ALIASES: Record<string, string> = {
@@ -369,12 +370,17 @@ function StoreDetailContent({ id }: { id: string }) {
               const pct = total > 0 ? inStock / total : 0
               const barColor = pct === 0 ? '#ef4444' : pct >= 0.75 ? '#22c55e' : '#f59e0b'
               const isExpanded = isSearching || expandedBrands.has(brand)
+              const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
 
               return (
                 <div
                   key={brand}
                   className="rounded-2xl overflow-hidden"
-                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+                  style={{
+                    backgroundColor: '#1a1a24',
+                    border: `1.5px solid ${brandColor}55`,
+                    boxShadow: `0 0 12px ${brandColor}22, 0 0 24px ${brandColor}0d`,
+                  }}
                 >
                   {/* Brand header — tap to expand */}
                   <button
@@ -420,7 +426,11 @@ function StoreDetailContent({ id }: { id: string }) {
                           <div
                             key={item.drink_id}
                             className="flex items-center rounded-xl p-3"
-                            style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                            style={{
+                              backgroundColor: 'rgba(255,255,255,0.04)',
+                              border: `1.5px solid ${q?.border ?? `${brandColor}44`}`,
+                              boxShadow: `0 0 8px ${q?.color ?? brandColor}22`,
+                            }}
                           >
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-white truncate">
