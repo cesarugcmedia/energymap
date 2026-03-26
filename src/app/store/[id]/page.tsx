@@ -291,7 +291,7 @@ function StoreDetailContent({ id }: { id: string }) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-2.5 mx-4 mb-5">
+      <div className="flex gap-2.5 mx-4 mb-2">
         <button
           className="flex-1 rounded-2xl p-3.5 font-bold text-white text-sm"
           style={{ backgroundColor: '#22c55e' }}
@@ -307,6 +307,9 @@ function StoreDetailContent({ id }: { id: string }) {
           + Add Drink
         </button>
       </div>
+      <p className="text-xs text-white/30 mx-4 mb-5 leading-relaxed">
+        + Add Drink is for <span className="text-white/50 font-semibold">new flavors only</span>. If it already exists, use ⚡ Report Stock to update its status.
+      </p>
 
       {loading ? (
         <div className="flex justify-center mt-8">
