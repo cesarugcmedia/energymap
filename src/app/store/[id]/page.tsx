@@ -72,7 +72,6 @@ function StoreDetailContent({ id }: { id: string }) {
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkBrand, setDrinkBrand] = useState('')
-  const [drinkName, setDrinkName] = useState('')
   const [drinkFlavor, setDrinkFlavor] = useState('')
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
   const [drinkSubmitted, setDrinkSubmitted] = useState(false)
@@ -146,12 +145,14 @@ function StoreDetailContent({ id }: { id: string }) {
   }
 
   async function submitAddDrink() {
-    if (!drinkBrand.trim() || !drinkName.trim()) return
+    if (!drinkBrand.trim() || !drinkFlavor.trim()) return
     setDrinkSubmitting(true)
+    const brand = drinkBrand.trim()
+    const flavor = drinkFlavor.trim()
     const { error } = await supabase.from('drinks').insert({
-      brand: drinkBrand.trim(),
-      name: drinkName.trim(),
-      flavor: drinkFlavor.trim() || null,
+      brand,
+      name: `${brand} ${flavor}`,
+      flavor,
     })
     if (error) {
       window.alert('Could not add drink. Please try again.')
@@ -165,7 +166,6 @@ function StoreDetailContent({ id }: { id: string }) {
   function closeAddDrink() {
     setShowAddDrink(false)
     setDrinkBrand('')
-    setDrinkName('')
     setDrinkFlavor('')
     setDrinkSubmitted(false)
     setDrinkSubmitting(false)
@@ -451,17 +451,7 @@ function StoreDetailContent({ id }: { id: string }) {
                   style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
 
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>DRINK NAME *</p>
-                <input
-                  type="text"
-                  placeholder="e.g. Monster Energy, Red Bull Energy"
-                  value={drinkName}
-                  onChange={(e) => setDrinkName(e.target.value)}
-                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
-                />
-
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>FLAVOR <span className="text-white/20 normal-case font-normal">optional</span></p>
+                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>FLAVOR *</p>
                 <input
                   type="text"
                   placeholder="e.g. Ultra White, Sugar Free"
@@ -482,10 +472,10 @@ function StoreDetailContent({ id }: { id: string }) {
                   <button
                     className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
                     style={{
-                      backgroundColor: !drinkBrand.trim() || !drinkName.trim() || drinkSubmitting
+                      backgroundColor: !drinkBrand.trim() || !drinkFlavor.trim() || drinkSubmitting
                         ? 'rgba(34,197,94,0.4)' : '#22c55e'
                     }}
-                    disabled={!drinkBrand.trim() || !drinkName.trim() || drinkSubmitting}
+                    disabled={!drinkBrand.trim() || !drinkFlavor.trim() || drinkSubmitting}
                     onClick={submitAddDrink}
                   >
                     {drinkSubmitting
