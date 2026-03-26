@@ -297,7 +297,7 @@ function StoreDetailContent({ id }: { id: string }) {
           style={{ backgroundColor: '#22c55e' }}
           onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
         >
-          ⚡ Report Stock
+          Report Stock
         </button>
         <button
           className="flex-1 rounded-2xl p-3.5 font-bold text-sm"
@@ -307,8 +307,8 @@ function StoreDetailContent({ id }: { id: string }) {
           + Add Drink
         </button>
       </div>
-      <p className="text-xs text-white/30 mx-4 mb-5 leading-relaxed">
-        + Add Drink is for <span className="text-white/50 font-semibold">new flavors only</span>. If it already exists, use ⚡ Report Stock to update its status.
+      <p className="text-xs text-white/55 mx-4 mb-5 leading-relaxed">
+        + Add Drink is for <span className="text-white font-semibold">new flavors only</span>. If it already exists, use Report Stock to update its status.
       </p>
 
       {loading ? (
