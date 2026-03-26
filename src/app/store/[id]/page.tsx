@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import BrandLogo from '@/components/BrandLogo'
 import type { Quantity } from '@/lib/types'
 
 // Canonical brand names — any alias maps to the authoritative spelling
@@ -293,7 +292,7 @@ function StoreDetailContent({ id }: { id: string }) {
         </button>
         <button
           className="flex-1 rounded-2xl p-3.5 font-bold text-sm"
-          style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
+          style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.35)', color: 'rgba(255,255,255,0.85)' }}
           onClick={() => setShowAddDrink(true)}
         >
           + Add Drink
@@ -365,8 +364,6 @@ function StoreDetailContent({ id }: { id: string }) {
                     className="w-full flex items-center gap-3 p-4 text-left"
                     onClick={() => toggleBrand(brand)}
                   >
-                    <BrandLogo brand={brand} />
-
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-black text-white">{brand}</p>
                       <div className="flex items-center gap-2 mt-1.5">
