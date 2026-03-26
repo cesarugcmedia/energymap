@@ -38,18 +38,33 @@ export default function AddStorePage() {
 
     try {
       const query = encodeURIComponent(address.trim())
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&countrycodes=us`
-      )
-      const data = await res.json()
 
-      if (!data || data.length === 0) {
-        setError('Address not found. Try adding city and state, or enter coordinates manually.')
+      // Primary: US Census Geocoding API (free, no key, US addresses only)
+      const censusRes = await fetch(
+        `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${query}&benchmark=Public_AR_Current&format=json`
+      )
+      const censusData = await censusRes.json()
+      const match = censusData?.result?.addressMatches?.[0]
+
+      if (match) {
+        setCoords({ lat: match.coordinates.y, lng: match.coordinates.x })
         setGeocoding(false)
         return
       }
 
-      setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
+      // Fallback: Nominatim
+      const nomRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=us`
+      )
+      const nomData = await nomRes.json()
+
+      if (nomData && nomData.length > 0) {
+        setCoords({ lat: parseFloat(nomData[0].lat), lng: parseFloat(nomData[0].lon) })
+        setGeocoding(false)
+        return
+      }
+
+      setError('Address not found. Double-check the street number, city, and state — or enter coordinates manually.')
     } catch {
       setError('Could not look up address. Try entering coordinates manually.')
     }
