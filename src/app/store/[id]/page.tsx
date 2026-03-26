@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -69,6 +70,12 @@ function StoreDetailContent({ id }: { id: string }) {
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [showAddDrink, setShowAddDrink] = useState(false)
+  const [drinkBrand, setDrinkBrand] = useState('')
+  const [drinkName, setDrinkName] = useState('')
+  const [drinkFlavor, setDrinkFlavor] = useState('')
+  const [drinkSubmitting, setDrinkSubmitting] = useState(false)
+  const [drinkSubmitted, setDrinkSubmitted] = useState(false)
 
   useEffect(() => {
     fetchStore()
@@ -136,6 +143,32 @@ function StoreDetailContent({ id }: { id: string }) {
       next.has(brand) ? next.delete(brand) : next.add(brand)
       return next
     })
+  }
+
+  async function submitAddDrink() {
+    if (!drinkBrand.trim() || !drinkName.trim()) return
+    setDrinkSubmitting(true)
+    const { error } = await supabase.from('drinks').insert({
+      brand: drinkBrand.trim(),
+      name: drinkName.trim(),
+      flavor: drinkFlavor.trim() || null,
+    })
+    if (error) {
+      window.alert('Could not add drink. Please try again.')
+      setDrinkSubmitting(false)
+      return
+    }
+    setDrinkSubmitted(true)
+    setDrinkSubmitting(false)
+  }
+
+  function closeAddDrink() {
+    setShowAddDrink(false)
+    setDrinkBrand('')
+    setDrinkName('')
+    setDrinkFlavor('')
+    setDrinkSubmitted(false)
+    setDrinkSubmitting(false)
   }
 
   const latestReport = stock.reduce<any>((latest, item) => {
@@ -211,14 +244,23 @@ function StoreDetailContent({ id }: { id: string }) {
         )}
       </div>
 
-      {/* Report button */}
-      <button
-        className="mx-4 mb-5 w-[calc(100%-32px)] rounded-2xl p-3.5 font-bold text-white text-base"
-        style={{ backgroundColor: '#22c55e' }}
-        onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
-      >
-        ⚡ Report Stock Here
-      </button>
+      {/* Action buttons */}
+      <div className="flex gap-2.5 mx-4 mb-5">
+        <button
+          className="flex-1 rounded-2xl p-3.5 font-bold text-white text-sm"
+          style={{ backgroundColor: '#22c55e' }}
+          onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
+        >
+          ⚡ Report Stock
+        </button>
+        <button
+          className="flex-1 rounded-2xl p-3.5 font-bold text-sm"
+          style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
+          onClick={() => setShowAddDrink(true)}
+        >
+          + Add Drink
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex justify-center mt-8">
@@ -363,6 +405,99 @@ function StoreDetailContent({ id }: { id: string }) {
             })}
           </div>
         </div>
+      )}
+
+      {/* Add Drink modal */}
+      {showAddDrink && createPortal(
+        <div
+          className="fixed inset-0 flex flex-col justify-end z-50"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeAddDrink() }}
+        >
+          <div
+            className="rounded-t-3xl p-5"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+
+            {drinkSubmitted ? (
+              <div className="flex flex-col items-center text-center gap-3 py-4">
+                <span style={{ fontSize: 48 }}>🥤</span>
+                <p className="text-xl font-black text-white">Drink Added!</p>
+                <p className="text-sm text-white/45 leading-relaxed">
+                  Thanks! It'll show up in the drink list right away.
+                </p>
+                <button
+                  className="mt-2 w-full rounded-2xl p-3.5 font-bold text-white"
+                  style={{ backgroundColor: '#22c55e' }}
+                  onClick={closeAddDrink}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-black text-white mb-1">Add a Drink</p>
+                <p className="text-xs text-white/40 mb-5">Don't see a drink listed? Add it here.</p>
+
+                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>BRAND *</p>
+                <input
+                  type="text"
+                  placeholder="e.g. Monster, Red Bull, Celsius"
+                  value={drinkBrand}
+                  onChange={(e) => setDrinkBrand(e.target.value)}
+                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                />
+
+                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>DRINK NAME *</p>
+                <input
+                  type="text"
+                  placeholder="e.g. Monster Energy, Red Bull Energy"
+                  value={drinkName}
+                  onChange={(e) => setDrinkName(e.target.value)}
+                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                />
+
+                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>FLAVOR <span className="text-white/20 normal-case font-normal">optional</span></p>
+                <input
+                  type="text"
+                  placeholder="e.g. Ultra White, Sugar Free"
+                  value={drinkFlavor}
+                  onChange={(e) => setDrinkFlavor(e.target.value)}
+                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-5"
+                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                />
+
+                <div className="flex gap-2.5">
+                  <button
+                    className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                    onClick={closeAddDrink}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
+                    style={{
+                      backgroundColor: !drinkBrand.trim() || !drinkName.trim() || drinkSubmitting
+                        ? 'rgba(34,197,94,0.4)' : '#22c55e'
+                    }}
+                    disabled={!drinkBrand.trim() || !drinkName.trim() || drinkSubmitting}
+                    onClick={submitAddDrink}
+                  >
+                    {drinkSubmitting
+                      ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : 'Add Drink'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )
