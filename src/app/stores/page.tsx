@@ -279,8 +279,9 @@ export default function StoresPage() {
                 className="flex-1 rounded-xl py-2 text-xs font-semibold"
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.6)',
+                  border: '1.5px solid rgba(255,255,255,0.5)',
+                  color: 'rgba(255,255,255,0.9)',
+                  boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
                 }}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -294,8 +295,9 @@ export default function StoresPage() {
                   className="flex-1 rounded-xl py-2 text-xs font-semibold"
                   style={{
                     backgroundColor: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.6)',
+                    border: '1.5px solid rgba(255,255,255,0.5)',
+                    color: 'rgba(255,255,255,0.9)',
+                    boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -410,9 +412,10 @@ export default function StoresPage() {
                   <button
                     className="flex-1 rounded-xl py-2 text-xs font-semibold"
                     style={{
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.55)',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1.5px solid rgba(255,255,255,0.5)',
+                      color: 'rgba(255,255,255,0.9)',
+                      boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -424,9 +427,10 @@ export default function StoresPage() {
                   <button
                     className="flex-1 rounded-xl py-2 text-xs font-semibold"
                     style={{
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.55)',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1.5px solid rgba(255,255,255,0.5)',
+                      color: 'rgba(255,255,255,0.9)',
+                      boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
