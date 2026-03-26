@@ -117,7 +117,26 @@ export default function AdminPage() {
   }
 
   async function toggleVerified(userId: string, current: boolean) {
-    await supabase.from('profiles').update({ is_verified_reporter: !current }).eq('id', userId)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ is_verified_reporter: !current })
+      .eq('id', userId)
+      .select('id')
+
+    if (error || !data || data.length === 0) {
+      window.alert(
+        `Could not update verified status — RLS is blocking this.\n\n` +
+        `Run this in Supabase SQL Editor:\n\n` +
+        `CREATE POLICY "Admins can update any profile"\n` +
+        `ON profiles FOR UPDATE TO authenticated\n` +
+        `USING (\n` +
+        `  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)\n` +
+        `);\n\n` +
+        `Error: ${error?.message ?? 'No rows updated (RLS silent block)'}`
+      )
+      return
+    }
+
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_verified_reporter: !current } : u))
   }
 
