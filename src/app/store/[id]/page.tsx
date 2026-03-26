@@ -68,6 +68,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     fetchStore()
@@ -142,8 +143,20 @@ function StoreDetailContent({ id }: { id: string }) {
     return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
   }, null)
 
-  // Group all stock by brand
-  const byBrand = stock.reduce<Record<string, any[]>>((acc, item) => {
+  const isSearching = search.trim().length > 0
+  const filteredStock = isSearching
+    ? stock.filter((item) => {
+        const q = search.toLowerCase()
+        return (
+          item.drink?.brand?.toLowerCase().includes(q) ||
+          item.drink?.name?.toLowerCase().includes(q) ||
+          item.drink?.flavor?.toLowerCase().includes(q)
+        )
+      })
+    : stock
+
+  // Group filtered stock by brand
+  const byBrand = filteredStock.reduce<Record<string, any[]>>((acc, item) => {
     const brand = item.drink?.brand ?? 'Other'
     if (!acc[brand]) acc[brand] = []
     acc[brand].push(item)
@@ -219,9 +232,37 @@ function StoreDetailContent({ id }: { id: string }) {
         </div>
       ) : (
         <div className="px-4 pb-16">
+          {/* Search */}
+          <div
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 mb-4"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <span className="text-white/30 text-sm">🔍</span>
+            <input
+              type="text"
+              placeholder="Search drinks & flavors..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+            />
+            {search.length > 0 && (
+              <button onClick={() => setSearch('')} className="text-white/30 text-xs">✕</button>
+            )}
+          </div>
+
           <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
-            BRANDS · {Object.keys(byBrand).length} found
+            {isSearching
+              ? `${filteredStock.length} result${filteredStock.length !== 1 ? 's' : ''}`
+              : `BRANDS · ${Object.keys(byBrand).length} found`}
           </p>
+          {isSearching && filteredStock.length === 0 && (
+            <div className="flex flex-col items-center gap-2 mt-8">
+              <span style={{ fontSize: 36 }}>🔍</span>
+              <p className="text-sm font-bold text-white">No drinks found</p>
+              <p className="text-xs text-white/40">Try a different brand or flavor name</p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2.5">
             {Object.entries(byBrand).map(([brand, items]) => {
               const inStock = items.filter((i) => i.quantity !== 'out').length
@@ -229,7 +270,7 @@ function StoreDetailContent({ id }: { id: string }) {
               const pct = total > 0 ? inStock / total : 0
               const barColor = pct === 0 ? '#ef4444' : pct >= 0.75 ? '#22c55e' : '#f59e0b'
               const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.5)'
-              const isExpanded = expandedBrands.has(brand)
+              const isExpanded = isSearching || expandedBrands.has(brand)
 
               return (
                 <div
