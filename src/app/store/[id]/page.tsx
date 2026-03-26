@@ -83,10 +83,9 @@ function StoreDetailContent({ id }: { id: string }) {
   const [favLoading, setFavLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
-  const [drinkBrand, setDrinkBrand] = useState('')
-  const [drinkFlavor, setDrinkFlavor] = useState('')
+  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
-  const [drinkSubmitted, setDrinkSubmitted] = useState(false)
+  const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number } | null>(null)
 
   useEffect(() => {
     fetchStore()
@@ -156,56 +155,74 @@ function StoreDetailContent({ id }: { id: string }) {
     })
   }
 
-  const [drinkDuplicate, setDrinkDuplicate] = useState(false)
+  function updateEntry(id: string, field: 'brand' | 'flavor', value: string) {
+    setDrinkEntries((prev) => prev.map((e) => e.id === id ? { ...e, [field]: value, duplicate: false } : e))
+  }
 
-  async function submitAddDrink() {
-    if (!drinkBrand.trim() || !drinkFlavor.trim()) return
-    setDrinkSubmitting(true)
-    setDrinkDuplicate(false)
-    const brand = normalizeBrand(drinkBrand)
-    const flavor = drinkFlavor.trim()
+  function normalizeEntryBrand(id: string) {
+    setDrinkEntries((prev) => prev.map((e) => e.id === id ? { ...e, brand: normalizeBrand(e.brand) } : e))
+  }
 
-    // Check for duplicate: same flavor under any known alias of this brand
+  function addEntry() {
+    setDrinkEntries((prev) => [...prev, { id: String(Date.now()), brand: '', flavor: '', duplicate: false }])
+  }
+
+  function removeEntry(id: string) {
+    setDrinkEntries((prev) => prev.length > 1 ? prev.filter((e) => e.id !== id) : prev)
+  }
+
+  async function isDuplicate(brand: string, flavor: string): Promise<boolean> {
     const aliasVariants = Object.entries(BRAND_ALIASES)
       .filter(([, canonical]) => canonical.toLowerCase() === brand.toLowerCase())
       .map(([alias]) => alias)
     const brandsToCheck = [...new Set([brand, ...aliasVariants])]
-
-    const { data: existing } = await supabase
+    const { data } = await supabase
       .from('drinks')
       .select('id')
       .in('brand', brandsToCheck.flatMap((b) => [b, b.toLowerCase(), b.toUpperCase(), b.charAt(0).toUpperCase() + b.slice(1).toLowerCase()]))
       .ilike('flavor', flavor)
       .maybeSingle()
+    return !!data
+  }
 
-    if (existing) {
-      setDrinkDuplicate(true)
-      setDrinkSubmitting(false)
-      return
-    }
+  async function submitAddDrink() {
+    const filled = drinkEntries.filter((e) => e.brand.trim() && e.flavor.trim())
+    if (filled.length === 0) return
+    setDrinkSubmitting(true)
 
-    const { error } = await supabase.from('drinks').insert({
-      brand,
-      name: `${brand} ${flavor}`,
-      flavor,
-      submitted_by: user?.id ?? null,
+    // Check each entry for duplicates in parallel
+    const duplicateFlags = await Promise.all(
+      filled.map((e) => isDuplicate(normalizeBrand(e.brand), e.flavor.trim()))
+    )
+
+    // Mark duplicates
+    const updatedEntries = drinkEntries.map((e) => {
+      const idx = filled.findIndex((f) => f.id === e.id)
+      if (idx === -1) return e
+      return { ...e, duplicate: duplicateFlags[idx] }
     })
-    if (error) {
-      window.alert('Could not add drink. Please try again.')
-      setDrinkSubmitting(false)
-      return
+    setDrinkEntries(updatedEntries)
+
+    const toInsert = filled.filter((_, i) => !duplicateFlags[i])
+    if (toInsert.length > 0) {
+      await supabase.from('drinks').insert(
+        toInsert.map((e) => {
+          const brand = normalizeBrand(e.brand)
+          const flavor = e.flavor.trim()
+          return { brand, name: `${brand} ${flavor}`, flavor, submitted_by: user?.id ?? null }
+        })
+      )
     }
-    setDrinkSubmitted(true)
+
+    setDrinkResults({ added: toInsert.length, skipped: duplicateFlags.filter(Boolean).length })
     setDrinkSubmitting(false)
   }
 
   function closeAddDrink() {
     setShowAddDrink(false)
-    setDrinkBrand('')
-    setDrinkFlavor('')
-    setDrinkSubmitted(false)
+    setDrinkEntries([{ id: '1', brand: '', flavor: '', duplicate: false }])
     setDrinkSubmitting(false)
-    setDrinkDuplicate(false)
+    setDrinkResults(null)
   }
 
   const latestReport = stock.reduce<any>((latest, item) => {
@@ -454,12 +471,15 @@ function StoreDetailContent({ id }: { id: string }) {
           >
             <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
 
-            {drinkSubmitted ? (
+            {drinkResults ? (
               <div className="flex flex-col items-center text-center gap-3 py-4">
                 <span style={{ fontSize: 48 }}>🥤</span>
-                <p className="text-xl font-black text-white">Drink Added!</p>
+                <p className="text-xl font-black text-white">
+                  {drinkResults.added > 0 ? `${drinkResults.added} Drink${drinkResults.added !== 1 ? 's' : ''} Added!` : 'Nothing Added'}
+                </p>
                 <p className="text-sm text-white/45 leading-relaxed">
-                  Thanks! It'll show up in the drink list right away.
+                  {drinkResults.added > 0 && `${drinkResults.added} drink${drinkResults.added !== 1 ? 's' : ''} added successfully.`}
+                  {drinkResults.skipped > 0 && ` ${drinkResults.skipped} skipped — already in the system.`}
                 </p>
                 <button
                   className="mt-2 w-full rounded-2xl p-3.5 font-bold text-white"
@@ -471,41 +491,58 @@ function StoreDetailContent({ id }: { id: string }) {
               </div>
             ) : (
               <>
-                <p className="text-lg font-black text-white mb-1">Add a Drink</p>
-                <p className="text-xs text-white/40 mb-5">Don't see a drink listed? Add it here.</p>
+                <p className="text-lg font-black text-white mb-1">Add Drinks</p>
+                <p className="text-xs text-white/40 mb-4">Add one or more new flavors below.</p>
 
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>BRAND *</p>
-                <input
-                  type="text"
-                  placeholder="e.g. Monster, Red Bull, Celsius"
-                  value={drinkBrand}
-                  onChange={(e) => { setDrinkBrand(e.target.value); setDrinkDuplicate(false) }}
-                  onBlur={(e) => setDrinkBrand(normalizeBrand(e.target.value))}
-                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
-                />
+                <div className="flex flex-col gap-3 max-h-[55vh] overflow-y-auto pr-0.5 mb-4">
+                  {drinkEntries.map((entry, idx) => (
+                    <div
+                      key={entry.id}
+                      className="rounded-2xl p-3.5"
+                      style={{ backgroundColor: '#0a0a0f', border: `1px solid ${entry.duplicate ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}` }}
+                    >
+                      <div className="flex items-center justify-between mb-2.5">
+                        <p className="text-[10px] font-bold text-white/35" style={{ letterSpacing: '1.5px' }}>DRINK {idx + 1}</p>
+                        {drinkEntries.length > 1 && (
+                          <button onClick={() => removeEntry(entry.id)} className="text-white/25 text-xs">✕</button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Brand (e.g. Monster)"
+                        value={entry.brand}
+                        onChange={(e) => updateEntry(entry.id, 'brand', e.target.value)}
+                        onBlur={() => normalizeEntryBrand(entry.id)}
+                        className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none mb-2"
+                        style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Flavor (e.g. Ultra White)"
+                        value={entry.flavor}
+                        onChange={(e) => updateEntry(entry.id, 'flavor', e.target.value)}
+                        className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none"
+                        style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                      />
+                      {entry.duplicate && (
+                        <div className="flex items-center gap-2 mt-2.5">
+                          <span style={{ fontSize: 13 }}>⚠️</span>
+                          <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>
+                            Already in the system — skipped.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>FLAVOR *</p>
-                <input
-                  type="text"
-                  placeholder="e.g. Ultra White, Sugar Free"
-                  value={drinkFlavor}
-                  onChange={(e) => { setDrinkFlavor(e.target.value); setDrinkDuplicate(false) }}
-                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-5"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
-                />
-
-                {drinkDuplicate && (
-                  <div
-                    className="rounded-xl p-3 mb-4 flex items-center gap-2.5"
-                    style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}
-                  >
-                    <span style={{ fontSize: 16 }}>⚠️</span>
-                    <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>
-                      This drink already exists in our database.
-                    </p>
-                  </div>
-                )}
+                <button
+                  className="w-full rounded-xl py-2.5 text-sm font-semibold mb-4 flex items-center justify-center gap-1.5"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)' }}
+                  onClick={addEntry}
+                >
+                  <span>+</span> Add Another
+                </button>
 
                 <div className="flex gap-2.5">
                   <button
@@ -518,15 +555,15 @@ function StoreDetailContent({ id }: { id: string }) {
                   <button
                     className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
                     style={{
-                      backgroundColor: !drinkBrand.trim() || !drinkFlavor.trim() || drinkSubmitting
+                      backgroundColor: drinkSubmitting || drinkEntries.every((e) => !e.brand.trim() || !e.flavor.trim())
                         ? 'rgba(34,197,94,0.4)' : '#22c55e'
                     }}
-                    disabled={!drinkBrand.trim() || !drinkFlavor.trim() || drinkSubmitting}
+                    disabled={drinkSubmitting || drinkEntries.every((e) => !e.brand.trim() || !e.flavor.trim())}
                     onClick={submitAddDrink}
                   >
                     {drinkSubmitting
                       ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      : 'Add Drink'}
+                      : `Submit ${drinkEntries.filter((e) => e.brand.trim() && e.flavor.trim()).length > 1 ? `${drinkEntries.filter((e) => e.brand.trim() && e.flavor.trim()).length} Drinks` : 'Drink'}`}
                   </button>
                 </div>
               </>
