@@ -39,7 +39,7 @@ export default function AddStorePage() {
     try {
       const query = encodeURIComponent(address.trim())
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1`
+        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&countrycodes=us`
       )
       const data = await res.json()
 
