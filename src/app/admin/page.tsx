@@ -181,6 +181,17 @@ export default function AdminPage() {
     setEditLng(store.lng?.toString() ?? '')
   }
 
+  async function deleteLocation(id: string) {
+    if (!window.confirm('Permanently delete this location? This cannot be undone.')) return
+    const { error } = await supabase.from('stores').delete().eq('id', id)
+    if (error) {
+      window.alert('Could not delete location. Check RLS policies in Supabase.')
+      return
+    }
+    setLocations((prev) => prev.filter((s) => s.id !== id))
+    setEditStore(null)
+  }
+
   async function saveEdit() {
     if (!editName.trim()) {
       window.alert('Store name is required.')
@@ -295,13 +306,22 @@ export default function AdminPage() {
                         {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
                       </p>
                     </div>
-                    <button
-                      onClick={() => openEdit(store)}
-                      className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
-                    >
-                      ✏️ Edit
-                    </button>
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <button
+                        onClick={() => openEdit(store)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-full"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => deleteLocation(store.id)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-full"
+                        style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               {locations.filter((s) => s.name.toLowerCase().includes(locationSearch.toLowerCase()) || s.address?.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
@@ -448,6 +468,7 @@ export default function AdminPage() {
           <div
             className="rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto"
             style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 40 }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
             <p className="text-lg font-black text-white mb-5">Edit Store</p>
@@ -542,28 +563,40 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div className="flex gap-2.5">
+            {editStore?.status === 'pending' && (
+              <div className="flex gap-2.5">
+                <button
+                  className="flex-1 rounded-xl p-3.5 font-bold text-sm"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
+                  onClick={() => {
+                    setEditStore(null)
+                    rejectStore(editStore?.id)
+                  }}
+                >
+                  ✕ Reject Store
+                </button>
+                <button
+                  className="flex-1 rounded-xl p-3.5 font-bold text-sm"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}
+                  onClick={() => {
+                    approveStore(editStore?.id)
+                    setEditStore(null)
+                  }}
+                >
+                  ✓ Approve Store
+                </button>
+              </div>
+            )}
+
+            {editStore?.status === 'approved' && (
               <button
-                className="flex-1 rounded-xl p-3.5 font-bold text-sm"
+                className="w-full rounded-xl p-3.5 font-bold text-sm mt-0"
                 style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
-                onClick={() => {
-                  setEditStore(null)
-                  rejectStore(editStore?.id)
-                }}
+                onClick={() => deleteLocation(editStore.id)}
               >
-                ✕ Reject Store
+                🗑️ Delete Location
               </button>
-              <button
-                className="flex-1 rounded-xl p-3.5 font-bold text-sm"
-                style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}
-                onClick={() => {
-                  approveStore(editStore?.id)
-                  setEditStore(null)
-                }}
-              >
-                ✓ Approve Store
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
