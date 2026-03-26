@@ -7,6 +7,27 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 
+// Canonical brand names — any alias maps to the authoritative spelling
+const BRAND_ALIASES: Record<string, string> = {
+  'alani':          'Alani Nu',
+  'alani nu':       'Alani Nu',
+  'red bull':       'Red Bull',
+  'redbull':        'Red Bull',
+  'monster':        'Monster',
+  'monster energy': 'Monster',
+  'celsius':        'Celsius',
+  'ghost':          'Ghost',
+  'reign':          'Reign',
+  'rockstar':       'Rockstar',
+  'bang':           'Bang',
+  'nos':            'NOS',
+}
+
+function normalizeBrand(input: string): string {
+  const key = input.trim().toLowerCase()
+  return BRAND_ALIASES[key] ?? input.trim()
+}
+
 const TYPE_ICON: Record<string, string> = {
   gas_station: '⛽',
   convenience: '🏪',
@@ -150,14 +171,19 @@ function StoreDetailContent({ id }: { id: string }) {
     if (!drinkBrand.trim() || !drinkFlavor.trim()) return
     setDrinkSubmitting(true)
     setDrinkDuplicate(false)
-    const brand = drinkBrand.trim()
+    const brand = normalizeBrand(drinkBrand)
     const flavor = drinkFlavor.trim()
 
-    // Check for existing drink with same brand + flavor (case-insensitive)
+    // Check for duplicate: same flavor under any known alias of this brand
+    const aliasVariants = Object.entries(BRAND_ALIASES)
+      .filter(([, canonical]) => canonical.toLowerCase() === brand.toLowerCase())
+      .map(([alias]) => alias)
+    const brandsToCheck = [...new Set([brand, ...aliasVariants])]
+
     const { data: existing } = await supabase
       .from('drinks')
       .select('id')
-      .ilike('brand', brand)
+      .in('brand', brandsToCheck.flatMap((b) => [b, b.toLowerCase(), b.toUpperCase(), b.charAt(0).toUpperCase() + b.slice(1).toLowerCase()]))
       .ilike('flavor', flavor)
       .maybeSingle()
 
@@ -467,6 +493,7 @@ function StoreDetailContent({ id }: { id: string }) {
                   placeholder="e.g. Monster, Red Bull, Celsius"
                   value={drinkBrand}
                   onChange={(e) => { setDrinkBrand(e.target.value); setDrinkDuplicate(false) }}
+                  onBlur={(e) => setDrinkBrand(normalizeBrand(e.target.value))}
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
                   style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
