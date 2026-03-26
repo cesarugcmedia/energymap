@@ -48,6 +48,18 @@ export default function AdminPage() {
   const [editLng, setEditLng] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Lock the scroll container behind the modal so iOS doesn't intercept taps on inputs
+  useEffect(() => {
+    const main = document.querySelector('main') as HTMLElement | null
+    if (!main) return
+    if (editStore) {
+      main.style.overflow = 'hidden'
+    } else {
+      main.style.overflow = ''
+    }
+    return () => { if (main) main.style.overflow = '' }
+  }, [editStore])
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
