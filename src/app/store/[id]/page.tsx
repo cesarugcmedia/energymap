@@ -153,6 +153,7 @@ function StoreDetailContent({ id }: { id: string }) {
       brand,
       name: `${brand} ${flavor}`,
       flavor,
+      submitted_by: user?.id ?? null,
     })
     if (error) {
       window.alert('Could not add drink. Please try again.')

@@ -90,6 +90,20 @@ export default function LeaderboardPage() {
               </div>
               <span className="text-sm font-black" style={{ color: '#facc15' }}>+5 pts</span>
             </div>
+            <div className="h-px" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} />
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.2)' }}
+              >
+                <span style={{ fontSize: 16 }}>🥤</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Add a drink</p>
+                <p className="text-xs text-white/40">Each new drink you submit</p>
+              </div>
+              <span className="text-sm font-black" style={{ color: '#06b6d4' }}>+3 pts</span>
+            </div>
           </div>
         </div>
       </div>
