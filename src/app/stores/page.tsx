@@ -67,6 +67,14 @@ function openDirections(destLat: number, destLng: number) {
 
 const RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
 
+const TYPE_FILTERS = [
+  { value: null, label: 'All' },
+  { value: 'gas_station', label: '⛽ Gas' },
+  { value: 'convenience', label: '🏪 Convenience' },
+  { value: 'grocery', label: '🛒 Grocery' },
+  { value: 'other', label: '📍 Other' },
+]
+
 export default function StoresPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -81,6 +89,7 @@ export default function StoresPage() {
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [radius, setRadius] = useState<number | null>(25)
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
 
   useEffect(() => {
     if (stores.length === 0) return
@@ -112,6 +121,7 @@ export default function StoresPage() {
   const sorted = [...stores]
     .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))
     .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
+    .filter((s) => typeFilter === null || s.type === typeFilter)
 
   const nearest = sorted[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
@@ -146,7 +156,7 @@ export default function StoresPage() {
       </div>
 
       {/* Radius selector */}
-      <div className="flex gap-2 px-4 mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-2 px-4 mb-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {RADIUS_OPTIONS.map((r) => {
           const active = radius === r
           return (
@@ -161,6 +171,27 @@ export default function StoresPage() {
               }}
             >
               {r === null ? 'All' : `${r} mi`}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Store type filter */}
+      <div className="flex gap-2 px-4 mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {TYPE_FILTERS.map((f) => {
+          const active = typeFilter === f.value
+          return (
+            <button
+              key={f.value ?? 'all'}
+              onClick={() => setTypeFilter(f.value)}
+              className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold"
+              style={{
+                backgroundColor: active ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
+                color: active ? '#22c55e' : 'rgba(255,255,255,0.45)',
+                border: active ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              {f.label}
             </button>
           )
         })}

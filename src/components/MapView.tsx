@@ -4,6 +4,9 @@ import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
 import type { Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
@@ -106,6 +109,58 @@ function MapReadyHandler({ onReady }: { onReady: (map: L.Map) => void }) {
   return null
 }
 
+function ClusteredMarkers({ stores, selected, onSelectStore }: {
+  stores: Store[]
+  selected: Store | null
+  onSelectStore: (store: Store) => void
+}) {
+  const map = useMap()
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null)
+
+  useEffect(() => {
+    if (clusterRef.current) {
+      map.removeLayer(clusterRef.current)
+    }
+
+    const cluster = (L as any).markerClusterGroup({
+      maxClusterRadius: 50,
+      showCoverageOnHover: false,
+      iconCreateFunction: (c: any) => L.divIcon({
+        className: '',
+        html: `<div style="
+          background:#1a1a24;
+          border:2px solid #22c55e;
+          border-radius:50%;
+          width:36px;height:36px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:12px;font-weight:800;color:#22c55e;
+          box-shadow:0 0 10px rgba(34,197,94,0.4);
+          font-family:system-ui,sans-serif;
+        ">${c.getChildCount()}</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+      }),
+    })
+
+    stores.forEach((store) => {
+      const marker = L.marker([store.lat, store.lng], {
+        icon: createStoreIcon(store, selected?.id === store.id),
+      })
+      marker.on('click', () => onSelectStore(store))
+      cluster.addLayer(marker)
+    })
+
+    map.addLayer(cluster)
+    clusterRef.current = cluster
+
+    return () => {
+      map.removeLayer(cluster)
+    }
+  }, [stores, selected, map, onSelectStore])
+
+  return null
+}
+
 interface MapViewProps {
   lat: number
   lng: number
@@ -130,14 +185,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       <FitStores lat={lat} lng={lng} stores={stores} />
       {onMapReady && <MapReadyHandler onReady={onMapReady} />}
       <Marker position={[lat, lng]} icon={userIcon} />
-      {stores.map((store) => (
-        <Marker
-          key={store.id}
-          position={[store.lat, store.lng]}
-          icon={createStoreIcon(store, selected?.id === store.id)}
-          eventHandlers={{ click: () => onSelectStore(store) }}
-        />
-      ))}
+      <ClusteredMarkers stores={stores} selected={selected} onSelectStore={onSelectStore} />
     </MapContainer>
   )
 }
