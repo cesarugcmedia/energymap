@@ -315,8 +315,9 @@ export default function MapPage() {
               className="flex-1 rounded-xl py-3 font-semibold text-sm"
               style={{
                 backgroundColor: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: 'rgba(255,255,255,0.6)',
+                border: '1.5px solid rgba(255,255,255,0.5)',
+                color: 'rgba(255,255,255,0.9)',
+                boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
               }}
               onClick={() => openDirections(selected.lat, selected.lng)}
             >
@@ -324,7 +325,11 @@ export default function MapPage() {
             </button>
             <button
               className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
-              style={{ backgroundColor: '#22c55e' }}
+              style={{
+                backgroundColor: '#22c55e',
+                border: '1.5px solid rgba(34,197,94,0.8)',
+                boxShadow: '0 0 12px rgba(34,197,94,0.4), 0 0 24px rgba(34,197,94,0.15)',
+              }}
               onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}
             >
               View Stock
