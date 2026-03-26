@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Drink } from '@/lib/types'
+import type { Drink, Quantity } from '@/lib/types'
 
 const BRAND_COLORS: Record<string, string> = {
   Monster: '#00cc44',
@@ -16,6 +16,13 @@ const BRAND_COLORS: Record<string, string> = {
   NOS: '#3b82f6',
 }
 
+const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
+  { value: 'out',    label: 'Out',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
+  { value: 'low',    label: 'Low',    color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+  { value: 'medium', label: 'Med',    color: '#f97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.35)' },
+  { value: 'full',   label: 'Full',   color: '#22c55e', bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.35)'  },
+]
+
 function DrinksContent() {
   const router = useRouter()
   const params = useSearchParams()
@@ -25,8 +32,10 @@ function DrinksContent() {
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [selected, setSelected] = useState<string | null>(null)
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
+  const [expandedDrinks, setExpandedDrinks] = useState<Set<string>>(new Set())
+  const [selections, setSelections] = useState<Record<string, Quantity>>({})
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     supabase
@@ -47,27 +56,81 @@ function DrinksContent() {
     })
   }
 
-  const filtered = drinks.filter(
-    (d) =>
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.brand.toLowerCase().includes(search.toLowerCase()) ||
-      (d.flavor ?? '').toLowerCase().includes(search.toLowerCase())
-  )
+  function toggleDrink(drinkId: string) {
+    setExpandedDrinks((prev) => {
+      const next = new Set(prev)
+      next.has(drinkId) ? next.delete(drinkId) : next.add(drinkId)
+      return next
+    })
+  }
 
-  const grouped = filtered.reduce<Record<string, Drink[]>>((acc, drink) => {
-    if (!acc[drink.brand]) acc[drink.brand] = []
-    acc[drink.brand].push(drink)
+  function selectQuantity(drinkId: string, qty: Quantity) {
+    setSelections((prev) => ({ ...prev, [drinkId]: qty }))
+    // Auto-collapse the picker after selection
+    setExpandedDrinks((prev) => {
+      const next = new Set(prev)
+      next.delete(drinkId)
+      return next
+    })
+  }
+
+  async function handleSubmit() {
+    const entries = Object.entries(selections)
+    if (entries.length === 0) return
+    setSubmitting(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Rate-limit check: filter out drinks reported in last 30 min
+    let toSubmit = entries
+    if (user) {
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+      const { data: recent } = await supabase
+        .from('stock_reports')
+        .select('drink_id')
+        .eq('user_id', user.id)
+        .eq('store_id', storeId)
+        .gte('reported_at', since)
+      const recentIds = new Set((recent ?? []).map((r: any) => r.drink_id))
+      toSubmit = entries.filter(([drinkId]) => !recentIds.has(drinkId))
+    }
+
+    if (toSubmit.length > 0) {
+      await supabase.from('stock_reports').insert(
+        toSubmit.map(([drinkId, quantity]) => ({
+          store_id: storeId,
+          drink_id: drinkId,
+          quantity,
+          user_id: user?.id ?? null,
+        }))
+      )
+    }
+
+    router.replace(
+      `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${toSubmit.length}`
+    )
+  }
+
+  const filtered = drinks.filter((d) => {
+    const q = search.toLowerCase()
+    return (
+      d.name.toLowerCase().includes(q) ||
+      d.brand.toLowerCase().includes(q) ||
+      (d.flavor ?? '').toLowerCase().includes(q)
+    )
+  })
+
+  const grouped = filtered.reduce<Record<string, Drink[]>>((acc, d) => {
+    if (!acc[d.brand]) acc[d.brand] = []
+    acc[d.brand].push(d)
     return acc
   }, {})
 
-  // When searching, auto-expand all matching brands
   const isSearching = search.length > 0
-  const isExpanded = (brand: string) => isSearching || expandedBrands.has(brand)
-
-  const selectedDrink = drinks.find((d) => d.id === selected)
+  const selectionCount = Object.keys(selections).length
 
   return (
-    <div className="bg-[#0a0a0f] relative">
+    <div className="bg-[#0a0a0f]">
       {/* Header */}
       <div className="flex items-center gap-3.5 px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <button
@@ -78,7 +141,7 @@ function DrinksContent() {
           <span className="text-white text-lg">←</span>
         </button>
         <div>
-          <p className="text-xl font-black text-white">Select a Drink</p>
+          <p className="text-xl font-black text-white">Report Stock</p>
           <p className="text-xs text-white/40 mt-0.5">{storeName}</p>
         </div>
       </div>
@@ -103,7 +166,11 @@ function DrinksContent() {
         )}
       </div>
 
-      {/* Brand accordion list */}
+      {/* Instructions */}
+      <p className="text-xs text-white/30 px-5 mb-4">
+        Tap a brand to expand, then tap a drink to set its stock level.
+      </p>
+
       {loading ? (
         <div className="flex justify-center mt-10">
           <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
@@ -112,8 +179,9 @@ function DrinksContent() {
         <div className="flex flex-col gap-2.5 px-5 pb-40">
           {Object.entries(grouped).map(([brand, brandDrinks]) => {
             const color = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
-            const expanded = isExpanded(brand)
-            const isSelectedBrand = brandDrinks.some((d) => d.id === selected)
+            const expanded = isSearching || expandedBrands.has(brand)
+            const brandSelections = brandDrinks.filter((d) => selections[d.id])
+            const hasBrandSelection = brandSelections.length > 0
 
             return (
               <div
@@ -121,7 +189,7 @@ function DrinksContent() {
                 className="rounded-2xl overflow-hidden"
                 style={{
                   backgroundColor: '#1a1a24',
-                  border: `1px solid ${isSelectedBrand ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                  border: `1px solid ${hasBrandSelection ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
                 }}
               >
                 {/* Brand header */}
@@ -133,19 +201,21 @@ function DrinksContent() {
                   <div className="flex-1">
                     <p className="text-base font-black text-white">{brand}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                      {brandDrinks.length} flavor{brandDrinks.length !== 1 ? 's' : ''}
+                      {hasBrandSelection
+                        ? `${brandSelections.length} of ${brandDrinks.length} reported`
+                        : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
                     </p>
                   </div>
-                  {isSelectedBrand && (
+                  {hasBrandSelection && (
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center mr-1"
+                      className="w-5 h-5 rounded-full flex items-center justify-center mr-1 shrink-0"
                       style={{ backgroundColor: '#22c55e' }}
                     >
-                      <span className="text-white text-[10px] font-bold">✓</span>
+                      <span className="text-white text-[10px] font-bold">{brandSelections.length}</span>
                     </div>
                   )}
                   <span
-                    className="text-white/30 text-sm"
+                    className="text-white/30 text-sm shrink-0"
                     style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}
                   >
                     ▾
@@ -154,41 +224,89 @@ function DrinksContent() {
 
                 {/* Flavors */}
                 {expanded && (
-                  <div className="px-4 pb-3 flex flex-col gap-1.5">
+                  <div className="px-4 pb-3 flex flex-col gap-2">
                     <div className="h-px mb-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
                     {brandDrinks.map((drink) => {
-                      const isSelected = selected === drink.id
+                      const selected = selections[drink.id]
+                      const pickerOpen = expandedDrinks.has(drink.id)
+                      const selectedOpt = QUANTITY_OPTIONS.find((o) => o.value === selected)
+
                       return (
-                        <button
-                          key={drink.id}
-                          className="flex items-center w-full rounded-xl overflow-hidden text-left"
-                          style={{
-                            backgroundColor: isSelected ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)',
-                            border: `1.5px solid ${isSelected ? '#22c55e' : 'rgba(255,255,255,0.06)'}`,
-                          }}
-                          onClick={() => setSelected(drink.id === selected ? null : drink.id)}
-                        >
-                          <div
-                            className="self-stretch w-1 shrink-0"
-                            style={{ backgroundColor: color }}
-                          />
-                          <div className="flex-1 p-3">
-                            <p className="text-sm font-semibold text-white">
-                              {drink.flavor ?? drink.name}
-                            </p>
-                            {drink.flavor && (
-                              <p className="text-xs text-white/35 mt-0.5">{drink.name}</p>
-                            )}
-                          </div>
-                          {isSelected && (
+                        <div key={drink.id}>
+                          {/* Drink row */}
+                          <button
+                            className="flex items-center w-full rounded-xl text-left"
+                            style={{
+                              backgroundColor: selected ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
+                              border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'rgba(255,255,255,0.06)') : 'rgba(255,255,255,0.06)'}`,
+                              borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
+                            }}
+                            onClick={() => toggleDrink(drink.id)}
+                          >
                             <div
-                              className="w-5 h-5 rounded-full flex items-center justify-center mr-3 shrink-0"
-                              style={{ backgroundColor: '#22c55e' }}
+                              className="self-stretch w-1 shrink-0"
+                              style={{
+                                backgroundColor: selected ? (selectedOpt?.color ?? color) : color,
+                                borderRadius: pickerOpen ? '10px 0 0 0' : '10px 0 0 10px',
+                              }}
+                            />
+                            <div className="flex-1 p-3">
+                              <p className="text-sm font-semibold text-white">
+                                {drink.flavor ?? drink.name}
+                              </p>
+                              {drink.flavor && (
+                                <p className="text-xs text-white/35 mt-0.5">{drink.name}</p>
+                              )}
+                            </div>
+                            {selected ? (
+                              <div
+                                className="px-2.5 py-1 rounded-full mr-3 shrink-0"
+                                style={{ backgroundColor: selectedOpt?.bg, border: `1px solid ${selectedOpt?.border}` }}
+                              >
+                                <span className="text-xs font-bold" style={{ color: selectedOpt?.color }}>
+                                  {selectedOpt?.label}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-white/25 text-xs mr-3 shrink-0">Tap to report</span>
+                            )}
+                          </button>
+
+                          {/* Inline quantity picker */}
+                          {pickerOpen && (
+                            <div
+                              className="flex"
+                              style={{
+                                borderRadius: '0 0 12px 12px',
+                                overflow: 'hidden',
+                                border: '1.5px solid rgba(255,255,255,0.06)',
+                                borderTop: 'none',
+                              }}
                             >
-                              <span className="text-white text-[10px] font-bold">✓</span>
+                              {QUANTITY_OPTIONS.map((opt) => (
+                                <button
+                                  key={opt.value}
+                                  className="flex-1 py-3 flex flex-col items-center gap-0.5"
+                                  style={{
+                                    backgroundColor: selected === opt.value ? opt.bg : 'rgba(255,255,255,0.03)',
+                                    borderRight: opt.value !== 'full' ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                                  }}
+                                  onClick={() => selectQuantity(drink.id, opt.value)}
+                                >
+                                  <span className="text-base leading-none">
+                                    {opt.value === 'out' ? '❌' : opt.value === 'low' ? '🟡' : opt.value === 'medium' ? '🟠' : '✅'}
+                                  </span>
+                                  <span
+                                    className="text-[10px] font-bold"
+                                    style={{ color: selected === opt.value ? opt.color : 'rgba(255,255,255,0.35)' }}
+                                  >
+                                    {opt.label}
+                                  </span>
+                                </button>
+                              ))}
                             </div>
                           )}
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -199,8 +317,8 @@ function DrinksContent() {
         </div>
       )}
 
-      {/* Sticky CTA */}
-      {selected && selectedDrink && (
+      {/* Sticky submit CTA */}
+      {selectionCount > 0 && (
         <div
           className="fixed bottom-0 p-5"
           style={{
@@ -210,22 +328,20 @@ function DrinksContent() {
             transform: 'translateX(-50%)',
             backgroundColor: '#0a0a0f',
             borderTop: '1px solid rgba(255,255,255,0.07)',
-            paddingBottom: 36,
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
           }}
         >
-          <p className="text-xs text-white/40 text-center mb-3 font-semibold">
-            {selectedDrink.brand} · {selectedDrink.flavor ?? selectedDrink.name}
-          </p>
           <button
-            className="w-full rounded-2xl p-4 font-bold text-white text-base"
-            style={{ backgroundColor: '#22c55e' }}
-            onClick={() =>
-              router.push(
-                `/submit/status?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&drinkId=${selected}&drinkName=${encodeURIComponent(selectedDrink.name)}&drinkFlavor=${encodeURIComponent(selectedDrink.flavor ?? '')}`
-              )
-            }
+            className="w-full rounded-2xl p-4 font-bold text-white text-base flex items-center justify-center gap-2"
+            style={{ backgroundColor: submitting ? 'rgba(34,197,94,0.5)' : '#22c55e' }}
+            onClick={handleSubmit}
+            disabled={submitting}
           >
-            Is it in stock? →
+            {submitting ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              `⚡ Submit ${selectionCount} Report${selectionCount !== 1 ? 's' : ''}`
+            )}
           </button>
         </div>
       )}

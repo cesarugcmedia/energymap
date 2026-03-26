@@ -20,6 +20,7 @@ function ResultContent() {
   const drinkName = params.get('drinkName') ?? ''
   const drinkFlavor = params.get('drinkFlavor') ?? ''
   const quantity = (params.get('quantity') ?? 'full') as Quantity
+  const count = params.get('count') ? parseInt(params.get('count')!) : null
 
   const [stock, setStock] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,12 +56,16 @@ function ResultContent() {
       {/* Banner */}
       <div
         className="flex items-center gap-3.5 mx-5 rounded-2xl p-4"
-        style={{ marginTop: 'calc(64px + env(safe-area-inset-top))', backgroundColor: config?.bg, border: `1px solid ${config?.border}` }}
+        style={{ marginTop: 'calc(64px + env(safe-area-inset-top))', backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}
       >
         <span style={{ fontSize: 32 }}>⚡</span>
         <div>
-          <p className="text-base font-bold text-white">Report submitted!</p>
-          <p className="text-xs text-white/45 mt-0.5">{drinkFlavor} — {config?.label}</p>
+          <p className="text-base font-bold text-white">
+            {count !== null ? `${count} report${count !== 1 ? 's' : ''} submitted!` : 'Report submitted!'}
+          </p>
+          <p className="text-xs text-white/45 mt-0.5">
+            {count !== null ? `Thanks for updating ${storeName}` : `${drinkFlavor} — ${config?.label}`}
+          </p>
         </div>
       </div>
 
@@ -114,7 +119,7 @@ function ResultContent() {
             router.replace(`/submit/drinks?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}`)
           }
         >
-          Report Another Drink
+          Report More Drinks
         </button>
         <button
           className="w-full rounded-2xl p-3.5 font-semibold"
