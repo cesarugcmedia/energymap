@@ -23,6 +23,9 @@ export default function AddStorePage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [manualCoords, setManualCoords] = useState(false)
+  const [manualLat, setManualLat] = useState('')
+  const [manualLng, setManualLng] = useState('')
 
   async function geocodeAddress() {
     if (!address.trim()) {
@@ -36,23 +39,33 @@ export default function AddStorePage() {
     try {
       const query = encodeURIComponent(address.trim())
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'EnergyMapApp/1.0' } }
+        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1`
       )
       const data = await res.json()
 
       if (!data || data.length === 0) {
-        setError('Address not found. Try adding more detail like city and state.')
+        setError('Address not found. Try adding city and state, or enter coordinates manually.')
         setGeocoding(false)
         return
       }
 
       setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
     } catch {
-      setError('Could not look up address. Check your internet connection.')
+      setError('Could not look up address. Try entering coordinates manually.')
     }
 
     setGeocoding(false)
+  }
+
+  function applyManualCoords() {
+    const lat = parseFloat(manualLat)
+    const lng = parseFloat(manualLng)
+    if (isNaN(lat) || isNaN(lng)) {
+      setError('Please enter valid latitude and longitude.')
+      return
+    }
+    setCoords({ lat, lng })
+    setError(null)
   }
 
   async function handleSubmit() {
@@ -198,6 +211,46 @@ export default function AddStorePage() {
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Manual coordinates fallback */}
+        <button
+          className="mt-3 text-xs font-semibold text-white/35 underline underline-offset-2"
+          onClick={() => setManualCoords((v) => !v)}
+        >
+          {manualCoords ? 'Hide manual entry' : "Can't find address? Enter coordinates manually"}
+        </button>
+
+        {manualCoords && (
+          <div className="mt-2.5 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="decimal"
+                className="flex-1 rounded-xl p-3 text-sm text-white outline-none"
+                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                placeholder="Latitude (e.g. 35.301)"
+                value={manualLat}
+                onChange={(e) => setManualLat(e.target.value)}
+              />
+              <input
+                type="text"
+                inputMode="decimal"
+                className="flex-1 rounded-xl p-3 text-sm text-white outline-none"
+                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                placeholder="Longitude (e.g. -81.069)"
+                value={manualLng}
+                onChange={(e) => setManualLng(e.target.value)}
+              />
+            </div>
+            <button
+              className="w-full rounded-xl p-3 font-bold text-white text-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+              onClick={applyManualCoords}
+            >
+              Use These Coordinates
+            </button>
           </div>
         )}
       </div>
