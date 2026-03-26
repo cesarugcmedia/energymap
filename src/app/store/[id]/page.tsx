@@ -144,11 +144,29 @@ function StoreDetailContent({ id }: { id: string }) {
     })
   }
 
+  const [drinkDuplicate, setDrinkDuplicate] = useState(false)
+
   async function submitAddDrink() {
     if (!drinkBrand.trim() || !drinkFlavor.trim()) return
     setDrinkSubmitting(true)
+    setDrinkDuplicate(false)
     const brand = drinkBrand.trim()
     const flavor = drinkFlavor.trim()
+
+    // Check for existing drink with same brand + flavor (case-insensitive)
+    const { data: existing } = await supabase
+      .from('drinks')
+      .select('id')
+      .ilike('brand', brand)
+      .ilike('flavor', flavor)
+      .maybeSingle()
+
+    if (existing) {
+      setDrinkDuplicate(true)
+      setDrinkSubmitting(false)
+      return
+    }
+
     const { error } = await supabase.from('drinks').insert({
       brand,
       name: `${brand} ${flavor}`,
@@ -170,6 +188,7 @@ function StoreDetailContent({ id }: { id: string }) {
     setDrinkFlavor('')
     setDrinkSubmitted(false)
     setDrinkSubmitting(false)
+    setDrinkDuplicate(false)
   }
 
   const latestReport = stock.reduce<any>((latest, item) => {
@@ -447,7 +466,7 @@ function StoreDetailContent({ id }: { id: string }) {
                   type="text"
                   placeholder="e.g. Monster, Red Bull, Celsius"
                   value={drinkBrand}
-                  onChange={(e) => setDrinkBrand(e.target.value)}
+                  onChange={(e) => { setDrinkBrand(e.target.value); setDrinkDuplicate(false) }}
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
                   style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
@@ -457,10 +476,22 @@ function StoreDetailContent({ id }: { id: string }) {
                   type="text"
                   placeholder="e.g. Ultra White, Sugar Free"
                   value={drinkFlavor}
-                  onChange={(e) => setDrinkFlavor(e.target.value)}
+                  onChange={(e) => { setDrinkFlavor(e.target.value); setDrinkDuplicate(false) }}
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-5"
                   style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
+
+                {drinkDuplicate && (
+                  <div
+                    className="rounded-xl p-3 mb-4 flex items-center gap-2.5"
+                    style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}
+                  >
+                    <span style={{ fontSize: 16 }}>⚠️</span>
+                    <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>
+                      This drink already exists in our database.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex gap-2.5">
                   <button
