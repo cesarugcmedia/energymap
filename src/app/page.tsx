@@ -255,7 +255,7 @@ export default function MapPage() {
           style={{
             backgroundColor: '#1a1a24',
             border: '1px solid rgba(255,255,255,0.08)',
-            paddingBottom: 36,
+            paddingBottom: 'calc(70px + env(safe-area-inset-bottom) + 12px)',
           }}
           onTouchStart={(e) => { swipeStartY.current = e.touches[0].clientY }}
           onTouchEnd={(e) => {
