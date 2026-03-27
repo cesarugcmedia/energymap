@@ -56,7 +56,10 @@ export default function CommunityPage() {
           .select('username, tier, is_verified_reporter')
           .eq('id', msg.user_id)
           .single()
-        setMessages((prev) => [...prev, { ...msg, profile: p }])
+        setMessages((prev) => {
+          if (prev.find((m) => m.id === msg.id)) return prev
+          return [...prev, { ...msg, profile: p }]
+        })
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
       })
       .subscribe()
@@ -108,11 +111,20 @@ export default function CommunityPage() {
       }
     }
 
-    await supabase.from('messages').insert({
+    const { data: newMsg, error } = await supabase.from('messages').insert({
       user_id: user.id,
       content: text.trim() || null,
       photo_url: photoUrl,
-    })
+    }).select().single()
+
+    if (newMsg && !error) {
+      // Optimistically add to UI in case real-time is delayed
+      setMessages((prev) => {
+        if (prev.find((m) => m.id === newMsg.id)) return prev
+        return [...prev, { ...newMsg, profile: { username: profile?.username, tier: profile?.tier, is_verified_reporter: profile?.is_verified_reporter } }]
+      })
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+    }
 
     setText('')
     removePhoto()
