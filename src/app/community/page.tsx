@@ -15,16 +15,6 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-function TierBadge({ tier }: { tier: string | null }) {
-  if (tier === 'tracker') return (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>🎯</span>
-  )
-  if (tier === 'hunter') return (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>⚡</span>
-  )
-  return null
-}
-
 export default function CommunityPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
@@ -54,7 +44,7 @@ export default function CommunityPage() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
         const msg = payload.new as any
         const [{ data: p }, { data: replyData }] = await Promise.all([
-          supabase.from('profiles').select('username, tier, is_verified_reporter').eq('id', msg.user_id).single(),
+          supabase.from('profiles').select('username').eq('id', msg.user_id).single(),
           msg.reply_to_id
             ? supabase.from('messages').select('id, content, photo_url, profile:profiles(username)').eq('id', msg.reply_to_id).single()
             : Promise.resolve({ data: null }),
@@ -91,7 +81,7 @@ export default function CommunityPage() {
     const [{ data: msgs }, { data: rxData }] = await Promise.all([
       supabase
         .from('messages')
-        .select('*, profile:profiles(username, tier, is_verified_reporter), reply:messages!reply_to_id(id, content, photo_url, profile:profiles(username))')
+        .select('*, profile:profiles(username), reply:messages!reply_to_id(id, content, photo_url, profile:profiles(username))')
         .order('created_at', { ascending: true })
         .limit(100),
       supabase.from('message_reactions').select('message_id, user_id, type'),
@@ -171,7 +161,7 @@ export default function CommunityPage() {
     if (newMsg && !error) {
       setMessages((prev) => {
         if (prev.find((m) => m.id === newMsg.id)) return prev
-        return [...prev, { ...newMsg, profile: { username: profile?.username, tier: profile?.tier, is_verified_reporter: profile?.is_verified_reporter } }]
+        return [...prev, { ...newMsg, profile: { username: profile?.username } }]
       })
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     }
@@ -195,7 +185,12 @@ export default function CommunityPage() {
     )
   }
 
-  const inputAreaHeight = 64 + (photoPreview ? 60 : 0) + (replyingTo ? 52 : 0)
+  // Group consecutive messages from same sender
+  const grouped = messages.map((msg, i) => {
+    const prev = messages[i - 1]
+    const isFirst = !prev || prev.user_id !== msg.user_id
+    return { ...msg, isFirst }
+  })
 
   return (
     <div className="bg-[#0a0a0f] flex flex-col" style={{ height: '100dvh' }}>
@@ -205,15 +200,12 @@ export default function CommunityPage() {
         className="flex items-center justify-between px-5 shrink-0"
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top))',
-          paddingBottom: 14,
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          paddingBottom: 12,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
           backgroundColor: '#0a0a0f',
         }}
       >
-        <div>
-          <p className="text-xl font-black text-white">💬 Community</p>
-          <p className="text-xs text-white/40 mt-0.5">{messages.length} message{messages.length !== 1 ? 's' : ''}</p>
-        </div>
+        <p className="text-base font-black text-white">Community Chat</p>
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e' }} />
           <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>Live</span>
@@ -221,76 +213,67 @@ export default function CommunityPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto py-3" style={{ paddingLeft: 12, paddingRight: 12 }}>
         {loading ? (
           <div className="flex justify-center mt-10">
             <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 text-center">
-            <span style={{ fontSize: 48 }}>💬</span>
-            <p className="text-lg font-bold text-white">No messages yet</p>
+            <span style={{ fontSize: 44 }}>💬</span>
+            <p className="text-base font-bold text-white">No messages yet</p>
             <p className="text-sm text-white/40">Be the first to say something!</p>
           </div>
         ) : (
-          messages.map((msg) => {
+          grouped.map((msg) => {
             const isMe = msg.user_id === user.id
-            const p = (isMe && !msg.profile?.username)
-              ? { username: profile?.username, tier: profile?.tier, is_verified_reporter: profile?.is_verified_reporter }
-              : msg.profile as any
+            const username = isMe
+              ? (profile?.username ?? msg.profile?.username)
+              : msg.profile?.username
             const reply = msg.reply as any
             const rx = reactions[msg.id] ?? { likes: 0, dislikes: 0, mine: null }
+            const hasReactions = rx.likes > 0 || rx.dislikes > 0
 
             return (
-              <div key={msg.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div
+                key={msg.id}
+                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                style={{ marginBottom: msg.isFirst ? 12 : 4, paddingLeft: isMe ? 48 : 0, paddingRight: isMe ? 0 : 48 }}
+              >
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
 
-                {/* Avatar */}
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 self-end mb-7"
-                  style={{ backgroundColor: isMe ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.08)' }}
-                >
-                  <span className="text-xs font-black" style={{ color: isMe ? '#22c55e' : 'rgba(255,255,255,0.6)' }}>
-                    {p?.username?.[0]?.toUpperCase() ?? '?'}
-                  </span>
-                </div>
-
-                <div className={`flex flex-col gap-1 max-w-[78%] ${isMe ? 'items-end' : 'items-start'}`}>
-
-                  {/* Name row */}
-                  <div className={`flex items-center gap-1.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <span className="text-xs font-bold" style={{ color: isMe ? '#22c55e' : 'rgba(255,255,255,0.65)' }}>
-                      @{p?.username}
-                    </span>
-                    {p?.is_verified_reporter && (
-                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
-                    )}
-                    <TierBadge tier={p?.tier} />
-                    <span className="text-[10px] text-white/25">{timeAgo(msg.created_at)}</span>
-                  </div>
+                  {/* Username — only on first in a group, and only for others */}
+                  {msg.isFirst && !isMe && (
+                    <p className="text-xs font-semibold mb-1 px-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      {username}
+                    </p>
+                  )}
 
                   {/* Bubble */}
                   <div
                     style={{
-                      backgroundColor: isMe ? 'rgba(34,197,94,0.1)' : '#1a1a24',
-                      border: `1px solid ${isMe ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.07)'}`,
-                      borderRadius: isMe ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                      backgroundColor: isMe ? '#22c55e' : '#1e1e2e',
+                      borderRadius: isMe
+                        ? (msg.isFirst ? '20px 20px 4px 20px' : '20px 4px 4px 20px')
+                        : (msg.isFirst ? '20px 20px 20px 4px' : '4px 20px 20px 4px'),
                       overflow: 'hidden',
+                      maxWidth: '100%',
                     }}
                   >
                     {/* Reply quote */}
                     {reply && (
                       <div
-                        className="px-3 pt-2.5 pb-2"
-                        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.03)' }}
+                        className="px-3 pt-2 pb-1.5 mx-1 mt-1 rounded-xl"
+                        style={{ backgroundColor: isMe ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.07)' }}
                       >
-                        <p className="text-[10px] font-bold mb-0.5" style={{ color: '#a78bfa' }}>
-                          ↩ @{(reply.profile as any)?.username}
+                        <p className="text-[10px] font-bold mb-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.7)' : '#a78bfa' }}>
+                          ↩ {(reply.profile as any)?.username}
                         </p>
                         {reply.content && (
-                          <p className="text-xs text-white/50 truncate">{reply.content}</p>
+                          <p className="text-xs truncate" style={{ color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.45)' }}>{reply.content}</p>
                         )}
                         {!reply.content && reply.photo_url && (
-                          <p className="text-xs text-white/40 italic">📷 Photo</p>
+                          <p className="text-xs italic" style={{ color: isMe ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)' }}>📷 Photo</p>
                         )}
                       </div>
                     )}
@@ -300,60 +283,52 @@ export default function CommunityPage() {
                       <img
                         src={msg.photo_url}
                         alt="shared"
-                        className="w-full object-cover"
-                        style={{ maxWidth: 260, maxHeight: 200, display: 'block' }}
+                        style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover' }}
                       />
                     )}
 
                     {/* Text */}
                     {msg.content && (
-                      <p className="text-sm text-white px-3.5 py-2.5" style={{ lineHeight: 1.55 }}>
+                      <p
+                        className="text-sm px-3.5 py-2.5"
+                        style={{ color: isMe ? '#fff' : 'rgba(255,255,255,0.9)', lineHeight: 1.5, margin: 0 }}
+                      >
                         {msg.content}
                       </p>
                     )}
                   </div>
 
-                  {/* Actions row */}
-                  <div className={`flex items-center gap-2 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {/* Time + reactions + actions */}
+                  <div className={`flex items-center gap-2 mt-1 px-1 flex-wrap ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(msg.created_at)}</span>
+
                     {/* Like */}
                     <button
                       onClick={() => toggleReaction(msg.id, 'like')}
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5"
-                      style={{
-                        backgroundColor: rx.mine === 'like' ? 'rgba(34,197,94,0.15)' : 'transparent',
-                        border: `1px solid ${rx.mine === 'like' ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                      }}
+                      className="flex items-center gap-0.5"
                     >
-                      <span style={{ fontSize: 12 }}>👍</span>
-                      {rx.likes > 0 && <span className="text-[11px] font-bold" style={{ color: rx.mine === 'like' ? '#22c55e' : 'rgba(255,255,255,0.4)' }}>{rx.likes}</span>}
+                      <span style={{ fontSize: 13, opacity: rx.mine === 'like' ? 1 : 0.4 }}>👍</span>
+                      {rx.likes > 0 && <span className="text-[11px] font-bold" style={{ color: rx.mine === 'like' ? '#22c55e' : 'rgba(255,255,255,0.35)' }}>{rx.likes}</span>}
                     </button>
 
                     {/* Dislike */}
                     <button
                       onClick={() => toggleReaction(msg.id, 'dislike')}
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5"
-                      style={{
-                        backgroundColor: rx.mine === 'dislike' ? 'rgba(239,68,68,0.12)' : 'transparent',
-                        border: `1px solid ${rx.mine === 'dislike' ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                      }}
+                      className="flex items-center gap-0.5"
                     >
-                      <span style={{ fontSize: 12 }}>👎</span>
-                      {rx.dislikes > 0 && <span className="text-[11px] font-bold" style={{ color: rx.mine === 'dislike' ? '#ef4444' : 'rgba(255,255,255,0.4)' }}>{rx.dislikes}</span>}
+                      <span style={{ fontSize: 13, opacity: rx.mine === 'dislike' ? 1 : 0.4 }}>👎</span>
+                      {rx.dislikes > 0 && <span className="text-[11px] font-bold" style={{ color: rx.mine === 'dislike' ? '#ef4444' : 'rgba(255,255,255,0.35)' }}>{rx.dislikes}</span>}
                     </button>
 
                     {/* Reply */}
-                    <button
-                      onClick={() => startReply(msg)}
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5"
-                      style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                    >
-                      <span className="text-[11px] text-white/40">↩ Reply</span>
+                    <button onClick={() => startReply(msg)}>
+                      <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>↩</span>
                     </button>
 
-                    {/* Delete own */}
+                    {/* Delete */}
                     {isMe && (
                       <button onClick={() => deleteMessage(msg.id)}>
-                        <span className="text-[10px] text-white/20">✕</span>
+                        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.18)' }}>✕</span>
                       </button>
                     )}
                   </div>
@@ -370,27 +345,20 @@ export default function CommunityPage() {
       <div
         className="shrink-0"
         style={{
-          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
           backgroundColor: '#0a0a0f',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 76px)',
         }}
       >
         {/* Reply preview */}
         {replyingTo && (
-          <div
-            className="flex items-center gap-2 px-4 py-2.5"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(139,92,246,0.05)' }}
-          >
-            <span className="text-xs" style={{ color: '#a78bfa' }}>↩</span>
+          <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+            <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: '#a78bfa' }} />
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold" style={{ color: '#a78bfa' }}>
-                Replying to @{(replyingTo.profile as any)?.username}
-              </p>
-              <p className="text-[11px] text-white/40 truncate">
-                {replyingTo.content ?? '📷 Photo'}
-              </p>
+              <p className="text-[11px] font-bold" style={{ color: '#a78bfa' }}>{(replyingTo.profile as any)?.username ?? profile?.username}</p>
+              <p className="text-[11px] text-white/40 truncate">{replyingTo.content ?? '📷 Photo'}</p>
             </div>
-            <button onClick={() => setReplyingTo(null)} className="text-white/30 text-xs shrink-0">✕</button>
+            <button onClick={() => setReplyingTo(null)} className="text-white/25 text-sm shrink-0">✕</button>
           </div>
         )}
 
@@ -398,27 +366,27 @@ export default function CommunityPage() {
         {photoPreview && (
           <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <img src={photoPreview} alt="preview" className="w-9 h-9 rounded-lg object-cover shrink-0" />
-            <p className="text-xs text-white/50 flex-1 truncate">{photo?.name}</p>
-            <button onClick={removePhoto} className="text-white/30 text-xs shrink-0">✕</button>
+            <p className="text-xs text-white/40 flex-1 truncate">{photo?.name}</p>
+            <button onClick={removePhoto} className="text-white/25 text-xs shrink-0">✕</button>
           </div>
         )}
 
-        {/* Text input */}
-        <div className="flex items-center gap-2.5 px-4 pt-3">
+        {/* Input row */}
+        <div className="flex items-center gap-2 px-3 pt-2.5">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
           >
             <span style={{ fontSize: 16 }}>📷</span>
           </button>
           <input
             ref={inputRef}
             type="text"
-            className="flex-1 rounded-2xl px-4 py-2.5 text-sm text-white outline-none"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.09)' }}
-            placeholder={replyingTo ? `Reply to @${(replyingTo.profile as any)?.username}...` : 'Say something...'}
+            className="flex-1 rounded-full px-4 py-2.5 text-sm text-white outline-none"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+            placeholder={replyingTo ? `Reply...` : 'iMessage'}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
@@ -426,12 +394,12 @@ export default function CommunityPage() {
           <button
             onClick={sendMessage}
             disabled={(!text.trim() && !photo) || sending}
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: (!text.trim() && !photo) || sending ? 'rgba(34,197,94,0.25)' : '#22c55e' }}
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: (!text.trim() && !photo) || sending ? 'rgba(34,197,94,0.3)' : '#22c55e' }}
           >
             {sending
               ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              : <span className="text-white font-black text-sm">↑</span>
+              : <span className="text-white font-black" style={{ fontSize: 16 }}>↑</span>
             }
           </button>
         </div>
