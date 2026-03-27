@@ -87,7 +87,7 @@ const TIERS = [
     glow: 'rgba(34,197,94,0.25)',
     border: 'rgba(34,197,94,0.5)',
     icon: '⚡',
-    tag: 'MOST POPULAR' as string | null,
+    tag: 'EARLY ACCESS' as string | null,
     comingSoon: false,
     description: null as string | null,
     features: [
@@ -504,7 +504,7 @@ export default function AccountPage() {
                       ) : (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
                           style={{ width: '100%', padding: 12, background: `linear-gradient(135deg, ${t.color}, ${t.color}bb)`, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 4px 16px ${t.glow}` }}>
-                          {t.id === 'free' ? 'Get Started Free →' : `Start ${t.name} →`}
+                          {t.id === 'free' ? 'Get Started Free →' : 'Join Waitlist →'}
                         </button>
                       )}
                     </div>
@@ -564,7 +564,7 @@ export default function AccountPage() {
                   style={{ width: '100%', padding: 15, background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`, border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 8px 24px ${tier.glow}`, marginTop: 4 }}>
                   {submitting
                     ? <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-                    : selectedTier === 'free' ? 'Create Free Account →' : `Start ${tier.name} — ${tier.price}/mo →`}
+                    : selectedTier === 'free' ? 'Create Free Account →' : 'Join Waitlist →'}
                 </button>
                 <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', lineHeight: 1.6 }}>
                   By signing up you agree to our Terms of Service and Privacy Policy.
