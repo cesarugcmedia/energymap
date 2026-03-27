@@ -15,12 +15,23 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
+function dayLabel(dateStr: string) {
+  const d = new Date(dateStr)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (d.toDateString() === today.toDateString()) return 'Today'
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
 export default function CommunityPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const msgRefs = useRef<Record<string, HTMLElement | null>>({})
 
   const [messages, setMessages] = useState<any[]>([])
@@ -30,6 +41,8 @@ export default function CommunityPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [replyingTo, setReplyingTo] = useState<any | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -48,7 +61,6 @@ export default function CommunityPage() {
           if (prev.find((m) => m.id === msg.id)) return prev
           return [...prev, { ...msg, profile: p }]
         })
-        // Only auto-scroll to bottom for top-level messages from others
         if (!msg.reply_to_id) {
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
         }
@@ -67,6 +79,14 @@ export default function CommunityPage() {
       localStorage.setItem('community_last_read', new Date().toISOString())
     }
   }, [loading])
+
+  // Close lightbox / confirm-delete on outside tap
+  useEffect(() => {
+    if (confirmDelete) {
+      const t = setTimeout(() => setConfirmDelete(null), 4000)
+      return () => clearTimeout(t)
+    }
+  }, [confirmDelete])
 
   async function fetchAll() {
     const { data: msgs } = await supabase
@@ -96,6 +116,10 @@ export default function CommunityPage() {
     inputRef.current?.focus()
   }
 
+  function dismissKeyboard() {
+    inputRef.current?.blur()
+  }
+
   async function sendMessage() {
     if ((!text.trim() && !photo) || !user || sending) return
     setSending(true)
@@ -111,19 +135,13 @@ export default function CommunityPage() {
       }
     }
 
-    // Flatten threading: if replying to a reply, attach to the top-level parent instead
     const replyParentId = replyingTo
       ? (replyingTo.reply_to_id ?? replyingTo.id)
       : null
 
     const { data: newMsg, error } = await supabase
       .from('messages')
-      .insert({
-        user_id: user.id,
-        content: text.trim() || null,
-        photo_url: photoUrl,
-        reply_to_id: replyParentId,
-      })
+      .insert({ user_id: user.id, content: text.trim() || null, photo_url: photoUrl, reply_to_id: replyParentId })
       .select('*')
       .single()
 
@@ -132,7 +150,6 @@ export default function CommunityPage() {
         if (prev.find((m) => m.id === newMsg.id)) return prev
         return [...prev, { ...newMsg, profile: { username: profile?.username } }]
       })
-      // Scroll to parent thread so user sees the reply land in place
       setTimeout(() => {
         if (replyParentId && msgRefs.current[replyParentId]) {
           msgRefs.current[replyParentId]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -149,6 +166,11 @@ export default function CommunityPage() {
   }
 
   async function deleteMessage(msgId: string) {
+    if (confirmDelete !== msgId) {
+      setConfirmDelete(msgId)
+      return
+    }
+    setConfirmDelete(null)
     await supabase.from('messages').delete().eq('id', msgId)
     setMessages((prev) => prev.filter((m) => m.id !== msgId))
   }
@@ -161,7 +183,6 @@ export default function CommunityPage() {
     )
   }
 
-  // Build reply map: parentId → list of replies (all replies are max 1 level deep)
   const replyMap: Record<string, any[]> = {}
   messages.forEach((m) => {
     if (m.reply_to_id) {
@@ -175,6 +196,7 @@ export default function CommunityPage() {
     const isMe = msg.user_id === user!.id
     const username = isMe ? (profile?.username ?? msg.profile?.username) : msg.profile?.username
     const threadReplies = !isReply ? (replyMap[msg.id] ?? []) : []
+    const isPendingDelete = confirmDelete === msg.id
 
     return (
       <div
@@ -182,7 +204,6 @@ export default function CommunityPage() {
         ref={(el) => { msgRefs.current[msg.id] = el }}
         style={{ marginBottom: isReply ? 4 : 14 }}
       >
-        {/* Message row */}
         <div
           className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
           style={{
@@ -190,17 +211,12 @@ export default function CommunityPage() {
             paddingRight: isReply ? (isMe ? 28 : 48) : (isMe ? 0 : 48),
           }}
         >
-          {/* Left thread line for others' replies */}
           {isReply && !isMe && (
             <div style={{ width: 2, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.15)', marginRight: 8, alignSelf: 'stretch', flexShrink: 0 }} />
           )}
 
           <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
-            {/* Username */}
-            <p
-              className="font-semibold mb-1 px-1"
-              style={{ color: isMe ? 'rgba(34,197,94,0.75)' : 'rgba(255,255,255,0.45)', fontSize: isReply ? 10 : 12 }}
-            >
+            <p className="font-semibold mb-1 px-1" style={{ color: isMe ? 'rgba(34,197,94,0.75)' : 'rgba(255,255,255,0.45)', fontSize: isReply ? 10 : 12 }}>
               {username}
             </p>
 
@@ -217,40 +233,40 @@ export default function CommunityPage() {
                 <img
                   src={msg.photo_url}
                   alt="shared"
-                  style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover' }}
+                  onClick={() => setLightboxUrl(msg.photo_url)}
+                  style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover', cursor: 'pointer' }}
                 />
               )}
               {msg.content && (
-                <p
-                  className="px-3.5 py-2.5"
-                  style={{ color: isMe ? '#fff' : 'rgba(255,255,255,0.9)', lineHeight: 1.5, margin: 0, fontSize: isReply ? 13 : 14 }}
-                >
+                <p className="px-3.5 py-2.5" style={{ color: isMe ? '#fff' : 'rgba(255,255,255,0.9)', lineHeight: 1.5, margin: 0, fontSize: isReply ? 13 : 14 }}>
                   {msg.content}
                 </p>
               )}
             </div>
 
-            {/* Timestamp + reply + delete */}
+            {/* Timestamp + actions */}
             <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
               <button onClick={() => startReply(msg)} className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 ↩ Reply
               </button>
               {isMe && (
-                <button onClick={() => deleteMessage(msg.id)} className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                  ✕
+                <button
+                  onClick={() => deleteMessage(msg.id)}
+                  className="text-[10px] font-semibold"
+                  style={{ color: isPendingDelete ? '#ef4444' : 'rgba(255,255,255,0.2)' }}
+                >
+                  {isPendingDelete ? 'Tap again to delete' : '✕'}
                 </button>
               )}
             </div>
           </div>
 
-          {/* Right thread line for my replies */}
           {isReply && isMe && (
             <div style={{ width: 2, borderRadius: 99, backgroundColor: 'rgba(34,197,94,0.35)', marginLeft: 8, alignSelf: 'stretch', flexShrink: 0 }} />
           )}
         </div>
 
-        {/* Thread replies — rendered directly under their parent, indented */}
         {threadReplies.length > 0 && (
           <div style={{ marginTop: 4 }}>
             {threadReplies.map((r) => renderMessage(r, true))}
@@ -260,8 +276,49 @@ export default function CommunityPage() {
     )
   }
 
+  // Insert day separators between top-level messages
+  function renderWithDaySeparators() {
+    let lastDay = ''
+    const items: React.ReactNode[] = []
+    topLevel.forEach((msg) => {
+      const day = new Date(msg.created_at).toDateString()
+      if (day !== lastDay) {
+        lastDay = day
+        items.push(
+          <div key={`day-${day}`} className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
+            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              {dayLabel(msg.created_at)}
+            </span>
+            <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
+          </div>
+        )
+      }
+      items.push(renderMessage(msg, false))
+    })
+    return items
+  }
+
   return (
     <div className="bg-[#0a0a0f] flex flex-col" style={{ height: '100dvh' }}>
+
+      {/* Fullscreen photo lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.92)' }}
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img src={lightboxUrl} alt="full" style={{ maxWidth: '100%', maxHeight: '90dvh', objectFit: 'contain', borderRadius: 12 }} />
+          <button
+            className="absolute top-12 right-5 w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+            onClick={() => setLightboxUrl(null)}
+          >
+            <span className="text-white text-lg">✕</span>
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div
@@ -280,8 +337,13 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-3" style={{ paddingLeft: 12, paddingRight: 12 }}>
+      {/* Messages — tap to dismiss keyboard */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto py-3"
+        style={{ paddingLeft: 12, paddingRight: 12 }}
+        onClick={dismissKeyboard}
+      >
         {loading ? (
           <div className="flex justify-center mt-10">
             <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
@@ -293,9 +355,7 @@ export default function CommunityPage() {
             <p className="text-sm text-white/40">Be the first to say something!</p>
           </div>
         ) : (
-          <div>
-            {topLevel.map((msg) => renderMessage(msg, false))}
-          </div>
+          <div>{renderWithDaySeparators()}</div>
         )}
         <div ref={bottomRef} />
       </div>
@@ -309,7 +369,6 @@ export default function CommunityPage() {
           paddingBottom: 'calc(70px + env(safe-area-inset-bottom))',
         }}
       >
-        {/* Reply preview */}
         {replyingTo && (
           <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
             <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: '#22c55e' }} />
@@ -323,7 +382,6 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {/* Photo preview */}
         {photoPreview && (
           <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <img src={photoPreview} alt="preview" className="w-9 h-9 rounded-lg object-cover shrink-0" />
@@ -332,7 +390,6 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {/* Input row */}
         <div className="flex items-center gap-2 px-3 pt-2.5">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           <button
