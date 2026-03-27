@@ -74,7 +74,10 @@ export default function CommunityPage() {
   }, [user])
 
   useEffect(() => {
-    if (!loading) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50)
+    if (!loading) {
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50)
+      localStorage.setItem('community_last_read', new Date().toISOString())
+    }
   }, [loading])
 
   async function fetchAll() {
@@ -277,8 +280,17 @@ export default function CommunityPage() {
                     )}
                   </div>
 
-                  {/* Timestamp */}
-                  <span className="text-[10px] mt-0.5 px-1" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(msg.created_at)}</span>
+                  {/* Timestamp + reply */}
+                  <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
+                    <button
+                      onClick={() => startReply(msg)}
+                      className="text-[10px] font-semibold"
+                      style={{ color: 'rgba(255,255,255,0.35)' }}
+                    >
+                      ↩ Reply
+                    </button>
+                  </div>
 
                 </div>
               </div>
