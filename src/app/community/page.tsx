@@ -188,12 +188,90 @@ export default function CommunityPage() {
     )
   }
 
-  // Group consecutive messages from same sender
-  const grouped = messages.map((msg, i) => {
-    const prev = messages[i - 1]
-    const isFirst = !prev || prev.user_id !== msg.user_id
-    return { ...msg, isFirst }
+  // Build threaded structure: top-level messages with replies nested underneath
+  const replyMap: Record<string, any[]> = {}
+  messages.forEach((m) => {
+    if (m.reply_to_id) {
+      if (!replyMap[m.reply_to_id]) replyMap[m.reply_to_id] = []
+      replyMap[m.reply_to_id].push(m)
+    }
   })
+  const topLevel = messages.filter((m) => !m.reply_to_id)
+
+  function renderMessage(msg: any, isReply = false) {
+    const isMe = msg.user_id === user!.id
+    const username = isMe ? (profile?.username ?? msg.profile?.username) : msg.profile?.username
+    const replies = replyMap[msg.id] ?? []
+
+    return (
+      <div key={msg.id}>
+        {/* Message row */}
+        <div
+          className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+          style={{
+            marginBottom: 2,
+            marginTop: isReply ? 4 : 0,
+            paddingLeft: isReply ? (isMe ? 48 : 20) : (isMe ? 48 : 0),
+            paddingRight: isReply ? (isMe ? 20 : 48) : (isMe ? 0 : 48),
+          }}
+        >
+          {/* Thread line for replies (others) */}
+          {isReply && !isMe && (
+            <div style={{ width: 2, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.12)', marginRight: 8, alignSelf: 'stretch', flexShrink: 0 }} />
+          )}
+
+          <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
+            {/* Username — always shown on first in group */}
+            <p className="text-xs font-semibold mb-1 px-1" style={{ color: isMe ? 'rgba(34,197,94,0.7)' : 'rgba(255,255,255,0.45)', fontSize: isReply ? 10 : 12 }}>
+              {username}
+            </p>
+
+            {/* Bubble */}
+            <div
+              style={{
+                backgroundColor: isMe ? '#22c55e' : (isReply ? '#16162a' : '#1e1e2e'),
+                borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                overflow: 'hidden',
+                maxWidth: '100%',
+              }}
+            >
+              {msg.photo_url && (
+                <img src={msg.photo_url} alt="shared" style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover' }} />
+              )}
+              {msg.content && (
+                <p
+                  className="px-3.5 py-2.5"
+                  style={{ color: isMe ? '#fff' : 'rgba(255,255,255,0.9)', lineHeight: 1.5, margin: 0, fontSize: isReply ? 13 : 14 }}
+                >
+                  {msg.content}
+                </p>
+              )}
+            </div>
+
+            {/* Timestamp + reply */}
+            <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+              <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
+              <button onClick={() => startReply(msg)} className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                ↩ Reply
+              </button>
+            </div>
+          </div>
+
+          {/* Thread line for my replies (right side) */}
+          {isReply && isMe && (
+            <div style={{ width: 2, borderRadius: 99, backgroundColor: 'rgba(34,197,94,0.3)', marginLeft: 8, alignSelf: 'stretch', flexShrink: 0 }} />
+          )}
+        </div>
+
+        {/* Nested replies */}
+        {replies.length > 0 && (
+          <div style={{ marginBottom: 10 }}>
+            {replies.map((r) => renderMessage(r, true))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="bg-[#0a0a0f] flex flex-col" style={{ height: '100dvh' }}>
@@ -228,74 +306,9 @@ export default function CommunityPage() {
             <p className="text-sm text-white/40">Be the first to say something!</p>
           </div>
         ) : (
-          grouped.map((msg) => {
-            const isMe = msg.user_id === user.id
-            const username = isMe
-              ? (profile?.username ?? msg.profile?.username)
-              : msg.profile?.username
-
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                style={{ marginBottom: msg.isFirst ? 12 : 4, paddingLeft: isMe ? 48 : 0, paddingRight: isMe ? 0 : 48 }}
-              >
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
-
-                  {/* Username — only on first in a group, and only for others */}
-                  {msg.isFirst && !isMe && (
-                    <p className="text-xs font-semibold mb-1 px-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                      {username}
-                    </p>
-                  )}
-
-                  {/* Bubble */}
-                  <div
-                    style={{
-                      backgroundColor: isMe ? '#22c55e' : '#1e1e2e',
-                      borderRadius: isMe
-                        ? (msg.isFirst ? '20px 20px 4px 20px' : '20px 4px 4px 20px')
-                        : (msg.isFirst ? '20px 20px 20px 4px' : '4px 20px 20px 4px'),
-                      overflow: 'hidden',
-                      maxWidth: '100%',
-                    }}
-                  >
-                    {/* Photo */}
-                    {msg.photo_url && (
-                      <img
-                        src={msg.photo_url}
-                        alt="shared"
-                        style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover' }}
-                      />
-                    )}
-
-                    {/* Text */}
-                    {msg.content && (
-                      <p
-                        className="text-sm px-3.5 py-2.5"
-                        style={{ color: isMe ? '#fff' : 'rgba(255,255,255,0.9)', lineHeight: 1.5, margin: 0 }}
-                      >
-                        {msg.content}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Timestamp + reply */}
-                  <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
-                    <button
-                      onClick={() => startReply(msg)}
-                      className="text-[10px] font-semibold"
-                      style={{ color: 'rgba(255,255,255,0.35)' }}
-                    >
-                      ↩ Reply
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-            )
-          })
+          <div style={{ paddingBottom: 8 }}>
+            {topLevel.map((msg) => renderMessage(msg, false))}
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
