@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -121,21 +121,16 @@ export default function CommunityPage() {
     }
   }, [user])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!loading) {
-      // Give the DOM time to fully render before scrolling
-      setTimeout(() => {
-        const container = scrollContainerRef.current
-        if (!container) return
-        if (unreadRef.current) {
-          // Scroll so the unread separator sits near the top of the view
-          const offset = unreadRef.current.offsetTop - container.offsetTop - 16
-          container.scrollTop = Math.max(0, offset)
-        } else {
-          // No new messages — go straight to the bottom
-          container.scrollTop = container.scrollHeight
-        }
-      }, 100)
+      const container = scrollContainerRef.current
+      if (!container) return
+      if (unreadRef.current) {
+        const offset = unreadRef.current.offsetTop - container.offsetTop - 16
+        container.scrollTop = Math.max(0, offset)
+      } else {
+        container.scrollTop = container.scrollHeight
+      }
       localStorage.setItem('community_last_read', new Date().toISOString())
     }
   }, [loading])
