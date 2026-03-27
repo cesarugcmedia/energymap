@@ -85,6 +85,10 @@ function StoreDetailContent({ id }: { id: string }) {
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
   const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
   const [historyLoading, setHistoryLoading] = useState<Set<string>>(new Set())
+  const [disputedReports, setDisputedReports] = useState<Set<string>>(new Set())
+  const [disputeModal, setDisputeModal] = useState<{ reportId: string; drinkName: string } | null>(null)
+  const [disputeReason, setDisputeReason] = useState('')
+  const [submittingDispute, setSubmittingDispute] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -97,6 +101,7 @@ function StoreDetailContent({ id }: { id: string }) {
     fetchStore()
     fetchStock()
     if (user) checkFavorite()
+    if (user && isTracker) fetchDisputes()
 
     const channel = supabase
       .channel(`store-detail:${id}`)
@@ -109,6 +114,29 @@ function StoreDetailContent({ id }: { id: string }) {
   async function fetchStore() {
     const { data } = await supabase.from('stores').select('*').eq('id', id).single()
     if (data) setStore(data)
+  }
+
+  async function fetchDisputes() {
+    if (!user) return
+    const { data } = await supabase
+      .from('disputes')
+      .select('report_id')
+      .eq('user_id', user.id)
+    if (data) setDisputedReports(new Set(data.map((d: any) => d.report_id)))
+  }
+
+  async function submitDispute() {
+    if (!disputeModal || !user) return
+    setSubmittingDispute(true)
+    await supabase.from('disputes').insert({
+      report_id: disputeModal.reportId,
+      user_id: user.id,
+      reason: disputeReason.trim() || null,
+    })
+    setDisputedReports((prev) => new Set(prev).add(disputeModal.reportId))
+    setSubmittingDispute(false)
+    setDisputeModal(null)
+    setDisputeReason('')
   }
 
   async function checkFavorite() {
@@ -502,6 +530,20 @@ function StoreDetailContent({ id }: { id: string }) {
                                   <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
                                 </div>
                                 {isTracker && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (!disputedReports.has(item.id)) {
+                                        setDisputeModal({ reportId: item.id, drinkName: item.drink?.flavor ?? item.drink?.name ?? '' })
+                                      }
+                                    }}
+                                    className="text-sm shrink-0"
+                                    title={disputedReports.has(item.id) ? 'Already disputed' : 'Dispute this report'}
+                                  >
+                                    {disputedReports.has(item.id) ? '🚩' : '⚑'}
+                                  </button>
+                                )}
+                                {isTracker && (
                                   <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                                 )}
                               </div>
@@ -673,6 +715,54 @@ function StoreDetailContent({ id }: { id: string }) {
                 </div>
               </>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Dispute modal — Tracker only */}
+      {disputeModal && createPortal(
+        <div
+          className="fixed inset-0 flex flex-col justify-end z-50"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setDisputeModal(null); setDisputeReason('') } }}
+        >
+          <div
+            className="rounded-t-3xl p-5"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <p className="text-lg font-black text-white mb-1">🚩 Dispute Report</p>
+            <p className="text-xs text-white/40 mb-4">
+              Flag <span className="text-white font-semibold">{disputeModal.drinkName}</span> as inaccurate. Our team will review it.
+            </p>
+            <textarea
+              className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none resize-none mb-4"
+              style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)', minHeight: 80 }}
+              placeholder="Optional: describe what's wrong (e.g. 'store was actually out')"
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+            />
+            <div className="flex gap-2.5">
+              <button
+                className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                onClick={() => { setDisputeModal(null); setDisputeReason('') }}
+              >
+                Cancel
+              </button>
+              <button
+                className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
+                style={{ backgroundColor: submittingDispute ? 'rgba(239,68,68,0.4)' : '#ef4444' }}
+                disabled={submittingDispute}
+                onClick={submitDispute}
+              >
+                {submittingDispute
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : 'Submit Dispute'}
+              </button>
+            </div>
           </div>
         </div>,
         document.body

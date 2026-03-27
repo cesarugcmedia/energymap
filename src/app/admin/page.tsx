@@ -34,7 +34,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users'>('stores')
+  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users' | 'disputes'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<any[]>([])
@@ -59,6 +59,8 @@ export default function AdminPage() {
   const [newFlavor, setNewFlavor] = useState('')
   const [addingDrink, setAddingDrink] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [disputes, setDisputes] = useState<any[]>([])
+  const [disputesLoading, setDisputesLoading] = useState(false)
 
 
   useEffect(() => {
@@ -116,6 +118,17 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
     if (data) setUsers(data)
     setUsersLoading(false)
+  }
+
+  async function fetchDisputes() {
+    setDisputesLoading(true)
+    const { data } = await supabase
+      .from('disputes')
+      .select('id, reason, created_at, reporter:profiles!disputes_user_id_fkey(username), report:stock_reports(quantity, reported_at, drink:drinks(name, flavor, brand), store:stores(name))')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (data) setDisputes(data)
+    setDisputesLoading(false)
   }
 
   async function fetchLocations() {
@@ -305,7 +318,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : fetchUsers() }}
+              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : tab === 'users' ? fetchUsers() : fetchDisputes() }}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
             >
@@ -323,7 +336,7 @@ export default function AdminPage() {
 
         {/* Tab switcher */}
         <div className="flex rounded-xl p-1 gap-0.5" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'locations', 'drinks', 'users'] as const).map((t) => (
+          {(['stores', 'locations', 'drinks', 'users', 'disputes'] as const).map((t) => (
             <button
               key={t}
               className="flex-1 rounded-lg py-2.5 text-[11px] font-bold"
@@ -336,9 +349,10 @@ export default function AdminPage() {
                 if (t === 'users' && users.length === 0) fetchUsers()
                 if (t === 'locations' && locations.length === 0) fetchLocations()
                 if (t === 'drinks' && drinks.length === 0) fetchDrinks()
+                if (t === 'disputes' && disputes.length === 0) fetchDisputes()
               }}
             >
-              {t === 'stores' ? `🕐 Pending` : t === 'locations' ? '📍 Locations' : t === 'drinks' ? '🥤 Drinks' : '👤 Users'}
+              {t === 'stores' ? '🕐 Pending' : t === 'locations' ? '📍 Locs' : t === 'drinks' ? '🥤 Drinks' : t === 'users' ? '👤 Users' : '🚩 Disputes'}
             </button>
           ))}
         </div>
@@ -584,6 +598,57 @@ export default function AdminPage() {
                 </button>
               </div>
             ))}
+          </div>
+        )
+      ) : tab === 'disputes' ? (
+        disputesLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : disputes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <span style={{ fontSize: 40 }}>✅</span>
+            <p className="text-lg font-bold text-white">No disputes</p>
+            <p className="text-sm text-white/40">No reports have been flagged yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 px-4 pb-6">
+            {disputes.map((d: any) => {
+              const report = d.report as any
+              const drink = report?.drink as any
+              const store = report?.store as any
+              const reporter = d.reporter as any
+              const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+                out:    { label: 'OUT',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)'  },
+                low:    { label: 'LOW',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
+                medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' },
+                full:   { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',  border: 'rgba(34,197,94,0.25)'  },
+              }
+              const q = QUANTITY_CONFIG[report?.quantity]
+              return (
+                <div key={d.id} className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black text-white truncate">{drink?.flavor ?? drink?.name ?? 'Unknown drink'}</p>
+                      <p className="text-xs text-white/40 mt-0.5">{store?.name ?? 'Unknown store'} · {drink?.brand}</p>
+                    </div>
+                    {q && (
+                      <div className="px-2.5 py-1 rounded-full shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
+                        <span className="text-[10px] font-bold" style={{ color: q.color }}>{q.label}</span>
+                      </div>
+                    )}
+                  </div>
+                  {d.reason && (
+                    <p className="text-xs text-white/60 mb-2 italic">"{d.reason}"</p>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-white/30">🚩 @{reporter?.username ?? 'unknown'}</span>
+                    <span className="text-[10px] text-white/20">·</span>
+                    <span className="text-[10px] text-white/30">{timeAgo(d.created_at)}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )
       ) : loading ? (
