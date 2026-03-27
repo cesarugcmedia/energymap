@@ -53,6 +53,14 @@ export default function CommunityPage() {
   const [typingUsers, setTypingUsers] = useState<Record<string, { username: string; at: number }>>({})
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [cooldown, setCooldown] = useState(0)          // seconds until next message allowed
+  const [rateLimited, setRateLimited] = useState(false) // true when burst limit hit
+  const recentSentRef = useRef<number[]>([])            // timestamps of recent sends
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const COOLDOWN_SEC = 3      // seconds between messages
+  const BURST_MAX = 5         // max messages per window
+  const BURST_WINDOW_MS = 60000 // 60 second window
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -180,8 +188,36 @@ export default function CommunityPage() {
     }
   }
 
+  function startCooldown(sec: number) {
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current)
+    setCooldown(sec)
+    cooldownTimerRef.current = setInterval(() => {
+      setCooldown((c) => {
+        if (c <= 1) {
+          clearInterval(cooldownTimerRef.current!)
+          cooldownTimerRef.current = null
+          setRateLimited(false)
+          return 0
+        }
+        return c - 1
+      })
+    }, 1000)
+  }
+
   async function sendMessage() {
-    if ((!text.trim() && !photo) || !user || sending) return
+    if ((!text.trim() && !photo) || !user || sending || cooldown > 0) return
+
+    // Burst check — max BURST_MAX messages per BURST_WINDOW_MS
+    const now = Date.now()
+    recentSentRef.current = recentSentRef.current.filter((t) => now - t < BURST_WINDOW_MS)
+    if (recentSentRef.current.length >= BURST_MAX) {
+      const oldest = recentSentRef.current[0]
+      const waitSec = Math.ceil((BURST_WINDOW_MS - (now - oldest)) / 1000)
+      setRateLimited(true)
+      startCooldown(waitSec)
+      return
+    }
+
     setSending(true)
 
     let photoUrl: string | null = null
@@ -217,6 +253,10 @@ export default function CommunityPage() {
         }
       }, 80)
     }
+
+    // Record this send and start cooldown
+    recentSentRef.current.push(Date.now())
+    startCooldown(COOLDOWN_SEC)
 
     setText('')
     removePhoto()
@@ -548,6 +588,13 @@ export default function CommunityPage() {
           </div>
         )}
 
+        {rateLimited && (
+          <div className="px-4 py-1.5 mx-3 mt-2 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <p className="text-[11px] font-semibold" style={{ color: '#ef4444' }}>
+              Slow down — too many messages. Try again in {cooldown}s.
+            </p>
+          </div>
+        )}
         <div className="flex items-center gap-2 px-3 pt-2.5">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           <button
@@ -569,12 +616,14 @@ export default function CommunityPage() {
           />
           <button
             onClick={sendMessage}
-            disabled={(!text.trim() && !photo) || sending}
+            disabled={(!text.trim() && !photo) || sending || cooldown > 0}
             className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{ backgroundColor: (!text.trim() && !photo) || sending ? 'rgba(34,197,94,0.3)' : '#22c55e' }}
+            style={{ backgroundColor: cooldown > 0 ? 'rgba(239,68,68,0.35)' : ((!text.trim() && !photo) || sending ? 'rgba(34,197,94,0.3)' : '#22c55e') }}
           >
             {sending
               ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : cooldown > 0
+              ? <span className="text-white font-black" style={{ fontSize: 11 }}>{cooldown}s</span>
               : <span className="text-white font-black" style={{ fontSize: 16 }}>↑</span>
             }
           </button>
