@@ -235,7 +235,9 @@ export default function CommunityPage() {
         ) : (
           messages.map((msg) => {
             const isMe = msg.user_id === user.id
-            const p = msg.profile as any
+            const p = (isMe && !msg.profile?.username)
+              ? { username: profile?.username, tier: profile?.tier, is_verified_reporter: profile?.is_verified_reporter }
+              : msg.profile as any
             const reply = msg.reply as any
             const rx = reactions[msg.id] ?? { likes: 0, dislikes: 0, mine: null }
 
