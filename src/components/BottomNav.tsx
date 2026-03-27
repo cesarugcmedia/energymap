@@ -22,12 +22,9 @@ export default function BottomNav() {
   const { user, profile } = useAuth()
   const [unread, setUnread] = useState(0)
 
-  // Clear badge when on community page
+  // Clear badge when on community page — community page owns the last_read timestamp
   useEffect(() => {
-    if (pathname === '/community') {
-      setUnread(0)
-      localStorage.setItem('community_last_read', new Date().toISOString())
-    }
+    if (pathname === '/community') setUnread(0)
   }, [pathname])
 
   // Load initial unread count + subscribe to new messages
