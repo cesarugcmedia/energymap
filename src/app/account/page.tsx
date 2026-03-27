@@ -151,6 +151,15 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
+  const [waitlistCount, setWaitlistCount] = useState<number>(0)
+
+  useEffect(() => {
+    supabase
+      .from('waitlist')
+      .select('id', { count: 'exact', head: true })
+      .eq('tier', 'hunter')
+      .then(({ count }) => setWaitlistCount(count ?? 0))
+  }, [])
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
@@ -173,6 +182,9 @@ export default function AccountPage() {
     if (authError) { setError(authError.message); setSubmitting(false); return }
     if (data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim() })
+      if (selectedTier === 'hunter') {
+        await supabase.from('waitlist').insert({ email: email.trim(), tier: 'hunter' })
+      }
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       await refreshProfile()
     }
@@ -483,6 +495,25 @@ export default function AccountPage() {
                       <span style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{t.price}</span>
                       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{t.period}</span>
                     </div>
+                    {t.id === 'hunter' && (() => {
+                      const BETA_LIMIT = 50
+                      const remaining = Math.max(0, BETA_LIMIT - waitlistCount)
+                      const spotsLeft = remaining > 0
+                      return (
+                        <div style={{ backgroundColor: 'rgba(34,197,94,0.07)', border: '1px dashed rgba(34,197,94,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
+                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: 8 }}>
+                            {spotsLeft
+                              ? `🔥 First 50 beta users get Hunter free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
+                              : '🔒 Beta spots are full. Hunter will be $5/mo at launch.'}
+                          </p>
+                          {/* Progress bar */}
+                          <div style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${Math.min((waitlistCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #22c55e, #4ade80)', borderRadius: 4, transition: 'width 0.5s ease' }} />
+                          </div>
+                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>{waitlistCount} / {BETA_LIMIT} spots claimed</p>
+                        </div>
+                      )
+                    })()}
                     {t.comingSoon && t.description && (
                       <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
                         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{t.description}</p>
@@ -500,6 +531,10 @@ export default function AccountPage() {
                       {t.comingSoon ? (
                         <div style={{ width: '100%', padding: 12, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)' }}>
                           Notify Me When Available
+                        </div>
+                      ) : t.id === 'hunter' && waitlistCount >= 50 ? (
+                        <div style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+                          Beta Full — Launching Soon
                         </div>
                       ) : (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
