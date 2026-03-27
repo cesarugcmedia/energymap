@@ -30,6 +30,7 @@ export default function CommunityPage() {
   const { user, profile, loading: authLoading } = useAuth()
   const bottomRef = useRef<HTMLDivElement>(null)
   const unreadRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -81,7 +82,10 @@ export default function CommunityPage() {
           return [...prev, { ...msg, profile: p }]
         })
         if (!msg.reply_to_id) {
-          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+          setTimeout(() => {
+            const c = scrollContainerRef.current
+            if (c) c.scrollTop = c.scrollHeight
+          }, 50)
         }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => {
@@ -119,14 +123,19 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (!loading) {
-      // Scroll to unread separator if there are unread messages, else to bottom
+      // Give the DOM time to fully render before scrolling
       setTimeout(() => {
+        const container = scrollContainerRef.current
+        if (!container) return
         if (unreadRef.current) {
-          unreadRef.current.scrollIntoView({ behavior: 'instant', block: 'center' })
+          // Scroll so the unread separator sits near the top of the view
+          const offset = unreadRef.current.offsetTop - container.offsetTop - 16
+          container.scrollTop = Math.max(0, offset)
         } else {
-          bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+          // No new messages — go straight to the bottom
+          container.scrollTop = container.scrollHeight
         }
-      }, 50)
+      }, 100)
       localStorage.setItem('community_last_read', new Date().toISOString())
     }
   }, [loading])
@@ -246,10 +255,13 @@ export default function CommunityPage() {
         return [...prev, { ...newMsg, profile: { username: profile?.username } }]
       })
       setTimeout(() => {
+        const c = scrollContainerRef.current
+        if (!c) return
         if (replyParentId && msgRefs.current[replyParentId]) {
-          msgRefs.current[replyParentId]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          const offset = msgRefs.current[replyParentId]!.offsetTop - c.offsetTop - 16
+          c.scrollTop = Math.max(0, offset)
         } else {
-          bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+          c.scrollTop = c.scrollHeight
         }
       }, 80)
     }
@@ -515,6 +527,7 @@ export default function CommunityPage() {
 
       {/* Messages */}
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto py-3"
         style={{ paddingLeft: 12, paddingRight: 12 }}
         onClick={dismissKeyboard}
