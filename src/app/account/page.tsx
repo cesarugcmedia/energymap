@@ -70,6 +70,7 @@ const TIERS = [
     tag: null as string | null,
     comingSoon: false,
     description: null as string | null,
+    inherits: null as string | null,
     features: [
       'Map with nearby stores',
       'View stock reports',
@@ -90,8 +91,8 @@ const TIERS = [
     tag: 'EARLY ACCESS' as string | null,
     comingSoon: false,
     description: null as string | null,
+    inherits: 'Free' as string | null,
     features: [
-      'Everything in Free',
       'Flavor alerts — instant notifications',
       'Saved favorite drinks',
       'Extended 25 mile radius',
@@ -112,8 +113,8 @@ const TIERS = [
     tag: 'COMING SOON' as string | null,
     comingSoon: true,
     description: 'Advanced tools for power users — dropping soon. Join the waitlist and get early access when it launches.',
+    inherits: 'Hunter' as string | null,
     features: [
-      'Everything in Hunter',
       '30-day stock history',
       'Custom store lists',
       'Leaderboard placement + badge',
@@ -520,6 +521,15 @@ export default function AccountPage() {
                       </div>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 7, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
+                      {/* Inheritance banner */}
+                      {t.inherits && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>
+                          <span style={{ fontSize: 10 }}>⬆️</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.3 }}>
+                            Includes everything in <span style={{ color: '#fff' }}>{t.inherits}</span>, plus:
+                          </span>
+                        </div>
+                      )}
                       {t.features.map((f, fi) => (
                         <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                           <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
