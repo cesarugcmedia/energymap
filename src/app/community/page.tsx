@@ -195,7 +195,8 @@ export default function CommunityPage() {
       }
     }
 
-    const replyParentId = replyingTo ? (replyingTo.reply_to_id ?? replyingTo.id) : null
+    // Store direct reference — grouping under root is handled at render time
+    const replyParentId = replyingTo?.id ?? null
 
     const { data: newMsg, error } = await supabase
       .from('messages')
@@ -238,12 +239,24 @@ export default function CommunityPage() {
     )
   }
 
-  // Build reply map
+  // Lookup map for quick access to any message by id
+  const msgMap: Record<string, any> = {}
+  messages.forEach((m) => { msgMap[m.id] = m })
+
+  // Walk up to find the root ancestor of a message
+  function getRoot(id: string): string {
+    const m = msgMap[id]
+    if (!m || !m.reply_to_id) return id
+    return getRoot(m.reply_to_id)
+  }
+
+  // Group all replies under their root ancestor so the whole thread stays together
   const replyMap: Record<string, any[]> = {}
   messages.forEach((m) => {
     if (m.reply_to_id) {
-      if (!replyMap[m.reply_to_id]) replyMap[m.reply_to_id] = []
-      replyMap[m.reply_to_id].push(m)
+      const root = getRoot(m.reply_to_id)
+      if (!replyMap[root]) replyMap[root] = []
+      replyMap[root].push(m)
     }
   })
   const topLevel = messages.filter((m) => !m.reply_to_id)
@@ -296,6 +309,20 @@ export default function CommunityPage() {
                 outline: isSearchMatch ? '2px solid #22c55e' : 'none',
               }}
             >
+              {/* Quote preview — shown on reply bubbles */}
+              {isReply && msg.reply_to_id && msgMap[msg.reply_to_id] && (
+                <div
+                  className="mx-2 mt-2 px-3 py-1.5 rounded-xl"
+                  style={{ backgroundColor: isMe ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.07)' }}
+                >
+                  <p className="text-[10px] font-bold mb-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.65)' : '#22c55e' }}>
+                    {msgMap[msg.reply_to_id].profile?.username}
+                  </p>
+                  <p className="text-[11px] truncate" style={{ color: isMe ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.4)' }}>
+                    {msgMap[msg.reply_to_id].content ?? '📷 Photo'}
+                  </p>
+                </div>
+              )}
               {msg.photo_url && (
                 <img
                   src={msg.photo_url}
