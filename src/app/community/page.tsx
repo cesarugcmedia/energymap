@@ -230,9 +230,6 @@ export default function CommunityPage() {
             const username = isMe
               ? (profile?.username ?? msg.profile?.username)
               : msg.profile?.username
-            const reply = msg.reply as any
-            const rx = reactions[msg.id] ?? { likes: 0, dislikes: 0, mine: null }
-            const hasReactions = rx.likes > 0 || rx.dislikes > 0
 
             return (
               <div
@@ -260,24 +257,6 @@ export default function CommunityPage() {
                       maxWidth: '100%',
                     }}
                   >
-                    {/* Reply quote */}
-                    {reply && (
-                      <div
-                        className="px-3 pt-2 pb-1.5 mx-1 mt-1 rounded-xl"
-                        style={{ backgroundColor: isMe ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.07)' }}
-                      >
-                        <p className="text-[10px] font-bold mb-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.7)' : '#a78bfa' }}>
-                          ↩ {(reply.profile as any)?.username}
-                        </p>
-                        {reply.content && (
-                          <p className="text-xs truncate" style={{ color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.45)' }}>{reply.content}</p>
-                        )}
-                        {!reply.content && reply.photo_url && (
-                          <p className="text-xs italic" style={{ color: isMe ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)' }}>📷 Photo</p>
-                        )}
-                      </div>
-                    )}
-
                     {/* Photo */}
                     {msg.photo_url && (
                       <img
@@ -298,40 +277,8 @@ export default function CommunityPage() {
                     )}
                   </div>
 
-                  {/* Time + reactions + actions */}
-                  <div className={`flex items-center gap-2 mt-1 px-1 flex-wrap ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(msg.created_at)}</span>
-
-                    {/* Like */}
-                    <button
-                      onClick={() => toggleReaction(msg.id, 'like')}
-                      className="flex items-center gap-0.5"
-                    >
-                      <span style={{ fontSize: 13, opacity: rx.mine === 'like' ? 1 : 0.4 }}>👍</span>
-                      {rx.likes > 0 && <span className="text-[11px] font-bold" style={{ color: rx.mine === 'like' ? '#22c55e' : 'rgba(255,255,255,0.35)' }}>{rx.likes}</span>}
-                    </button>
-
-                    {/* Dislike */}
-                    <button
-                      onClick={() => toggleReaction(msg.id, 'dislike')}
-                      className="flex items-center gap-0.5"
-                    >
-                      <span style={{ fontSize: 13, opacity: rx.mine === 'dislike' ? 1 : 0.4 }}>👎</span>
-                      {rx.dislikes > 0 && <span className="text-[11px] font-bold" style={{ color: rx.mine === 'dislike' ? '#ef4444' : 'rgba(255,255,255,0.35)' }}>{rx.dislikes}</span>}
-                    </button>
-
-                    {/* Reply */}
-                    <button onClick={() => startReply(msg)}>
-                      <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>↩</span>
-                    </button>
-
-                    {/* Delete */}
-                    {isMe && (
-                      <button onClick={() => deleteMessage(msg.id)}>
-                        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.18)' }}>✕</span>
-                      </button>
-                    )}
-                  </div>
+                  {/* Timestamp */}
+                  <span className="text-[10px] mt-0.5 px-1" style={{ color: 'rgba(255,255,255,0.2)' }}>{timeAgo(msg.created_at)}</span>
 
                 </div>
               </div>
