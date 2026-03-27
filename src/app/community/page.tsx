@@ -29,10 +29,17 @@ export default function CommunityPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
   const bottomRef = useRef<HTMLDivElement>(null)
+  const unreadRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const msgRefs = useRef<Record<string, HTMLElement | null>>({})
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const typingThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Capture last-read time before messages load so we can find unread messages
+  const lastReadTimeRef = useRef<string | null>(
+    typeof window !== 'undefined' ? localStorage.getItem('community_last_read') : null
+  )
 
   const [messages, setMessages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,6 +50,9 @@ export default function CommunityPage() {
   const [replyingTo, setReplyingTo] = useState<any | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [typingUsers, setTypingUsers] = useState<Record<string, { username: string; at: number }>>({})
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -52,6 +62,7 @@ export default function CommunityPage() {
     if (!user) return
     fetchAll()
 
+    // Message subscription
     const msgChannel = supabase
       .channel('community-messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
@@ -70,23 +81,59 @@ export default function CommunityPage() {
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(msgChannel) }
+    // Typing indicator broadcast channel
+    const typingChannel = supabase
+      .channel('community-typing', { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'typing' }, ({ payload }: any) => {
+        setTypingUsers((prev) => ({
+          ...prev,
+          [payload.user_id]: { username: payload.username, at: Date.now() },
+        }))
+      })
+      .subscribe()
+    typingChannelRef.current = typingChannel
+
+    // Clear stale typing indicators every second
+    const typingInterval = setInterval(() => {
+      setTypingUsers((prev) => {
+        const now = Date.now()
+        const next = Object.fromEntries(Object.entries(prev).filter(([, v]) => now - v.at < 3000))
+        return Object.keys(next).length !== Object.keys(prev).length ? next : prev
+      })
+    }, 1000)
+
+    return () => {
+      supabase.removeChannel(msgChannel)
+      supabase.removeChannel(typingChannel)
+      clearInterval(typingInterval)
+    }
   }, [user])
 
   useEffect(() => {
     if (!loading) {
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50)
+      // Scroll to unread separator if there are unread messages, else to bottom
+      setTimeout(() => {
+        if (unreadRef.current) {
+          unreadRef.current.scrollIntoView({ behavior: 'instant', block: 'center' })
+        } else {
+          bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+        }
+      }, 50)
       localStorage.setItem('community_last_read', new Date().toISOString())
     }
   }, [loading])
 
-  // Close lightbox / confirm-delete on outside tap
   useEffect(() => {
     if (confirmDelete) {
       const t = setTimeout(() => setConfirmDelete(null), 4000)
       return () => clearTimeout(t)
     }
   }, [confirmDelete])
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 100)
+    else setSearchQuery('')
+  }, [searchOpen])
 
   async function fetchAll() {
     const { data: msgs } = await supabase
@@ -120,6 +167,19 @@ export default function CommunityPage() {
     inputRef.current?.blur()
   }
 
+  function onTextChange(val: string) {
+    setText(val)
+    // Throttled typing broadcast
+    if (val.trim() && typingChannelRef.current && !typingThrottleRef.current) {
+      typingChannelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { username: profile?.username, user_id: user?.id },
+      })
+      typingThrottleRef.current = setTimeout(() => { typingThrottleRef.current = null }, 2000)
+    }
+  }
+
   async function sendMessage() {
     if ((!text.trim() && !photo) || !user || sending) return
     setSending(true)
@@ -135,9 +195,7 @@ export default function CommunityPage() {
       }
     }
 
-    const replyParentId = replyingTo
-      ? (replyingTo.reply_to_id ?? replyingTo.id)
-      : null
+    const replyParentId = replyingTo ? (replyingTo.reply_to_id ?? replyingTo.id) : null
 
     const { data: newMsg, error } = await supabase
       .from('messages')
@@ -166,10 +224,7 @@ export default function CommunityPage() {
   }
 
   async function deleteMessage(msgId: string) {
-    if (confirmDelete !== msgId) {
-      setConfirmDelete(msgId)
-      return
-    }
+    if (confirmDelete !== msgId) { setConfirmDelete(msgId); return }
     setConfirmDelete(null)
     await supabase.from('messages').delete().eq('id', msgId)
     setMessages((prev) => prev.filter((m) => m.id !== msgId))
@@ -183,6 +238,7 @@ export default function CommunityPage() {
     )
   }
 
+  // Build reply map
   const replyMap: Record<string, any[]> = {}
   messages.forEach((m) => {
     if (m.reply_to_id) {
@@ -192,11 +248,22 @@ export default function CommunityPage() {
   })
   const topLevel = messages.filter((m) => !m.reply_to_id)
 
+  // Active typers (exclude self)
+  const activeTypers = Object.entries(typingUsers)
+    .filter(([uid]) => uid !== user.id)
+    .map(([, v]) => v.username)
+
+  // Search filter
+  const searchResults = searchQuery.trim()
+    ? messages.filter((m) => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : []
+
   function renderMessage(msg: any, isReply = false) {
     const isMe = msg.user_id === user!.id
     const username = isMe ? (profile?.username ?? msg.profile?.username) : msg.profile?.username
     const threadReplies = !isReply ? (replyMap[msg.id] ?? []) : []
     const isPendingDelete = confirmDelete === msg.id
+    const isSearchMatch = searchQuery.trim() && msg.content?.toLowerCase().includes(searchQuery.toLowerCase())
 
     return (
       <div
@@ -220,13 +287,13 @@ export default function CommunityPage() {
               {username}
             </p>
 
-            {/* Bubble */}
             <div
               style={{
                 backgroundColor: isMe ? '#22c55e' : (isReply ? '#16162a' : '#1e1e2e'),
                 borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
                 overflow: 'hidden',
                 maxWidth: '100%',
+                outline: isSearchMatch ? '2px solid #22c55e' : 'none',
               }}
             >
               {msg.photo_url && (
@@ -244,18 +311,11 @@ export default function CommunityPage() {
               )}
             </div>
 
-            {/* Timestamp + actions */}
             <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
-              <button onClick={() => startReply(msg)} className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                ↩ Reply
-              </button>
+              <button onClick={() => startReply(msg)} className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>↩ Reply</button>
               {isMe && (
-                <button
-                  onClick={() => deleteMessage(msg.id)}
-                  className="text-[10px] font-semibold"
-                  style={{ color: isPendingDelete ? '#ef4444' : 'rgba(255,255,255,0.2)' }}
-                >
+                <button onClick={() => deleteMessage(msg.id)} className="text-[10px] font-semibold" style={{ color: isPendingDelete ? '#ef4444' : 'rgba(255,255,255,0.2)' }}>
                   {isPendingDelete ? 'Tap again to delete' : '✕'}
                 </button>
               )}
@@ -276,11 +336,13 @@ export default function CommunityPage() {
     )
   }
 
-  // Insert day separators between top-level messages
-  function renderWithDaySeparators() {
+  function renderWithSeparators() {
     let lastDay = ''
+    let shownUnread = false
     const items: React.ReactNode[] = []
+
     topLevel.forEach((msg) => {
+      // Day separator
       const day = new Date(msg.created_at).toDateString()
       if (day !== lastDay) {
         lastDay = day
@@ -294,15 +356,36 @@ export default function CommunityPage() {
           </div>
         )
       }
+
+      // Unread separator — insert before the first unread message
+      if (
+        !shownUnread &&
+        lastReadTimeRef.current &&
+        new Date(msg.created_at) > new Date(lastReadTimeRef.current) &&
+        msg.user_id !== user!.id
+      ) {
+        shownUnread = true
+        items.push(
+          <div key="unread-separator" ref={unreadRef} className="flex items-center gap-3 my-3">
+            <div className="flex-1 h-px" style={{ backgroundColor: '#22c55e' }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#22c55e' }}>
+              New Messages
+            </span>
+            <div className="flex-1 h-px" style={{ backgroundColor: '#22c55e' }} />
+          </div>
+        )
+      }
+
       items.push(renderMessage(msg, false))
     })
+
     return items
   }
 
   return (
     <div className="bg-[#0a0a0f] flex flex-col" style={{ height: '100dvh' }}>
 
-      {/* Fullscreen photo lightbox */}
+      {/* Lightbox */}
       {lightboxUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
@@ -322,24 +405,49 @@ export default function CommunityPage() {
 
       {/* Header */}
       <div
-        className="flex items-center justify-between px-5 shrink-0"
+        className="shrink-0"
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top))',
-          paddingBottom: 12,
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           backgroundColor: '#0a0a0f',
         }}
       >
-        <p className="text-base font-black text-white">Community Chat</p>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e' }} />
-          <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>Live</span>
+        <div className="flex items-center justify-between px-5 pb-3">
+          <p className="text-base font-black text-white">Community Chat</p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e' }} />
+              <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>Live</span>
+            </div>
+            <button onClick={() => setSearchOpen((o) => !o)}>
+              <span style={{ fontSize: 16, opacity: searchOpen ? 1 : 0.5 }}>🔍</span>
+            </button>
+          </div>
         </div>
+
+        {/* Search bar */}
+        {searchOpen && (
+          <div className="px-4 pb-3">
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="w-full rounded-full px-4 py-2 text-sm text-white outline-none"
+              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.1)' }}
+              placeholder="Search messages…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery.trim() && (
+              <p className="text-[11px] mt-1.5 px-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Messages — tap to dismiss keyboard */}
+      {/* Messages */}
       <div
-        ref={scrollRef}
         className="flex-1 overflow-y-auto py-3"
         style={{ paddingLeft: 12, paddingRight: 12 }}
         onClick={dismissKeyboard}
@@ -348,6 +456,16 @@ export default function CommunityPage() {
           <div className="flex justify-center mt-10">
             <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : searchOpen && searchQuery.trim() ? (
+          // Search results view
+          searchResults.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 mt-20 text-center">
+              <span style={{ fontSize: 36 }}>🔍</span>
+              <p className="text-sm text-white/40">No messages found</p>
+            </div>
+          ) : (
+            <div>{searchResults.map((msg) => renderMessage(msg, false))}</div>
+          )
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 text-center">
             <span style={{ fontSize: 44 }}>💬</span>
@@ -355,10 +473,23 @@ export default function CommunityPage() {
             <p className="text-sm text-white/40">Be the first to say something!</p>
           </div>
         ) : (
-          <div>{renderWithDaySeparators()}</div>
+          <div>{renderWithSeparators()}</div>
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Typing indicator */}
+      {activeTypers.length > 0 && (
+        <div className="px-4 py-1 shrink-0">
+          <p className="text-[11px] italic" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {activeTypers.length === 1
+              ? `${activeTypers[0]} is typing…`
+              : activeTypers.length === 2
+              ? `${activeTypers[0]} and ${activeTypers[1]} are typing…`
+              : 'Several people are typing…'}
+          </p>
+        </div>
+      )}
 
       {/* Input area */}
       <div
@@ -406,7 +537,7 @@ export default function CommunityPage() {
             style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
             placeholder={replyingTo ? 'Write a reply…' : 'Message…'}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => onTextChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
           />
           <button
