@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
@@ -21,6 +21,8 @@ export default function BottomNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
   const [unread, setUnread] = useState(0)
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
 
   // Clear badge when on community page — community page owns the last_read timestamp
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function BottomNav() {
       .channel('nav-unread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const msg = payload.new as any
-        if (msg.user_id !== user.id && pathname !== '/community') {
+        if (msg.user_id !== user.id && pathnameRef.current !== '/community') {
           setUnread((c) => c + 1)
         }
       })
