@@ -306,7 +306,7 @@ export default function CommunityPage() {
         style={{
           borderTop: '1px solid rgba(255,255,255,0.06)',
           backgroundColor: '#0a0a0f',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 76px)',
+          paddingBottom: 'calc(70px + env(safe-area-inset-bottom))',
         }}
       >
         {/* Reply preview */}
