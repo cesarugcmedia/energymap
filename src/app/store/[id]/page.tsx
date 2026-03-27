@@ -75,12 +75,16 @@ function StoreDetailContent({ id }: { id: string }) {
   const name = params.get('name') ?? ''
   const { user, profile } = useAuth()
   const isHunterPlus = profile?.is_admin || profile?.tier === 'hunter' || profile?.tier === 'tracker'
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
 
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [profileMap, setProfileMap] = useState<Record<string, { username: string; verified: boolean }>>({})
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
+  const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
+  const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
+  const [historyLoading, setHistoryLoading] = useState<Set<string>>(new Set())
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -155,6 +159,27 @@ function StoreDetailContent({ id }: { id: string }) {
       next.has(brand) ? next.delete(brand) : next.add(brand)
       return next
     })
+  }
+
+  async function toggleHistory(drinkId: string) {
+    if (!isTracker) return
+    setExpandedHistory((prev) => {
+      const next = new Set(prev)
+      next.has(drinkId) ? next.delete(drinkId) : next.add(drinkId)
+      return next
+    })
+    if (!drinkHistory[drinkId]) {
+      setHistoryLoading((prev) => new Set(prev).add(drinkId))
+      const { data } = await supabase
+        .from('stock_reports')
+        .select('id, quantity, reported_at, user_id, reporter:profiles(username, is_verified_reporter)')
+        .eq('store_id', id)
+        .eq('drink_id', drinkId)
+        .order('reported_at', { ascending: false })
+        .limit(10)
+      setDrinkHistory((prev) => ({ ...prev, [drinkId]: data ?? [] }))
+      setHistoryLoading((prev) => { const next = new Set(prev); next.delete(drinkId); return next })
+    }
   }
 
   function updateEntry(id: string, field: 'brand' | 'flavor', value: string) {
@@ -433,42 +458,98 @@ function StoreDetailContent({ id }: { id: string }) {
                       {[...items].sort((a, b) => (STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)).map((item) => {
                         const q = QUANTITY_CONFIG[item.quantity as Quantity]
                         const freshColor = stalenessColor(item.reported_at)
+                        const historyOpen = expandedHistory.has(item.drink_id)
+                        const history = drinkHistory[item.drink_id] ?? []
+                        const loadingHistory = historyLoading.has(item.drink_id)
                         return (
-                          <div
-                            key={item.drink_id}
-                            className="flex items-center rounded-xl p-3"
-                            style={{
-                              backgroundColor: 'rgba(255,255,255,0.04)',
-                              border: `1.5px solid ${q?.border ?? `${brandColor}44`}`,
-                              boxShadow: `0 0 8px ${q?.color ?? brandColor}22`,
-                            }}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-white truncate">
-                                {item.drink?.flavor ?? item.drink?.name}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                {isHunterPlus ? (
-                                  <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
-                                ) : (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${freshColor}18`, color: freshColor, border: `1px solid ${freshColor}44` }}>{stalenessLabel(item.reported_at)}</span>
-                                )}
-                                {profileMap[item.user_id] && (
-                                  <div className="flex items-center gap-1">
-                                    <p className="text-xs text-white/30">· @{profileMap[item.user_id].username}</p>
-                                    {profileMap[item.user_id].verified && (
-                                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
-                                    )}
-                                  </div>
+                          <div key={item.drink_id}>
+                            <div
+                              className="flex items-center rounded-xl p-3"
+                              style={{
+                                backgroundColor: 'rgba(255,255,255,0.04)',
+                                border: `1.5px solid ${q?.border ?? `${brandColor}44`}`,
+                                boxShadow: `0 0 8px ${q?.color ?? brandColor}22`,
+                                borderRadius: isTracker && historyOpen ? '12px 12px 0 0' : 12,
+                                cursor: isTracker ? 'pointer' : 'default',
+                              }}
+                              onClick={() => toggleHistory(item.drink_id)}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white truncate">
+                                  {item.drink?.flavor ?? item.drink?.name}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {isHunterPlus ? (
+                                    <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
+                                  ) : (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${freshColor}18`, color: freshColor, border: `1px solid ${freshColor}44` }}>{stalenessLabel(item.reported_at)}</span>
+                                  )}
+                                  {profileMap[item.user_id] && (
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-xs text-white/30">· @{profileMap[item.user_id].username}</p>
+                                      {profileMap[item.user_id].verified && (
+                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <div
+                                  className="px-2.5 py-1 rounded-full"
+                                  style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}
+                                >
+                                  <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                                </div>
+                                {isTracker && (
+                                  <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                                 )}
                               </div>
                             </div>
-                            <div
-                              className="px-2.5 py-1 rounded-full shrink-0"
-                              style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}
-                            >
-                              <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                            </div>
+
+                            {/* Stock history panel — Tracker only */}
+                            {isTracker && historyOpen && (
+                              <div
+                                className="px-3 pb-3"
+                                style={{
+                                  backgroundColor: 'rgba(255,255,255,0.02)',
+                                  border: `1.5px solid ${q?.border ?? `${brandColor}44`}`,
+                                  borderTop: 'none',
+                                  borderRadius: '0 0 12px 12px',
+                                }}
+                              >
+                                <p className="text-[9px] font-bold py-2" style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '1.5px' }}>REPORT HISTORY</p>
+                                {loadingHistory ? (
+                                  <div className="flex justify-center py-3">
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                                  </div>
+                                ) : history.length === 0 ? (
+                                  <p className="text-xs text-white/30 pb-1">No history found.</p>
+                                ) : (
+                                  <div className="flex flex-col gap-1.5">
+                                    {history.map((h: any, i: number) => {
+                                      const hq = QUANTITY_CONFIG[h.quantity as Quantity]
+                                      const reporter = (h.reporter as any)
+                                      return (
+                                        <div key={h.id} className="flex items-center gap-2.5">
+                                          <div className="w-px self-stretch" style={{ backgroundColor: i === 0 ? hq?.color : 'rgba(255,255,255,0.08)', minHeight: 20 }} />
+                                          <div
+                                            className="px-2 py-0.5 rounded-full shrink-0"
+                                            style={{ backgroundColor: hq?.bg, border: `1px solid ${hq?.border}` }}
+                                          >
+                                            <span className="text-[9px] font-bold" style={{ color: hq?.color }}>{hq?.label}</span>
+                                          </div>
+                                          <p className="text-[11px] text-white/50 flex-1">{timeAgo(h.reported_at)}</p>
+                                          {reporter?.username && (
+                                            <p className="text-[10px] text-white/30">@{reporter.username}</p>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )
                       })}
