@@ -263,6 +263,9 @@ export default function AccountPage() {
                   {profile.is_verified_reporter && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                   )}
+                  {(profile.tier === 'hunter' || profile.tier === 'tracker') && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>⚡ HUNTER</span>
+                  )}
                 </div>
               </div>
             </div>
