@@ -89,6 +89,12 @@ function StoreDetailContent({ id }: { id: string }) {
   const [disputeModal, setDisputeModal] = useState<{ reportId: string; drinkName: string } | null>(null)
   const [disputeReason, setDisputeReason] = useState('')
   const [submittingDispute, setSubmittingDispute] = useState(false)
+  const [showAddToList, setShowAddToList] = useState(false)
+  const [userLists, setUserLists] = useState<any[]>([])
+  const [listsLoading, setListsLoading] = useState(false)
+  const [addedToLists, setAddedToLists] = useState<Set<string>>(new Set())
+  const [newListName, setNewListName] = useState('')
+  const [creatingList, setCreatingList] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -137,6 +143,53 @@ function StoreDetailContent({ id }: { id: string }) {
     setSubmittingDispute(false)
     setDisputeModal(null)
     setDisputeReason('')
+  }
+
+  async function openAddToList() {
+    setShowAddToList(true)
+    if (userLists.length === 0) {
+      setListsLoading(true)
+      const { data: listsData } = await supabase
+        .from('custom_lists')
+        .select('id, name')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+      if (listsData) setUserLists(listsData)
+      const { data: existingData } = await supabase
+        .from('list_stores')
+        .select('list_id')
+        .eq('store_id', id)
+        .in('list_id', (listsData ?? []).map((l: any) => l.id))
+      if (existingData) setAddedToLists(new Set(existingData.map((ls: any) => ls.list_id)))
+      setListsLoading(false)
+    }
+  }
+
+  async function toggleStoreInList(listId: string) {
+    if (addedToLists.has(listId)) {
+      await supabase.from('list_stores').delete().eq('list_id', listId).eq('store_id', id)
+      setAddedToLists((prev) => { const next = new Set(prev); next.delete(listId); return next })
+    } else {
+      await supabase.from('list_stores').insert({ list_id: listId, store_id: id })
+      setAddedToLists((prev) => new Set(prev).add(listId))
+    }
+  }
+
+  async function createAndAddList() {
+    if (!newListName.trim() || !user) return
+    setCreatingList(true)
+    const { data } = await supabase
+      .from('custom_lists')
+      .insert({ user_id: user.id, name: newListName.trim() })
+      .select()
+      .single()
+    if (data) {
+      setUserLists((prev) => [data, ...prev])
+      await supabase.from('list_stores').insert({ list_id: data.id, store_id: id })
+      setAddedToLists((prev) => new Set(prev).add(data.id))
+    }
+    setNewListName('')
+    setCreatingList(false)
   }
 
   async function checkFavorite() {
@@ -379,6 +432,15 @@ function StoreDetailContent({ id }: { id: string }) {
         >
           + Add Drink
         </button>
+        {isTracker && (
+          <button
+            className="rounded-2xl p-3.5 font-bold text-sm"
+            style={{ backgroundColor: 'rgba(139,92,246,0.12)', border: '1.5px solid rgba(139,92,246,0.4)', color: '#a78bfa', boxShadow: '0 0 12px rgba(139,92,246,0.15)' }}
+            onClick={openAddToList}
+          >
+            📑
+          </button>
+        )}
       </div>
       <p className="text-xs text-white/55 mx-4 mb-5 leading-relaxed">
         + Add Drink is for <span className="text-white font-semibold">new flavors only</span>. If it already exists, use Report Stock to update its status.
@@ -715,6 +777,85 @@ function StoreDetailContent({ id }: { id: string }) {
                 </div>
               </>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add to List modal — Tracker only */}
+      {showAddToList && createPortal(
+        <div
+          className="fixed inset-0 flex flex-col justify-end z-50"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowAddToList(false); setNewListName('') } }}
+        >
+          <div
+            className="rounded-t-3xl p-5"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <p className="text-lg font-black text-white mb-1">📑 Add to List</p>
+            <p className="text-xs text-white/40 mb-4">Save <span className="text-white font-semibold">{name}</span> to a custom list.</p>
+
+            {listsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 mb-4 max-h-[40vh] overflow-y-auto">
+                {userLists.map((list) => {
+                  const added = addedToLists.has(list.id)
+                  return (
+                    <button
+                      key={list.id}
+                      className="flex items-center gap-3 rounded-xl p-3.5 text-left"
+                      style={{
+                        backgroundColor: added ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${added ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                      }}
+                      onClick={() => toggleStoreInList(list.id)}
+                    >
+                      <span style={{ fontSize: 18 }}>📑</span>
+                      <span className="flex-1 text-sm font-semibold text-white">{list.name}</span>
+                      <span className="text-base">{added ? '✅' : '○'}</span>
+                    </button>
+                  )
+                })}
+                {userLists.length === 0 && (
+                  <p className="text-sm text-white/30 text-center py-2">No lists yet. Create one below.</p>
+                )}
+              </div>
+            )}
+
+            {/* Create new list inline */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                placeholder="New list name..."
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') createAndAddList() }}
+              />
+              <button
+                onClick={createAndAddList}
+                disabled={!newListName.trim() || creatingList}
+                className="px-4 rounded-xl text-sm font-bold text-black"
+                style={{ backgroundColor: !newListName.trim() || creatingList ? 'rgba(139,92,246,0.4)' : '#a78bfa' }}
+              >
+                {creatingList ? '...' : '+ Create'}
+              </button>
+            </div>
+
+            <button
+              className="w-full rounded-xl p-3.5 font-semibold text-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+              onClick={() => { setShowAddToList(false); setNewListName('') }}
+            >
+              Done
+            </button>
           </div>
         </div>,
         document.body
