@@ -90,9 +90,17 @@ export default function StoresPage() {
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
-  const [radius, setRadius] = useState<number | null>(isHunterPlus ? 25 : 10)
+  const [radius, setRadius] = useState<number | null>(10)
+  const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (!authLoading && !radiusInitialized) {
+      setRadius(isHunterPlus ? 25 : 10)
+      setRadiusInitialized(true)
+    }
+  }, [authLoading, isHunterPlus, radiusInitialized])
 
   useEffect(() => {
     if (stores.length === 0) return
