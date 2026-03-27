@@ -25,9 +25,31 @@ function dayLabel(dateStr: string) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+// Parse @[Store Name](id) into tappable spans
+function renderContent(content: string, isMe: boolean, onMentionClick: (storeId: string) => void) {
+  const parts = content.split(/(@\[[^\]]+\]\([^)]+\))/g)
+  return parts.map((part, i) => {
+    const match = part.match(/^@\[([^\]]+)\]\(([^)]+)\)$/)
+    if (match) {
+      return (
+        <span
+          key={i}
+          onClick={(e) => { e.stopPropagation(); onMentionClick(match[2]) }}
+          style={{ color: isMe ? 'rgba(255,255,255,0.95)' : '#22c55e', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+        >
+          @{match[1]}
+        </span>
+      )
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
 export default function CommunityPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
+  const isAdmin = profile?.is_admin === true
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const unreadRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -37,12 +59,12 @@ export default function CommunityPage() {
   const msgRefs = useRef<Record<string, HTMLElement | null>>({})
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const typingThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Capture last-read time before messages load so we can find unread messages
   const lastReadTimeRef = useRef<string | null>(
     typeof window !== 'undefined' ? localStorage.getItem('community_last_read') : null
   )
 
   const [messages, setMessages] = useState<any[]>([])
+  const [pinnedMessage, setPinnedMessage] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
@@ -54,14 +76,18 @@ export default function CommunityPage() {
   const [typingUsers, setTypingUsers] = useState<Record<string, { username: string; at: number }>>({})
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [cooldown, setCooldown] = useState(0)          // seconds until next message allowed
-  const [rateLimited, setRateLimited] = useState(false) // true when burst limit hit
-  const recentSentRef = useRef<number[]>([])            // timestamps of recent sends
+  const [cooldown, setCooldown] = useState(0)
+  const [rateLimited, setRateLimited] = useState(false)
+  const [mentionMode, setMentionMode] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionSuggestions, setMentionSuggestions] = useState<any[]>([])
+  const [reportedMsgs, setReportedMsgs] = useState<Set<string>>(new Set())
+  const recentSentRef = useRef<number[]>([])
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const COOLDOWN_SEC = 3      // seconds between messages
-  const BURST_MAX = 5         // max messages per window
-  const BURST_WINDOW_MS = 60000 // 60 second window
+  const COOLDOWN_SEC = 3
+  const BURST_MAX = 5
+  const BURST_WINDOW_MS = 60000
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -71,7 +97,6 @@ export default function CommunityPage() {
     if (!user) return
     fetchAll()
 
-    // Message subscription
     const msgChannel = supabase
       .channel('community-messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
@@ -88,12 +113,26 @@ export default function CommunityPage() {
           }, 50)
         }
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+        const updated = payload.new as any
+        setMessages((prev) => prev.map((m) => m.id === updated.id ? { ...m, ...updated } : m))
+        if (updated.pinned) {
+          setMessages((prev) => {
+            const full = prev.find((m) => m.id === updated.id)
+            if (full) setPinnedMessage(full)
+            return prev
+          })
+        } else if (!updated.pinned) {
+          setPinnedMessage((p: any) => p?.id === updated.id ? null : p)
+        }
+      })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => {
-        setMessages((prev) => prev.filter((m) => m.id !== (payload.old as any).id))
+        const id = (payload.old as any).id
+        setMessages((prev) => prev.filter((m) => m.id !== id))
+        setPinnedMessage((p: any) => p?.id === id ? null : p)
       })
       .subscribe()
 
-    // Typing indicator broadcast channel
     const typingChannel = supabase
       .channel('community-typing', { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'typing' }, ({ payload }: any) => {
@@ -105,7 +144,6 @@ export default function CommunityPage() {
       .subscribe()
     typingChannelRef.current = typingChannel
 
-    // Clear stale typing indicators every second
     const typingInterval = setInterval(() => {
       setTypingUsers((prev) => {
         const now = Date.now()
@@ -147,13 +185,24 @@ export default function CommunityPage() {
     else setSearchQuery('')
   }, [searchOpen])
 
+  // Store mention autocomplete
+  useEffect(() => {
+    if (!mentionMode) { setMentionSuggestions([]); return }
+    supabase
+      .from('stores')
+      .select('id, name')
+      .ilike('name', `%${mentionQuery}%`)
+      .limit(5)
+      .then(({ data }) => setMentionSuggestions(data ?? []))
+  }, [mentionQuery, mentionMode])
+
   async function fetchAll() {
-    const { data: msgs } = await supabase
-      .from('messages')
-      .select('*, profile:profiles(username)')
-      .order('created_at', { ascending: true })
-      .limit(200)
+    const [{ data: msgs }, { data: pinned }] = await Promise.all([
+      supabase.from('messages').select('*, profile:profiles(username)').order('created_at', { ascending: true }).limit(200),
+      supabase.from('messages').select('*, profile:profiles(username)').eq('pinned', true).maybeSingle(),
+    ])
     if (msgs) setMessages(msgs)
+    if (pinned) setPinnedMessage(pinned)
     setLoading(false)
   }
 
@@ -179,9 +228,27 @@ export default function CommunityPage() {
     inputRef.current?.blur()
   }
 
+  function insertMention(store: { id: string; name: string }) {
+    const newText = text.replace(/@\w*$/, `@[${store.name}](${store.id}) `)
+    setText(newText)
+    setMentionMode(false)
+    setMentionQuery('')
+    setMentionSuggestions([])
+    inputRef.current?.focus()
+  }
+
   function onTextChange(val: string) {
     setText(val)
-    // Throttled typing broadcast
+    // Detect @mention
+    const match = val.match(/@(\w*)$/)
+    if (match) {
+      setMentionMode(true)
+      setMentionQuery(match[1])
+    } else {
+      setMentionMode(false)
+      setMentionQuery('')
+    }
+    // Typing broadcast
     if (val.trim() && typingChannelRef.current && !typingThrottleRef.current) {
       typingChannelRef.current.send({
         type: 'broadcast',
@@ -211,7 +278,6 @@ export default function CommunityPage() {
   async function sendMessage() {
     if ((!text.trim() && !photo) || !user || sending || cooldown > 0) return
 
-    // Burst check — max BURST_MAX messages per BURST_WINDOW_MS
     const now = Date.now()
     recentSentRef.current = recentSentRef.current.filter((t) => now - t < BURST_WINDOW_MS)
     if (recentSentRef.current.length >= BURST_MAX) {
@@ -235,9 +301,7 @@ export default function CommunityPage() {
       }
     }
 
-    // Store direct reference — grouping under root is handled at render time
     const replyParentId = replyingTo?.id ?? null
-
     const { data: newMsg, error } = await supabase
       .from('messages')
       .insert({ user_id: user.id, content: text.trim() || null, photo_url: photoUrl, reply_to_id: replyParentId })
@@ -261,10 +325,8 @@ export default function CommunityPage() {
       }, 80)
     }
 
-    // Record this send and start cooldown
     recentSentRef.current.push(Date.now())
     startCooldown(COOLDOWN_SEC)
-
     setText('')
     removePhoto()
     setReplyingTo(null)
@@ -278,6 +340,24 @@ export default function CommunityPage() {
     setMessages((prev) => prev.filter((m) => m.id !== msgId))
   }
 
+  async function pinMessage(msgId: string) {
+    await supabase.from('messages').update({ pinned: false }).eq('pinned', true)
+    await supabase.from('messages').update({ pinned: true }).eq('id', msgId)
+    const msg = messages.find((m) => m.id === msgId)
+    if (msg) setPinnedMessage(msg)
+  }
+
+  async function unpinMessage() {
+    await supabase.from('messages').update({ pinned: false }).eq('pinned', true)
+    setPinnedMessage(null)
+  }
+
+  async function reportMessage(msgId: string) {
+    if (reportedMsgs.has(msgId)) return
+    await supabase.from('message_reports').insert({ message_id: msgId, reported_by: user!.id })
+    setReportedMsgs((prev) => new Set([...prev, msgId]))
+  }
+
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
@@ -286,18 +366,15 @@ export default function CommunityPage() {
     )
   }
 
-  // Lookup map for quick access to any message by id
   const msgMap: Record<string, any> = {}
   messages.forEach((m) => { msgMap[m.id] = m })
 
-  // Walk up to find the root ancestor of a message
   function getRoot(id: string): string {
     const m = msgMap[id]
     if (!m || !m.reply_to_id) return id
     return getRoot(m.reply_to_id)
   }
 
-  // Group all replies under their root ancestor so the whole thread stays together
   const replyMap: Record<string, any[]> = {}
   messages.forEach((m) => {
     if (m.reply_to_id) {
@@ -308,12 +385,10 @@ export default function CommunityPage() {
   })
   const topLevel = messages.filter((m) => !m.reply_to_id)
 
-  // Active typers (exclude self)
   const activeTypers = Object.entries(typingUsers)
     .filter(([uid]) => uid !== user.id)
     .map(([, v]) => v.username)
 
-  // Search filter
   const searchResults = searchQuery.trim()
     ? messages.filter((m) => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
     : []
@@ -324,13 +399,10 @@ export default function CommunityPage() {
     const threadReplies = !isReply ? (replyMap[msg.id] ?? []) : []
     const isPendingDelete = confirmDelete === msg.id
     const isSearchMatch = searchQuery.trim() && msg.content?.toLowerCase().includes(searchQuery.toLowerCase())
+    const alreadyReported = reportedMsgs.has(msg.id)
 
     return (
-      <div
-        key={msg.id}
-        ref={(el) => { msgRefs.current[msg.id] = el }}
-        style={{ marginBottom: isReply ? 4 : 14 }}
-      >
+      <div key={msg.id} ref={(el) => { msgRefs.current[msg.id] = el }} style={{ marginBottom: isReply ? 4 : 14 }}>
         <div
           className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
           style={{
@@ -356,12 +428,9 @@ export default function CommunityPage() {
                 outline: isSearchMatch ? '2px solid #22c55e' : 'none',
               }}
             >
-              {/* Quote preview — shown on reply bubbles */}
+              {/* Reply quote */}
               {isReply && msg.reply_to_id && msgMap[msg.reply_to_id] && (
-                <div
-                  className="mx-2 mt-2 px-3 py-1.5 rounded-xl"
-                  style={{ backgroundColor: isMe ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.07)' }}
-                >
+                <div className="mx-2 mt-2 px-3 py-1.5 rounded-xl" style={{ backgroundColor: isMe ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.07)' }}>
                   <p className="text-[10px] font-bold mb-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.65)' : '#22c55e' }}>
                     {msgMap[msg.reply_to_id].profile?.username}
                   </p>
@@ -371,23 +440,36 @@ export default function CommunityPage() {
                 </div>
               )}
               {msg.photo_url && (
-                <img
-                  src={msg.photo_url}
-                  alt="shared"
-                  onClick={() => setLightboxUrl(msg.photo_url)}
-                  style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover', cursor: 'pointer' }}
-                />
+                <img src={msg.photo_url} alt="shared" onClick={() => setLightboxUrl(msg.photo_url)}
+                  style={{ maxWidth: 240, maxHeight: 180, display: 'block', width: '100%', objectFit: 'cover', cursor: 'pointer' }} />
               )}
               {msg.content && (
                 <p className="px-3.5 py-2.5" style={{ color: isMe ? '#fff' : 'rgba(255,255,255,0.9)', lineHeight: 1.5, margin: 0, fontSize: isReply ? 13 : 14 }}>
-                  {msg.content}
+                  {renderContent(msg.content, isMe, (id) => router.push(`/store/${id}`))}
                 </p>
               )}
             </div>
 
+            {/* Actions row */}
             <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
               <button onClick={() => startReply(msg)} className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>↩ Reply</button>
+              {!isMe && (
+                <button
+                  onClick={() => reportMessage(msg.id)}
+                  disabled={alreadyReported}
+                  className="text-[10px]"
+                  style={{ opacity: alreadyReported ? 0.35 : 0.5 }}
+                  title={alreadyReported ? 'Reported' : 'Report message'}
+                >
+                  🚩
+                </button>
+              )}
+              {isAdmin && (
+                <button onClick={() => pinMessage(msg.id)} className="text-[10px]" style={{ opacity: 0.4 }} title="Pin message">
+                  📌
+                </button>
+              )}
               {isMe && (
                 <button onClick={() => deleteMessage(msg.id)} className="text-[10px] font-semibold" style={{ color: isPendingDelete ? '#ef4444' : 'rgba(255,255,255,0.2)' }}>
                   {isPendingDelete ? 'Tap again to delete' : '✕'}
@@ -416,40 +498,27 @@ export default function CommunityPage() {
     const items: React.ReactNode[] = []
 
     topLevel.forEach((msg) => {
-      // Day separator
       const day = new Date(msg.created_at).toDateString()
       if (day !== lastDay) {
         lastDay = day
         items.push(
           <div key={`day-${day}`} className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              {dayLabel(msg.created_at)}
-            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>{dayLabel(msg.created_at)}</span>
             <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
           </div>
         )
       }
-
-      // Unread separator — insert before the first unread message
-      if (
-        !shownUnread &&
-        lastReadTimeRef.current &&
-        new Date(msg.created_at) > new Date(lastReadTimeRef.current) &&
-        msg.user_id !== user!.id
-      ) {
+      if (!shownUnread && lastReadTimeRef.current && new Date(msg.created_at) > new Date(lastReadTimeRef.current) && msg.user_id !== user!.id) {
         shownUnread = true
         items.push(
           <div key="unread-separator" ref={unreadRef} className="flex items-center gap-3 my-3">
             <div className="flex-1 h-px" style={{ backgroundColor: '#22c55e' }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#22c55e' }}>
-              New Messages
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#22c55e' }}>New Messages</span>
             <div className="flex-1 h-px" style={{ backgroundColor: '#22c55e' }} />
           </div>
         )
       }
-
       items.push(renderMessage(msg, false))
     })
 
@@ -461,31 +530,16 @@ export default function CommunityPage() {
 
       {/* Lightbox */}
       {lightboxUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.92)' }}
-          onClick={() => setLightboxUrl(null)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.92)' }} onClick={() => setLightboxUrl(null)}>
           <img src={lightboxUrl} alt="full" style={{ maxWidth: '100%', maxHeight: '90dvh', objectFit: 'contain', borderRadius: 12 }} />
-          <button
-            className="absolute top-12 right-5 w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
-            onClick={() => setLightboxUrl(null)}
-          >
+          <button className="absolute top-12 right-5 w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} onClick={() => setLightboxUrl(null)}>
             <span className="text-white text-lg">✕</span>
           </button>
         </div>
       )}
 
       {/* Header */}
-      <div
-        className="shrink-0"
-        style={{
-          paddingTop: 'calc(56px + env(safe-area-inset-top))',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          backgroundColor: '#0a0a0f',
-        }}
-      >
+      <div className="shrink-0" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#0a0a0f' }}>
         <div className="flex items-center justify-between px-5 pb-3">
           <p className="text-base font-black text-white">Community Chat</p>
           <div className="flex items-center gap-3">
@@ -498,19 +552,11 @@ export default function CommunityPage() {
             </button>
           </div>
         </div>
-
-        {/* Search bar */}
         {searchOpen && (
           <div className="px-4 pb-3">
-            <input
-              ref={searchInputRef}
-              type="text"
-              className="w-full rounded-full px-4 py-2 text-sm text-white outline-none"
+            <input ref={searchInputRef} type="text" className="w-full rounded-full px-4 py-2 text-sm text-white outline-none"
               style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.1)' }}
-              placeholder="Search messages…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+              placeholder="Search messages…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             {searchQuery.trim() && (
               <p className="text-[11px] mt-1.5 px-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
@@ -520,19 +566,29 @@ export default function CommunityPage() {
         )}
       </div>
 
+      {/* Pinned message banner */}
+      {pinnedMessage && (
+        <div className="shrink-0 flex items-center gap-2.5 px-4 py-2.5" style={{ backgroundColor: 'rgba(34,197,94,0.07)', borderBottom: '1px solid rgba(34,197,94,0.15)' }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>📌</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold mb-0.5" style={{ color: '#22c55e' }}>Pinned · {pinnedMessage.profile?.username}</p>
+            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              {pinnedMessage.content ?? '📷 Photo'}
+            </p>
+          </div>
+          {isAdmin && (
+            <button onClick={unpinMessage} className="text-white/25 text-sm shrink-0">✕</button>
+          )}
+        </div>
+      )}
+
       {/* Messages */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto py-3"
-        style={{ paddingLeft: 12, paddingRight: 12 }}
-        onClick={dismissKeyboard}
-      >
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-3" style={{ paddingLeft: 12, paddingRight: 12 }} onClick={dismissKeyboard}>
         {loading ? (
           <div className="flex justify-center mt-10">
             <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : searchOpen && searchQuery.trim() ? (
-          // Search results view
           searchResults.length === 0 ? (
             <div className="flex flex-col items-center gap-2 mt-20 text-center">
               <span style={{ fontSize: 36 }}>🔍</span>
@@ -557,31 +613,20 @@ export default function CommunityPage() {
       {activeTypers.length > 0 && (
         <div className="px-4 py-1 shrink-0">
           <p className="text-[11px] italic" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {activeTypers.length === 1
-              ? `${activeTypers[0]} is typing…`
-              : activeTypers.length === 2
-              ? `${activeTypers[0]} and ${activeTypers[1]} are typing…`
+            {activeTypers.length === 1 ? `${activeTypers[0]} is typing…`
+              : activeTypers.length === 2 ? `${activeTypers[0]} and ${activeTypers[1]} are typing…`
               : 'Several people are typing…'}
           </p>
         </div>
       )}
 
       {/* Input area */}
-      <div
-        className="shrink-0"
-        style={{
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          backgroundColor: '#0a0a0f',
-          paddingBottom: 'calc(70px + env(safe-area-inset-bottom))',
-        }}
-      >
+      <div className="shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#0a0a0f', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
         {replyingTo && (
           <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
             <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: '#22c55e' }} />
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold" style={{ color: '#22c55e' }}>
-                Replying to {(replyingTo.profile as any)?.username ?? profile?.username}
-              </p>
+              <p className="text-[11px] font-bold" style={{ color: '#22c55e' }}>Replying to {(replyingTo.profile as any)?.username ?? profile?.username}</p>
               <p className="text-[11px] text-white/40 truncate">{replyingTo.content ?? '📷 Photo'}</p>
             </div>
             <button onClick={() => setReplyingTo(null)} className="text-white/25 text-sm shrink-0">✕</button>
@@ -596,20 +641,33 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {rateLimited && (
-          <div className="px-4 py-1.5 mx-3 mt-2 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <p className="text-[11px] font-semibold" style={{ color: '#ef4444' }}>
-              Slow down — too many messages. Try again in {cooldown}s.
-            </p>
+        {/* @mention suggestions */}
+        {mentionSuggestions.length > 0 && (
+          <div className="mx-3 mb-2 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
+            {mentionSuggestions.map((store, i) => (
+              <button
+                key={store.id}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left"
+                style={{ borderBottom: i < mentionSuggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}
+                onMouseDown={(e) => { e.preventDefault(); insertMention(store) }}
+              >
+                <span style={{ fontSize: 14 }}>🏪</span>
+                <span className="text-sm font-medium text-white">{store.name}</span>
+              </button>
+            ))}
           </div>
         )}
+
+        {rateLimited && (
+          <div className="px-4 py-1.5 mx-3 mt-2 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <p className="text-[11px] font-semibold" style={{ color: '#ef4444' }}>Slow down — too many messages. Try again in {cooldown}s.</p>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 px-3 pt-2.5">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
-          >
+          <button onClick={() => fileInputRef.current?.click()} className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <span style={{ fontSize: 16 }}>📷</span>
           </button>
           <input
@@ -617,7 +675,7 @@ export default function CommunityPage() {
             type="text"
             className="flex-1 rounded-full px-4 py-2.5 text-sm text-white outline-none"
             style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
-            placeholder={replyingTo ? 'Write a reply…' : 'Message…'}
+            placeholder={replyingTo ? 'Write a reply…' : 'Message… (@ to mention a store)'}
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
@@ -628,12 +686,9 @@ export default function CommunityPage() {
             className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: cooldown > 0 ? 'rgba(239,68,68,0.35)' : ((!text.trim() && !photo) || sending ? 'rgba(34,197,94,0.3)' : '#22c55e') }}
           >
-            {sending
-              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              : cooldown > 0
-              ? <span className="text-white font-black" style={{ fontSize: 11 }}>{cooldown}s</span>
-              : <span className="text-white font-black" style={{ fontSize: 16 }}>↑</span>
-            }
+            {sending ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : cooldown > 0 ? <span className="text-white font-black" style={{ fontSize: 11 }}>{cooldown}s</span>
+              : <span className="text-white font-black" style={{ fontSize: 16 }}>↑</span>}
           </button>
         </div>
       </div>
