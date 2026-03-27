@@ -90,6 +90,7 @@ export default function StoresPage() {
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
+  const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
@@ -117,6 +118,49 @@ export default function StoresPage() {
         })
         setStoreStock(grouped)
       })
+  }, [stores])
+
+  useEffect(() => {
+    if (stores.length === 0) return
+    const storeIds = new Set(stores.map((s) => s.id))
+
+    const channel = supabase
+      .channel('stores-live-updates')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stock_reports' }, async (payload) => {
+        const report = payload.new as any
+        if (!storeIds.has(report.store_id)) return
+
+        // Fetch drink name and reporter username in parallel
+        const [{ data: drinkData }, { data: profileData }] = await Promise.all([
+          supabase.from('drinks').select('name, flavor').eq('id', report.drink_id).single(),
+          report.user_id
+            ? supabase.from('profiles').select('username').eq('id', report.user_id).single()
+            : Promise.resolve({ data: null }),
+        ])
+
+        const drinkName = drinkData?.flavor ?? drinkData?.name ?? 'a drink'
+        const username = profileData?.username ?? 'Someone'
+        const updateId = `${report.store_id}-${Date.now()}`
+
+        setLiveUpdates((prev) => ({
+          ...prev,
+          [report.store_id]: [
+            { id: updateId, username, drinkName, quantity: report.quantity },
+            ...(prev[report.store_id] ?? []),
+          ].slice(0, 3), // keep latest 3
+        }))
+
+        // Auto-dismiss after 8 seconds
+        setTimeout(() => {
+          setLiveUpdates((prev) => ({
+            ...prev,
+            [report.store_id]: (prev[report.store_id] ?? []).filter((u) => u.id !== updateId),
+          }))
+        }, 8000)
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [stores])
 
   useEffect(() => {
@@ -417,6 +461,26 @@ export default function StoresPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Live update notifications */}
+                {(liveUpdates[store.id] ?? []).map((update) => {
+                  const qColor = update.quantity === 'full' ? '#22c55e' : update.quantity === 'out' ? '#ef4444' : update.quantity === 'low' ? '#f59e0b' : '#f97316'
+                  const qLabel = update.quantity === 'full' ? 'FULL' : update.quantity === 'out' ? 'OUT' : update.quantity === 'low' ? 'LOW' : 'MED'
+                  return (
+                    <div
+                      key={update.id}
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 mb-2"
+                      style={{ backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: qColor }} />
+                      <p className="text-xs flex-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                        <span className="font-bold text-white">@{update.username}</span> reported{' '}
+                        <span className="font-semibold">{update.drinkName}</span> as{' '}
+                        <span className="font-bold" style={{ color: qColor }}>{qLabel}</span>
+                      </p>
+                    </div>
+                  )
+                })}
 
                 <div className="flex gap-2 mt-2">
                   <button
