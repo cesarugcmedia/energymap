@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { BRAND_COLORS } from '@/components/BrandLogo'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
 
 const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
@@ -19,6 +20,10 @@ function DrinksContent() {
   const storeId = params.get('storeId') ?? ''
   const storeName = params.get('storeName') ?? ''
 
+  const { profile } = useAuth()
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -26,6 +31,9 @@ function DrinksContent() {
   const [expandedDrinks, setExpandedDrinks] = useState<Set<string>>(new Set())
   const [selections, setSelections] = useState<Record<string, Quantity>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
 
   useEffect(() => {
     supabase
@@ -64,12 +72,39 @@ function DrinksContent() {
     })
   }
 
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhoto(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  function removePhoto() {
+    setPhoto(null)
+    setPhotoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   async function handleSubmit() {
     const entries = Object.entries(selections)
     if (entries.length === 0) return
     setSubmitting(true)
 
     const { data: { user } } = await supabase.auth.getUser()
+
+    // Upload photo if present
+    let photoUrl: string | null = null
+    if (photo && user) {
+      setPhotoUploading(true)
+      const ext = photo.name.split('.').pop() ?? 'jpg'
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('report-photos').upload(path, photo)
+      if (!error) {
+        const { data: urlData } = supabase.storage.from('report-photos').getPublicUrl(path)
+        photoUrl = urlData.publicUrl
+      }
+      setPhotoUploading(false)
+    }
 
     // Rate-limit check: filter out drinks reported in last 30 min
     let toSubmit = entries
@@ -92,6 +127,7 @@ function DrinksContent() {
           drink_id: drinkId,
           quantity,
           user_id: user?.id ?? null,
+          ...(photoUrl ? { photo_url: photoUrl } : {}),
         }))
       )
     }
@@ -313,6 +349,16 @@ function DrinksContent() {
         </div>
       )}
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handlePhotoChange}
+      />
+
       {/* Sticky submit CTA */}
       {selectionCount > 0 && (
         <div
@@ -327,6 +373,45 @@ function DrinksContent() {
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
           }}
         >
+          {/* Photo picker — Tracker only */}
+          {isTracker && (
+            <div className="flex items-center gap-3 mb-3">
+              {photoPreview ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <img
+                    src={photoPreview}
+                    alt="shelf photo"
+                    className="w-12 h-12 rounded-xl object-cover shrink-0"
+                    style={{ border: '1px solid rgba(139,92,246,0.4)' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{photo?.name}</p>
+                    <p className="text-[10px] text-white/40">Photo attached</p>
+                  </div>
+                  <button
+                    onClick={removePhoto}
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+                  >
+                    <span className="text-xs" style={{ color: '#ef4444' }}>✕</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 flex-1 rounded-xl px-3.5 py-2.5"
+                  style={{ backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}
+                >
+                  <span style={{ fontSize: 18 }}>📷</span>
+                  <div className="text-left">
+                    <p className="text-xs font-bold" style={{ color: '#a78bfa' }}>Attach shelf photo</p>
+                    <p className="text-[10px] text-white/30">Tracker exclusive</p>
+                  </div>
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             className="w-full rounded-2xl p-4 font-bold text-white text-base flex items-center justify-center gap-2"
             style={{ backgroundColor: submitting ? 'rgba(34,197,94,0.5)' : '#22c55e' }}
@@ -334,7 +419,10 @@ function DrinksContent() {
             disabled={submitting}
           >
             {submitting ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {photoUploading && <span className="text-sm">Uploading photo...</span>}
+              </div>
             ) : (
               `⚡ Submit ${selectionCount} Report${selectionCount !== 1 ? 's' : ''}`
             )}
