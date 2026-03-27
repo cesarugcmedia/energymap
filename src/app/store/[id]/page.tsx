@@ -73,7 +73,8 @@ function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()
   const params = useSearchParams()
   const name = params.get('name') ?? ''
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const isHunterPlus = profile?.tier === 'hunter' || profile?.tier === 'tracker'
 
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
@@ -263,7 +264,7 @@ function StoreDetailContent({ id }: { id: string }) {
           >
             <span className="text-white text-lg">←</span>
           </button>
-          {user && (
+          {user && isHunterPlus && (
             <button
               onClick={toggleFavorite}
               disabled={favLoading}
@@ -276,6 +277,16 @@ function StoreDetailContent({ id }: { id: string }) {
               <span style={{ fontSize: 16 }}>{isFavorited ? '❤️' : '🤍'}</span>
             </button>
           )}
+          {user && !isHunterPlus && (
+            <button
+              onClick={() => router.push('/account')}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}
+              title="Hunter feature"
+            >
+              <span style={{ fontSize: 14 }}>🔒</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3 mb-3">
@@ -286,7 +297,7 @@ function StoreDetailContent({ id }: { id: string }) {
           </div>
         </div>
 
-        {latestReport && (
+        {latestReport && !isHunterPlus && (
           <div
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
             style={{ border: `1px solid ${stalenessColor(latestReport.reported_at)}` }}
@@ -437,8 +448,11 @@ function StoreDetailContent({ id }: { id: string }) {
                                 {item.drink?.flavor ?? item.drink?.name}
                               </p>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: freshColor }} />
-                                <p className="text-xs" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
+                                {isHunterPlus ? (
+                                  <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
+                                ) : (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${freshColor}18`, color: freshColor, border: `1px solid ${freshColor}44` }}>{stalenessLabel(item.reported_at)}</span>
+                                )}
                                 {profileMap[item.user_id] && (
                                   <div className="flex items-center gap-1">
                                     <p className="text-xs text-white/30">· @{profileMap[item.user_id].username}</p>

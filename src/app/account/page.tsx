@@ -182,7 +182,7 @@ export default function AccountPage() {
     const { data, error: authError } = await supabase.auth.signUp({ email, password })
     if (authError) { setError(authError.message); setSubmitting(false); return }
     if (data.user) {
-      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim() })
+      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: selectedTier ?? 'free' })
       if (selectedTier === 'hunter') {
         await supabase.from('waitlist').insert({ email: email.trim(), tier: 'hunter' })
       }

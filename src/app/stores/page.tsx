@@ -65,7 +65,8 @@ function openDirections(destLat: number, destLng: number) {
   }
 }
 
-const RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
+const FREE_RADIUS_OPTIONS = [5, 10]
+const HUNTER_RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
 
 const TYPE_FILTERS = [
   { value: null, label: 'All' },
@@ -77,7 +78,8 @@ const TYPE_FILTERS = [
 
 export default function StoresPage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
+  const isHunterPlus = profile?.tier === 'hunter' || profile?.tier === 'tracker'
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -88,7 +90,7 @@ export default function StoresPage() {
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
-  const [radius, setRadius] = useState<number | null>(25)
+  const [radius, setRadius] = useState<number | null>(isHunterPlus ? 25 : 10)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
@@ -183,7 +185,7 @@ export default function StoresPage() {
 
       {/* Radius selector */}
       <div className="flex gap-2 px-4 mb-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        {RADIUS_OPTIONS.map((r) => {
+        {(isHunterPlus ? HUNTER_RADIUS_OPTIONS : FREE_RADIUS_OPTIONS).map((r) => {
           const active = radius === r
           return (
             <button
