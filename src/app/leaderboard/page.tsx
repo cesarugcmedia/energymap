@@ -148,8 +148,11 @@ export default function LeaderboardPage() {
                         {entry.is_verified_reporter && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                         )}
-                        {(entry.tier === 'hunter' || entry.tier === 'tracker') && (
+                        {entry.tier === 'hunter' && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>⚡ HUNTER</span>
+                        )}
+                        {entry.tier === 'tracker' && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.35)' }}>🎯 TRACKER</span>
                         )}
                         {isMe && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}>YOU</span>

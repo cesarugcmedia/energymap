@@ -80,7 +80,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [profileMap, setProfileMap] = useState<Record<string, { username: string; verified: boolean }>>({})
+  const [profileMap, setProfileMap] = useState<Record<string, { username: string; verified: boolean; tier: string | null }>>({})
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
   const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
@@ -222,11 +222,11 @@ function StoreDetailContent({ id }: { id: string }) {
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, username, is_verified_reporter')
+          .select('id, username, is_verified_reporter, tier')
           .in('id', userIds)
         if (profiles) {
-          const map: Record<string, { username: string; verified: boolean }> = {}
-          profiles.forEach((p) => { map[p.id] = { username: p.username, verified: p.is_verified_reporter } })
+          const map: Record<string, { username: string; verified: boolean; tier: string | null }> = {}
+          profiles.forEach((p) => { map[p.id] = { username: p.username, verified: p.is_verified_reporter, tier: p.tier ?? null } })
           setProfileMap(map)
         }
       }
@@ -575,10 +575,16 @@ function StoreDetailContent({ id }: { id: string }) {
                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${freshColor}18`, color: freshColor, border: `1px solid ${freshColor}44` }}>{stalenessLabel(item.reported_at)}</span>
                                   )}
                                   {profileMap[item.user_id] && (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 flex-wrap">
                                       <p className="text-xs text-white/30">· @{profileMap[item.user_id].username}</p>
                                       {profileMap[item.user_id].verified && (
                                         <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
+                                      )}
+                                      {profileMap[item.user_id].tier === 'hunter' && (
+                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>⚡</span>
+                                      )}
+                                      {profileMap[item.user_id].tier === 'tracker' && (
+                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>🎯</span>
                                       )}
                                     </div>
                                   )}
