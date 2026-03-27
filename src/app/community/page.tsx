@@ -259,7 +259,7 @@ export default function CommunityPage() {
                   {/* Name row */}
                   <div className={`flex items-center gap-1.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                     <span className="text-xs font-bold" style={{ color: isMe ? '#22c55e' : 'rgba(255,255,255,0.65)' }}>
-                      @{p?.username ?? 'unknown'}
+                      @{p?.username}
                     </span>
                     {p?.is_verified_reporter && (
                       <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
@@ -284,7 +284,7 @@ export default function CommunityPage() {
                         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.03)' }}
                       >
                         <p className="text-[10px] font-bold mb-0.5" style={{ color: '#a78bfa' }}>
-                          ↩ @{(reply.profile as any)?.username ?? 'unknown'}
+                          ↩ @{(reply.profile as any)?.username}
                         </p>
                         {reply.content && (
                           <p className="text-xs text-white/50 truncate">{reply.content}</p>
