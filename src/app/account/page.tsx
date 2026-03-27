@@ -280,14 +280,7 @@ export default function AccountPage() {
       bg: 'rgba(34,197,94,0.08)',
       border: 'rgba(34,197,94,0.25)',
       icon: '🗺️',
-      tag: null,
-      features: [
-        'Map with nearby stores',
-        'View stock reports',
-        'Submit stock reports',
-        'Add missing stores',
-        'Basic radius (10 miles)',
-      ],
+      features: ['Map & nearby stores', 'View & submit reports', 'Add missing stores'],
     },
     {
       name: 'Hunter',
@@ -296,15 +289,7 @@ export default function AccountPage() {
       bg: 'rgba(245,158,11,0.08)',
       border: 'rgba(245,158,11,0.3)',
       icon: '🎯',
-      tag: 'For flavor seekers',
-      features: [
-        'Flavor alerts — instant notifications',
-        'Saved favorites — pin top drinks',
-        'Extended radius (25 miles)',
-        'Early alerts before free users',
-        'No staleness warning banners',
-        'Verified reporter badge',
-      ],
+      features: ['Flavor alerts', 'Extended radius (25mi)', 'Verified reporter badge'],
     },
     {
       name: 'Tracker',
@@ -313,15 +298,7 @@ export default function AccountPage() {
       bg: 'rgba(168,85,247,0.08)',
       border: 'rgba(168,85,247,0.3)',
       icon: '📊',
-      tag: 'For power users',
-      features: [
-        'Everything in Hunter',
-        '30-day stock history per drink',
-        'Custom lists (e.g. Best Ghost spots)',
-        'Leaderboard placement + badge',
-        'Dispute wrong reports',
-        'Photo uploads — shelf proof',
-      ],
+      features: ['30-day stock history', 'Custom lists', 'Photo uploads'],
     },
     {
       name: 'Store Owner',
@@ -330,87 +307,62 @@ export default function AccountPage() {
       bg: 'rgba(59,130,246,0.08)',
       border: 'rgba(59,130,246,0.3)',
       icon: '🏪',
-      tag: 'For businesses',
-      features: [
-        'Everything in Tracker',
-        'Claim your store',
-        'Self-report stock updates',
-        'Respond to community reports',
-        'Verified store badge on the map',
-        'Analytics — store view counts',
-      ],
+      features: ['Claim your store', 'Self-report stock', 'Store analytics'],
     },
   ]
 
   return (
-    <div className="bg-[#0a0a0f] pb-12" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div className="bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
 
-      {/* Hero */}
-      <div className="px-5 pt-5 pb-7 text-center">
+      {/* Hero — compact */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-4">
         <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.3)', boxShadow: '0 0 24px rgba(34,197,94,0.2)' }}
+          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.3)', boxShadow: '0 0 16px rgba(34,197,94,0.2)' }}
         >
-          <span style={{ fontSize: 32 }}>⚡</span>
+          <span style={{ fontSize: 22 }}>⚡</span>
         </div>
-        <h1 className="text-3xl font-black text-white mb-2">EnergyMap</h1>
-        <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          Know what's in stock before you drive there.<br />Track energy drinks at stores near you.
-        </p>
+        <div>
+          <h1 className="text-xl font-black text-white leading-tight">EnergyMap</h1>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Know what's in stock before you drive there.</p>
+        </div>
       </div>
 
       {/* Tier cards — horizontal scroll */}
-      <div className="mb-7">
-        <p className="text-[10px] font-bold px-5 mb-3" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px' }}>PLANS</p>
-        <div className="flex gap-3 px-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      <div className="mb-4">
+        <p className="text-[10px] font-bold px-5 mb-2" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px' }}>PLANS</p>
+        <div className="flex gap-2.5 px-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {TIERS.map((tier) => (
             <div
               key={tier.name}
-              className="rounded-2xl p-4 flex-shrink-0"
+              className="rounded-2xl p-3.5 flex-shrink-0"
               style={{
-                width: 220,
+                width: 168,
                 backgroundColor: tier.bg,
                 border: `1.5px solid ${tier.border}`,
-                boxShadow: `0 0 16px ${tier.color}18`,
+                boxShadow: `0 0 14px ${tier.color}15`,
               }}
             >
-              {/* Header */}
-              <div className="flex items-center gap-2.5 mb-3">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${tier.color}18`, border: `1px solid ${tier.color}33` }}
-                >
-                  <span style={{ fontSize: 18 }}>{tier.icon}</span>
-                </div>
+              <div className="flex items-center gap-2 mb-2.5">
+                <span style={{ fontSize: 16 }}>{tier.icon}</span>
                 <div>
-                  <p className="text-base font-black text-white">{tier.name}</p>
-                  {tier.price
-                    ? <p className="text-xs font-bold" style={{ color: tier.color }}>{tier.price}</p>
-                    : <p className="text-xs font-bold" style={{ color: tier.color }}>Free forever</p>
-                  }
+                  <p className="text-sm font-black text-white leading-tight">{tier.name}</p>
+                  <p className="text-[10px] font-bold" style={{ color: tier.color }}>
+                    {tier.price ?? 'Free forever'}
+                  </p>
                 </div>
               </div>
-
-              {tier.tag && (
-                <p className="text-[10px] font-semibold mb-3" style={{ color: `${tier.color}cc` }}>{tier.tag}</p>
-              )}
-
-              {/* Features */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 {tier.features.map((f) => (
-                  <div key={f} className="flex items-start gap-2">
-                    <span className="text-xs mt-0.5 shrink-0" style={{ color: tier.color }}>✓</span>
-                    <p className="text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.65)' }}>{f}</p>
+                  <div key={f} className="flex items-start gap-1.5">
+                    <span className="text-[10px] shrink-0 mt-px" style={{ color: tier.color }}>✓</span>
+                    <p className="text-[10px] leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>{f}</p>
                   </div>
                 ))}
               </div>
-
               {tier.price && (
-                <div
-                  className="mt-4 rounded-xl py-2 text-center"
-                  style={{ backgroundColor: `${tier.color}18`, border: `1px solid ${tier.color}33` }}
-                >
-                  <p className="text-xs font-bold" style={{ color: tier.color }}>Coming Soon</p>
+                <div className="mt-2.5 rounded-lg py-1 text-center" style={{ backgroundColor: `${tier.color}18`, border: `1px solid ${tier.color}30` }}>
+                  <p className="text-[10px] font-bold" style={{ color: tier.color }}>Coming Soon</p>
                 </div>
               )}
             </div>
@@ -419,24 +371,17 @@ export default function AccountPage() {
       </div>
 
       {/* Auth form */}
-      <div className="px-5">
+      <div className="px-5 pb-8">
         <div
-          className="rounded-2xl p-5"
+          className="rounded-2xl p-4"
           style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
         >
-          <p className="text-lg font-black text-white mb-1">
-            {mode === 'signin' ? 'Welcome back' : 'Get started free'}
-          </p>
-          <p className="text-xs mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {mode === 'signin' ? 'Sign in to your account' : 'Create your free account today'}
-          </p>
-
           {/* Toggle */}
-          <div className="flex rounded-xl p-1 mb-5" style={{ backgroundColor: '#0a0a0f' }}>
+          <div className="flex rounded-xl p-1 mb-4" style={{ backgroundColor: '#0a0a0f' }}>
             {(['signin', 'signup'] as const).map((m) => (
               <button
                 key={m}
-                className="flex-1 rounded-lg py-2.5 text-sm font-bold"
+                className="flex-1 rounded-lg py-2 text-sm font-bold"
                 style={{
                   backgroundColor: mode === m ? '#22c55e' : 'transparent',
                   color: mode === m ? '#000' : 'rgba(255,255,255,0.4)',
@@ -448,28 +393,28 @@ export default function AccountPage() {
             ))}
           </div>
 
-          <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="flex flex-col gap-3.5">
+          <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="flex flex-col gap-3">
             {mode === 'signup' && (
               <div>
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>USERNAME</p>
+                <p className="text-[10px] font-bold text-white/35 mb-1.5" style={{ letterSpacing: '1.5px' }}>USERNAME</p>
                 <input
                   type="text"
-                  className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
+                  className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none"
                   style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                   placeholder="yourname"
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                   autoComplete="username"
                 />
-                <p className="text-[10px] text-white/25 mt-1.5">Lowercase letters, numbers, underscores only</p>
+                <p className="text-[10px] text-white/25 mt-1">Letters, numbers, underscores only</p>
               </div>
             )}
 
             <div>
-              <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>EMAIL</p>
+              <p className="text-[10px] font-bold text-white/35 mb-1.5" style={{ letterSpacing: '1.5px' }}>EMAIL</p>
               <input
                 type="email"
-                className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
+                className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none"
                 style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                 placeholder="you@example.com"
                 value={email}
@@ -480,10 +425,10 @@ export default function AccountPage() {
             </div>
 
             <div>
-              <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>PASSWORD</p>
+              <p className="text-[10px] font-bold text-white/35 mb-1.5" style={{ letterSpacing: '1.5px' }}>PASSWORD</p>
               <input
                 type="password"
-                className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
+                className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none"
                 style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
                 placeholder="••••••••"
                 value={password}
