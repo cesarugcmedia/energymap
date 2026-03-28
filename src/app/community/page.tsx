@@ -25,19 +25,28 @@ function dayLabel(dateStr: string) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-// Parse @[Store Name](id) into tappable spans
-function renderContent(content: string, isMe: boolean, onMentionClick: (storeId: string) => void) {
+// Parse @[Name](s:id) store mentions and @[Name](u:id) user mentions
+// Legacy format @[Name](uuid) (no prefix) treated as store
+function renderContent(content: string, isMe: boolean, onStoreClick: (storeId: string) => void) {
   const parts = content.split(/(@\[[^\]]+\]\([^)]+\))/g)
   return parts.map((part, i) => {
     const match = part.match(/^@\[([^\]]+)\]\(([^)]+)\)$/)
     if (match) {
+      const [, name, rawId] = match
+      const isUser = rawId.startsWith('u:')
+      const id = rawId.replace(/^[su]:/, '')
       return (
         <span
           key={i}
-          onClick={(e) => { e.stopPropagation(); onMentionClick(match[2]) }}
-          style={{ color: isMe ? 'rgba(255,255,255,0.95)' : '#22c55e', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+          onClick={isUser ? undefined : (e) => { e.stopPropagation(); onStoreClick(id) }}
+          style={{
+            color: isMe ? 'rgba(255,255,255,0.95)' : '#22c55e',
+            fontWeight: 700,
+            textDecoration: isUser ? 'none' : 'underline',
+            cursor: isUser ? 'default' : 'pointer',
+          }}
         >
-          @{match[1]}
+          @{name}
         </span>
       )
     }
@@ -80,7 +89,7 @@ export default function CommunityPage() {
   const [rateLimited, setRateLimited] = useState(false)
   const [mentionMode, setMentionMode] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
-  const [mentionSuggestions, setMentionSuggestions] = useState<any[]>([])
+  const [mentionSuggestions, setMentionSuggestions] = useState<{ type: 'store' | 'user'; id: string; name: string; subtitle?: string }[]>([])
   const [reportedMsgs, setReportedMsgs] = useState<Set<string>>(new Set())
   const recentSentRef = useRef<number[]>([])
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -185,15 +194,25 @@ export default function CommunityPage() {
     else setSearchQuery('')
   }, [searchOpen])
 
-  // Store mention autocomplete
+  // Mention autocomplete — query both users and stores
   useEffect(() => {
     if (!mentionMode) { setMentionSuggestions([]); return }
-    supabase
-      .from('stores')
-      .select('id, name')
-      .ilike('name', `%${mentionQuery}%`)
-      .limit(5)
-      .then(({ data }) => setMentionSuggestions(data ?? []))
+    const q = mentionQuery.toLowerCase()
+    Promise.all([
+      supabase.from('profiles').select('id, username').ilike('username', `%${q}%`).limit(4),
+      supabase.from('stores').select('id, name, address').ilike('name', `%${q}%`).limit(5),
+    ]).then(([{ data: users }, { data: stores }]) => {
+      const userItems = (users ?? [])
+        .filter((u) => u.id !== user?.id)
+        .map((u) => ({ type: 'user' as const, id: u.id, name: u.username }))
+      const storeItems = (stores ?? []).map((s) => ({
+        type: 'store' as const,
+        id: s.id,
+        name: s.name,
+        subtitle: s.address ?? undefined,
+      }))
+      setMentionSuggestions([...userItems, ...storeItems])
+    })
   }, [mentionQuery, mentionMode])
 
   async function fetchAll() {
@@ -228,8 +247,9 @@ export default function CommunityPage() {
     inputRef.current?.blur()
   }
 
-  function insertMention(store: { id: string; name: string }) {
-    const newText = text.replace(/@\w*$/, `@[${store.name}](${store.id}) `)
+  function insertMention(item: { type: 'store' | 'user'; id: string; name: string }) {
+    const prefix = item.type === 'user' ? 'u' : 's'
+    const newText = text.replace(/@\w*$/, `@[${item.name}](${prefix}:${item.id}) `)
     setText(newText)
     setMentionMode(false)
     setMentionQuery('')
@@ -644,15 +664,20 @@ export default function CommunityPage() {
         {/* @mention suggestions */}
         {mentionSuggestions.length > 0 && (
           <div className="mx-3 mb-2 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
-            {mentionSuggestions.map((store, i) => (
+            {mentionSuggestions.map((item, i) => (
               <button
-                key={store.id}
+                key={`${item.type}-${item.id}`}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-left"
                 style={{ borderBottom: i < mentionSuggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}
-                onMouseDown={(e) => { e.preventDefault(); insertMention(store) }}
+                onMouseDown={(e) => { e.preventDefault(); insertMention(item) }}
               >
-                <span style={{ fontSize: 14 }}>🏪</span>
-                <span className="text-sm font-medium text-white">{store.name}</span>
+                <span style={{ fontSize: 14 }}>{item.type === 'user' ? '👤' : '🏪'}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium text-white">{item.name}</span>
+                  {item.subtitle && (
+                    <span className="text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{item.subtitle}</span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
