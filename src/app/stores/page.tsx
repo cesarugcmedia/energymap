@@ -17,10 +17,10 @@ const TYPE_ICON: Record<string, string> = {
 }
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
-  out: { label: 'OUT', color: '#ef4444' },
-  low: { label: 'LOW', color: '#f59e0b' },
-  medium: { label: 'MED', color: '#f97316' },
-  full: { label: 'FULL', color: '#22c55e' },
+  out:    { label: 'OUT',  color: '#ef4444' },
+  low:    { label: 'LOW',  color: '#f59e0b' },
+  medium: { label: 'MED',  color: '#f97316' },
+  full:   { label: 'FULL', color: '#22c55e' },
 }
 
 function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
@@ -54,7 +54,6 @@ function stalenessColor(dateStr: string) {
 
 function openDirections(destLat: number, destLng: number) {
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
-  // No origin passed — both apps use device GPS automatically, avoiding duplicate stop
   if (isIOS) {
     window.open(`https://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=d`, '_blank')
   } else {
@@ -69,11 +68,11 @@ const FREE_RADIUS_OPTIONS = [5, 10]
 const HUNTER_RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
 
 const TYPE_FILTERS = [
-  { value: null, label: 'All' },
-  { value: 'gas_station', label: '⛽ Gas' },
-  { value: 'convenience', label: '🏪 Convenience' },
-  { value: 'grocery', label: '🛒 Grocery' },
-  { value: 'other', label: '📍 Other' },
+  { value: null,          label: 'All'         },
+  { value: 'gas_station', label: '⛽ Gas'       },
+  { value: 'convenience', label: '🏪 Conv.'     },
+  { value: 'grocery',     label: '🛒 Grocery'   },
+  { value: 'other',       label: '📍 Other'     },
 ]
 
 export default function StoresPage() {
@@ -130,7 +129,6 @@ export default function StoresPage() {
         const report = payload.new as any
         if (!storeIds.has(report.store_id)) return
 
-        // Fetch drink name and reporter username in parallel
         const [{ data: drinkData }, { data: profileData }] = await Promise.all([
           supabase.from('drinks').select('name, flavor').eq('id', report.drink_id).single(),
           report.user_id
@@ -147,10 +145,9 @@ export default function StoresPage() {
           [report.store_id]: [
             { id: updateId, username, drinkName, quantity: report.quantity },
             ...(prev[report.store_id] ?? []),
-          ].slice(0, 3), // keep latest 3
+          ].slice(0, 3),
         }))
 
-        // Auto-dismiss after 8 seconds
         setTimeout(() => {
           setLiveUpdates((prev) => ({
             ...prev,
@@ -185,340 +182,236 @@ export default function StoresPage() {
 
   const nearest = sorted[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
-  // "You're at" if within ~0.15 miles (~240m), otherwise "Nearest store"
   const isAtStore = nearestDist !== null && nearestDist < 0.15
 
   return (
-    <div className="">
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-5 pb-4"
-        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
-      >
-        <div>
-          <p className="text-2xl font-black text-white">Nearby Stores</p>
-          <p className="text-xs text-white/40 mt-0.5">Sorted by distance</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <NotificationBell />
-          <button
-            onClick={() => router.push('/add-store')}
-            className="text-xs font-bold px-3 py-1.5 rounded-full"
-            style={{
-              color: '#22c55e',
-              backgroundColor: 'rgba(34,197,94,0.15)',
-              border: '1px solid rgba(34,197,94,0.3)',
-            }}
-          >
-          + Add Store
-          </button>
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', backgroundColor: '#070710', color: '#fff', overflowX: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+      <style>{`
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .store-card { transition: border-color 0.2s ease; }
+        .store-card:hover { border-color: rgba(34,197,94,0.25) !important; }
+        .action-btn { transition: opacity 0.15s ease, transform 0.15s ease; cursor: pointer; }
+        .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .action-btn:active { transform: translateY(0); }
+        .pill-btn { transition: all 0.15s ease; cursor: pointer; }
+      `}</style>
 
-      {/* Search */}
-      <div className="px-4 mb-3">
-        <div
-          className="flex items-center gap-2.5 rounded-xl px-3.5 py-3"
-          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          <span className="text-white/30 text-sm">🔍</span>
+      {/* Background */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(34,197,94,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative', zIndex: 1, padding: '0 16px' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
+          <div>
+            <h1 className="text-2xl font-black text-white" style={{ letterSpacing: '-0.5px' }}>Nearby Stores</h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Sorted by distance</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <NotificationBell />
+            <button
+              className="action-btn"
+              onClick={() => router.push('/add-store')}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 20, padding: '9px 15px', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}
+            >
+              + Add Store
+            </button>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '11px 14px', marginBottom: 12, animation: 'fadeUp 0.5s ease 0.03s both' }}>
+          <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.3)' }}>🔍</span>
           <input
             type="text"
             placeholder="Search stores..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+            style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: 'none' }}
           />
-          {search.length > 0 && (
-            <button onClick={() => setSearch('')} className="text-white/30 text-xs">✕</button>
+          {search && (
+            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 13 }}>✕</button>
           )}
         </div>
-      </div>
 
-      {/* Radius selector */}
-      <div className="flex gap-2 px-4 mb-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        {(isHunterPlus ? HUNTER_RADIUS_OPTIONS : FREE_RADIUS_OPTIONS).map((r) => {
-          const active = radius === r
-          return (
-            <button
-              key={r ?? 'all'}
-              onClick={() => setRadius(r)}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold"
-              style={{
-                backgroundColor: active ? '#22c55e' : 'rgba(255,255,255,0.06)',
-                color: active ? '#000' : 'rgba(255,255,255,0.45)',
-                border: active ? 'none' : '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              {r === null ? 'All' : `${r} mi`}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Store type filter */}
-      <div className="flex gap-2 px-4 mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        {TYPE_FILTERS.map((f) => {
-          const active = typeFilter === f.value
-          return (
-            <button
-              key={f.value ?? 'all'}
-              onClick={() => setTypeFilter(f.value)}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold"
-              style={{
-                backgroundColor: active ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
-                color: active ? '#22c55e' : 'rgba(255,255,255,0.45)',
-                border: active ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              {f.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* You're At / Nearest Store card */}
-      {!loading && nearest && (
-        <div className="px-4 mb-4">
-          <p
-            className="text-[10px] font-bold mb-2"
-            style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}
-          >
-            {isAtStore ? "YOU'RE AT" : 'NEAREST TO YOU'}
-          </p>
-          <button
-            className="w-full rounded-2xl p-4 text-left"
-            style={{
-              backgroundColor: isAtStore ? 'rgba(34,197,94,0.08)' : '#1a1a24',
-              border: `1px solid ${isAtStore ? 'rgba(34,197,94,0.4)' : 'rgba(34,197,94,0.25)'}`,
-              boxShadow: isAtStore
-                ? '0 0 0 1px rgba(34,197,94,0.15), 0 2px 16px rgba(34,197,94,0.15)'
-                : '0 0 0 1px rgba(34,197,94,0.08), 0 2px 12px rgba(0,0,0,0.4)',
-            }}
-            onClick={() =>
-              router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)
-            }
-          >
-            <div className="flex items-center gap-3">
-              <span style={{ fontSize: 28 }}>{TYPE_ICON[nearest.type]}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-bold text-white truncate">{nearest.name}</p>
-                <p className="text-xs text-white/40 mt-0.5 truncate">{nearest.address}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p
-                  className="text-xs font-bold"
-                  style={{ color: isAtStore ? '#22c55e' : 'rgba(255,255,255,0.5)' }}
-                >
-                  {isAtStore ? '● Here' : `${nearestDist!.toFixed(1)} mi`}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            <div className="flex gap-2 mt-3">
-              <button
-                className="flex-1 rounded-xl py-2 text-xs font-bold text-white"
-                style={{ backgroundColor: '#22c55e' }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  router.push(
-                    `/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`
-                  )
-                }}
-              >
-                ⚡ Report Stock
-              </button>
-              <button
-                className="flex-1 rounded-xl py-2 text-xs font-semibold"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: '1.5px solid rgba(255,255,255,0.5)',
-                  color: 'rgba(255,255,255,0.9)',
-                  boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)
-                }}
-              >
-                View Stock
-              </button>
-              {!isAtStore && (
-                <button
-                  className="flex-1 rounded-xl py-2 text-xs font-semibold"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    border: '1.5px solid rgba(255,255,255,0.5)',
-                    color: 'rgba(255,255,255,0.9)',
-                    boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openDirections(nearest.lat, nearest.lng)
-                  }}
-                >
-                  🧭 Directions
-                </button>
-              )}
-            </div>
-          </button>
-        </div>
-      )}
-
-      {/* Loading skeleton for nearest card */}
-      {loading && (
-        <div className="px-4 mb-4">
-          <div className="h-3 w-20 rounded mb-2" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
-          <div className="rounded-2xl p-4 h-24 animate-pulse" style={{ backgroundColor: '#1a1a24' }} />
-        </div>
-      )}
-
-      {/* All stores list */}
-      <div className="px-4 mb-2">
-        <p
-          className="text-[10px] font-bold"
-          style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}
-        >
-          ALL STORES
-        </p>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : stores.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-40 gap-3">
-          <span style={{ fontSize: 40 }}>🏪</span>
-          <p className="text-lg font-bold text-white">No stores found</p>
-          <p className="text-sm text-white/40">Tap + Add Store to add one!</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5 px-4 pb-6">
-          {sorted.map((store) => {
-            const stock = storeStock[store.id] ?? []
-            const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
-            const latestReport = stock.reduce<any>((latest, item) => {
-              if (!latest) return item
-              return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
-            }, null)
-            const inStockCount = stock.filter((s) => s.quantity !== 'out').length
-            const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
-            const barColor =
-              stock.length === 0
-                ? '#333'
-                : pct === 0
-                  ? '#ef4444'
-                  : pct >= 75
-                    ? '#22c55e'
-                    : '#f59e0b'
-
+        {/* Radius filter */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+          {(isHunterPlus ? HUNTER_RADIUS_OPTIONS : FREE_RADIUS_OPTIONS).map((r) => {
+            const active = radius === r
             return (
-              <button
-                key={store.id}
-                className="rounded-2xl p-4 text-left w-full"
-                style={{
-                  backgroundColor: '#1a1a24',
-                  border: '1px solid rgba(34,197,94,0.25)',
-                  boxShadow: '0 0 0 1px rgba(34,197,94,0.08), 0 2px 12px rgba(0,0,0,0.4)',
-                }}
-                onClick={() =>
-                  router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
-                }
-              >
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-3 flex-1">
-                    <span style={{ fontSize: 26 }}>{TYPE_ICON[store.type]}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                      <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-white ml-2">{dist} mi</p>
-                </div>
-
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div
-                    className="flex-1 h-1.5 rounded-full overflow-hidden"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, backgroundColor: barColor }}
-                    />
-                  </div>
-                  <p className="text-xs font-bold" style={{ color: barColor, minWidth: 95, textAlign: 'right' }}>
-                    {stock.length === 0 ? 'No reports' : `${inStockCount}/${stock.length} available`}
-                  </p>
-                </div>
-
-                {latestReport && (
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stalenessColor(latestReport.reported_at) }} />
-                    <p className="text-xs font-semibold" style={{ color: stalenessColor(latestReport.reported_at) }}>
-                      Updated {timeAgo(latestReport.reported_at)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Live update notifications */}
-                {(liveUpdates[store.id] ?? []).map((update) => {
-                  const qColor = update.quantity === 'full' ? '#22c55e' : update.quantity === 'out' ? '#ef4444' : update.quantity === 'low' ? '#f59e0b' : '#f97316'
-                  const qLabel = update.quantity === 'full' ? 'FULL' : update.quantity === 'out' ? 'OUT' : update.quantity === 'low' ? 'LOW' : 'MED'
-                  return (
-                    <div
-                      key={update.id}
-                      className="flex items-center gap-2 rounded-xl px-3 py-2 mb-2"
-                      style={{ backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: qColor }} />
-                      <p className="text-xs flex-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                        <span className="font-bold text-white">@{update.username}</span> reported{' '}
-                        <span className="font-semibold">{update.drinkName}</span> as{' '}
-                        <span className="font-bold" style={{ color: qColor }}>{qLabel}</span>
-                      </p>
-                    </div>
-                  )
-                })}
-
-                <div className="flex gap-2 mt-2">
-                  <button
-                    className="flex-1 rounded-xl py-2 text-xs font-semibold"
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                      border: '1.5px solid rgba(255,255,255,0.5)',
-                      color: 'rgba(255,255,255,0.9)',
-                      boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      openDirections(store.lat, store.lng)
-                    }}
-                  >
-                    🧭 Directions
-                  </button>
-                  <button
-                    className="flex-1 rounded-xl py-2 text-xs font-semibold"
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                      border: '1.5px solid rgba(255,255,255,0.5)',
-                      color: 'rgba(255,255,255,0.9)',
-                      boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
-                    }}
-                  >
-                    View Stock
-                  </button>
-                </div>
+              <button key={r ?? 'all'} className="pill-btn"
+                onClick={() => setRadius(r)}
+                style={{ flexShrink: 0, padding: '7px 15px', borderRadius: 20, border: '1px solid', borderColor: active ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: active ? '#22c55e' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                {r === null ? 'All' : `${r} mi`}
               </button>
             )
           })}
         </div>
-      )}
+
+        {/* Type filter */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+          {TYPE_FILTERS.map((f) => {
+            const active = typeFilter === f.value
+            return (
+              <button key={f.value ?? 'all'} className="pill-btn"
+                onClick={() => setTypeFilter(f.value)}
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#22c55e' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Nearest / You're At card */}
+        {loading ? (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ height: 10, width: 80, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.07)', marginBottom: 8 }} />
+            <div style={{ borderRadius: 18, height: 96, backgroundColor: '#1a1a24' }} className="animate-pulse" />
+          </div>
+        ) : nearest && (
+          <div style={{ marginBottom: 20, animation: 'fadeUp 0.5s ease 0.08s both' }}>
+            <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 8 }}>
+              {isAtStore ? "YOU'RE AT" : 'NEAREST TO YOU'}
+            </p>
+            <div className="store-card" style={{ backgroundColor: '#1a1a24', borderRadius: 18, padding: 16, border: `1px solid ${isAtStore ? 'rgba(34,197,94,0.4)' : 'rgba(34,197,94,0.25)'}`, boxShadow: isAtStore ? '0 0 0 1px rgba(34,197,94,0.15), 0 4px 24px rgba(34,197,94,0.1)' : '0 4px 20px rgba(34,197,94,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}
+                onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}
+                className="cursor-pointer"
+              >
+                <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                  {TYPE_ICON[nearest.type]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.name}</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
+                </div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: isAtStore ? '#22c55e' : 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+                  {isAtStore ? '● Here' : `${nearestDist!.toFixed(1)} mi`}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 12, padding: '11px 0', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}
+                  onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
+                  ⚡ Report Stock
+                </button>
+                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                  onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
+                  View Stock
+                </button>
+                {!isAtStore && (
+                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                    onClick={() => openDirections(nearest.lat, nearest.lng)}>
+                    🧭 Directions
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All stores */}
+        <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 12 }}>
+          {search ? `RESULTS (${sorted.length})` : 'ALL STORES'}
+        </p>
+
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : sorted.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
+            <span style={{ fontSize: 40 }}>🏪</span>
+            <p style={{ fontSize: 16, fontWeight: 700 }}>No stores found</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Try a different search or filter</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24, animation: 'fadeUp 0.5s ease 0.12s both' }}>
+            {sorted.map((store, i) => {
+              const stock = storeStock[store.id] ?? []
+              const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
+              const latestReport = stock.reduce<any>((latest, item) => {
+                if (!latest) return item
+                return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
+              }, null)
+              const inStockCount = stock.filter((s) => s.quantity !== 'out').length
+              const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
+              const barColor =
+                stock.length === 0 ? '#333'
+                : pct === 0 ? '#ef4444'
+                : pct >= 75 ? '#22c55e'
+                : '#f59e0b'
+
+              return (
+                <div key={store.id} className="store-card"
+                  style={{ backgroundColor: '#1a1a24', borderRadius: 18, padding: 16, border: '1px solid rgba(255,255,255,0.07)' }}>
+
+                  {/* Top row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
+                    onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                      {TYPE_ICON[store.type]}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 15, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.name}</p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>{dist} mi</p>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0 }}>
+                      {stock.length === 0 ? 'No reports' : `${inStockCount}/${stock.length} in stock`}
+                    </span>
+                  </div>
+
+                  {/* Freshness */}
+                  {latestReport && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at) }}>
+                        Updated {timeAgo(latestReport.reported_at)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Live update notifications */}
+                  {(liveUpdates[store.id] ?? []).map((update) => {
+                    const qColor = update.quantity === 'full' ? '#22c55e' : update.quantity === 'out' ? '#ef4444' : update.quantity === 'low' ? '#f59e0b' : '#f97316'
+                    const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
+                    return (
+                      <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}>
+                        <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
+                        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', flex: 1 }}>
+                          <span style={{ fontWeight: 700, color: '#fff' }}>@{update.username}</span> reported{' '}
+                          <span style={{ fontWeight: 600 }}>{update.drinkName}</span> as{' '}
+                          <span style={{ fontWeight: 700, color: qColor }}>{qLabel}</span>
+                        </p>
+                      </div>
+                    )
+                  })}
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                      onClick={() => openDirections(store.lat, store.lng)}>
+                      🧭 Directions
+                    </button>
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                      onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
+                      View Stock
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
