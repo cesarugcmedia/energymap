@@ -91,6 +91,7 @@ export default function CommunityPage() {
   const [mentionQuery, setMentionQuery] = useState('')
   const [mentionSuggestions, setMentionSuggestions] = useState<{ type: 'store' | 'user'; id: string; name: string; subtitle?: string }[]>([])
   const [reportedMsgs, setReportedMsgs] = useState<Set<string>>(new Set())
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
   const recentSentRef = useRef<number[]>([])
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -193,6 +194,17 @@ export default function CommunityPage() {
     if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 100)
     else setSearchQuery('')
   }, [searchOpen])
+
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    function onScroll() {
+      const distFromBottom = el!.scrollHeight - el!.scrollTop - el!.clientHeight
+      setShowScrollBtn(distFromBottom > 120)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [loading])
 
   // Mention autocomplete — query both users and stores
   useEffect(() => {
@@ -654,6 +666,27 @@ export default function CommunityPage() {
               : activeTypers.length === 2 ? `${activeTypers[0]} and ${activeTypers[1]} are typing…`
               : 'Several people are typing…'}
           </p>
+        </div>
+      )}
+
+      {/* Scroll-to-bottom button */}
+      {showScrollBtn && (
+        <div className="shrink-0 flex justify-center py-2" style={{ position: 'relative', zIndex: 10 }}>
+          <button
+            onClick={() => {
+              const c = scrollContainerRef.current
+              if (c) c.scrollTop = c.scrollHeight
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs"
+            style={{
+              backgroundColor: '#22c55e',
+              color: '#fff',
+              boxShadow: '0 4px 16px rgba(34,197,94,0.35)',
+              animation: 'fadeUp 0.15s ease',
+            }}
+          >
+            <span style={{ fontSize: 13 }}>↓</span> Latest messages
+          </button>
         </div>
       )}
 
