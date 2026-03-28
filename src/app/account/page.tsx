@@ -146,6 +146,20 @@ const TIERS = [
   },
 ]
 
+const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  out:    { label: 'OUT',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)'  },
+  low:    { label: 'LOW',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
+  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' },
+  full:   { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',  border: 'rgba(34,197,94,0.25)'  },
+}
+
+const ACCOUNT_TABS = [
+  { id: 'overview',  label: 'Overview', icon: '📊' },
+  { id: 'lists',     label: 'Lists',    icon: '📑' },
+  { id: 'reports',   label: 'Reports',  icon: '📋' },
+  { id: 'settings',  label: 'Settings', icon: '⚙️' },
+]
+
 const HOW_IT_WORKS = [
   { icon: '📍', title: 'Find Nearby Stores', desc: 'See gas stations and convenience stores around you on a live map, sorted by distance.' },
   { icon: '⚡', title: 'Check Stock Instantly', desc: 'Community members report what\'s in stock in real time — Celsius, Ghost, Alani, Red Bull and more.' },
@@ -200,6 +214,26 @@ const [lists, setLists] = useState<any[]>([])
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [savingPassword, setSavingPassword] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'overview' | 'lists' | 'reports' | 'settings'>('overview')
+
+  // All reports (Reports tab, paginated)
+  const [allReports, setAllReports] = useState<any[]>([])
+  const [allReportsPage, setAllReportsPage] = useState(0)
+  const [allReportsLoading, setAllReportsLoading] = useState(false)
+  const [allReportsHasMore, setAllReportsHasMore] = useState(true)
+
+  // Notification preferences (persisted to localStorage)
+  const [notifFlavors, setNotifFlavors] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('notif_flavors') !== 'false' : true
+  )
+  const [notifLocation, setNotifLocation] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('notif_location') !== 'false' : true
+  )
+  const [notifEmail, setNotifEmail] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('notif_email') === 'true' : false
+  )
 
   useEffect(() => {
     supabase
@@ -344,6 +378,35 @@ const [lists, setLists] = useState<any[]>([])
     setListStores((prev) => prev.filter((ls) => ls.id !== listStoreId))
   }
 
+  async function fetchAllReports(page = 0) {
+    if (!user) return
+    setAllReportsLoading(true)
+    const PAGE_SIZE = 20
+    const { data } = await supabase
+      .from('stock_reports')
+      .select('id, reported_at, quantity, drink:drinks(name, flavor, brand), store:stores(name)')
+      .eq('user_id', user.id)
+      .order('reported_at', { ascending: false })
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+    if (data) {
+      if (page === 0) setAllReports(data)
+      else setAllReports((prev) => [...prev, ...data])
+      setAllReportsHasMore(data.length === PAGE_SIZE)
+      setAllReportsPage(page)
+    }
+    setAllReportsLoading(false)
+  }
+
+  // Persist notification prefs
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_flavors', String(notifFlavors)) }, [notifFlavors])
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_location', String(notifLocation)) }, [notifLocation])
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_email', String(notifEmail)) }, [notifEmail])
+
+  // Fetch reports when tab opens
+  useEffect(() => {
+    if (activeTab === 'reports' && user && allReports.length === 0) fetchAllReports(0)
+  }, [activeTab, user])
+
 function selectAndContinue(tierId: TierId) {
     setSelectedTier(tierId)
     setStep(2)
@@ -378,314 +441,405 @@ function selectAndContinue(tierId: TierId) {
 
   // ── LOGGED IN ──────────────────────────────────────────────
   if (user && profile) {
+    // Compute earned badges
+    const earned = new Set<string>()
+    const memberDays = Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+    if (memberDays >= 30)            earned.add('early_adopter')
+    if (reportCount >= 1)            earned.add('first_report')
+    if (reportCount >= 10)           earned.add('reporter_10')
+    if (reportCount >= 50)           earned.add('reporter_50')
+    if (reportCount >= 100)          earned.add('reporter_100')
+    if (storeCount >= 1)             earned.add('scout')
+    if (storeCount >= 5)             earned.add('pathfinder')
+    if (uniqueFlavors >= 5)          earned.add('flavor_hunter')
+    if (profile.is_verified_reporter) earned.add('verified')
+
+    function progressHint(id: string): string | null {
+      if (id === 'reporter_10'   && reportCount < 10)   return `${reportCount}/10 reports`
+      if (id === 'reporter_50'   && reportCount < 50)   return `${reportCount}/50 reports`
+      if (id === 'reporter_100'  && reportCount < 100)  return `${reportCount}/100 reports`
+      if (id === 'pathfinder'    && storeCount < 5)     return `${storeCount}/5 stores`
+      if (id === 'flavor_hunter' && uniqueFlavors < 5)  return `${uniqueFlavors}/5 drinks`
+      return null
+    }
+
+    const TIER_LABEL: Record<string, { label: string; color: string; icon: string }> = {
+      free:    { label: 'Free',    color: '#6b7280', icon: '🗺️' },
+      hunter:  { label: 'Hunter',  color: '#22c55e', icon: '⚡' },
+      tracker: { label: 'Tracker', color: '#f97316', icon: '🔥' },
+    }
+    const tierInfo = TIER_LABEL[profile.tier ?? 'free']
     return (
-      <div className="bg-[#070710]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-        {/* Profile card */}
-        <div className="px-5 mb-4">
-          <div className="rounded-2xl p-5" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)' }}>
+      <div className="bg-[#070710]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+
+        {/* ── Profile card (always visible) ── */}
+        <div className="px-5 pt-4 pb-3">
+          <div className="rounded-2xl p-5" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.2)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #22c55e, #4ade80)' }} />
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}>
+              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)', boxShadow: '0 4px 16px rgba(34,197,94,0.2)' }}>
                 <span className="text-2xl font-black" style={{ color: '#22c55e' }}>{profile.username[0].toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-lg font-black text-white truncate">@{profile.username}</p>
                 <p className="text-xs text-white/40 mt-0.5 truncate">{user.email}</p>
                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                  {profile.is_admin && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>ADMIN</span>
-                  )}
-                  {profile.is_verified_reporter && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
-                  )}
-                  {profile.tier === 'hunter' && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>⚡ HUNTER</span>
-                  )}
-                  {profile.tier === 'tracker' && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.35)' }}>🎯 TRACKER</span>
-                  )}
+                  {profile.is_admin && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>ADMIN</span>}
+                  {profile.is_verified_reporter && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40` }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
                 </div>
               </div>
             </div>
-
-            {/* Edit username */}
-            {editingUsername ? (
-              <div className="mb-3">
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>NEW USERNAME</p>
-                <input
-                  type="text"
-                  className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
-                  placeholder={profile.username}
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                  autoFocus
-                />
-                {usernameError && <p className="text-xs text-red-400 mb-2">{usernameError}</p>}
-                <div className="flex gap-2">
-                  <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} className="flex-1 rounded-xl py-2 text-xs font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
-                  <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} className="flex-1 rounded-xl py-2 text-xs font-bold text-black" style={{ backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>
-                    {savingUsername ? '...' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            ) : changingPassword ? (
-              <div className="mb-3">
-                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>NEW PASSWORD</p>
-                <input
-                  type="password"
-                  className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
-                  placeholder="New password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  autoFocus
-                />
-                <input
-                  type="password"
-                  className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
-                  placeholder="Confirm password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-                {passwordError && <p className="text-xs text-red-400 mb-2">{passwordError}</p>}
-                {passwordSuccess && <p className="text-xs mb-2" style={{ color: '#22c55e' }}>Password updated!</p>}
-                <div className="flex gap-2">
-                  <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} className="flex-1 rounded-xl py-2 text-xs font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
-                  <button onClick={savePassword} disabled={savingPassword} className="flex-1 rounded-xl py-2 text-xs font-bold text-black" style={{ backgroundColor: savingPassword ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>
-                    {savingPassword ? '...' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2 mb-3">
-                <button
-                  onClick={() => { setEditingUsername(true); setNewUsername('') }}
-                  className="flex-1 rounded-xl py-2 text-xs font-bold"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
-                >
-                  ✏️ Username
-                </button>
-                <button
-                  onClick={() => setChangingPassword(true)}
-                  className="flex-1 rounded-xl py-2 text-xs font-bold"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
-                >
-                  🔑 Password
-                </button>
-              </div>
-            )}
-
-            <button onClick={handleSignOut} className="w-full rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        {/* Activity Stats */}
-        <div className="px-5 mb-2">
-          <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>MY ACTIVITY</p>
-          {statsLoading ? (
-            <div className="flex justify-center py-3"><div className="w-5 h-5 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" /></div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 mb-4">
+            {/* Stat row */}
+            <div className="flex" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
               {[
-                { value: reportCount, label: 'Reports' },
-                { value: storeCount, label: 'Stores Added' },
-                { value: `${Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)}d`, label: 'Member For' },
-              ].map(({ value, label }) => (
-                <div key={label} className="rounded-2xl p-3 flex flex-col items-center gap-1" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <span className="text-xl font-black text-white">{value}</span>
-                  <span className="text-[10px] text-white/40 text-center leading-tight">{label}</span>
+                { value: reportCount, label: 'Reports', color: '#22c55e' },
+                { value: storeCount,  label: 'Stores Added', color: '#f97316' },
+                { value: `${memberDays}d`, label: 'Member For', color: '#a78bfa' },
+              ].map((s, i) => (
+                <div key={s.label} className="flex-1 text-center" style={{ borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <p className="text-xl font-black" style={{ color: s.color }}>{statsLoading ? '–' : s.value}</p>
+                  <p className="text-[10px] font-semibold text-white/35 mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Recent Reports */}
-        {!statsLoading && recentReports.length > 0 && (
-          <div className="px-5 mb-4">
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>RECENT REPORTS</p>
-            <div className="flex flex-col gap-2">
-              {recentReports.map((r) => {
-                const drink = r.drink as any
-                const store = r.store as any
-                const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
-                return (
-                  <div key={r.id} className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <span style={{ fontSize: 18 }}>⚡</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{drinkLabel || 'Unknown drink'}</p>
-                      <p className="text-xs text-white/40 truncate">{store?.name ?? 'Unknown store'}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-bold" style={{ color: '#22c55e' }}>{r.quantity} seen</p>
-                      <p className="text-[10px] text-white/30">{timeAgo(r.reported_at)}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+        {/* ── Tab bar ── */}
+        <div className="px-5 mb-4">
+          <div className="flex gap-1 rounded-2xl p-1" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            {ACCOUNT_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl font-bold text-[11px] transition-all"
+                style={{
+                  backgroundColor: activeTab === tab.id ? '#22c55e' : 'transparent',
+                  color: activeTab === tab.id ? '#fff' : 'rgba(255,255,255,0.4)',
+                }}
+              >
+                <span style={{ fontSize: 15 }}>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* Badges */}
-        {!statsLoading && (() => {
-          const earned = new Set<string>()
-          const memberDays = Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
-          if (memberDays >= 30) earned.add('early_adopter')
-          if (reportCount >= 1)   earned.add('first_report')
-          if (reportCount >= 10)  earned.add('reporter_10')
-          if (reportCount >= 50)  earned.add('reporter_50')
-          if (reportCount >= 100) earned.add('reporter_100')
-          if (storeCount >= 1)    earned.add('scout')
-          if (storeCount >= 5)    earned.add('pathfinder')
-          if (uniqueFlavors >= 5) earned.add('flavor_hunter')
-          if (profile.is_verified_reporter) earned.add('verified')
+        {/* ── OVERVIEW TAB ── */}
+        {activeTab === 'overview' && (
+          <div className="px-5 flex flex-col gap-4">
 
-          function progressHint(id: string): string | null {
-            if (id === 'reporter_10'  && reportCount < 10)  return `${reportCount}/10 reports`
-            if (id === 'reporter_50'  && reportCount < 50)  return `${reportCount}/50 reports`
-            if (id === 'reporter_100' && reportCount < 100) return `${reportCount}/100 reports`
-            if (id === 'pathfinder'   && storeCount < 5)    return `${storeCount}/5 stores`
-            if (id === 'flavor_hunter' && uniqueFlavors < 5) return `${uniqueFlavors}/5 drinks`
-            return null
-          }
+            {/* Plan card */}
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>YOUR PLAN</p>
+              <div className="flex items-center gap-3 mb-3">
+                <span style={{ fontSize: 26 }}>{tierInfo.icon}</span>
+                <div className="flex-1">
+                  <p className="text-base font-black" style={{ color: tierInfo.color }}>{tierInfo.label}</p>
+                  <p className="text-xs text-white/40">{profile.tier === 'free' ? 'Free forever' : profile.tier === 'hunter' ? '$5 / month' : '$10 / month'}</p>
+                </div>
+                {profile.tier === 'free' && (
+                  <button className="rounded-xl px-3 py-2 text-xs font-black" style={{ backgroundColor: '#22c55e', color: '#fff', boxShadow: '0 0 12px rgba(34,197,94,0.35)' }}>
+                    Upgrade ⚡
+                  </button>
+                )}
+              </div>
+            </div>
 
-          const earnedCount = earned.size
-          return (
-            <div className="px-5 mb-4">
+            {/* Badges */}
+            <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>BADGES</p>
-                <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.25)' }}>{earnedCount}/{BADGE_DEFS.length} earned</p>
+                <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.25)' }}>{earned.size}/{BADGE_DEFS.length} earned</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {BADGE_DEFS.map((b) => {
                   const isEarned = earned.has(b.id)
                   const hint = progressHint(b.id)
                   return (
-                    <div
-                      key={b.id}
-                      className="rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center"
-                      style={{
-                        backgroundColor: isEarned ? 'rgba(255,255,255,0.05)' : '#1a1a24',
-                        border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(255,255,255,0.06)',
-                        boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none',
-                        opacity: isEarned ? 1 : 0.45,
-                      }}
-                    >
+                    <div key={b.id} className="rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center"
+                      style={{ backgroundColor: isEarned ? 'rgba(255,255,255,0.05)' : '#1a1a24', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(255,255,255,0.06)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
                       <span style={{ fontSize: 22, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
                       <p className="text-[11px] font-black leading-tight" style={{ color: isEarned ? b.color : 'rgba(255,255,255,0.5)' }}>{b.name}</p>
-                      {hint ? (
-                        <p className="text-[9px] font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>{hint}</p>
-                      ) : (
-                        <p className="text-[9px] leading-tight" style={{ color: 'rgba(255,255,255,0.3)' }}>{b.desc}</p>
-                      )}
+                      <p className="text-[9px] leading-tight" style={{ color: 'rgba(255,255,255,0.3)' }}>{hint ?? b.desc}</p>
                     </div>
                   )
                 })}
               </div>
             </div>
-          )
-        })()}
 
-        {/* My Lists */}
-        <div className="flex items-center justify-between px-5 mt-4 mb-3">
-          <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>MY LISTS</p>
-          <button
-            onClick={() => activeList ? setActiveList(null) : setShowNewList((v) => !v)}
-            className="text-xs font-bold px-3 py-1 rounded-full"
-            style={{ backgroundColor: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa' }}
-          >
-            {activeList ? '← Back' : '+ New'}
-          </button>
-        </div>
+            {/* Recent reports preview */}
+            {recentReports.length > 0 && (
+              <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>RECENT REPORTS</p>
+                  <button onClick={() => setActiveTab('reports')} className="text-xs font-bold" style={{ color: '#22c55e' }}>See all →</button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {recentReports.slice(0, 3).map((r) => {
+                    const drink = r.drink as any
+                    const store = r.store as any
+                    const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
+                    const q = QUANTITY_CONFIG[r.quantity as string] ?? QUANTITY_CONFIG.full
+                    return (
+                      <div key={r.id} className="flex items-center gap-3 px-1 py-1.5 rounded-xl">
+                        <div className="px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
+                          <span className="text-[10px] font-black" style={{ color: q.color }}>{q.label}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{drinkLabel || 'Unknown drink'}</p>
+                          <p className="text-xs text-white/40 truncate">{store?.name ?? 'Unknown store'}</p>
+                        </div>
+                        <p className="text-[10px] text-white/30 shrink-0">{timeAgo(r.reported_at)}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* New list form */}
-        {showNewList && !activeList && (
-          <div className="mx-5 mb-3 rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(139,92,246,0.3)' }}>
-            <input
-              type="text"
-              className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-3"
-              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
-              placeholder="List name (e.g. Celsius Spots)"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') createList() }}
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button onClick={() => { setShowNewList(false); setNewListName('') }} className="flex-1 rounded-xl py-2 text-sm font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
-              <button onClick={createList} disabled={!newListName.trim() || creatingList} className="flex-1 rounded-xl py-2 text-sm font-bold text-black" style={{ backgroundColor: !newListName.trim() || creatingList ? 'rgba(139,92,246,0.4)' : '#a78bfa' }}>
-                {creatingList ? '...' : 'Create'}
+        {/* ── LISTS TAB ── */}
+        {activeTab === 'lists' && (
+          <div>
+            <div className="flex items-center justify-between px-5 mb-3">
+              <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>MY LISTS</p>
+              <button onClick={() => activeList ? setActiveList(null) : setShowNewList((v) => !v)} className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ backgroundColor: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa' }}>
+                {activeList ? '← Back' : '+ New'}
               </button>
+            </div>
+            {showNewList && !activeList && (
+              <div className="mx-5 mb-3 rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(139,92,246,0.3)' }}>
+                <input type="text" className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-3"
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  placeholder="List name (e.g. Celsius Spots)" value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') createList() }} autoFocus />
+                <div className="flex gap-2">
+                  <button onClick={() => { setShowNewList(false); setNewListName('') }} className="flex-1 rounded-xl py-2 text-sm font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+                  <button onClick={createList} disabled={!newListName.trim() || creatingList} className="flex-1 rounded-xl py-2 text-sm font-bold text-black" style={{ backgroundColor: !newListName.trim() || creatingList ? 'rgba(139,92,246,0.4)' : '#a78bfa' }}>
+                    {creatingList ? '...' : 'Create'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {listsLoading ? (
+              <div className="flex justify-center py-4"><div className="w-6 h-6 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" /></div>
+            ) : activeList ? (
+              listStoresLoading ? (
+                <div className="flex justify-center py-4"><div className="w-6 h-6 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" /></div>
+              ) : listStores.length === 0 ? (
+                <div className="mx-5 rounded-2xl p-5 flex flex-col items-center gap-2" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <span style={{ fontSize: 28 }}>📭</span>
+                  <p className="text-sm font-bold text-white">No stores in this list</p>
+                  <p className="text-xs text-white/40 text-center">Go to a store and tap 📑 to add it.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 px-5">
+                  {listStores.map((ls: any) => {
+                    const store = ls.store
+                    return (
+                      <div key={ls.id} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{store?.name}</p>
+                          <p className="text-xs text-white/40 truncate">{store?.address}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} className="text-xs font-bold px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e' }}>View</a>
+                          <button onClick={() => removeFromList(ls.id)} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                            <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            ) : lists.length === 0 ? (
+              <div className="mx-5 rounded-2xl p-5 flex flex-col items-center gap-2" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <span style={{ fontSize: 28 }}>📑</span>
+                <p className="text-sm font-bold text-white">No lists yet</p>
+                <p className="text-xs text-white/40 text-center">Create a list to organize your store spots.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 px-5">
+                {lists.map((list) => {
+                  const count = list.list_stores?.[0]?.count ?? 0
+                  return (
+                    <div key={list.id} className="rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }} onClick={() => openList(list)}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)' }}>
+                        <span style={{ fontSize: 16 }}>📑</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{list.name}</p>
+                        <p className="text-xs text-white/40">{count} store{count !== 1 ? 's' : ''}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-white/30 text-sm">›</span>
+                        <button onClick={(e) => { e.stopPropagation(); deleteList(list.id) }} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                          <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── REPORTS TAB ── */}
+        {activeTab === 'reports' && (
+          <div className="px-5">
+            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <p className="text-sm font-black text-white">My Reports</p>
+                  <p className="text-xs text-white/40 mt-0.5">{reportCount} total submissions</p>
+                </div>
+                {profile.is_verified_reporter && (
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓ VERIFIED</span>
+                )}
+              </div>
+              {allReportsLoading && allReports.length === 0 ? (
+                <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" /></div>
+              ) : allReports.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10">
+                  <span style={{ fontSize: 32 }}>📋</span>
+                  <p className="text-sm text-white/40">No reports yet</p>
+                </div>
+              ) : (
+                <div>
+                  {allReports.map((r) => {
+                    const drink = r.drink as any
+                    const store = r.store as any
+                    const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
+                    const q = QUANTITY_CONFIG[r.quantity as string] ?? QUANTITY_CONFIG.full
+                    return (
+                      <div key={r.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
+                          <span className="text-[10px] font-black" style={{ color: q.color }}>{q.label}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{drinkLabel || 'Unknown drink'}</p>
+                          <p className="text-xs text-white/40 truncate">{store?.name ?? 'Unknown store'}</p>
+                        </div>
+                        <p className="text-[10px] text-white/30 shrink-0">{timeAgo(r.reported_at)}</p>
+                      </div>
+                    )
+                  })}
+                  {allReportsHasMore && (
+                    <button
+                      onClick={() => fetchAllReports(allReportsPage + 1)}
+                      disabled={allReportsLoading}
+                      className="w-full py-3 text-sm font-bold"
+                      style={{ color: allReportsLoading ? 'rgba(255,255,255,0.2)' : '#22c55e' }}
+                    >
+                      {allReportsLoading ? 'Loading…' : 'Load more'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {listsLoading ? (
-          <div className="flex justify-center py-4"><div className="w-6 h-6 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" /></div>
-        ) : activeList ? (
-          // List detail view
-          listStoresLoading ? (
-            <div className="flex justify-center py-4"><div className="w-6 h-6 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" /></div>
-          ) : listStores.length === 0 ? (
-            <div className="mx-5 rounded-2xl p-5 flex flex-col items-center gap-2" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <span style={{ fontSize: 28 }}>📭</span>
-              <p className="text-sm font-bold text-white">No stores in this list</p>
-              <p className="text-xs text-white/40 text-center">Go to a store and tap 📑 to add it.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 px-5 pb-4">
-              {listStores.map((ls: any) => {
-                const store = ls.store
-                return (
-                  <div key={ls.id} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{store?.name}</p>
-                      <p className="text-xs text-white/40 truncate">{store?.address}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} className="text-xs font-bold px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e' }}>View</a>
-                      <button onClick={() => removeFromList(ls.id)} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                        <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )
-        ) : lists.length === 0 ? (
-          <div className="mx-5 mb-6 rounded-2xl p-5 flex flex-col items-center gap-2" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <span style={{ fontSize: 28 }}>📑</span>
-            <p className="text-sm font-bold text-white">No lists yet</p>
-            <p className="text-xs text-white/40 text-center">Create a list to organize your store spots.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 px-5 pb-8">
-            {lists.map((list) => {
-              const count = list.list_stores?.[0]?.count ?? 0
-              return (
-                <div key={list.id} className="rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }} onClick={() => openList(list)}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)' }}>
-                    <span style={{ fontSize: 16 }}>📑</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{list.name}</p>
-                    <p className="text-xs text-white/40">{count} store{count !== 1 ? 's' : ''}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-white/30 text-sm">›</span>
-                    <button onClick={(e) => { e.stopPropagation(); deleteList(list.id) }} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                      <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>
+        {/* ── SETTINGS TAB ── */}
+        {activeTab === 'settings' && (
+          <div className="px-5 flex flex-col gap-4">
+
+            {/* Profile */}
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[10px] font-bold mb-4" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>PROFILE</p>
+
+              {editingUsername ? (
+                <div className="mb-4">
+                  <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>NEW USERNAME</p>
+                  <input type="text" className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
+                    style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
+                    placeholder={profile.username} value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
+                  {usernameError && <p className="text-xs text-red-400 mb-2">{usernameError}</p>}
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} className="flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+                    <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} className="flex-1 rounded-xl py-2.5 text-sm font-bold text-black" style={{ backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>
+                      {savingUsername ? '...' : 'Save Username'}
                     </button>
                   </div>
                 </div>
-              )
-            })}
+              ) : (
+                <button onClick={() => { setEditingUsername(true); setNewUsername('') }} className="w-full rounded-xl py-3 text-sm font-bold text-left px-4 mb-3"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>
+                  ✏️ Change Username
+                  <span className="float-right text-white/25">@{profile.username}</span>
+                </button>
+              )}
+
+              {changingPassword ? (
+                <div>
+                  <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>NEW PASSWORD</p>
+                  <input type="password" className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
+                    style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
+                    placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoFocus />
+                  <input type="password" className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
+                    style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
+                    placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                  {passwordError && <p className="text-xs text-red-400 mb-2">{passwordError}</p>}
+                  {passwordSuccess && <p className="text-xs mb-2" style={{ color: '#22c55e' }}>Password updated!</p>}
+                  <div className="flex gap-2">
+                    <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} className="flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+                    <button onClick={savePassword} disabled={savingPassword} className="flex-1 rounded-xl py-2.5 text-sm font-bold text-black" style={{ backgroundColor: savingPassword ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>
+                      {savingPassword ? '...' : 'Save Password'}
+                    </button>
+                  </div>
+                </div>
+              ) : !editingUsername && (
+                <button onClick={() => setChangingPassword(true)} className="w-full rounded-xl py-3 text-sm font-bold text-left px-4"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>
+                  🔑 Change Password
+                </button>
+              )}
+            </div>
+
+            {/* Notifications */}
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[10px] font-bold mb-4" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>NOTIFICATIONS</p>
+              {[
+                { label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
+                { label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
+                { label: 'Weekly email digest', desc: 'Summary of stock reports in your area', value: notifEmail, set: setNotifEmail },
+              ].map((item, i) => (
+                <div key={item.label} className="flex items-center justify-between py-3" style={{ borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <div className="flex-1 min-w-0 pr-4">
+                    <p className="text-sm font-bold text-white">{item.label}</p>
+                    <p className="text-xs text-white/35 mt-0.5">{item.desc}</p>
+                  </div>
+                  <button
+                    onClick={() => item.set(!item.value)}
+                    className="shrink-0 rounded-full"
+                    style={{ width: 44, height: 24, backgroundColor: item.value ? '#22c55e' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s' }}
+                  >
+                    <div style={{ position: 'absolute', top: 2, left: item.value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Sign out */}
+            <button onClick={handleSignOut} className="w-full rounded-2xl py-3.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+              Sign Out
+            </button>
+
+            {/* Danger zone */}
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.12)' }}>
+              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(239,68,68,0.5)', letterSpacing: '1.5px' }}>DANGER ZONE</p>
+              <button className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
+                Delete Account
+              </button>
+            </div>
           </div>
         )}
       </div>
