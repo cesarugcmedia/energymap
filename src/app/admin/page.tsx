@@ -61,6 +61,7 @@ export default function AdminPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [disputes, setDisputes] = useState<any[]>([])
   const [disputesLoading, setDisputesLoading] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
 
 
   useEffect(() => {
@@ -124,11 +125,24 @@ export default function AdminPage() {
     setDisputesLoading(true)
     const { data } = await supabase
       .from('disputes')
-      .select('id, reason, created_at, reporter:profiles!disputes_user_id_fkey(username), report:stock_reports(quantity, reported_at, drink:drinks(name, flavor, brand), store:stores(name))')
+      .select('id, reason, created_at, report_id, reporter:profiles!disputes_user_id_fkey(username), report:stock_reports(id, quantity, reported_at, drink:drinks(name, flavor, brand), store:stores(name))')
       .order('created_at', { ascending: false })
       .limit(50)
     if (data) setDisputes(data)
     setDisputesLoading(false)
+  }
+
+  async function dismissDispute(disputeId: string) {
+    const { error } = await supabase.from('disputes').delete().eq('id', disputeId)
+    if (error) { window.alert('Could not dismiss dispute. Check RLS policies.'); return }
+    setDisputes((prev) => prev.filter((d) => d.id !== disputeId))
+  }
+
+  async function deleteDisputedReport(disputeId: string, reportId: string) {
+    if (!window.confirm('Delete this stock report? This cannot be undone.')) return
+    const { error } = await supabase.from('stock_reports').delete().eq('id', reportId)
+    if (error) { window.alert('Could not delete report. Check RLS policies.'); return }
+    setDisputes((prev) => prev.filter((d) => d.id !== disputeId))
   }
 
   async function fetchLocations() {
@@ -554,7 +568,18 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2.5 px-4 pb-6">
-            {users.map((u) => (
+            <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-1" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <span className="text-white/30 text-sm">🔍</span>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+              />
+              {userSearch && <button onClick={() => setUserSearch('')} className="text-white/30 text-xs">✕</button>}
+            </div>
+            {users.filter((u) => u.username?.toLowerCase().includes(userSearch.toLowerCase())).map((u) => (
               <div
                 key={u.id}
                 className="rounded-2xl px-4 py-3.5 flex items-center gap-3"
@@ -598,6 +623,12 @@ export default function AdminPage() {
                 </button>
               </div>
             ))}
+            {users.filter((u) => u.username?.toLowerCase().includes(userSearch.toLowerCase())).length === 0 && (
+              <div className="flex flex-col items-center gap-2 mt-8">
+                <span style={{ fontSize: 36 }}>🔍</span>
+                <p className="text-sm font-bold text-white">No users found</p>
+              </div>
+            )}
           </div>
         )
       ) : tab === 'disputes' ? (
@@ -641,10 +672,28 @@ export default function AdminPage() {
                   {d.reason && (
                     <p className="text-xs text-white/60 mb-2 italic">"{d.reason}"</p>
                   )}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 mb-3">
                     <span className="text-[10px] text-white/30">🚩 @{reporter?.username ?? 'unknown'}</span>
                     <span className="text-[10px] text-white/20">·</span>
                     <span className="text-[10px] text-white/30">{timeAgo(d.created_at)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => dismissDispute(d.id)}
+                      className="flex-1 rounded-xl py-2 text-xs font-bold"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                    >
+                      Dismiss
+                    </button>
+                    {d.report?.id && (
+                      <button
+                        onClick={() => deleteDisputedReport(d.id, d.report.id)}
+                        className="flex-1 rounded-xl py-2 text-xs font-bold"
+                        style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
+                      >
+                        🗑️ Delete Report
+                      </button>
+                    )}
                   </div>
                 </div>
               )
