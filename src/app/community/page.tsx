@@ -324,7 +324,16 @@ export default function CommunityPage() {
 
     let photoUrl: string | null = null
     if (photo) {
-      const ext = photo.name.split('.').pop() ?? 'jpg'
+      const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic']
+      if (!ALLOWED_TYPES.includes(photo.type)) {
+        setSending(false)
+        return
+      }
+      const EXT_MAP: Record<string, string> = {
+        'image/jpeg': 'jpg', 'image/png': 'png',
+        'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic',
+      }
+      const ext = EXT_MAP[photo.type] ?? 'jpg'
       const path = `${user.id}/${Date.now()}.${ext}`
       const { error } = await supabase.storage.from('chat-photos').upload(path, photo)
       if (!error) {
@@ -385,7 +394,7 @@ export default function CommunityPage() {
   async function deleteMessage(msgId: string) {
     if (confirmDelete !== msgId) { setConfirmDelete(msgId); return }
     setConfirmDelete(null)
-    await supabase.from('messages').delete().eq('id', msgId)
+    await supabase.from('messages').delete().eq('id', msgId).eq('user_id', user!.id)
     setMessages((prev) => prev.filter((m) => m.id !== msgId))
   }
 
