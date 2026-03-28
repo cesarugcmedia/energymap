@@ -531,17 +531,35 @@ function selectAndContinue(tierId: TierId) {
           <div className="px-5 flex flex-col gap-4">
 
             {/* Plan card */}
-            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>YOUR PLAN</p>
-              <div className="flex items-center gap-3 mb-3">
-                <span style={{ fontSize: 26 }}>{tierInfo.icon}</span>
-                <div className="flex-1">
-                  <p className="text-base font-black" style={{ color: tierInfo.color }}>{tierInfo.label}</p>
-                  <p className="text-xs text-white/40">{profile.tier === 'free' ? 'Free forever' : profile.tier === 'hunter' ? '$5 / month' : '$10 / month'}</p>
+            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${tierInfo.color}30` }}>
+              <div style={{ height: 3, background: `linear-gradient(90deg, ${tierInfo.color}, ${tierInfo.color}66)` }} />
+              <div className="p-4">
+                <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>YOUR PLAN</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${tierInfo.color}18`, border: `1px solid ${tierInfo.color}35` }}>
+                    <span style={{ fontSize: 20 }}>{tierInfo.icon}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-base font-black" style={{ color: tierInfo.color }}>{tierInfo.label}</p>
+                    <p className="text-xs text-white/40">{profile.tier === 'free' ? 'Free forever' : profile.tier === 'hunter' ? '$5 / month' : '$10 / month'}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5 mb-3">
+                  {(profile.tier === 'free'
+                    ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
+                    : profile.tier === 'hunter'
+                    ? ['Everything in Free', '⚡ 2× leaderboard points', 'Early stock alerts', 'Verified reporter badge']
+                    : ['Everything in Hunter', '🔥 5× leaderboard points', 'Priority alerts + analytics']
+                  ).map((f) => (
+                    <div key={f} className="flex items-center gap-2">
+                      <span style={{ fontSize: 10, color: tierInfo.color }}>✓</span>
+                      <span className="text-xs text-white/50">{f}</span>
+                    </div>
+                  ))}
                 </div>
                 {profile.tier === 'free' && (
-                  <button className="rounded-xl px-3 py-2 text-xs font-black" style={{ backgroundColor: '#22c55e', color: '#fff', boxShadow: '0 0 12px rgba(34,197,94,0.35)' }}>
-                    Upgrade ⚡
+                  <button className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: `linear-gradient(135deg, #22c55e, #16a34a)`, color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}>
+                    Upgrade to Hunter ⚡
                   </button>
                 )}
               </div>
