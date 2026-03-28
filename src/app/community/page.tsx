@@ -345,6 +345,23 @@ export default function CommunityPage() {
       }, 80)
     }
 
+    // Fire mention notifications
+    if (newMsg && !error && text.trim()) {
+      const mentionRegex = /@\[[^\]]+\]\(u:([^)]+)\)/g
+      const mentionedIds = [...new Set([...text.matchAll(mentionRegex)].map((m) => m[1]))]
+        .filter((id) => id !== user.id)
+      if (mentionedIds.length > 0) {
+        await supabase.from('notifications').insert(
+          mentionedIds.map((uid) => ({
+            user_id: uid,
+            type: 'mention',
+            message: `@${profile?.username} mentioned you in Community Chat`,
+            read: false,
+          }))
+        )
+      }
+    }
+
     recentSentRef.current.push(Date.now())
     startCooldown(COOLDOWN_SEC)
     setText('')
