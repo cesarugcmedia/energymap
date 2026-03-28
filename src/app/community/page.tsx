@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
+const CHANNELS = [
+  { id: 'general',     name: 'general',      icon: '💬', desc: 'General energy drink chat' },
+  { id: 'finds',       name: 'finds',         icon: '🎯', desc: 'Share your latest finds' },
+  { id: 'alerts',      name: 'stock-alerts',  icon: '🔔', desc: 'Live stock updates' },
+  { id: 'reviews',     name: 'reviews',       icon: '⭐', desc: 'Rate and review flavors' },
+  { id: 'new-flavors', name: 'new-flavors',   icon: '🆕', desc: 'New drops and releases' },
+]
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -25,8 +33,6 @@ function dayLabel(dateStr: string) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-// Parse @[Name](s:id) store mentions and @[Name](u:id) user mentions
-// Legacy format @[Name](uuid) (no prefix) treated as store
 function renderContent(content: string, isMe: boolean, onStoreClick: (storeId: string) => void) {
   const parts = content.split(/(@\[[^\]]+\]\([^)]+\))/g)
   return parts.map((part, i) => {
@@ -72,6 +78,10 @@ export default function CommunityPage() {
     typeof window !== 'undefined' ? localStorage.getItem('community_last_read') : null
   )
 
+  const [activeChannel, setActiveChannel] = useState('general')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [channelUnread, setChannelUnread] = useState<Record<string, number>>({})
+
   const [messages, setMessages] = useState<any[]>([])
   const [pinnedMessage, setPinnedMessage] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
@@ -99,32 +109,52 @@ export default function CommunityPage() {
   const BURST_MAX = 5
   const BURST_WINDOW_MS = 60000
 
+  const currentChannel = CHANNELS.find((c) => c.id === activeChannel) ?? CHANNELS[0]
+
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
   }, [user, authLoading])
 
+  // Re-fetch messages when channel changes
   useEffect(() => {
     if (!user) return
+    setLoading(true)
+    setMessages([])
+    setPinnedMessage(null)
     fetchAll()
+    setChannelUnread((prev) => ({ ...prev, [activeChannel]: 0 }))
+  }, [activeChannel, user])
+
+  // Realtime subscriptions (once, on mount)
+  useEffect(() => {
+    if (!user) return
 
     const msgChannel = supabase
       .channel('community-messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
         const msg = payload.new as any
         const { data: p } = await supabase.from('profiles').select('username').eq('id', msg.user_id).single()
-        setMessages((prev) => {
-          if (prev.find((m) => m.id === msg.id)) return prev
-          return [...prev, { ...msg, profile: p }]
-        })
-        if (!msg.reply_to_id) {
-          setTimeout(() => {
-            const c = scrollContainerRef.current
-            if (c) c.scrollTop = c.scrollHeight
-          }, 50)
+        const incoming = { ...msg, profile: p }
+
+        if (msg.channel === activeChannel) {
+          setMessages((prev) => {
+            if (prev.find((m) => m.id === msg.id)) return prev
+            return [...prev, incoming]
+          })
+          if (!msg.reply_to_id) {
+            setTimeout(() => {
+              const c = scrollContainerRef.current
+              if (c) c.scrollTop = c.scrollHeight
+            }, 50)
+          }
+        } else {
+          // Increment unread for non-active channel
+          setChannelUnread((prev) => ({ ...prev, [msg.channel]: (prev[msg.channel] ?? 0) + 1 }))
         }
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
         const updated = payload.new as any
+        if (updated.channel !== activeChannel) return
         setMessages((prev) => prev.map((m) => m.id === updated.id ? { ...m, ...updated } : m))
         if (updated.pinned) {
           setMessages((prev) => {
@@ -146,6 +176,7 @@ export default function CommunityPage() {
     const typingChannel = supabase
       .channel('community-typing', { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'typing' }, ({ payload }: any) => {
+        if (payload.channel !== activeChannel) return
         setTypingUsers((prev) => ({
           ...prev,
           [payload.user_id]: { username: payload.username, at: Date.now() },
@@ -167,7 +198,7 @@ export default function CommunityPage() {
       supabase.removeChannel(typingChannel)
       clearInterval(typingInterval)
     }
-  }, [user])
+  }, [user, activeChannel])
 
   useLayoutEffect(() => {
     if (!loading) {
@@ -206,7 +237,6 @@ export default function CommunityPage() {
     return () => el.removeEventListener('scroll', onScroll)
   }, [loading])
 
-  // Mention autocomplete — query both users and stores
   useEffect(() => {
     if (!mentionMode) { setMentionSuggestions([]); return }
     const q = mentionQuery.toLowerCase()
@@ -229,8 +259,18 @@ export default function CommunityPage() {
 
   async function fetchAll() {
     const [{ data: msgs }, { data: pinned }] = await Promise.all([
-      supabase.from('messages').select('*, profile:profiles(username)').order('created_at', { ascending: true }).limit(200),
-      supabase.from('messages').select('*, profile:profiles(username)').eq('pinned', true).maybeSingle(),
+      supabase
+        .from('messages')
+        .select('*, profile:profiles(username)')
+        .eq('channel', activeChannel)
+        .order('created_at', { ascending: true })
+        .limit(200),
+      supabase
+        .from('messages')
+        .select('*, profile:profiles(username)')
+        .eq('channel', activeChannel)
+        .eq('pinned', true)
+        .maybeSingle(),
     ])
     if (msgs) setMessages(msgs)
     if (pinned) setPinnedMessage(pinned)
@@ -271,7 +311,6 @@ export default function CommunityPage() {
 
   function onTextChange(val: string) {
     setText(val)
-    // Detect @mention
     const match = val.match(/@(\w*)$/)
     if (match) {
       setMentionMode(true)
@@ -280,12 +319,11 @@ export default function CommunityPage() {
       setMentionMode(false)
       setMentionQuery('')
     }
-    // Typing broadcast
     if (val.trim() && typingChannelRef.current && !typingThrottleRef.current) {
       typingChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
-        payload: { username: profile?.username, user_id: user?.id },
+        payload: { username: profile?.username, user_id: user?.id, channel: activeChannel },
       })
       typingThrottleRef.current = setTimeout(() => { typingThrottleRef.current = null }, 2000)
     }
@@ -325,10 +363,7 @@ export default function CommunityPage() {
     let photoUrl: string | null = null
     if (photo) {
       const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic']
-      if (!ALLOWED_TYPES.includes(photo.type)) {
-        setSending(false)
-        return
-      }
+      if (!ALLOWED_TYPES.includes(photo.type)) { setSending(false); return }
       const EXT_MAP: Record<string, string> = {
         'image/jpeg': 'jpg', 'image/png': 'png',
         'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic',
@@ -345,7 +380,13 @@ export default function CommunityPage() {
     const replyParentId = replyingTo?.id ?? null
     const { data: newMsg, error } = await supabase
       .from('messages')
-      .insert({ user_id: user.id, content: text.trim() || null, photo_url: photoUrl, reply_to_id: replyParentId })
+      .insert({
+        user_id: user.id,
+        content: text.trim() || null,
+        photo_url: photoUrl,
+        reply_to_id: replyParentId,
+        channel: activeChannel,
+      })
       .select('*')
       .single()
 
@@ -366,7 +407,6 @@ export default function CommunityPage() {
       }, 80)
     }
 
-    // Fire mention notifications
     if (newMsg && !error && text.trim()) {
       const mentionRegex = /@\[[^\]]+\]\(u:([^)]+)\)/g
       const mentionedIds = [...new Set([...text.matchAll(mentionRegex)].map((m) => m[1]))]
@@ -376,7 +416,7 @@ export default function CommunityPage() {
           mentionedIds.map((uid) => ({
             user_id: uid,
             type: 'mention',
-            message: `@${profile?.username} mentioned you in Community Chat`,
+            message: `@${profile?.username} mentioned you in #${currentChannel.name}`,
             read: false,
           }))
         )
@@ -399,14 +439,14 @@ export default function CommunityPage() {
   }
 
   async function pinMessage(msgId: string) {
-    await supabase.from('messages').update({ pinned: false }).eq('pinned', true)
+    await supabase.from('messages').update({ pinned: false }).eq('pinned', true).eq('channel', activeChannel)
     await supabase.from('messages').update({ pinned: true }).eq('id', msgId)
     const msg = messages.find((m) => m.id === msgId)
     if (msg) setPinnedMessage(msg)
   }
 
   async function unpinMessage() {
-    await supabase.from('messages').update({ pinned: false }).eq('pinned', true)
+    await supabase.from('messages').update({ pinned: false }).eq('pinned', true).eq('channel', activeChannel)
     setPinnedMessage(null)
   }
 
@@ -414,6 +454,14 @@ export default function CommunityPage() {
     if (reportedMsgs.has(msgId)) return
     await supabase.from('message_reports').insert({ message_id: msgId, reported_by: user!.id })
     setReportedMsgs((prev) => new Set([...prev, msgId]))
+  }
+
+  function switchChannel(id: string) {
+    setActiveChannel(id)
+    setSidebarOpen(false)
+    setSearchOpen(false)
+    setSearchQuery('')
+    setReplyingTo(null)
   }
 
   if (authLoading || !user) {
@@ -451,7 +499,7 @@ export default function CommunityPage() {
     ? messages.filter((m) => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
     : []
 
-  function renderMessage(msg: any, isReply = false) {
+  function renderMessage(msg: any, isReply = false, isGrouped = false) {
     const isMe = msg.user_id === user!.id
     const username = isMe ? (profile?.username ?? msg.profile?.username) : msg.profile?.username
     const threadReplies = !isReply ? (replyMap[msg.id] ?? []) : []
@@ -460,7 +508,7 @@ export default function CommunityPage() {
     const alreadyReported = reportedMsgs.has(msg.id)
 
     return (
-      <div key={msg.id} ref={(el) => { msgRefs.current[msg.id] = el }} style={{ marginBottom: isReply ? 4 : 14 }}>
+      <div key={msg.id} ref={(el) => { msgRefs.current[msg.id] = el }} style={{ marginBottom: isReply ? 4 : (isGrouped ? 2 : 14) }}>
         <div
           className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
           style={{
@@ -473,20 +521,23 @@ export default function CommunityPage() {
           )}
 
           <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
-            <p className="font-semibold mb-1 px-1" style={{ color: isMe ? 'rgba(34,197,94,0.75)' : 'rgba(255,255,255,0.45)', fontSize: isReply ? 10 : 12 }}>
-              {username}
-            </p>
+            {!isGrouped && (
+              <p className="font-semibold mb-1 px-1" style={{ color: isMe ? 'rgba(34,197,94,0.75)' : 'rgba(255,255,255,0.45)', fontSize: isReply ? 10 : 12 }}>
+                {username}
+              </p>
+            )}
 
             <div
               style={{
                 backgroundColor: isMe ? '#22c55e' : (isReply ? '#16162a' : '#1e1e2e'),
-                borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                borderRadius: isMe
+                  ? (isGrouped ? '20px 20px 4px 20px' : '20px 20px 4px 20px')
+                  : (isGrouped ? '4px 20px 20px 20px' : '20px 20px 20px 4px'),
                 overflow: 'hidden',
                 maxWidth: '100%',
                 outline: isSearchMatch ? '2px solid #22c55e' : 'none',
               }}
             >
-              {/* Reply quote */}
               {isReply && msg.reply_to_id && msgMap[msg.reply_to_id] && (
                 <div className="mx-2 mt-2 px-3 py-1.5 rounded-xl" style={{ backgroundColor: isMe ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.07)' }}>
                   <p className="text-[10px] font-bold mb-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.65)' : '#22c55e' }}>
@@ -508,7 +559,6 @@ export default function CommunityPage() {
               )}
             </div>
 
-            {/* Actions row */}
             <div className={`flex items-center gap-2 mt-0.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{timeAgo(msg.created_at)}</span>
               <button onClick={() => startReply(msg)} className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>↩ Reply</button>
@@ -543,7 +593,7 @@ export default function CommunityPage() {
 
         {threadReplies.length > 0 && (
           <div style={{ marginTop: 4 }}>
-            {threadReplies.map((r) => renderMessage(r, true))}
+            {threadReplies.map((r) => renderMessage(r, true, false))}
           </div>
         )}
       </div>
@@ -555,7 +605,7 @@ export default function CommunityPage() {
     let shownUnread = false
     const items: React.ReactNode[] = []
 
-    topLevel.forEach((msg) => {
+    topLevel.forEach((msg, i) => {
       const day = new Date(msg.created_at).toDateString()
       if (day !== lastDay) {
         lastDay = day
@@ -577,14 +627,25 @@ export default function CommunityPage() {
           </div>
         )
       }
-      items.push(renderMessage(msg, false))
+
+      // Message grouping: same user, same day, within 5 minutes of previous
+      const prev = topLevel[i - 1]
+      const isGrouped =
+        prev &&
+        prev.user_id === msg.user_id &&
+        !prev.reply_to_id &&
+        new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000
+
+      items.push(renderMessage(msg, false, !!isGrouped))
     })
 
     return items
   }
 
+  const totalUnread = Object.values(channelUnread).reduce((a, b) => a + b, 0)
+
   return (
-    <div className="flex flex-col" style={{ height: '100dvh' }}>
+    <div className="flex flex-col" style={{ height: '100dvh', position: 'relative', overflow: 'hidden' }}>
 
       {/* Lightbox */}
       {lightboxUrl && (
@@ -596,11 +657,115 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {/* Header */}
+      {/* ── Sidebar overlay ── */}
+      {sidebarOpen && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 40, display: 'flex' }}>
+          {/* Backdrop */}
+          <div
+            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Drawer */}
+          <div
+            style={{
+              position: 'relative',
+              width: 240,
+              height: '100%',
+              backgroundColor: '#0d0d1a',
+              borderRight: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex',
+              flexDirection: 'column',
+              zIndex: 1,
+            }}
+          >
+            {/* Sidebar header */}
+            <div style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', padding: 'calc(56px + env(safe-area-inset-top)) 14px 12px' }}>
+              <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>CHANNELS</p>
+            </div>
+
+            {/* Channel list */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
+              {CHANNELS.map((ch) => {
+                const unread = channelUnread[ch.id] ?? 0
+                const isActive = ch.id === activeChannel
+                return (
+                  <button
+                    key={ch.id}
+                    onClick={() => switchChannel(ch.id)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 10px',
+                      borderRadius: 10,
+                      marginBottom: 2,
+                      backgroundColor: isActive ? 'rgba(34,197,94,0.1)' : 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>{ch.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: isActive ? 700 : 500, color: isActive ? '#22c55e' : 'rgba(255,255,255,0.5)', flex: 1 }}>
+                      # {ch.name}
+                    </span>
+                    {unread > 0 && (
+                      <div style={{ minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#fff', padding: '0 5px' }}>
+                        {unread}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Profile mini */}
+            <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+              <div style={{ position: 'relative' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#22c55e' }}>
+                  {profile?.username?.[0]?.toUpperCase() ?? '?'}
+                </div>
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid #0d0d1a' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{profile?.username}</p>
+                {profile?.tier === 'hunter' && (
+                  <p style={{ fontSize: 10, color: 'rgba(34,197,94,0.7)', fontWeight: 600 }}>⚡ Hunter</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Header ── */}
       <div className="shrink-0" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#070710' }}>
-        <div className="flex items-center justify-between px-5 pb-3">
-          <p className="text-base font-black text-white">Community Chat</p>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 pb-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Hamburger */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="w-8 h-8 flex items-center justify-center shrink-0 rounded-lg"
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)', position: 'relative' }}
+            >
+              <span style={{ fontSize: 16, opacity: 0.6 }}>☰</span>
+              {totalUnread > 0 && (
+                <div style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: 7, backgroundColor: '#22c55e', fontSize: 8, fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {totalUnread > 9 ? '9+' : totalUnread}
+                </div>
+              )}
+            </button>
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-sm font-black text-white/40">⚡</span>
+              <span className="text-sm font-black text-white/40">Community</span>
+              <span className="text-sm text-white/20">/</span>
+              <span className="text-sm font-bold text-white truncate">{currentChannel.icon} {currentChannel.name}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e' }} />
               <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>Live</span>
@@ -610,6 +775,14 @@ export default function CommunityPage() {
             </button>
           </div>
         </div>
+
+        {/* Channel description */}
+        {!searchOpen && (
+          <div className="px-4 pb-2">
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{currentChannel.desc}</p>
+          </div>
+        )}
+
         {searchOpen && (
           <div className="px-4 pb-3">
             <input ref={searchInputRef} type="text" className="w-full rounded-full px-4 py-2 text-sm text-white outline-none"
@@ -653,13 +826,13 @@ export default function CommunityPage() {
               <p className="text-sm text-white/40">No messages found</p>
             </div>
           ) : (
-            <div>{searchResults.map((msg) => renderMessage(msg, false))}</div>
+            <div>{searchResults.map((msg) => renderMessage(msg, false, false))}</div>
           )
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 text-center">
-            <span style={{ fontSize: 44 }}>💬</span>
-            <p className="text-base font-bold text-white">No messages yet</p>
-            <p className="text-sm text-white/40">Be the first to say something!</p>
+            <span style={{ fontSize: 44 }}>{currentChannel.icon}</span>
+            <p className="text-base font-bold text-white">#{currentChannel.name}</p>
+            <p className="text-sm text-white/40">Be the first to post here!</p>
           </div>
         ) : (
           <div>{renderWithSeparators()}</div>
@@ -669,7 +842,18 @@ export default function CommunityPage() {
 
       {/* Typing indicator */}
       {activeTypers.length > 0 && (
-        <div className="px-4 py-1 shrink-0">
+        <div className="px-4 py-1 shrink-0 flex items-center gap-2">
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: 5, height: 5, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.4)',
+                  animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                }}
+              />
+            ))}
+          </div>
           <p className="text-[11px] italic" style={{ color: 'rgba(255,255,255,0.4)' }}>
             {activeTypers.length === 1 ? `${activeTypers[0]} is typing…`
               : activeTypers.length === 2 ? `${activeTypers[0]} and ${activeTypers[1]} are typing…`
@@ -691,7 +875,6 @@ export default function CommunityPage() {
               backgroundColor: '#22c55e',
               color: '#fff',
               boxShadow: '0 4px 16px rgba(34,197,94,0.35)',
-              animation: 'fadeUp 0.15s ease',
             }}
           >
             <span style={{ fontSize: 13 }}>↓</span> Latest messages
@@ -720,7 +903,6 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {/* @mention suggestions */}
         {mentionSuggestions.length > 0 && (
           <div className="mx-3 mb-2 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
             {mentionSuggestions.map((item, i) => (
@@ -759,7 +941,7 @@ export default function CommunityPage() {
             type="text"
             className="flex-1 rounded-full px-4 py-2.5 text-sm text-white outline-none"
             style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
-            placeholder={replyingTo ? 'Write a reply…' : 'Message… (@ to mention a store)'}
+            placeholder={replyingTo ? 'Write a reply…' : `Message #${currentChannel.name}… (@ to mention)`}
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
@@ -776,6 +958,13 @@ export default function CommunityPage() {
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-5px); }
+        }
+      `}</style>
     </div>
   )
 }
