@@ -93,7 +93,7 @@ export default function MapPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex items-center justify-center h-screen ">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -101,7 +101,7 @@ export default function MapPage() {
 
   if (locLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 bg-[#0a0a0f]">
+      <div className="flex flex-col items-center justify-center h-screen gap-3 ">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
         <p className="text-white/40 text-sm">Finding your location…</p>
       </div>
@@ -110,7 +110,7 @@ export default function MapPage() {
 
   if (locError) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-[#0a0a0f] px-8 text-center gap-5">
+      <div className="flex flex-col items-center justify-center h-screen  px-8 text-center gap-5">
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
           <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
@@ -160,7 +160,7 @@ export default function MapPage() {
   }
 
   return (
-    <div className="relative bg-[#0a0a0f]" style={{ height: '100dvh' }}>
+    <div className="relative " style={{ height: '100dvh' }}>
       {/* Header */}
       <div
         className="absolute top-0 left-0 right-0 z-10 px-5 pb-4 pointer-events-none"

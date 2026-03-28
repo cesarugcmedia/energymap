@@ -66,14 +66,14 @@ export default function NotificationsPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex items-center justify-center h-screen ">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div className="" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 pb-4">
         <div>

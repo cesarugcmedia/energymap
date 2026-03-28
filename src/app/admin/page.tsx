@@ -91,7 +91,7 @@ export default function AdminPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex items-center justify-center h-screen ">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -309,7 +309,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen ">
       {/* Header */}
       <div className="px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
         <div className="flex items-center justify-between mb-4">
@@ -462,7 +462,7 @@ export default function AdminPage() {
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
                 <input
                   type="text"
@@ -470,7 +470,7 @@ export default function AdminPage() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
                 <input
                   type="text"
@@ -478,7 +478,7 @@ export default function AdminPage() {
                   value={newFlavor}
                   onChange={(e) => setNewFlavor(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
                 <button
                   onClick={addDrink}
@@ -749,7 +749,7 @@ export default function AdminPage() {
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
             />
@@ -758,7 +758,7 @@ export default function AdminPage() {
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
               value={editAddress}
               onChange={(e) => setEditAddress(e.target.value)}
             />
@@ -771,7 +771,7 @@ export default function AdminPage() {
                   type="number"
                   step="any"
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
                   value={editLat}
                   onChange={(e) => setEditLat(e.target.value)}
                 />
@@ -782,7 +782,7 @@ export default function AdminPage() {
                   type="number"
                   step="any"
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
                   value={editLng}
                   onChange={(e) => setEditLng(e.target.value)}
                 />
@@ -796,7 +796,7 @@ export default function AdminPage() {
                   key={t.value}
                   className="flex items-center gap-1.5 rounded-xl px-3 py-2.5"
                   style={{
-                    backgroundColor: editType === t.value ? 'rgba(34,197,94,0.08)' : '#0a0a0f',
+                    backgroundColor: editType === t.value ? 'rgba(34,197,94,0.08)' : '#070710',
                     border: `1.5px solid ${editType === t.value ? '#22c55e' : 'transparent'}`,
                     minWidth: '47%',
                   }}

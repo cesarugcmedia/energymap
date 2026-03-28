@@ -359,7 +359,7 @@ function StoreDetailContent({ id }: { id: string }) {
   }, {})
 
   return (
-    <div className="bg-[#0a0a0f]">
+    <div className="">
       {/* Header */}
       <div className="px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <div className="flex items-center justify-between mb-4">
@@ -714,7 +714,7 @@ function StoreDetailContent({ id }: { id: string }) {
                     <div
                       key={entry.id}
                       className="rounded-2xl p-3.5"
-                      style={{ backgroundColor: '#0a0a0f', border: `1px solid ${entry.duplicate ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}` }}
+                      style={{ backgroundColor: '#070710', border: `1px solid ${entry.duplicate ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}` }}
                     >
                       <div className="flex items-center justify-between mb-2.5">
                         <p className="text-[10px] font-bold text-white/35" style={{ letterSpacing: '1.5px' }}>DRINK {idx + 1}</p>
@@ -839,7 +839,7 @@ function StoreDetailContent({ id }: { id: string }) {
               <input
                 type="text"
                 className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
-                style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
                 placeholder="New list name..."
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
@@ -886,7 +886,7 @@ function StoreDetailContent({ id }: { id: string }) {
             </p>
             <textarea
               className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none resize-none mb-4"
-              style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)', minHeight: 80 }}
+              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)', minHeight: 80 }}
               placeholder="Optional: describe what's wrong (e.g. 'store was actually out')"
               value={disputeReason}
               onChange={(e) => setDisputeReason(e.target.value)}

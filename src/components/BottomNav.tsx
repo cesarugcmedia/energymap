@@ -71,7 +71,7 @@ export default function BottomNav() {
         maxWidth: '448px',
         left: '50%',
         transform: 'translateX(-50%)',
-        backgroundColor: '#0a0a0f',
+        backgroundColor: '#070710',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         height: 'calc(70px + env(safe-area-inset-bottom))',
       }}

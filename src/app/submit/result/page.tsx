@@ -52,7 +52,7 @@ function ResultContent() {
   }, {})
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] overflow-y-auto pb-16">
+    <div className="min-h-screen  overflow-y-auto pb-16">
       {/* Banner */}
       <div
         className="flex items-center gap-3.5 mx-5 rounded-2xl p-4"

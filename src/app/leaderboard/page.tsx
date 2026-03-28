@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex items-center justify-center h-screen">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -42,7 +42,7 @@ export default function LeaderboardPage() {
   const myRank = entries.findIndex((e) => e.id === user.id)
 
   return (
-    <div className="bg-[#0a0a0f]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 pb-4">

@@ -189,7 +189,7 @@ export default function StoresPage() {
   const isAtStore = nearestDist !== null && nearestDist < 0.15
 
   return (
-    <div className="bg-[#0a0a0f]">
+    <div className="">
       {/* Header */}
       <div
         className="flex items-center justify-between px-5 pb-4"

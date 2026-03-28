@@ -392,7 +392,7 @@ export default function AccountPage() {
             <input
               type="text"
               className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-3"
-              style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
               placeholder="List name (e.g. Celsius Spots)"
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}

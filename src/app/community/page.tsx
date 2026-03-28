@@ -380,7 +380,7 @@ export default function CommunityPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex items-center justify-center h-screen">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -546,7 +546,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="bg-[#0a0a0f] flex flex-col" style={{ height: '100dvh' }}>
+    <div className="flex flex-col" style={{ height: '100dvh' }}>
 
       {/* Lightbox */}
       {lightboxUrl && (
@@ -559,7 +559,7 @@ export default function CommunityPage() {
       )}
 
       {/* Header */}
-      <div className="shrink-0" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#0a0a0f' }}>
+      <div className="shrink-0" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#070710' }}>
         <div className="flex items-center justify-between px-5 pb-3">
           <p className="text-base font-black text-white">Community Chat</p>
           <div className="flex items-center gap-3">
@@ -641,7 +641,7 @@ export default function CommunityPage() {
       )}
 
       {/* Input area */}
-      <div className="shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#0a0a0f', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+      <div className="shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#070710', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
         {replyingTo && (
           <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
             <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: '#22c55e' }} />

@@ -90,7 +90,7 @@ export default function ListsPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0a0f]">
+      <div className="flex items-center justify-center h-screen ">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -99,7 +99,7 @@ export default function ListsPage() {
   // List detail view
   if (activeList) {
     return (
-      <div className="bg-[#0a0a0f] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+      <div className=" min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <div className="px-5 pb-4">
           <div className="flex items-center gap-3 mb-1">
             <button
@@ -173,7 +173,7 @@ export default function ListsPage() {
 
   // Lists overview
   return (
-    <div className="bg-[#0a0a0f] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div className=" min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <div className="flex items-center justify-between px-5 pb-4">
         <div>
           <p className="text-2xl font-black text-white">📑 My Lists</p>
@@ -195,7 +195,7 @@ export default function ListsPage() {
           <input
             type="text"
             className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-3"
-            style={{ backgroundColor: '#0a0a0f', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
             placeholder="List name (e.g. Celsius Spots)"
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}

@@ -156,7 +156,7 @@ function DrinksContent() {
   const selectionCount = Object.keys(selections).length
 
   return (
-    <div className="bg-[#0a0a0f]">
+    <div className="">
       {/* Header */}
       <div className="flex items-center gap-3.5 px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <button
@@ -368,7 +368,7 @@ function DrinksContent() {
             width: '100%',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: '#0a0a0f',
+            backgroundColor: '#070710',
             borderTop: '1px solid rgba(255,255,255,0.07)',
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
           }}
