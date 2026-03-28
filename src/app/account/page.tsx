@@ -147,9 +147,7 @@ export default function AccountPage() {
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [favorites, setFavorites] = useState<any[]>([])
-  const [favLoading, setFavLoading] = useState(false)
-  const [lists, setLists] = useState<any[]>([])
+const [lists, setLists] = useState<any[]>([])
   const [listsLoading, setListsLoading] = useState(false)
   const [activeList, setActiveList] = useState<any | null>(null)
   const [listStores, setListStores] = useState<any[]>([])
@@ -205,10 +203,7 @@ export default function AccountPage() {
   }
 
   useEffect(() => {
-    if (user) {
-      fetchFavorites(user.id)
-      fetchLists(user.id)
-    }
+    if (user) fetchLists(user.id)
   }, [user])
 
   async function fetchLists(userId: string) {
@@ -259,18 +254,7 @@ export default function AccountPage() {
     setListStores((prev) => prev.filter((ls) => ls.id !== listStoreId))
   }
 
-  async function fetchFavorites(userId: string) {
-    setFavLoading(true)
-    const { data } = await supabase
-      .from('favorites')
-      .select('*, store:stores(id, name, type, address)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    if (data) setFavorites(data)
-    setFavLoading(false)
-  }
-
-  function selectAndContinue(tierId: TierId) {
+function selectAndContinue(tierId: TierId) {
     setSelectedTier(tierId)
     setStep(2)
   }
@@ -336,43 +320,6 @@ export default function AccountPage() {
             </button>
           </div>
         </div>
-
-        <div className="px-5 mb-3">
-          <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>FAVORITE STORES</p>
-        </div>
-
-        {favLoading ? (
-          <div className="flex justify-center mt-6">
-            <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : favorites.length === 0 ? (
-          <div className="mx-5 rounded-2xl p-6 flex flex-col items-center gap-2" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <span style={{ fontSize: 32 }}>🤍</span>
-            <p className="text-sm font-bold text-white">No favorites yet</p>
-            <p className="text-xs text-white/40 text-center">Tap ❤️ on any store to save it here.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2.5 px-5 pb-4">
-            {favorites.map((fav) => {
-              const store = fav.store
-              if (!store) return null
-              return (
-                <div key={fav.id} className="rounded-2xl p-4 flex items-center gap-3" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    <span style={{ fontSize: 20 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                    {store.address && <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>}
-                  </div>
-                  <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} className="text-xs font-bold px-3 py-2 rounded-xl shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e' }}>
-                    View Stock
-                  </a>
-                </div>
-              )
-            })}
-          </div>
-        )}
 
         {/* My Lists */}
         <div className="flex items-center justify-between px-5 mt-4 mb-3">

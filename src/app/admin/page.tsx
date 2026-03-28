@@ -104,7 +104,7 @@ export default function AdminPage() {
     setLoading(true)
     const { data } = await supabase
       .from('stores')
-      .select('*')
+      .select('*, submitter:profiles!stores_submitted_by_fkey(username)')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
     if (data) setStores(data)
@@ -726,6 +726,7 @@ export default function AdminPage() {
                   <p className="text-xs text-white/40 mt-0.5">{store.address}</p>
                   <p className="text-xs mt-1" style={{ color: 'rgba(255,200,0,0.6)' }}>
                     {store.type.replace('_', ' ')} · Submitted {timeAgo(store.created_at)}
+                    {store.submitter?.username && ` · by @${store.submitter.username}`}
                   </p>
                 </div>
               </div>

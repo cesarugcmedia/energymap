@@ -95,9 +95,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [addedToLists, setAddedToLists] = useState<Set<string>>(new Set())
   const [newListName, setNewListName] = useState('')
   const [creatingList, setCreatingList] = useState(false)
-  const [isFavorited, setIsFavorited] = useState(false)
-  const [favLoading, setFavLoading] = useState(false)
-  const [search, setSearch] = useState('')
+const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
@@ -106,7 +104,6 @@ function StoreDetailContent({ id }: { id: string }) {
   useEffect(() => {
     fetchStore()
     fetchStock()
-    if (user) checkFavorite()
     if (user && isTracker) fetchDisputes()
 
     const channel = supabase
@@ -190,25 +187,6 @@ function StoreDetailContent({ id }: { id: string }) {
     }
     setNewListName('')
     setCreatingList(false)
-  }
-
-  async function checkFavorite() {
-    if (!user) return
-    const { data } = await supabase.from('favorites').select('id').eq('user_id', user.id).eq('store_id', id).maybeSingle()
-    setIsFavorited(!!data)
-  }
-
-  async function toggleFavorite() {
-    if (!user || favLoading) return
-    setFavLoading(true)
-    if (isFavorited) {
-      await supabase.from('favorites').delete().eq('user_id', user.id).eq('store_id', id)
-      setIsFavorited(false)
-    } else {
-      await supabase.from('favorites').insert({ user_id: user.id, store_id: id })
-      setIsFavorited(true)
-    }
-    setFavLoading(false)
   }
 
   async function fetchStock() {
@@ -370,29 +348,6 @@ function StoreDetailContent({ id }: { id: string }) {
           >
             <span className="text-white text-lg">←</span>
           </button>
-          {user && isHunterPlus && (
-            <button
-              onClick={toggleFavorite}
-              disabled={favLoading}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{
-                backgroundColor: isFavorited ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.07)',
-                border: isFavorited ? '1px solid rgba(239,68,68,0.3)' : '1px solid transparent',
-              }}
-            >
-              <span style={{ fontSize: 16 }}>{isFavorited ? '❤️' : '🤍'}</span>
-            </button>
-          )}
-          {user && !isHunterPlus && (
-            <button
-              onClick={() => router.push('/account')}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}
-              title="Hunter feature"
-            >
-              <span style={{ fontSize: 14 }}>🔒</span>
-            </button>
-          )}
         </div>
 
         <div className="flex items-center gap-3 mb-3">
