@@ -7,6 +7,16 @@ import { useAuth } from '@/contexts/AuthContext'
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'hunter' | 'tracker'
 
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
 function SetupProfile({ userId, email }: { userId: string; email: string }) {
   const [username, setUsername] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -160,6 +170,24 @@ const [lists, setLists] = useState<any[]>([])
   const [confirmEmail, setConfirmEmail] = useState(false)
   const [waitlistCount, setWaitlistCount] = useState<number>(0)
 
+  // Stats
+  const [reportCount, setReportCount] = useState<number>(0)
+  const [storeCount, setStoreCount] = useState<number>(0)
+  const [recentReports, setRecentReports] = useState<any[]>([])
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  // Profile management
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newUsername, setNewUsername] = useState('')
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [savingUsername, setSavingUsername] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [savingPassword, setSavingPassword] = useState(false)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+
   useEffect(() => {
     supabase
       .from('waitlist')
@@ -203,7 +231,7 @@ const [lists, setLists] = useState<any[]>([])
   }
 
   useEffect(() => {
-    if (user) fetchLists(user.id)
+    if (user) { fetchLists(user.id); fetchStats(user.id) }
   }, [user])
 
   async function fetchLists(userId: string) {
@@ -215,6 +243,53 @@ const [lists, setLists] = useState<any[]>([])
       .order('created_at', { ascending: false })
     if (data) setLists(data)
     setListsLoading(false)
+  }
+
+  async function fetchStats(userId: string) {
+    setStatsLoading(true)
+    const [{ count: rCount }, { count: sCount }, { data: recent }] = await Promise.all([
+      supabase.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', userId).eq('status', 'approved'),
+      supabase.from('stock_reports')
+        .select('id, reported_at, quantity, drink:drinks(name, flavor, brand), store:stores(name)')
+        .eq('user_id', userId)
+        .order('reported_at', { ascending: false })
+        .limit(5),
+    ])
+    setReportCount(rCount ?? 0)
+    setStoreCount(sCount ?? 0)
+    if (recent) setRecentReports(recent)
+    setStatsLoading(false)
+  }
+
+  async function saveUsername() {
+    if (!newUsername.trim() || !user) return
+    setUsernameError(null)
+    if (newUsername.trim().length < 3) { setUsernameError('Must be at least 3 characters.'); return }
+    setSavingUsername(true)
+    const { data: existing } = await supabase.from('profiles').select('id').eq('username', newUsername.trim()).neq('id', user.id).maybeSingle()
+    if (existing) { setUsernameError('That username is already taken.'); setSavingUsername(false); return }
+    const { error: upErr } = await supabase.from('profiles').update({ username: newUsername.trim() }).eq('id', user.id)
+    if (upErr) { setUsernameError('Could not save. Try again.'); setSavingUsername(false); return }
+    await refreshProfile()
+    setSavingUsername(false)
+    setEditingUsername(false)
+    setNewUsername('')
+  }
+
+  async function savePassword() {
+    setPasswordError(null)
+    setPasswordSuccess(false)
+    if (newPassword.length < 6) { setPasswordError('Password must be at least 6 characters.'); return }
+    if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); return }
+    setSavingPassword(true)
+    const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword })
+    if (pwErr) { setPasswordError(pwErr.message); setSavingPassword(false); return }
+    setSavingPassword(false)
+    setPasswordSuccess(true)
+    setNewPassword('')
+    setConfirmPassword('')
+    setTimeout(() => { setChangingPassword(false); setPasswordSuccess(false) }, 1500)
   }
 
   async function openList(list: any) {
@@ -290,7 +365,8 @@ function selectAndContinue(tierId: TierId) {
   if (user && profile) {
     return (
       <div className="bg-[#070710]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-        <div className="px-5 mb-6">
+        {/* Profile card */}
+        <div className="px-5 mb-4">
           <div className="rounded-2xl p-5" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)' }}>
             <div className="flex items-center gap-4 mb-4">
               <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)' }}>
@@ -315,11 +391,129 @@ function selectAndContinue(tierId: TierId) {
                 </div>
               </div>
             </div>
+
+            {/* Edit username */}
+            {editingUsername ? (
+              <div className="mb-3">
+                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>NEW USERNAME</p>
+                <input
+                  type="text"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
+                  placeholder={profile.username}
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  autoFocus
+                />
+                {usernameError && <p className="text-xs text-red-400 mb-2">{usernameError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} className="flex-1 rounded-xl py-2 text-xs font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+                  <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} className="flex-1 rounded-xl py-2 text-xs font-bold text-black" style={{ backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>
+                    {savingUsername ? '...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : changingPassword ? (
+              <div className="mb-3">
+                <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>NEW PASSWORD</p>
+                <input
+                  type="password"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
+                  placeholder="New password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoFocus
+                />
+                <input
+                  type="password"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white outline-none mb-2"
+                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                {passwordError && <p className="text-xs text-red-400 mb-2">{passwordError}</p>}
+                {passwordSuccess && <p className="text-xs mb-2" style={{ color: '#22c55e' }}>Password updated!</p>}
+                <div className="flex gap-2">
+                  <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} className="flex-1 rounded-xl py-2 text-xs font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+                  <button onClick={savePassword} disabled={savingPassword} className="flex-1 rounded-xl py-2 text-xs font-bold text-black" style={{ backgroundColor: savingPassword ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>
+                    {savingPassword ? '...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => { setEditingUsername(true); setNewUsername('') }}
+                  className="flex-1 rounded-xl py-2 text-xs font-bold"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
+                >
+                  ✏️ Username
+                </button>
+                <button
+                  onClick={() => setChangingPassword(true)}
+                  className="flex-1 rounded-xl py-2 text-xs font-bold"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
+                >
+                  🔑 Password
+                </button>
+              </div>
+            )}
+
             <button onClick={handleSignOut} className="w-full rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
               Sign Out
             </button>
           </div>
         </div>
+
+        {/* Activity Stats */}
+        <div className="px-5 mb-2">
+          <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>MY ACTIVITY</p>
+          {statsLoading ? (
+            <div className="flex justify-center py-3"><div className="w-5 h-5 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" /></div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[
+                { value: reportCount, label: 'Reports' },
+                { value: storeCount, label: 'Stores Added' },
+                { value: `${Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)}d`, label: 'Member For' },
+              ].map(({ value, label }) => (
+                <div key={label} className="rounded-2xl p-3 flex flex-col items-center gap-1" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <span className="text-xl font-black text-white">{value}</span>
+                  <span className="text-[10px] text-white/40 text-center leading-tight">{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Reports */}
+        {!statsLoading && recentReports.length > 0 && (
+          <div className="px-5 mb-4">
+            <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>RECENT REPORTS</p>
+            <div className="flex flex-col gap-2">
+              {recentReports.map((r) => {
+                const drink = r.drink as any
+                const store = r.store as any
+                const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
+                return (
+                  <div key={r.id} className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <span style={{ fontSize: 18 }}>⚡</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{drinkLabel || 'Unknown drink'}</p>
+                      <p className="text-xs text-white/40 truncate">{store?.name ?? 'Unknown store'}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-bold" style={{ color: '#22c55e' }}>{r.quantity} seen</p>
+                      <p className="text-[10px] text-white/30">{timeAgo(r.reported_at)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* My Lists */}
         <div className="flex items-center justify-between px-5 mt-4 mb-3">
