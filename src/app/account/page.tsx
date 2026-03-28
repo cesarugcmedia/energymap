@@ -7,6 +7,18 @@ import { useAuth } from '@/contexts/AuthContext'
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'hunter' | 'tracker'
 
+const BADGE_DEFS = [
+  { id: 'early_adopter', icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)' },
+  { id: 'first_report',  icon: '⚡', name: 'First Report',    desc: 'Submitted your first stock report',   color: '#22c55e', glow: 'rgba(34,197,94,0.25)'  },
+  { id: 'reporter_10',   icon: '📊', name: 'Reporter',        desc: '10 stock reports submitted',          color: '#22c55e', glow: 'rgba(34,197,94,0.25)'  },
+  { id: 'reporter_50',   icon: '🏆', name: 'Veteran',         desc: '50 stock reports submitted',          color: '#f97316', glow: 'rgba(249,115,22,0.25)' },
+  { id: 'reporter_100',  icon: '💎', name: 'Elite',           desc: '100 stock reports submitted',         color: '#a855f7', glow: 'rgba(168,85,247,0.25)' },
+  { id: 'scout',         icon: '📍', name: 'Scout',           desc: 'Added your first approved store',     color: '#3b82f6', glow: 'rgba(59,130,246,0.25)' },
+  { id: 'pathfinder',    icon: '🗺️', name: 'Pathfinder',      desc: 'Added 5 approved stores',             color: '#06b6d4', glow: 'rgba(6,182,212,0.25)'  },
+  { id: 'flavor_hunter', icon: '🎯', name: 'Flavor Hunter',   desc: 'Reported 5 different drinks',         color: '#ec4899', glow: 'rgba(236,72,153,0.25)' },
+  { id: 'verified',      icon: '✅', name: 'Verified',        desc: 'Trusted community reporter',          color: '#60a5fa', glow: 'rgba(96,165,250,0.25)'  },
+]
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -173,6 +185,7 @@ const [lists, setLists] = useState<any[]>([])
   // Stats
   const [reportCount, setReportCount] = useState<number>(0)
   const [storeCount, setStoreCount] = useState<number>(0)
+  const [uniqueFlavors, setUniqueFlavors] = useState<number>(0)
   const [recentReports, setRecentReports] = useState<any[]>([])
   const [statsLoading, setStatsLoading] = useState(false)
 
@@ -247,7 +260,7 @@ const [lists, setLists] = useState<any[]>([])
 
   async function fetchStats(userId: string) {
     setStatsLoading(true)
-    const [{ count: rCount }, { count: sCount }, { data: recent }] = await Promise.all([
+    const [{ count: rCount }, { count: sCount }, { data: recent }, { data: flavors }] = await Promise.all([
       supabase.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', userId).eq('status', 'approved'),
       supabase.from('stock_reports')
@@ -255,10 +268,12 @@ const [lists, setLists] = useState<any[]>([])
         .eq('user_id', userId)
         .order('reported_at', { ascending: false })
         .limit(5),
+      supabase.from('stock_reports').select('drink_id').eq('user_id', userId),
     ])
     setReportCount(rCount ?? 0)
     setStoreCount(sCount ?? 0)
     if (recent) setRecentReports(recent)
+    if (flavors) setUniqueFlavors(new Set(flavors.map((r: any) => r.drink_id)).size)
     setStatsLoading(false)
   }
 
@@ -514,6 +529,66 @@ function selectAndContinue(tierId: TierId) {
             </div>
           </div>
         )}
+
+        {/* Badges */}
+        {!statsLoading && (() => {
+          const earned = new Set<string>()
+          const memberDays = Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+          if (memberDays >= 30) earned.add('early_adopter')
+          if (reportCount >= 1)   earned.add('first_report')
+          if (reportCount >= 10)  earned.add('reporter_10')
+          if (reportCount >= 50)  earned.add('reporter_50')
+          if (reportCount >= 100) earned.add('reporter_100')
+          if (storeCount >= 1)    earned.add('scout')
+          if (storeCount >= 5)    earned.add('pathfinder')
+          if (uniqueFlavors >= 5) earned.add('flavor_hunter')
+          if (profile.is_verified_reporter) earned.add('verified')
+
+          function progressHint(id: string): string | null {
+            if (id === 'reporter_10'  && reportCount < 10)  return `${reportCount}/10 reports`
+            if (id === 'reporter_50'  && reportCount < 50)  return `${reportCount}/50 reports`
+            if (id === 'reporter_100' && reportCount < 100) return `${reportCount}/100 reports`
+            if (id === 'pathfinder'   && storeCount < 5)    return `${storeCount}/5 stores`
+            if (id === 'flavor_hunter' && uniqueFlavors < 5) return `${uniqueFlavors}/5 drinks`
+            return null
+          }
+
+          const earnedCount = earned.size
+          return (
+            <div className="px-5 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>BADGES</p>
+                <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.25)' }}>{earnedCount}/{BADGE_DEFS.length} earned</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {BADGE_DEFS.map((b) => {
+                  const isEarned = earned.has(b.id)
+                  const hint = progressHint(b.id)
+                  return (
+                    <div
+                      key={b.id}
+                      className="rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center"
+                      style={{
+                        backgroundColor: isEarned ? 'rgba(255,255,255,0.05)' : '#1a1a24',
+                        border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(255,255,255,0.06)',
+                        boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none',
+                        opacity: isEarned ? 1 : 0.45,
+                      }}
+                    >
+                      <span style={{ fontSize: 22, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
+                      <p className="text-[11px] font-black leading-tight" style={{ color: isEarned ? b.color : 'rgba(255,255,255,0.5)' }}>{b.name}</p>
+                      {hint ? (
+                        <p className="text-[9px] font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>{hint}</p>
+                      ) : (
+                        <p className="text-[9px] leading-tight" style={{ color: 'rgba(255,255,255,0.3)' }}>{b.desc}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* My Lists */}
         <div className="flex items-center justify-between px-5 mt-4 mb-3">
