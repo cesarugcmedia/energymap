@@ -184,7 +184,7 @@ export default function MapPage() {
         />
       </div>
 
-      {/* Zoom controls */}
+      {/* Zoom + locate controls */}
       {leafletMap && (
         <div
           className="absolute z-10 flex flex-col gap-2"
@@ -207,6 +207,20 @@ export default function MapPage() {
               {label}
             </button>
           ))}
+          <button
+            onClick={() => leafletMap.setView([lat, lng], 15)}
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: 'rgba(10,10,15,0.92)',
+              border: '1px solid rgba(59,130,246,0.5)',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              fontSize: 18,
+            }}
+            title="Re-center on my location"
+          >
+            📍
+          </button>
         </div>
       )}
 
