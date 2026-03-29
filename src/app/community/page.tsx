@@ -15,6 +15,23 @@ const CHANNELS = [
 
 const QUICK_REACTIONS = ['⚡', '🔥', '👀', '💯', '🙌', '❤️']
 
+const AVATAR_COLORS = [
+  'linear-gradient(135deg, #22c55e, #16a34a)',
+  'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+  'linear-gradient(135deg, #a855f7, #7c3aed)',
+  'linear-gradient(135deg, #f97316, #ea580c)',
+  'linear-gradient(135deg, #ec4899, #be185d)',
+  'linear-gradient(135deg, #06b6d4, #0284c7)',
+  'linear-gradient(135deg, #f59e0b, #d97706)',
+  'linear-gradient(135deg, #10b981, #059669)',
+]
+
+function avatarColor(userId: string) {
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -365,16 +382,17 @@ export default function CommunityPage() {
     const isSearchMatch = searchQuery.trim() && msg.content?.toLowerCase().includes(searchQuery.toLowerCase())
     const msgReactions = localReactions[msg.id] ?? []
     const initial = (username?.[0] ?? '?').toUpperCase()
+    const color = avatarColor(msg.user_id ?? msg.id ?? '')
 
     return (
       <div key={msg.id} ref={(el) => { msgRefs.current[msg.id] = el as HTMLElement | null }}
         className="msg-row"
-        style={{ display: 'flex', gap: 12, padding: `${grouped ? 2 : 10}px 16px`, background: isMe ? 'rgba(34,197,94,0.02)' : isSearchMatch ? 'rgba(34,197,94,0.04)' : 'transparent', position: 'relative' }}>
+        style={{ display: 'flex', gap: 12, padding: `${grouped ? 2 : 10}px 16px`, background: isSearchMatch ? 'rgba(34,197,94,0.04)' : 'transparent', position: 'relative' }}>
 
         {/* Avatar */}
         <div style={{ width: 36, flexShrink: 0 }}>
           {!grouped && (
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff' }}>
               {initial}
             </div>
           )}
@@ -428,42 +446,38 @@ export default function CommunityPage() {
             </div>
           )}
 
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 3 }}>
+          {/* Actions row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginTop: 4, position: 'relative' }}>
             <button onClick={() => { setReplyingTo(msg); inputRef.current?.focus() }}
-              style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↩ Reply</button>
+              style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 6 }}>↩ Reply</button>
+            {/* Emoji reaction button — always visible, works on mobile */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setReactingTo(reactingTo === msg.id ? null : msg.id)}
+                style={{ fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6, opacity: 0.5 }}>😊</button>
+              {reactingTo === msg.id && (
+                <div style={{ position: 'absolute', left: 0, bottom: 'calc(100% + 4px)', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 6, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', animation: 'slideIn 0.15s ease', whiteSpace: 'nowrap' }}>
+                  {QUICK_REACTIONS.map((emoji) => (
+                    <button key={emoji} onClick={() => addReaction(msg.id, emoji)}
+                      style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: '2px 3px', borderRadius: 6 }}>
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {!isMe && (
               <button onClick={() => reportMessage(msg.id)} disabled={reportedMsgs.has(msg.id)}
-                style={{ fontSize: 10, color: reportedMsgs.has(msg.id) ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>🚩</button>
+                style={{ fontSize: 11, color: reportedMsgs.has(msg.id) ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6 }}>🚩</button>
             )}
             {isAdmin && (
-              <button onClick={() => pinMessage(msg.id)} style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>📌</button>
+              <button onClick={() => pinMessage(msg.id)}
+                style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6 }}>📌</button>
             )}
             {isMe && (
               <button onClick={() => deleteMessage(msg.id)}
-                style={{ fontSize: 10, fontWeight: 600, color: isPendingDelete ? '#ef4444' : 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                {isPendingDelete ? 'Tap again to delete' : '✕'}
+                style={{ fontSize: 11, fontWeight: 600, color: isPendingDelete ? '#ef4444' : 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6 }}>
+                {isPendingDelete ? 'delete?' : '✕'}
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Quick react (hover) */}
-        <div className="reaction-btn" style={{ position: 'absolute', right: 12, top: grouped ? 2 : 10 }}>
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setReactingTo(reactingTo === msg.id ? null : msg.id)}
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '3px 7px', cursor: 'pointer', fontSize: 13 }}>😊</button>
-            {reactingTo === msg.id && (
-              <div style={{ position: 'absolute', right: 0, bottom: 'calc(100% + 6px)', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 6, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', animation: 'slideIn 0.15s ease' }}>
-                {QUICK_REACTIONS.map((emoji) => (
-                  <button key={emoji} onClick={() => addReaction(msg.id, emoji)}
-                    style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: '2px 4px', borderRadius: 6, transition: 'transform 0.1s ease' }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.3)' }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}>
-                    {emoji}
-                  </button>
-                ))}
-              </div>
             )}
           </div>
         </div>
