@@ -159,7 +159,15 @@ export default function CommunityPage() {
             if (prev.find((m) => m.id === msg.id)) return prev
             return [...prev, incoming]
           })
-          setTimeout(() => { const c = scrollContainerRef.current; if (c) c.scrollTop = c.scrollHeight }, 50)
+          setTimeout(() => {
+            const c = scrollContainerRef.current
+            if (!c) return
+            const distFromBottom = c.scrollHeight - c.scrollTop - c.clientHeight
+            if (distFromBottom < 200) {
+              c.scrollTop = c.scrollHeight
+              localStorage.setItem('community_last_read', new Date().toISOString())
+            }
+          }, 50)
         } else {
           setChannelUnread((prev) => ({ ...prev, [msg.channel]: (prev[msg.channel] ?? 0) + 1 }))
         }
@@ -249,7 +257,14 @@ export default function CommunityPage() {
   useEffect(() => {
     const el = scrollContainerRef.current
     if (!el) return
-    const onScroll = () => setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 120)
+    const onScroll = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      setShowScrollBtn(distFromBottom > 120)
+      // Mark everything as read when user is at (or near) the bottom
+      if (distFromBottom < 60) {
+        localStorage.setItem('community_last_read', new Date().toISOString())
+      }
+    }
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [loading])
