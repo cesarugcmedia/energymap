@@ -104,11 +104,25 @@ export default function AdminPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('stores')
-      .select('*, submitter:profiles(username)')
+      .select('id, name, address, type, lat, lng, status, submitted_by, created_at')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
     if (error) console.error('fetchPending error:', error)
-    if (data) setStores(data)
+    if (data) {
+      // Fetch submitter usernames separately to avoid FK join issues
+      const submitterIds = [...new Set(data.map((s: any) => s.submitted_by).filter(Boolean))]
+      let usernameMap: Record<string, string> = {}
+      if (submitterIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', submitterIds)
+        if (profiles) {
+          usernameMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.username]))
+        }
+      }
+      setStores(data.map((s: any) => ({ ...s, submitter: s.submitted_by ? { username: usernameMap[s.submitted_by] ?? 'Unknown' } : null })))
+    }
     setLoading(false)
   }
 
