@@ -117,7 +117,7 @@ export default function CommunityPage() {
   const [reportedMsgs, setReportedMsgs] = useState<Set<string>>(new Set())
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const [reactingTo, setReactingTo] = useState<string | null>(null)
-  const [localReactions, setLocalReactions] = useState<Record<string, { emoji: string; count: number }[]>>({})
+  const [reactions, setReactions] = useState<Record<string, { emoji: string; count: number; byMe: boolean }[]>>({})
   const recentSentRef = useRef<number[]>([])
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -196,7 +196,30 @@ export default function CommunityPage() {
       })
     }, 1000)
 
-    return () => { supabase.removeChannel(msgChannel); supabase.removeChannel(typingChannel); clearInterval(typingInterval) }
+    const reactionsChannel = supabase
+      .channel('community-reactions')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'message_reactions' }, (payload) => {
+        const r = payload.new as any
+        if (r.user_id === user!.id) return // already handled optimistically
+        setReactions((prev) => {
+          const c = prev[r.message_id] ?? []
+          const ex = c.find((x) => x.emoji === r.emoji)
+          if (ex) return { ...prev, [r.message_id]: c.map((x) => x.emoji === r.emoji ? { ...x, count: x.count + 1 } : x) }
+          return { ...prev, [r.message_id]: [...c, { emoji: r.emoji, count: 1, byMe: false }] }
+        })
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'message_reactions' }, (payload) => {
+        const r = payload.old as any
+        if (!r.message_id || !r.emoji || r.user_id === user!.id) return // already handled optimistically
+        setReactions((prev) => {
+          const c = prev[r.message_id] ?? []
+          const updated = c.map((x) => x.emoji === r.emoji ? { ...x, count: Math.max(0, x.count - 1) } : x).filter((x) => x.count > 0)
+          return { ...prev, [r.message_id]: updated }
+        })
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(msgChannel); supabase.removeChannel(typingChannel); supabase.removeChannel(reactionsChannel); clearInterval(typingInterval) }
   }, [user, activeChannel])
 
   useLayoutEffect(() => {
@@ -250,7 +273,23 @@ export default function CommunityPage() {
       supabase.from('messages').select('*, profile:profiles(username)')
         .eq('channel', activeChannel).eq('pinned', true).maybeSingle(),
     ])
-    if (msgs) setMessages(msgs)
+    if (msgs) {
+      setMessages(msgs)
+      const ids = msgs.map((m: any) => m.id)
+      if (ids.length > 0) {
+        const { data: rxns } = await supabase.from('message_reactions').select('message_id, emoji, user_id').in('message_id', ids)
+        if (rxns) {
+          const grouped: Record<string, { emoji: string; count: number; byMe: boolean }[]> = {}
+          for (const r of rxns) {
+            if (!grouped[r.message_id]) grouped[r.message_id] = []
+            const ex = grouped[r.message_id].find((x) => x.emoji === r.emoji)
+            if (ex) { ex.count++; if (r.user_id === user!.id) ex.byMe = true }
+            else grouped[r.message_id].push({ emoji: r.emoji, count: 1, byMe: r.user_id === user!.id })
+          }
+          setReactions(grouped)
+        }
+      }
+    }
     if (pinned) setPinnedMessage(pinned)
     setLoading(false)
   }
@@ -349,13 +388,28 @@ export default function CommunityPage() {
     setReportedMsgs((prev) => new Set([...prev, msgId]))
   }
 
-  function addReaction(msgId: string, emoji: string) {
-    setLocalReactions((prev) => {
-      const existing = prev[msgId] ?? []
-      const found = existing.find((r) => r.emoji === emoji)
-      return { ...prev, [msgId]: found ? existing.map((r) => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) : [...existing, { emoji, count: 1 }] }
-    })
+  async function addReaction(msgId: string, emoji: string) {
+    if (!user) return
     setReactingTo(null)
+    const cur = reactions[msgId] ?? []
+    const existing = cur.find((r) => r.emoji === emoji)
+    // Optimistic update
+    setReactions((prev) => {
+      const c = prev[msgId] ?? []
+      if (existing?.byMe) {
+        const updated = c.map((r) => r.emoji === emoji ? { ...r, count: r.count - 1 } : r).filter((r) => r.count > 0)
+        return { ...prev, [msgId]: updated }
+      } else if (existing) {
+        return { ...prev, [msgId]: c.map((r) => r.emoji === emoji ? { ...r, count: r.count + 1, byMe: true } : r) }
+      } else {
+        return { ...prev, [msgId]: [...c, { emoji, count: 1, byMe: true }] }
+      }
+    })
+    if (existing?.byMe) {
+      await supabase.from('message_reactions').delete().eq('message_id', msgId).eq('user_id', user.id).eq('emoji', emoji)
+    } else {
+      await supabase.from('message_reactions').upsert({ message_id: msgId, user_id: user.id, emoji }, { onConflict: 'message_id,user_id,emoji' })
+    }
   }
 
   function switchChannel(id: string) {
@@ -380,7 +434,7 @@ export default function CommunityPage() {
     const parentMsg = msg.reply_to_id ? msgMap[msg.reply_to_id] : null
     const isPendingDelete = confirmDelete === msg.id
     const isSearchMatch = searchQuery.trim() && msg.content?.toLowerCase().includes(searchQuery.toLowerCase())
-    const msgReactions = localReactions[msg.id] ?? []
+    const msgReactions = reactions[msg.id] ?? []
     const initial = (username?.[0] ?? '?').toUpperCase()
     const color = avatarColor(msg.user_id ?? msg.id ?? '')
 
@@ -438,7 +492,7 @@ export default function CommunityPage() {
             <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
               {msgReactions.map((r, ri) => (
                 <div key={ri} className="reaction-chip" onClick={() => addReaction(msg.id, r.emoji)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '2px 8px', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: r.byMe ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', border: r.byMe ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '2px 8px', cursor: 'pointer' }}>
                   <span style={{ fontSize: 13 }}>{r.emoji}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{r.count}</span>
                 </div>
