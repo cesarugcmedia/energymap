@@ -12,6 +12,24 @@ body {
   font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
 
+@media (min-width: 768px) {
+  html,
+  body {
+    overflow: auto;
+  }
+}
+
+/* Bottom nav clearance on mobile only */
+.mobile-nav-pb {
+  padding-bottom: calc(70px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .mobile-nav-pb {
+    padding-bottom: 0;
+  }
+}
+
 /* Prevent iOS input zoom — all inputs must be at least 16px */
 input,
 textarea,

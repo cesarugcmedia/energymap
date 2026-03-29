@@ -13,8 +13,7 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
 
   return (
     <main
-      className="flex-1 overflow-y-auto"
-      style={user && !selfManaged ? { paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' } : {}}
+      className={`flex-1 overflow-y-auto${user && !selfManaged ? ' mobile-nav-pb' : ''}`}
     >
       {children}
     </main>

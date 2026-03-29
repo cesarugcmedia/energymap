@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
@@ -88,6 +88,7 @@ export default function StoresPage() {
   const lat = location?.coords.latitude ?? 35.3015
   const lng = location?.coords.longitude ?? -81.0694
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
+  const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
   const [radius, setRadius] = useState<number | null>(10)
@@ -148,16 +149,21 @@ export default function StoresPage() {
           ].slice(0, 3),
         }))
 
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           setLiveUpdates((prev) => ({
             ...prev,
             [report.store_id]: (prev[report.store_id] ?? []).filter((u) => u.id !== updateId),
           }))
         }, 8000)
+        liveUpdateTimersRef.current.push(timer)
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+      liveUpdateTimersRef.current.forEach(clearTimeout)
+      liveUpdateTimersRef.current = []
+    }
   }, [stores])
 
   useEffect(() => {

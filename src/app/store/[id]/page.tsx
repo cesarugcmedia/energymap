@@ -104,7 +104,6 @@ const [search, setSearch] = useState('')
   useEffect(() => {
     fetchStore()
     fetchStock()
-    if (user && isTracker) fetchDisputes()
 
     const channel = supabase
       .channel(`store-detail:${id}`)
@@ -113,6 +112,10 @@ const [search, setSearch] = useState('')
 
     return () => { supabase.removeChannel(channel) }
   }, [id])
+
+  useEffect(() => {
+    if (user && isTracker) fetchDisputes()
+  }, [user, isTracker, id])
 
   async function fetchStore() {
     const { data } = await supabase.from('stores').select('*').eq('id', id).single()

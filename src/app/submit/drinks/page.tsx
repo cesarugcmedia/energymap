@@ -87,54 +87,58 @@ function DrinksContent() {
 
   async function handleSubmit() {
     const entries = Object.entries(selections)
-    if (entries.length === 0) return
+    if (entries.length === 0 || submitting) return
     setSubmitting(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
 
-    // Upload photo if present
-    let photoUrl: string | null = null
-    if (photo && user) {
-      setPhotoUploading(true)
-      const ext = photo.name.split('.').pop() ?? 'jpg'
-      const path = `${user.id}/${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('report-photos').upload(path, photo)
-      if (!error) {
-        const { data: urlData } = supabase.storage.from('report-photos').getPublicUrl(path)
-        photoUrl = urlData.publicUrl
+      // Upload photo if present
+      let photoUrl: string | null = null
+      if (photo && user) {
+        setPhotoUploading(true)
+        const ext = photo.name.split('.').pop() ?? 'jpg'
+        const path = `${user.id}/${Date.now()}.${ext}`
+        const { error } = await supabase.storage.from('report-photos').upload(path, photo)
+        if (!error) {
+          const { data: urlData } = supabase.storage.from('report-photos').getPublicUrl(path)
+          photoUrl = urlData.publicUrl
+        }
+        setPhotoUploading(false)
       }
-      setPhotoUploading(false)
-    }
 
-    // Rate-limit check: filter out drinks reported in last 30 min
-    let toSubmit = entries
-    if (user) {
-      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
-      const { data: recent } = await supabase
-        .from('stock_reports')
-        .select('drink_id')
-        .eq('user_id', user.id)
-        .eq('store_id', storeId)
-        .gte('reported_at', since)
-      const recentIds = new Set((recent ?? []).map((r: any) => r.drink_id))
-      toSubmit = entries.filter(([drinkId]) => !recentIds.has(drinkId))
-    }
+      // Rate-limit check: filter out drinks reported in last 30 min
+      let toSubmit = entries
+      if (user) {
+        const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+        const { data: recent } = await supabase
+          .from('stock_reports')
+          .select('drink_id')
+          .eq('user_id', user.id)
+          .eq('store_id', storeId)
+          .gte('reported_at', since)
+        const recentIds = new Set((recent ?? []).map((r: any) => r.drink_id))
+        toSubmit = entries.filter(([drinkId]) => !recentIds.has(drinkId))
+      }
 
-    if (toSubmit.length > 0) {
-      await supabase.from('stock_reports').insert(
-        toSubmit.map(([drinkId, quantity]) => ({
-          store_id: storeId,
-          drink_id: drinkId,
-          quantity,
-          user_id: user?.id ?? null,
-          ...(photoUrl ? { photo_url: photoUrl } : {}),
-        }))
+      if (toSubmit.length > 0) {
+        await supabase.from('stock_reports').insert(
+          toSubmit.map(([drinkId, quantity]) => ({
+            store_id: storeId,
+            drink_id: drinkId,
+            quantity,
+            user_id: user?.id ?? null,
+            ...(photoUrl ? { photo_url: photoUrl } : {}),
+          }))
+        )
+      }
+
+      router.replace(
+        `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${toSubmit.length}`
       )
+    } catch {
+      setSubmitting(false)
     }
-
-    router.replace(
-      `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${toSubmit.length}`
-    )
   }
 
   const filtered = drinks.filter((d) => {

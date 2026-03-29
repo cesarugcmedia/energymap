@@ -46,8 +46,9 @@ export default function LeaderboardPage() {
       .select('*')
       .order('points', { ascending: false })
       .limit(50)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) setEntries(data)
+        if (error) console.error('Leaderboard fetch failed:', error.message)
         setLoading(false)
       })
   }, [user])

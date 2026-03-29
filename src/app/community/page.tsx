@@ -269,31 +269,34 @@ export default function CommunityPage() {
   }, [mentionQuery, mentionMode])
 
   async function fetchAll() {
-    const [{ data: msgs }, { data: pinned }] = await Promise.all([
-      supabase.from('messages').select('*, profile:profiles(username, tier, is_verified_reporter)')
-        .eq('channel', activeChannel).order('created_at', { ascending: true }).limit(200),
-      supabase.from('messages').select('*, profile:profiles(username)')
-        .eq('channel', activeChannel).eq('pinned', true).maybeSingle(),
-    ])
-    if (msgs) {
-      setMessages(msgs)
-      const ids = msgs.map((m: any) => m.id)
-      if (ids.length > 0) {
-        const { data: rxns } = await supabase.from('message_reactions').select('message_id, emoji, user_id').in('message_id', ids)
-        if (rxns) {
-          const grouped: Record<string, { emoji: string; count: number; byMe: boolean }[]> = {}
-          for (const r of rxns) {
-            if (!grouped[r.message_id]) grouped[r.message_id] = []
-            const ex = grouped[r.message_id].find((x) => x.emoji === r.emoji)
-            if (ex) { ex.count++; if (r.user_id === user!.id) ex.byMe = true }
-            else grouped[r.message_id].push({ emoji: r.emoji, count: 1, byMe: r.user_id === user!.id })
+    try {
+      const [{ data: msgs }, { data: pinned }] = await Promise.all([
+        supabase.from('messages').select('*, profile:profiles(username, tier, is_verified_reporter)')
+          .eq('channel', activeChannel).order('created_at', { ascending: true }).limit(200),
+        supabase.from('messages').select('*, profile:profiles(username)')
+          .eq('channel', activeChannel).eq('pinned', true).maybeSingle(),
+      ])
+      if (msgs) {
+        setMessages(msgs)
+        const ids = msgs.map((m: any) => m.id)
+        if (ids.length > 0) {
+          const { data: rxns } = await supabase.from('message_reactions').select('message_id, emoji, user_id').in('message_id', ids)
+          if (rxns) {
+            const grouped: Record<string, { emoji: string; count: number; byMe: boolean }[]> = {}
+            for (const r of rxns) {
+              if (!grouped[r.message_id]) grouped[r.message_id] = []
+              const ex = grouped[r.message_id].find((x) => x.emoji === r.emoji)
+              if (ex) { ex.count++; if (r.user_id === user!.id) ex.byMe = true }
+              else grouped[r.message_id].push({ emoji: r.emoji, count: 1, byMe: r.user_id === user!.id })
+            }
+            setReactions(grouped)
           }
-          setReactions(grouped)
         }
       }
+      if (pinned) setPinnedMessage(pinned)
+    } finally {
+      setLoading(false)
     }
-    if (pinned) setPinnedMessage(pinned)
-    setLoading(false)
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {

@@ -61,7 +61,8 @@ export default function ListsPage() {
   }
 
   async function deleteList(listId: string) {
-    await supabase.from('custom_lists').delete().eq('id', listId)
+    const { error } = await supabase.from('custom_lists').delete().eq('id', listId)
+    if (error) { console.error('Failed to delete list:', error.message); return }
     setLists((prev) => prev.filter((l) => l.id !== listId))
     if (activeList?.id === listId) setActiveList(null)
   }
@@ -79,7 +80,8 @@ export default function ListsPage() {
   }
 
   async function removeFromList(listStoreId: string) {
-    await supabase.from('list_stores').delete().eq('id', listStoreId)
+    const { error } = await supabase.from('list_stores').delete().eq('id', listStoreId)
+    if (error) { console.error('Failed to remove from list:', error.message); return }
     setListStores((prev) => prev.filter((ls) => ls.id !== listStoreId))
     setLists((prev) => prev.map((l) =>
       l.id === activeList?.id

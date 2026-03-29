@@ -42,15 +42,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   async function fetchProfile(userId: string, attempt = 0) {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    if (data) {
-      setProfile(data)
-      setLoading(false)
-    } else if (attempt < 4) {
-      setTimeout(() => fetchProfile(userId, attempt + 1), 300)
-    } else {
-      setProfile(null)
-      setLoading(false)
+    try {
+      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      if (data) {
+        setProfile(data)
+        setLoading(false)
+      } else if (attempt < 4) {
+        setTimeout(() => fetchProfile(userId, attempt + 1), 300)
+      } else {
+        setProfile(null)
+        setLoading(false)
+      }
+    } catch {
+      if (attempt < 4) {
+        setTimeout(() => fetchProfile(userId, attempt + 1), 300)
+      } else {
+        setProfile(null)
+        setLoading(false)
+      }
     }
   }
 

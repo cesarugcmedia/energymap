@@ -27,6 +27,8 @@ export function useNearbyStores(lat: number, lng: number) {
       cachedStores = data
       cacheTime = Date.now()
       setStores(data)
+    } else if (error) {
+      console.error('Failed to load stores:', error.message)
     }
     setLoading(false)
   }, [])

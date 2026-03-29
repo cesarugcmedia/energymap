@@ -7,29 +7,27 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 const ALL_TABS = [
-  { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
-  { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false, trackerOnly: false },
-  { href: '/community', label: 'Community', icon: '💬', adminOnly: false, trackerOnly: false },
-  { href: '/leaderboard', label: 'Ranks', icon: '🏆', adminOnly: false, trackerOnly: false },
-  { href: '/account', label: 'Account', icon: '👤', adminOnly: false, trackerOnly: false },
-  { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true, trackerOnly: false },
+  { href: '/', label: 'Map', icon: '🗺️', adminOnly: false },
+  { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false },
+  { href: '/community', label: 'Community', icon: '💬', adminOnly: false },
+  { href: '/leaderboard', label: 'Ranks', icon: '🏆', adminOnly: false },
+  { href: '/account', label: 'Account', icon: '👤', adminOnly: false },
+  { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true },
 ]
 
 const TAB_PATHS = ['/', '/stores', '/community', '/leaderboard', '/notifications', '/account', '/admin', '/admin/login']
 
-export default function BottomNav() {
+export default function SideNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
   const [unread, setUnread] = useState(0)
   const pathnameRef = useRef(pathname)
   useEffect(() => { pathnameRef.current = pathname }, [pathname])
 
-  // Clear badge when on community page — community page owns the last_read timestamp
   useEffect(() => {
     if (pathname === '/community') setUnread(0)
   }, [pathname])
 
-  // Load initial unread count + subscribe to new messages
   useEffect(() => {
     if (!user) return
     const lastRead = localStorage.getItem('community_last_read') ?? new Date(0).toISOString()
@@ -42,7 +40,7 @@ export default function BottomNav() {
       .then(({ count }) => setUnread(count ?? 0))
 
     const channel = supabase
-      .channel('nav-unread')
+      .channel('sidenav-unread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const msg = payload.new as any
         if (msg.user_id !== user.id && pathnameRef.current !== '/community') {
@@ -57,33 +55,51 @@ export default function BottomNav() {
   if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
 
-  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
   const tabs = ALL_TABS.filter((t) => {
     if (t.adminOnly && !profile?.is_admin) return false
-    if (t.trackerOnly && !isTracker) return false
     return true
   })
 
+  const tierLabel = profile?.is_admin ? 'Admin' : profile?.tier === 'tracker' ? 'Tracker' : profile?.tier === 'hunter' ? 'Hunter' : 'Free'
+  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? '#a855f7' : profile?.tier === 'hunter' ? '#22c55e' : 'rgba(255,255,255,0.35)'
+
   return (
-    <div
-      className="fixed bottom-0 z-50 w-full md:hidden"
+    <aside
+      className="hidden md:flex flex-col shrink-0"
       style={{
+        width: 220,
+        height: '100dvh',
         backgroundColor: '#070710',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
-        height: 'calc(70px + env(safe-area-inset-bottom))',
+        borderRight: '1px solid rgba(255,255,255,0.07)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 50,
       }}
     >
-      <div className="flex" style={{ height: '70px' }}>
+      {/* Logo */}
+      <div style={{ padding: '28px 20px 24px' }}>
+        <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, letterSpacing: 3, color: '#22c55e', lineHeight: 1 }}>
+          EnergyMap
+        </p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>Find drinks near you</p>
+      </div>
+
+      {/* Nav links */}
+      <nav className="flex flex-col gap-1 px-3 flex-1">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href || (tab.href === '/admin' && pathname === '/admin/login')
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex flex-col items-center justify-center flex-1 gap-1 no-underline"
-              style={{ color: isActive ? '#22c55e' : 'rgba(255,255,255,0.35)' }}
+              className="flex items-center gap-3 rounded-xl px-3 py-3 no-underline transition-colors"
+              style={{
+                backgroundColor: isActive ? 'rgba(34,197,94,0.1)' : 'transparent',
+                color: isActive ? '#22c55e' : 'rgba(255,255,255,0.5)',
+              }}
             >
-              <span style={{ fontSize: 20, position: 'relative', display: 'inline-block' }}>
+              <span style={{ fontSize: 18, position: 'relative', display: 'inline-block' }}>
                 {tab.icon}
                 {tab.href === '/community' && unread > 0 && (
                   <span
@@ -110,11 +126,24 @@ export default function BottomNav() {
                   </span>
                 )}
               </span>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>{tab.label}</span>
+              <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500 }}>{tab.label}</span>
             </Link>
           )
         })}
+      </nav>
+
+      {/* User footer */}
+      <div
+        style={{
+          padding: '16px 20px',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
+        <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {profile?.username ?? user.email?.split('@')[0] ?? 'User'}
+        </p>
+        <p style={{ fontSize: 11, color: tierColor, fontWeight: 600, marginTop: 2 }}>{tierLabel}</p>
       </div>
-    </div>
+    </aside>
   )
 }

@@ -61,7 +61,8 @@ export default function NotificationsPage() {
 
   async function clearAll() {
     if (!window.confirm('Clear all notifications?')) return
-    await supabase.from('notifications').delete().eq('user_id', user!.id)
+    const { error } = await supabase.from('notifications').delete().eq('user_id', user!.id)
+    if (error) { console.error('Failed to clear notifications:', error.message); return }
     setNotifications([])
   }
 
