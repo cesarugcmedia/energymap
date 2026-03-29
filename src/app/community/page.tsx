@@ -146,6 +146,31 @@ export default function CommunityPage() {
     setChannelUnread((prev) => ({ ...prev, [activeChannel]: 0 }))
   }, [activeChannel, user])
 
+  // On first load, sync per-channel unread counts from DB
+  useEffect(() => {
+    if (!user) return
+    const lastRead = lastReadTimeRef.current ?? new Date(0).toISOString()
+    Promise.all(
+      CHANNELS.map((ch) =>
+        supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('channel', ch.id)
+          .gt('created_at', lastRead)
+          .neq('user_id', user.id)
+          .then(({ count }) => ({ id: ch.id, count: count ?? 0 }))
+      )
+    ).then((results) => {
+      setChannelUnread((prev) => {
+        const next = { ...prev }
+        results.forEach(({ id, count }) => {
+          if (id !== activeChannel) next[id] = count
+        })
+        return next
+      })
+    })
+  }, [user])
+
   useEffect(() => {
     if (!user) return
     const msgChannel = supabase
