@@ -558,8 +558,13 @@ function selectAndContinue(tierId: TierId) {
                   ))}
                 </div>
                 {profile.tier === 'free' && (
-                  <button className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: `linear-gradient(135deg, #22c55e, #16a34a)`, color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}>
+                  <button className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}>
                     Upgrade to Hunter ⚡
+                  </button>
+                )}
+                {profile.tier === 'hunter' && (
+                  <button className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: '#fff', boxShadow: '0 4px 12px rgba(168,85,247,0.25)' }}>
+                    Upgrade to Tracker 🎯
                   </button>
                 )}
               </div>
