@@ -519,6 +519,7 @@ export default function CommunityPage() {
             {/* Emoji reaction button — always visible, works on mobile */}
             <button
               onClick={(e) => {
+                e.stopPropagation()
                 if (reactingTo === msg.id) {
                   setReactingTo(null); setReactingToPos(null)
                 } else {
