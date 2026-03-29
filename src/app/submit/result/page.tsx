@@ -52,7 +52,11 @@ function ResultContent() {
   }, {})
 
   return (
-    <div className="min-h-screen  overflow-y-auto pb-16">
+    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
+      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 1, overflowY: 'auto', paddingBottom: 80 }}>
       {/* Banner */}
       <div
         className="flex items-center gap-3.5 mx-5 rounded-2xl p-4"
@@ -128,6 +132,7 @@ function ResultContent() {
         >
           Back to Map
         </button>
+      </div>
       </div>
     </div>
   )

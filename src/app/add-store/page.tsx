@@ -95,7 +95,10 @@ export default function AddStorePage() {
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center  px-8 text-center">
+      <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
         <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
         <p className="text-2xl font-black text-white mb-2.5">Store Submitted!</p>
         <p className="text-sm text-white/45 mb-10 leading-relaxed">
@@ -121,12 +124,17 @@ export default function AddStorePage() {
         >
           Add Another Store
         </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className=" overflow-y-auto pb-16">
+    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
+      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 1, overflowY: 'auto', paddingBottom: 80 }}>
       {/* Header */}
       <div className="flex items-center gap-3.5 px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
         <button
@@ -137,7 +145,7 @@ export default function AddStorePage() {
           <span className="text-white text-lg">←</span>
         </button>
         <div>
-          <p className="text-xl font-black text-white">Add a Store</p>
+          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 2, color: '#fff', lineHeight: 1 }}>Add a Store</h1>
           <p className="text-xs text-white/40 mt-0.5">Help grow the map ⚡</p>
         </div>
       </div>
@@ -310,6 +318,7 @@ export default function AddStorePage() {
           'Submit Store →'
         )}
       </button>
+      </div>
     </div>
   )
 }

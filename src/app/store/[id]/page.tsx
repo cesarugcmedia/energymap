@@ -337,7 +337,11 @@ const [search, setSearch] = useState('')
   }, {})
 
   return (
-    <div className="">
+    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
+      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
       {/* Header */}
       <div className="px-5 pb-4" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
         <div className="flex items-center justify-between mb-4">
@@ -869,6 +873,7 @@ const [search, setSearch] = useState('')
         </div>,
         document.body
       )}
+      </div>
     </div>
   )
 }
