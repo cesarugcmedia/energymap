@@ -190,7 +190,9 @@ export default function CommunityPage() {
             const distFromBottom = c.scrollHeight - c.scrollTop - c.clientHeight
             if (distFromBottom < 200) {
               c.scrollTop = c.scrollHeight
-              localStorage.setItem('community_last_read', new Date().toISOString())
+              const now = new Date().toISOString()
+              localStorage.setItem('community_last_read', now)
+              lastReadTimeRef.current = now
             }
           }, 50)
         } else {
@@ -266,7 +268,9 @@ export default function CommunityPage() {
       } else {
         container.scrollTop = container.scrollHeight
       }
-      localStorage.setItem('community_last_read', new Date().toISOString())
+      const now = new Date().toISOString()
+      localStorage.setItem('community_last_read', now)
+      lastReadTimeRef.current = now
     }
   }, [loading])
 
@@ -287,7 +291,9 @@ export default function CommunityPage() {
       setShowScrollBtn(distFromBottom > 120)
       // Mark everything as read when user is at (or near) the bottom
       if (distFromBottom < 60) {
-        localStorage.setItem('community_last_read', new Date().toISOString())
+        const now = new Date().toISOString()
+        localStorage.setItem('community_last_read', now)
+        lastReadTimeRef.current = now
       }
     }
     el.addEventListener('scroll', onScroll, { passive: true })
