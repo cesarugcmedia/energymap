@@ -571,7 +571,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div style={{ height: '100dvh', backgroundColor: '#070710', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ height: '100dvh', backgroundColor: '#070710', fontFamily: "'DM Sans', system-ui, sans-serif", color: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -744,7 +744,7 @@ export default function CommunityPage() {
           )}
 
           {/* Input area */}
-          <div style={{ flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(7,7,16,0.95)', paddingBottom: 'calc(8px + env(safe-area-inset-bottom))' }}>
+          <div style={{ flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(7,7,16,0.95)' }}>
             {replyingTo && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                 <div style={{ width: 2, height: 32, borderRadius: 99, backgroundColor: '#22c55e', flexShrink: 0 }} />
