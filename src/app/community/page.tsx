@@ -326,7 +326,8 @@ export default function CommunityPage() {
         setMessages(msgs)
         const ids = msgs.map((m: any) => m.id)
         if (ids.length > 0) {
-          const { data: rxns } = await supabase.from('message_reactions').select('message_id, emoji, user_id').in('message_id', ids)
+          const { data: rxns, error: rxnErr } = await supabase.from('message_reactions').select('message_id, emoji, user_id').in('message_id', ids)
+          if (rxnErr) console.error('reactions fetch error:', rxnErr.message)
           if (rxns) {
             const grouped: Record<string, { emoji: string; count: number; byMe: boolean }[]> = {}
             for (const r of rxns) {
