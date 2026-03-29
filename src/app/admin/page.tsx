@@ -102,11 +102,12 @@ export default function AdminPage() {
 
   async function fetchPending() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('stores')
-      .select('*, submitter:profiles!stores_submitted_by_fkey(username)')
+      .select('*, submitter:profiles(username)')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
+    if (error) console.error('fetchPending error:', error)
     if (data) setStores(data)
     setLoading(false)
   }
