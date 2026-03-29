@@ -117,6 +117,7 @@ export default function CommunityPage() {
   const [reportedMsgs, setReportedMsgs] = useState<Set<string>>(new Set())
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const [reactingTo, setReactingTo] = useState<string | null>(null)
+  const [reactingToPos, setReactingToPos] = useState<{ top: number; left: number } | null>(null)
   const [reactions, setReactions] = useState<Record<string, { emoji: string; count: number; byMe: boolean }[]>>({})
   const recentSentRef = useRef<number[]>([])
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -140,6 +141,7 @@ export default function CommunityPage() {
     setLoading(true)
     setMessages([])
     setPinnedMessage(null)
+    setReactions({})
     fetchAll()
     setChannelUnread((prev) => ({ ...prev, [activeChannel]: 0 }))
   }, [activeChannel, user])
@@ -314,6 +316,10 @@ export default function CommunityPage() {
 
   function onTextChange(val: string) {
     setText(val)
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`
+    }
     const match = val.match(/@(\w*)$/)
     if (match) { setMentionMode(true); setMentionQuery(match[1]) }
     else { setMentionMode(false); setMentionQuery('') }
@@ -339,29 +345,34 @@ export default function CommunityPage() {
       setRateLimited(true); startCooldown(Math.ceil((BURST_WINDOW_MS - (now - recentSentRef.current[0])) / 1000)); return
     }
     setSending(true)
-    let photoUrl: string | null = null
-    if (photo) {
-      const EXT_MAP: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic' }
-      if (!EXT_MAP[photo.type]) { setSending(false); return }
-      const path = `${user.id}/${Date.now()}.${EXT_MAP[photo.type]}`
-      const { error } = await supabase.storage.from('chat-photos').upload(path, photo)
-      if (!error) { const { data: u } = supabase.storage.from('chat-photos').getPublicUrl(path); photoUrl = u.publicUrl }
-    }
-    const { data: newMsg } = await supabase.from('messages')
-      .insert({ user_id: user.id, content: text.trim() || null, photo_url: photoUrl, reply_to_id: replyingTo?.id ?? null, channel: activeChannel })
-      .select('*').single()
-    if (newMsg) {
-      setMessages((prev) => prev.find((m) => m.id === newMsg.id) ? prev : [...prev, { ...newMsg, profile: { username: profile?.username, tier: profile?.tier, is_verified_reporter: profile?.is_verified_reporter } }])
-      setTimeout(() => { const c = scrollContainerRef.current; if (c) c.scrollTop = c.scrollHeight }, 80)
-      if (text.trim()) {
-        const mentionedIds = [...new Set([...text.matchAll(/@\[[^\]]+\]\(u:([^)]+)\)/g)].map((m) => m[1]))].filter((id) => id !== user.id)
-        if (mentionedIds.length > 0) {
-          await supabase.from('notifications').insert(mentionedIds.map((uid) => ({ user_id: uid, type: 'mention', message: `@${profile?.username} mentioned you in #${currentChannel.name}`, read: false })))
+    try {
+      let photoUrl: string | null = null
+      if (photo) {
+        const EXT_MAP: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic' }
+        if (!EXT_MAP[photo.type]) return
+        const path = `${user.id}/${Date.now()}.${EXT_MAP[photo.type]}`
+        const { error } = await supabase.storage.from('chat-photos').upload(path, photo)
+        if (!error) { const { data: u } = supabase.storage.from('chat-photos').getPublicUrl(path); photoUrl = u.publicUrl }
+      }
+      const { data: newMsg } = await supabase.from('messages')
+        .insert({ user_id: user.id, content: text.trim() || null, photo_url: photoUrl, reply_to_id: replyingTo?.id ?? null, channel: activeChannel })
+        .select('*').single()
+      if (newMsg) {
+        setMessages((prev) => prev.find((m) => m.id === newMsg.id) ? prev : [...prev, { ...newMsg, profile: { username: profile?.username, tier: profile?.tier, is_verified_reporter: profile?.is_verified_reporter } }])
+        setTimeout(() => { const c = scrollContainerRef.current; if (c) c.scrollTop = c.scrollHeight }, 80)
+        if (text.trim()) {
+          const mentionedIds = [...new Set([...text.matchAll(/@\[[^\]]+\]\(u:([^)]+)\)/g)].map((m) => m[1]))].filter((id) => id !== user.id)
+          if (mentionedIds.length > 0) {
+            await supabase.from('notifications').insert(mentionedIds.map((uid) => ({ user_id: uid, type: 'mention', message: `@${profile?.username} mentioned you in #${currentChannel.name}`, read: false })))
+          }
         }
       }
+      recentSentRef.current.push(Date.now()); startCooldown(COOLDOWN_SEC)
+      setText(''); removePhoto(); setReplyingTo(null)
+      if (inputRef.current) inputRef.current.style.height = 'auto'
+    } finally {
+      setSending(false)
     }
-    recentSentRef.current.push(Date.now()); startCooldown(COOLDOWN_SEC)
-    setText(''); removePhoto(); setReplyingTo(null); setSending(false)
   }
 
   async function deleteMessage(msgId: string) {
@@ -391,6 +402,7 @@ export default function CommunityPage() {
   async function addReaction(msgId: string, emoji: string) {
     if (!user) return
     setReactingTo(null)
+    setReactingToPos(null)
     const cur = reactions[msgId] ?? []
     const existing = cur.find((r) => r.emoji === emoji)
     // Optimistic update
@@ -505,20 +517,16 @@ export default function CommunityPage() {
             <button onClick={() => { setReplyingTo(msg); inputRef.current?.focus() }}
               style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 6 }}>↩ Reply</button>
             {/* Emoji reaction button — always visible, works on mobile */}
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => setReactingTo(reactingTo === msg.id ? null : msg.id)}
-                style={{ fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6, opacity: 0.5 }}>😊</button>
-              {reactingTo === msg.id && (
-                <div style={{ position: 'absolute', left: 0, bottom: 'calc(100% + 4px)', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 6, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', animation: 'slideIn 0.15s ease', whiteSpace: 'nowrap' }}>
-                  {QUICK_REACTIONS.map((emoji) => (
-                    <button key={emoji} onClick={() => addReaction(msg.id, emoji)}
-                      style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: '2px 3px', borderRadius: 6 }}>
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <button
+              onClick={(e) => {
+                if (reactingTo === msg.id) {
+                  setReactingTo(null); setReactingToPos(null)
+                } else {
+                  const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect()
+                  setReactingTo(msg.id); setReactingToPos({ top: rect.top, left: rect.left })
+                }
+              }}
+              style={{ fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6, opacity: 0.5 }}>😊</button>
             {!isMe && (
               <button onClick={() => reportMessage(msg.id)} disabled={reportedMsgs.has(msg.id)}
                 style={{ fontSize: 11, color: reportedMsgs.has(msg.id) ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: 6 }}>🚩</button>
@@ -588,6 +596,18 @@ export default function CommunityPage() {
       {/* Background */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+
+      {/* Reaction picker — fixed so it's never clipped by scroll container overflow */}
+      {reactingTo && reactingToPos && (
+        <div style={{ position: 'fixed', left: reactingToPos.left, top: reactingToPos.top, transform: 'translateY(calc(-100% - 4px))', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 6, zIndex: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', animation: 'slideIn 0.15s ease', whiteSpace: 'nowrap' }}>
+          {QUICK_REACTIONS.map((emoji) => (
+            <button key={emoji} onClick={() => addReaction(reactingTo, emoji)}
+              style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: '2px 3px', borderRadius: 6 }}>
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightboxUrl && (
@@ -695,7 +715,7 @@ export default function CommunityPage() {
           )}
 
           {/* Messages */}
-          <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }} onClick={() => setReactingTo(null)}>
+          <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }} onClick={() => { setReactingTo(null); setReactingToPos(null) }}>
             {loading ? (
               <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 48 }}>
                 <div className="w-7 h-7 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
