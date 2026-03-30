@@ -240,17 +240,17 @@ export default function CommunityPage() {
         if (r.user_id === user!.id) return // already handled optimistically
         setReactions((prev) => {
           const c = prev[r.message_id] ?? []
-          const ex = c.find((x) => x.emoji === r.emoji)
-          if (ex) return { ...prev, [r.message_id]: c.map((x) => x.emoji === r.emoji ? { ...x, count: x.count + 1 } : x) }
-          return { ...prev, [r.message_id]: [...c, { emoji: r.emoji, count: 1, byMe: false }] }
+          const ex = c.find((x) => x.emoji === r.type)
+          if (ex) return { ...prev, [r.message_id]: c.map((x) => x.emoji === r.type ? { ...x, count: x.count + 1 } : x) }
+          return { ...prev, [r.message_id]: [...c, { emoji: r.type, count: 1, byMe: false }] }
         })
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'message_reactions' }, (payload) => {
         const r = payload.old as any
-        if (!r.message_id || !r.emoji || r.user_id === user!.id) return // already handled optimistically
+        if (!r.message_id || !r.type || r.user_id === user!.id) return // already handled optimistically
         setReactions((prev) => {
           const c = prev[r.message_id] ?? []
-          const updated = c.map((x) => x.emoji === r.emoji ? { ...x, count: Math.max(0, x.count - 1) } : x).filter((x) => x.count > 0)
+          const updated = c.map((x) => x.emoji === r.type ? { ...x, count: Math.max(0, x.count - 1) } : x).filter((x) => x.count > 0)
           return { ...prev, [r.message_id]: updated }
         })
       })
@@ -326,15 +326,15 @@ export default function CommunityPage() {
         setMessages(msgs)
         const ids = msgs.map((m: any) => m.id)
         if (ids.length > 0) {
-          const { data: rxns, error: rxnErr } = await supabase.from('message_reactions').select('message_id, emoji, user_id').in('message_id', ids)
+          const { data: rxns, error: rxnErr } = await supabase.from('message_reactions').select('message_id, type, user_id').in('message_id', ids)
           if (rxnErr) console.error('reactions fetch error:', rxnErr.message)
           if (rxns) {
             const grouped: Record<string, { emoji: string; count: number; byMe: boolean }[]> = {}
             for (const r of rxns) {
               if (!grouped[r.message_id]) grouped[r.message_id] = []
-              const ex = grouped[r.message_id].find((x) => x.emoji === r.emoji)
+              const ex = grouped[r.message_id].find((x) => x.emoji === r.type)
               if (ex) { ex.count++; if (r.user_id === user!.id) ex.byMe = true }
-              else grouped[r.message_id].push({ emoji: r.emoji, count: 1, byMe: r.user_id === user!.id })
+              else grouped[r.message_id].push({ emoji: r.type, count: 1, byMe: r.user_id === user!.id })
             }
             setReactions(grouped)
           }
@@ -468,9 +468,9 @@ export default function CommunityPage() {
       }
     })
     if (existing?.byMe) {
-      await supabase.from('message_reactions').delete().eq('message_id', msgId).eq('user_id', user.id).eq('emoji', emoji)
+      await supabase.from('message_reactions').delete().eq('message_id', msgId).eq('user_id', user.id).eq('type', emoji)
     } else {
-      await supabase.from('message_reactions').upsert({ message_id: msgId, user_id: user.id, emoji }, { onConflict: 'message_id,user_id,emoji' })
+      await supabase.from('message_reactions').upsert({ message_id: msgId, user_id: user.id, type: emoji }, { onConflict: 'message_id,user_id,type' })
     }
   }
 
