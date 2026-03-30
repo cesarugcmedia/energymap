@@ -1106,7 +1106,7 @@ function selectAndContinue(tierId: TierId) {
                       ) : (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
                           style={{ width: '100%', padding: 12, background: `linear-gradient(135deg, ${t.color}, ${t.color}bb)`, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 4px 16px ${t.glow}` }}>
-                          {t.id === 'free' ? 'Get Started Free →' : 'Join Waitlist →'}
+                          {t.id === 'tracker' ? 'Join Waitlist →' : 'Get Started →'}
                         </button>
                       )}
                     </div>
