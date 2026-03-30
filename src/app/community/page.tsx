@@ -26,6 +26,23 @@ const AVATAR_COLORS = [
   'linear-gradient(135deg, #10b981, #059669)',
 ]
 
+const BUBBLE_COLORS = [
+  { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.18)'  },
+  { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.18)' },
+  { bg: 'rgba(168,85,247,0.08)', border: 'rgba(168,85,247,0.18)' },
+  { bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.18)' },
+  { bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.18)' },
+  { bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.18)'  },
+  { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.18)' },
+  { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.18)' },
+]
+
+function bubbleColor(userId: string) {
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0
+  return BUBBLE_COLORS[hash % BUBBLE_COLORS.length]
+}
+
 function avatarColor(userId: string) {
   let hash = 0
   for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0
@@ -499,6 +516,9 @@ export default function CommunityPage() {
     const msgReactions = reactions[msg.id] ?? []
     const initial = (username?.[0] ?? '?').toUpperCase()
     const color = avatarColor(msg.user_id ?? msg.id ?? '')
+    const bubble = isMe
+      ? { bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.28)' }
+      : bubbleColor(msg.user_id ?? msg.id ?? '')
 
     return (
       <div key={msg.id} ref={(el) => { msgRefs.current[msg.id] = el as HTMLElement | null }}
@@ -536,17 +556,19 @@ export default function CommunityPage() {
             </div>
           )}
 
-          {/* Photo */}
-          {msg.photo_url && (
-            <img src={msg.photo_url} alt="shared" onClick={() => setLightboxUrl(msg.photo_url)}
-              style={{ maxWidth: 240, maxHeight: 180, display: 'block', objectFit: 'cover', borderRadius: 10, cursor: 'pointer', marginBottom: 4 }} />
-          )}
-
-          {/* Text */}
-          {msg.content && (
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, wordBreak: 'break-word', margin: 0 }}>
-              {renderContent(msg.content, (id) => router.push(`/store/${id}`))}
-            </p>
+          {/* Bubble */}
+          {(msg.photo_url || msg.content) && (
+            <div style={{ display: 'inline-block', maxWidth: '100%', backgroundColor: bubble.bg, border: `1px solid ${bubble.border}`, borderRadius: grouped ? '4px 12px 12px 12px' : '12px', padding: '8px 12px', marginTop: grouped ? 0 : 2 }}>
+              {msg.photo_url && (
+                <img src={msg.photo_url} alt="shared" onClick={() => setLightboxUrl(msg.photo_url)}
+                  style={{ maxWidth: 220, maxHeight: 160, display: 'block', objectFit: 'cover', borderRadius: 8, cursor: 'pointer', marginBottom: msg.content ? 6 : 0 }} />
+              )}
+              {msg.content && (
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, wordBreak: 'break-word', margin: 0 }}>
+                  {renderContent(msg.content, (id) => router.push(`/store/${id}`))}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Reactions */}
