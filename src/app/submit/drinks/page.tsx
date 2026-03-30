@@ -34,6 +34,7 @@ function DrinksContent() {
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError, setPhotoError] = useState(false)
 
   useEffect(() => {
     supabase
@@ -82,6 +83,7 @@ function DrinksContent() {
   function removePhoto() {
     setPhoto(null)
     setPhotoPreview(null)
+    setPhotoError(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -100,11 +102,14 @@ function DrinksContent() {
         const ext = photo.name.split('.').pop() ?? 'jpg'
         const path = `${user.id}/${Date.now()}.${ext}`
         const { error } = await supabase.storage.from('report-photos').upload(path, photo)
-        if (!error) {
-          const { data: urlData } = supabase.storage.from('report-photos').getPublicUrl(path)
-          photoUrl = urlData.publicUrl
-        }
         setPhotoUploading(false)
+        if (error) {
+          setPhotoError(true)
+          setSubmitting(false)
+          return
+        }
+        const { data: urlData } = supabase.storage.from('report-photos').getPublicUrl(path)
+        photoUrl = urlData.publicUrl
       }
 
       // Rate-limit check: filter out drinks reported in last 30 min
@@ -381,6 +386,13 @@ function DrinksContent() {
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
           }}
         >
+          {/* Photo error */}
+          {photoError && (
+            <p className="text-xs font-bold mb-2" style={{ color: '#ef4444' }}>
+              ⚠️ Photo upload failed. Remove the photo and try again, or submit without it.
+            </p>
+          )}
+
           {/* Photo picker — Tracker only */}
           {isTracker && (
             <div className="flex items-center gap-3 mb-3">

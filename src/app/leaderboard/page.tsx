@@ -33,6 +33,7 @@ export default function LeaderboardPage() {
   const { user, profile, loading: authLoading } = useAuth()
   const [entries, setEntries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [timeframe, setTimeframe] = useState('All Time')
 
   useEffect(() => {
@@ -47,8 +48,7 @@ export default function LeaderboardPage() {
       .order('points', { ascending: false })
       .limit(50)
       .then(({ data, error }) => {
-        if (data) setEntries(data)
-        if (error) console.error('Leaderboard fetch failed:', error.message)
+        if (error) { setFetchError(true) } else if (data) { setEntries(data) }
         setLoading(false)
       })
   }, [user])
@@ -116,6 +116,12 @@ export default function LeaderboardPage() {
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '64px 0' }}>
             <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : fetchError ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
+            <span style={{ fontSize: 48 }}>⚠️</span>
+            <p style={{ fontSize: 16, fontWeight: 800 }}>Couldn't load leaderboard</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Check your connection and try again.</p>
           </div>
         ) : entries.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
