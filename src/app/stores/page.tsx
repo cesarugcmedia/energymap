@@ -183,7 +183,7 @@ export default function StoresPage() {
         <div>
           <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
           <p className="text-sm text-white/45 leading-relaxed">
-            EnergyMap uses your location to show nearby stores. Please allow location access to continue.
+            Amped Map uses your location to show nearby stores. Please allow location access to continue.
           </p>
         </div>
         <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>

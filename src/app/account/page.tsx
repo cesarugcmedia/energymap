@@ -918,7 +918,7 @@ function selectAndContinue(tierId: TierId) {
         <div style={{ textAlign: 'center', padding: '48px 24px 40px', animation: 'fadeUp 0.6s ease' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
             <span style={{ fontSize: 40, display: 'inline-block', animation: 'float 3s ease-in-out infinite' }}>⚡</span>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 3, background: 'linear-gradient(135deg, #22c55e, #4ade80)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>EnergyMap</span>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 3, background: 'linear-gradient(135deg, #22c55e, #4ade80)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Amped Map</span>
           </div>
           <h1 style={{ fontSize: 'clamp(26px, 5vw, 44px)', fontWeight: 900, lineHeight: 1.15, marginBottom: 16, letterSpacing: '-0.5px' }}>
             Never Hunt for Your<br />
@@ -949,7 +949,7 @@ function selectAndContinue(tierId: TierId) {
             </div>
             <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, marginBottom: 8 }}>Built by Energy Drink Fans, for Energy Drink Fans</h2>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', maxWidth: 460, margin: '0 auto', lineHeight: 1.7 }}>
-              We know the frustration of driving to three stores for one flavor. EnergyMap solves that — powered by a community just like you.
+              We know the frustration of driving to three stores for one flavor. Amped Map solves that — powered by a community just like you.
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 40 }}>
@@ -965,7 +965,7 @@ function selectAndContinue(tierId: TierId) {
             <span style={{ fontSize: 28, marginBottom: 12, display: 'block' }}>🎯</span>
             <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, color: '#fff' }}>Our Mission</h3>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: '0 auto', lineHeight: 1.8 }}>
-              Energy drink culture is exploding — new flavors drop constantly, stores sell out fast, and fans are left empty-handed. EnergyMap gives the community a single place to share, discover, and track stock so no one misses out.
+              Energy drink culture is exploding — new flavors drop constantly, stores sell out fast, and fans are left empty-handed. Amped Map gives the community a single place to share, discover, and track stock so no one misses out.
             </p>
           </div>
         </div>
@@ -1011,7 +1011,7 @@ function selectAndContinue(tierId: TierId) {
           <div style={{ maxWidth: 400, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
             <div style={{ backgroundColor: '#0f0f1a', borderRadius: 20, padding: 28, border: '1px solid rgba(255,255,255,0.08)' }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Welcome back</h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Sign in to your EnergyMap account</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Sign in to your Amped Map account</p>
               <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 1.2, display: 'block', marginBottom: 8 }}>EMAIL</label>
@@ -1146,7 +1146,7 @@ function selectAndContinue(tierId: TierId) {
             </div>
             <div style={{ backgroundColor: '#0f0f1a', borderRadius: 20, padding: 28, border: '1px solid rgba(255,255,255,0.08)' }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Create your account</h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Join the EnergyMap community</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Join the Amped Map community</p>
               <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 1.2, display: 'block', marginBottom: 8 }}>USERNAME</label>
@@ -1197,7 +1197,7 @@ function selectAndContinue(tierId: TierId) {
         <div style={{ textAlign: 'center', padding: '28px 24px 48px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 16 }}>⚡</span>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 2, color: 'rgba(255,255,255,0.3)' }}>EnergyMap</span>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 2, color: 'rgba(255,255,255,0.3)' }}>Amped Map</span>
           </div>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Built for the community · Powered by real-time reports</p>
         </div>

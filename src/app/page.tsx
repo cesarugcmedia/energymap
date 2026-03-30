@@ -115,7 +115,7 @@ export default function MapPage() {
         <div>
           <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
           <p className="text-sm text-white/45 leading-relaxed">
-            EnergyMap uses your location to show nearby stores. Please allow location access to continue.
+            Amped Map uses your location to show nearby stores. Please allow location access to continue.
           </p>
         </div>
 
@@ -166,7 +166,7 @@ export default function MapPage() {
         className="absolute top-0 left-0 right-0 z-10 px-5 pb-4 pointer-events-none"
         style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
       >
-        <p className="text-xl font-black text-white">⚡ EnergyMap</p>
+        <p className="text-xl font-black text-white">⚡ Amped Map</p>
         <p className="text-xs text-white/45 mt-0.5">
           {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
         </p>

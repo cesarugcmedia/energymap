@@ -10,7 +10,7 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
 const bebasNeue = Bebas_Neue({ subsets: ['latin'], weight: '400', variable: '--font-bebas-neue' })
 
 export const metadata: Metadata = {
-  title: 'EnergyMap',
+  title: 'Amped Map',
   description: 'Find energy drinks near you',
 }
 

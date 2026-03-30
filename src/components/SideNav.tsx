@@ -82,7 +82,7 @@ export default function SideNav() {
       {/* Logo */}
       <div style={{ padding: '28px 20px 24px' }}>
         <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, letterSpacing: 3, color: '#22c55e', lineHeight: 1 }}>
-          EnergyMap
+          Amped Map
         </p>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>Find drinks near you</p>
       </div>
