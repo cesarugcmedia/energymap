@@ -195,7 +195,7 @@ const [lists, setLists] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
-  const [waitlistCount, setWaitlistCount] = useState<number>(0)
+  const [betaCount, setBetaCount] = useState<number>(0)
 
   // Stats
   const [reportCount, setReportCount] = useState<number>(0)
@@ -238,10 +238,10 @@ const [lists, setLists] = useState<any[]>([])
 
   useEffect(() => {
     supabase
-      .from('waitlist')
+      .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('tier', 'tracker')
-      .then(({ count }) => setWaitlistCount(count ?? 0))
+      .then(({ count }) => setBetaCount(count ?? 0))
   }, [])
 
   async function handleSignIn(e: React.FormEvent) {
@@ -264,10 +264,13 @@ const [lists, setLists] = useState<any[]>([])
     const { data, error: authError } = await supabase.auth.signUp({ email, password })
     if (authError) { setError(authError.message); setSubmitting(false); return }
     if (data.user) {
-      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: selectedTier ?? 'free' })
+      let actualTier = selectedTier ?? 'free'
       if (selectedTier === 'tracker') {
-        await supabase.from('waitlist').insert({ email: email.trim(), tier: 'tracker', user_id: data.user.id })
+        // Re-check live count to handle race conditions
+        const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
+        if ((count ?? 0) >= 50) actualTier = 'free'
       }
+      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: actualTier })
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       await refreshProfile()
     }
@@ -1056,19 +1059,19 @@ function selectAndContinue(tierId: TierId) {
                     </div>
                     {t.id === 'tracker' && (() => {
                       const BETA_LIMIT = 50
-                      const remaining = Math.max(0, BETA_LIMIT - waitlistCount)
+                      const remaining = Math.max(0, BETA_LIMIT - betaCount)
                       const spotsLeft = remaining > 0
                       return (
                         <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
                           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: 8 }}>
                             {spotsLeft
                               ? `🔥 First 50 beta users get Tracker free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
-                              : '🔒 Beta spots are full. Tracker will be $10/mo at launch.'}
+                              : '🔒 Beta is full. Tracker is $10/mo.'}
                           </p>
                           <div style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${Math.min((waitlistCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)', borderRadius: 4, transition: 'width 0.5s ease' }} />
+                            <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)', borderRadius: 4, transition: 'width 0.5s ease' }} />
                           </div>
-                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>{waitlistCount} / {BETA_LIMIT} spots claimed</p>
+                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>{betaCount} / {BETA_LIMIT} beta spots claimed</p>
                         </div>
                       )
                     })()}
@@ -1099,14 +1102,15 @@ function selectAndContinue(tierId: TierId) {
                         <div style={{ width: '100%', padding: 12, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)' }}>
                           Notify Me When Available
                         </div>
-                      ) : t.id === 'tracker' && waitlistCount >= 50 ? (
-                        <div style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
-                          Beta Full — Launching Soon
-                        </div>
+                      ) : t.id === 'tracker' && betaCount >= 50 ? (
+                        <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
+                          style={{ width: '100%', padding: 12, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 16px rgba(168,85,247,0.3)' }}>
+                          Buy Tracker — $10/mo →
+                        </button>
                       ) : (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
                           style={{ width: '100%', padding: 12, background: `linear-gradient(135deg, ${t.color}, ${t.color}bb)`, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 4px 16px ${t.glow}` }}>
-                          {t.id === 'tracker' ? 'Join Waitlist →' : 'Get Started →'}
+                          {t.id === 'tracker' ? 'Claim Beta Spot →' : 'Get Started →'}
                         </button>
                       )}
                     </div>
@@ -1166,7 +1170,7 @@ function selectAndContinue(tierId: TierId) {
                   style={{ width: '100%', padding: 15, background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`, border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 8px 24px ${tier.glow}`, marginTop: 4 }}>
                   {submitting
                     ? <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-                    : selectedTier === 'free' ? 'Create Free Account →' : 'Join Waitlist →'}
+                    : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 50 ? 'Claim Beta Spot →' : 'Buy Tracker →') : 'Get Started →'}
                 </button>
                 <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', lineHeight: 1.6 }}>
                   By signing up you agree to our Terms of Service and Privacy Policy.
