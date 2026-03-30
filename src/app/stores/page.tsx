@@ -84,9 +84,9 @@ export default function StoresPage() {
     if (!authLoading && !user) router.replace('/account')
   }, [user, authLoading])
 
-  const { location, loading: locLoading } = useLocation()
-  const lat = location?.coords.latitude ?? 35.3015
-  const lng = location?.coords.longitude ?? -81.0694
+  const { location, loading: locLoading, error: locError } = useLocation()
+  const lat = location?.coords.latitude ?? 0
+  const lng = location?.coords.longitude ?? 0
   const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
   const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
@@ -175,6 +175,28 @@ export default function StoresPage() {
   }, [])
 
   const loading = locLoading || storesLoading
+
+  if (locError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: '#070710' }}>
+        <span style={{ fontSize: 48 }}>📍</span>
+        <div>
+          <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
+          <p className="text-sm text-white/45 leading-relaxed">
+            EnergyMap uses your location to show nearby stores. Please allow location access to continue.
+          </p>
+        </div>
+        <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>HOW TO ENABLE IN YOUR BROWSER</p>
+          <div className="flex flex-col gap-2.5">
+            <p className="text-xs text-white/50 leading-relaxed"><span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon → Site settings → Location → Allow</p>
+            <p className="text-xs text-white/50 leading-relaxed"><span className="text-white/70 font-semibold">Safari:</span> Settings → Safari → Location → Allow</p>
+            <p className="text-xs text-white/50 leading-relaxed"><span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Location → Allow</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const sorted = [...stores]
     .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))

@@ -63,8 +63,8 @@ export default function MapPage() {
   }, [user, authLoading])
 
   const { location, loading: locLoading, error: locError, retry } = useLocation()
-  const lat = location?.coords.latitude ?? 35.3015
-  const lng = location?.coords.longitude ?? -81.0694
+  const lat = location?.coords.latitude ?? 0
+  const lng = location?.coords.longitude ?? 0
   const { stores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
   const [selected, setSelected] = useState<Store | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
