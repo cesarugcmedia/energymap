@@ -79,6 +79,8 @@ function StoreDetailContent({ id }: { id: string }) {
 
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
+  const [storeError, setStoreError] = useState(false)
+  const [stockError, setStockError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [profileMap, setProfileMap] = useState<Record<string, { username: string; verified: boolean; tier: string | null }>>({})
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
@@ -110,8 +112,9 @@ const [search, setSearch] = useState('')
   }, [id])
 
   async function fetchStore() {
-    const { data } = await supabase.from('stores').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('stores').select('*').eq('id', id).single()
     if (data) setStore(data)
+    else if (error) setStoreError(true)
   }
 
   async function openAddToList() {
@@ -162,10 +165,11 @@ const [search, setSearch] = useState('')
   }
 
   async function fetchStock() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('latest_stock')
       .select('*, drink:drinks(name, brand, flavor)')
       .eq('store_id', id)
+    if (error) { setStockError(true); setLoading(false); return }
     if (data) {
       setStock(data)
       const userIds = [...new Set(data.map((d) => d.user_id).filter(Boolean))]
@@ -377,7 +381,21 @@ const [search, setSearch] = useState('')
         + Add Drink is for <span className="text-white font-semibold">new flavors only</span>. If it already exists, use Report Stock to update its status.
       </p>
 
-      {loading ? (
+      {storeError ? (
+        <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
+          <span style={{ fontSize: 48 }}>🏪</span>
+          <p className="text-lg font-black text-white">Store not found</p>
+          <p className="text-sm text-white/40">This store may have been removed.</p>
+          <button onClick={() => router.back()} className="mt-2 text-sm font-bold px-5 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}>← Go back</button>
+        </div>
+      ) : stockError ? (
+        <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
+          <span style={{ fontSize: 48 }}>⚠️</span>
+          <p className="text-lg font-black text-white">Couldn't load stock</p>
+          <p className="text-sm text-white/40">Check your connection and try again.</p>
+          <button onClick={() => { setStockError(false); setLoading(true); fetchStock() }} className="mt-2 text-sm font-bold px-5 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>Retry</button>
+        </div>
+      ) : loading ? (
         <div className="flex justify-center mt-8">
           <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
         </div>

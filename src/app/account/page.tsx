@@ -371,15 +371,24 @@ const [lists, setLists] = useState<any[]>([])
     setCreatingList(false)
   }
 
+  const [deletingListId, setDeletingListId] = useState<string | null>(null)
+  const [removingStoreId, setRemovingStoreId] = useState<string | null>(null)
+
   async function deleteList(listId: string) {
+    if (deletingListId) return
+    setDeletingListId(listId)
     await supabase.from('custom_lists').delete().eq('id', listId)
     setLists((prev) => prev.filter((l) => l.id !== listId))
     if (activeList?.id === listId) setActiveList(null)
+    setDeletingListId(null)
   }
 
   async function removeFromList(listStoreId: string) {
+    if (removingStoreId) return
+    setRemovingStoreId(listStoreId)
     await supabase.from('list_stores').delete().eq('id', listStoreId)
     setListStores((prev) => prev.filter((ls) => ls.id !== listStoreId))
+    setRemovingStoreId(null)
   }
 
   async function fetchAllReports(page = 0) {
@@ -676,8 +685,8 @@ function selectAndContinue(tierId: TierId) {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} className="text-xs font-bold px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e' }}>View</a>
-                          <button onClick={() => removeFromList(ls.id)} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                            <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>
+                          <button onClick={() => removeFromList(ls.id)} disabled={!!removingStoreId} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', opacity: removingStoreId === ls.id ? 0.4 : 1 }}>
+                            {removingStoreId === ls.id ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>}
                           </button>
                         </div>
                       </div>
@@ -706,8 +715,8 @@ function selectAndContinue(tierId: TierId) {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-white/30 text-sm">›</span>
-                        <button onClick={(e) => { e.stopPropagation(); deleteList(list.id) }} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                          <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>
+                        <button onClick={(e) => { e.stopPropagation(); deleteList(list.id) }} disabled={!!deletingListId} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', opacity: deletingListId === list.id ? 0.4 : 1 }}>
+                          {deletingListId === list.id ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>}
                         </button>
                       </div>
                     </div>
