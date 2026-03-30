@@ -110,8 +110,8 @@ const TIERS = [
     glow: 'rgba(34,197,94,0.25)',
     border: 'rgba(34,197,94,0.5)',
     icon: '⚡',
-    tag: 'COMING SOON' as string | null,
-    comingSoon: true,
+    tag: null as string | null,
+    comingSoon: false,
     description: null as string | null,
     inherits: 'Free' as string | null,
     features: [
