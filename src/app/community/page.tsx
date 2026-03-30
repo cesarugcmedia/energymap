@@ -488,7 +488,7 @@ export default function CommunityPage() {
     if (existing?.byMe) {
       await supabase.from('message_reactions').delete().eq('message_id', msgId).eq('user_id', user.id).eq('type', emoji)
     } else {
-      await supabase.from('message_reactions').upsert({ message_id: msgId, user_id: user.id, type: emoji }, { onConflict: 'message_id,user_id,type' })
+      await supabase.from('message_reactions').insert({ message_id: msgId, user_id: user.id, type: emoji })
     }
   }
 
