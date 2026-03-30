@@ -110,8 +110,8 @@ const TIERS = [
     glow: 'rgba(34,197,94,0.25)',
     border: 'rgba(34,197,94,0.5)',
     icon: '⚡',
-    tag: 'EARLY ACCESS' as string | null,
-    comingSoon: false,
+    tag: 'COMING SOON' as string | null,
+    comingSoon: true,
     description: null as string | null,
     inherits: 'Free' as string | null,
     features: [
@@ -132,11 +132,12 @@ const TIERS = [
     glow: 'rgba(249,115,22,0.25)',
     border: 'rgba(249,115,22,0.4)',
     icon: '🔥',
-    tag: 'COMING SOON' as string | null,
-    comingSoon: true,
-    description: 'Advanced tools for power users — dropping soon. Join the waitlist and get early access when it launches.',
+    tag: 'EARLY ACCESS' as string | null,
+    comingSoon: false,
+    description: null as string | null,
     inherits: 'Hunter' as string | null,
     features: [
+      'Community chat access',
       '30-day stock history',
       'Custom store lists',
       'Leaderboard placement + badge',
@@ -239,7 +240,7 @@ const [lists, setLists] = useState<any[]>([])
     supabase
       .from('waitlist')
       .select('id', { count: 'exact', head: true })
-      .eq('tier', 'hunter')
+      .eq('tier', 'tracker')
       .then(({ count }) => setWaitlistCount(count ?? 0))
   }, [])
 
@@ -264,8 +265,8 @@ const [lists, setLists] = useState<any[]>([])
     if (authError) { setError(authError.message); setSubmitting(false); return }
     if (data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: selectedTier ?? 'free' })
-      if (selectedTier === 'hunter') {
-        await supabase.from('waitlist').insert({ email: email.trim(), tier: 'hunter' })
+      if (selectedTier === 'tracker') {
+        await supabase.from('waitlist').insert({ email: email.trim(), tier: 'tracker' })
       }
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       await refreshProfile()

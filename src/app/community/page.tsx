@@ -151,7 +151,8 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
-  }, [user, authLoading])
+    if (!authLoading && user && profile && profile.tier !== 'tracker' && !profile.is_admin) router.replace('/')
+  }, [user, profile, authLoading])
 
   useEffect(() => {
     if (!user) return

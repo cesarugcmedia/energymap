@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase'
 const ALL_TABS = [
   { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
   { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false, trackerOnly: false },
-  { href: '/community', label: 'Community', icon: '💬', adminOnly: false, trackerOnly: false },
+  { href: '/community', label: 'Community', icon: '💬', adminOnly: false, trackerOnly: true },
   { href: '/leaderboard', label: 'Ranks', icon: '🏆', adminOnly: false, trackerOnly: false },
   { href: '/account', label: 'Account', icon: '👤', adminOnly: false, trackerOnly: false },
   { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true, trackerOnly: false },

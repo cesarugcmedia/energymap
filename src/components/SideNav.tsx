@@ -7,12 +7,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 const ALL_TABS = [
-  { href: '/', label: 'Map', icon: '🗺️', adminOnly: false },
-  { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false },
-  { href: '/community', label: 'Community', icon: '💬', adminOnly: false },
-  { href: '/leaderboard', label: 'Ranks', icon: '🏆', adminOnly: false },
-  { href: '/account', label: 'Account', icon: '👤', adminOnly: false },
-  { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true },
+  { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
+  { href: '/stores', label: 'Stores', icon: '📋', adminOnly: false, trackerOnly: false },
+  { href: '/community', label: 'Community', icon: '💬', adminOnly: false, trackerOnly: true },
+  { href: '/leaderboard', label: 'Ranks', icon: '🏆', adminOnly: false, trackerOnly: false },
+  { href: '/account', label: 'Account', icon: '👤', adminOnly: false, trackerOnly: false },
+  { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true, trackerOnly: false },
 ]
 
 const TAB_PATHS = ['/', '/stores', '/community', '/leaderboard', '/notifications', '/account', '/admin', '/admin/login']
@@ -55,8 +55,10 @@ export default function SideNav() {
   if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
 
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
   const tabs = ALL_TABS.filter((t) => {
     if (t.adminOnly && !profile?.is_admin) return false
+    if (t.trackerOnly && !isTracker) return false
     return true
   })
 
