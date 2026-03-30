@@ -266,7 +266,7 @@ const [lists, setLists] = useState<any[]>([])
     if (data.user) {
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: selectedTier ?? 'free' })
       if (selectedTier === 'tracker') {
-        await supabase.from('waitlist').insert({ email: email.trim(), tier: 'tracker' })
+        await supabase.from('waitlist').insert({ email: email.trim(), tier: 'tracker', user_id: data.user.id })
       }
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       await refreshProfile()

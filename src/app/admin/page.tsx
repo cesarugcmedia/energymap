@@ -34,7 +34,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users'>('stores')
+  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users' | 'waitlist'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<any[]>([])
@@ -60,6 +60,9 @@ export default function AdminPage() {
   const [addingDrink, setAddingDrink] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [userSearch, setUserSearch] = useState('')
+  const [waitlist, setWaitlist] = useState<any[]>([])
+  const [waitlistLoading, setWaitlistLoading] = useState(false)
+  const [approvingId, setApprovingId] = useState<string | null>(null)
 
 
   useEffect(() => {
@@ -132,6 +135,40 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
     if (data) setUsers(data)
     setUsersLoading(false)
+  }
+
+  async function fetchWaitlist() {
+    setWaitlistLoading(true)
+    const { data } = await supabase
+      .from('waitlist')
+      .select('id, email, tier, user_id, created_at')
+      .order('created_at', { ascending: false })
+    if (data) {
+      const userIds = data.map((w: any) => w.user_id).filter(Boolean)
+      let profileMap: Record<string, { username: string; tier: string | null }> = {}
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, tier')
+          .in('id', userIds)
+        if (profiles) profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, { username: p.username, tier: p.tier }]))
+      }
+      setWaitlist(data.map((w: any) => ({ ...w, profile: profileMap[w.user_id] ?? null })))
+    }
+    setWaitlistLoading(false)
+  }
+
+  async function approveWaitlistUser(waitlistId: string, userId: string) {
+    setApprovingId(waitlistId)
+    await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', userId)
+    await supabase.from('waitlist').delete().eq('id', waitlistId)
+    setWaitlist((prev) => prev.filter((w) => w.id !== waitlistId))
+    setApprovingId(null)
+  }
+
+  async function removeFromWaitlist(waitlistId: string) {
+    await supabase.from('waitlist').delete().eq('id', waitlistId)
+    setWaitlist((prev) => prev.filter((w) => w.id !== waitlistId))
   }
 
   async function fetchLocations() {
@@ -321,7 +358,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : fetchUsers() }}
+              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : tab === 'users' ? fetchUsers() : fetchWaitlist() }}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
             >
@@ -339,7 +376,7 @@ export default function AdminPage() {
 
         {/* Tab switcher */}
         <div className="flex rounded-xl p-1 gap-0.5" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'locations', 'drinks', 'users'] as const).map((t) => (
+          {(['stores', 'locations', 'drinks', 'users', 'waitlist'] as const).map((t) => (
             <button
               key={t}
               className="flex-1 rounded-lg py-2.5 text-[11px] font-bold"
@@ -352,9 +389,10 @@ export default function AdminPage() {
                 if (t === 'users' && users.length === 0) fetchUsers()
                 if (t === 'locations' && locations.length === 0) fetchLocations()
                 if (t === 'drinks' && drinks.length === 0) fetchDrinks()
+                if (t === 'waitlist' && waitlist.length === 0) fetchWaitlist()
               }}
             >
-              {t === 'stores' ? '🕐 Pending' : t === 'locations' ? '📍 Locs' : t === 'drinks' ? '🥤 Drinks' : '👤 Users'}
+              {t === 'stores' ? '🕐 Pending' : t === 'locations' ? '📍 Locs' : t === 'drinks' ? '🥤 Drinks' : t === 'users' ? '👤 Users' : '📋 Waitlist'}
             </button>
           ))}
         </div>
@@ -547,6 +585,73 @@ export default function AdminPage() {
                 </div>
               )})
             })()}
+          </div>
+        )
+      ) : tab === 'waitlist' ? (
+        waitlistLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : waitlist.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <span style={{ fontSize: 40 }}>📋</span>
+            <p className="text-lg font-bold text-white">No waitlist signups</p>
+            <p className="text-sm text-white/40">Tracker waitlist entries will appear here.</p>
+          </div>
+        ) : (
+          <div className="px-4 pb-6">
+            <p className="text-xs font-bold text-white/30 mb-3" style={{ letterSpacing: '1.5px' }}>
+              {waitlist.length} SIGNUP{waitlist.length !== 1 ? 'S' : ''} — TRACKER BETA
+            </p>
+            <div className="flex flex-col gap-3">
+              {waitlist.map((w: any) => (
+                <div key={w.id} className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(139,92,246,0.2)' }}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      {w.profile?.username ? (
+                        <p className="text-sm font-bold text-white">@{w.profile.username}</p>
+                      ) : (
+                        <p className="text-sm font-bold text-white/40 italic">No profile yet</p>
+                      )}
+                      <p className="text-xs text-white/40 mt-0.5 truncate">{w.email}</p>
+                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>Joined {timeAgo(w.created_at)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {w.profile?.tier === 'tracker' ? (
+                        <span className="text-[9px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.35)' }}>
+                          🎯 APPROVED
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(249,115,22,0.12)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.3)' }}>
+                          ⏳ PENDING
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {w.profile?.tier !== 'tracker' && w.user_id && (
+                      <button
+                        onClick={() => approveWaitlistUser(w.id, w.user_id)}
+                        disabled={approvingId === w.id}
+                        className="flex-1 rounded-xl py-2 text-xs font-bold flex items-center justify-center"
+                        style={{ backgroundColor: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.35)', color: '#a78bfa' }}
+                      >
+                        {approvingId === w.id
+                          ? <div className="w-3.5 h-3.5 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
+                          : '🎯 Approve → Tracker'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => removeFromWaitlist(w.id)}
+                      className="rounded-xl py-2 px-3 text-xs font-bold"
+                      style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )
       ) : tab === 'users' ? (
