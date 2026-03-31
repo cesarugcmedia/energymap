@@ -282,9 +282,7 @@ const [lists, setLists] = useState<any[]>([])
       const profileTier = isFreeBetaTracker ? 'tracker' : 'free'
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: profileTier })
 
-      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
-
-      // Redirect to Stripe for paid tiers (unless free beta tracker spot)
+      // Redirect to Stripe for paid tiers (unless free beta tracker spot) — before email confirmation check
       if (isPaidTier && !isFreeBetaTracker) {
         const res = await fetch('/api/stripe/checkout', {
           method: 'POST',
@@ -294,6 +292,8 @@ const [lists, setLists] = useState<any[]>([])
         const { url } = await res.json()
         if (url) { window.location.href = url; return }
       }
+
+      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
 
       await refreshProfile()
     }
