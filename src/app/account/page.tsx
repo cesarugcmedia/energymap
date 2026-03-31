@@ -117,6 +117,7 @@ const TIERS = [
     features: [
       'Extended 25 mile radius',
       'No staleness warning banners',
+      'Early stock alerts',
     ],
   },
   {
@@ -556,7 +557,7 @@ function selectAndContinue(tierId: TierId) {
                   {(profile.tier === 'free'
                     ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
                     : profile.tier === 'hunter'
-                    ? ['Everything in Free', 'Extended 25 mile radius', 'No staleness banners']
+                    ? ['Everything in Free', 'Extended 25 mile radius', 'Early stock alerts']
                     : ['Everything in Hunter', 'Community chat', 'Custom store lists', 'Verified reporter badge']
                   ).map((f) => (
                     <div key={f} className="flex items-center gap-2">
