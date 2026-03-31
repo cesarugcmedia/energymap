@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -171,8 +172,9 @@ const STATS = [
   { value: 'Free', label: 'To Get Started' },
 ]
 
-export default function AccountPage() {
+function AccountPageInner() {
   const { user, profile, loading, refreshProfile } = useAuth()
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<Mode>('signup')
   const [selectedTier, setSelectedTier] = useState<TierId | null>(null)
   const [step, setStep] = useState(1)
@@ -239,6 +241,13 @@ const [lists, setLists] = useState<any[]>([])
       .eq('tier', 'tracker')
       .then(({ count }) => setBetaCount(count ?? 0))
   }, [])
+
+  // Refresh profile after successful Stripe payment
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      refreshProfile()
+    }
+  }, [searchParams])
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
@@ -369,6 +378,20 @@ const [lists, setLists] = useState<any[]>([])
 
   const [deletingListId, setDeletingListId] = useState<string | null>(null)
   const [removingStoreId, setRemovingStoreId] = useState<string | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+
+  async function startCheckout(tier: 'hunter' | 'tracker') {
+    if (checkoutLoading || !user) return
+    setCheckoutLoading(true)
+    const res = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier, userId: user.id, email: user.email }),
+    })
+    const { url } = await res.json()
+    if (url) window.location.href = url
+    else setCheckoutLoading(false)
+  }
 
   async function deleteList(listId: string) {
     if (deletingListId) return
@@ -567,13 +590,13 @@ function selectAndContinue(tierId: TierId) {
                   ))}
                 </div>
                 {profile.tier === 'free' && (
-                  <button className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}>
-                    Upgrade to Hunter ⚡
+                  <button onClick={() => startCheckout('hunter')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
+                    {checkoutLoading ? '...' : 'Upgrade to Hunter ⚡'}
                   </button>
                 )}
                 {profile.tier === 'hunter' && (
-                  <button className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: '#fff', boxShadow: '0 4px 12px rgba(168,85,247,0.25)' }}>
-                    Upgrade to Tracker 🎯
+                  <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: '#fff', boxShadow: '0 4px 12px rgba(168,85,247,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
+                    {checkoutLoading ? '...' : 'Upgrade to Tracker 🎯'}
                   </button>
                 )}
               </div>
@@ -1200,4 +1223,8 @@ function selectAndContinue(tierId: TierId) {
       </div>
     </div>
   )
+}
+
+export default function AccountPage() {
+  return <Suspense><AccountPageInner /></Suspense>
 }
