@@ -60,6 +60,7 @@ export default function AdminPage() {
   const [addingDrink, setAddingDrink] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [userSearch, setUserSearch] = useState('')
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
 
   useEffect(() => {
@@ -167,6 +168,26 @@ export default function AdminPage() {
     }
 
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_verified_reporter: !current } : u))
+  }
+
+  async function deleteUser(userId: string, username: string) {
+    if (!window.confirm(`Delete @${username}? This is permanent and cannot be undone.`)) return
+    if (deletingUserId) return
+    setDeletingUserId(userId)
+    const session = await supabase.auth.getSession()
+    const requesterId = session.data.session?.user.id
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, requesterId }),
+    })
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== userId))
+    } else {
+      const { error } = await res.json()
+      window.alert(`Failed to delete user: ${error}`)
+    }
+    setDeletingUserId(null)
   }
 
   async function approveStore(id: string) {
@@ -599,6 +620,14 @@ export default function AdminPage() {
                   </div>
                   <p className="text-xs text-white/30 mt-0.5">Joined {timeAgo(u.created_at)}</p>
                 </div>
+                <button
+                  onClick={() => deleteUser(u.id, u.username)}
+                  disabled={deletingUserId === u.id}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', opacity: deletingUserId === u.id ? 0.5 : 1 }}
+                >
+                  {deletingUserId === u.id ? '...' : '🗑 Delete'}
+                </button>
                 <button
                   onClick={() => toggleVerified(u.id, u.is_verified_reporter)}
                   className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
