@@ -414,6 +414,16 @@ const [lists, setLists] = useState<any[]>([])
   const [removingStoreId, setRemovingStoreId] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [resetSent, setResetSent] = useState(false)
+
+  async function handleForgotPassword() {
+    if (!email) { setError('Enter your email above first.'); return }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/account`,
+    })
+    if (error) { setError(error.message); return }
+    setResetSent(true)
+  }
 
   async function startCheckout(tier: 'hunter' | 'tracker') {
     if (checkoutLoading || !user) return
@@ -1121,6 +1131,12 @@ function selectAndContinue(tierId: TierId) {
                     </button>
                   </div>
                 </div>
+                <div style={{ textAlign: 'right', marginTop: -6 }}>
+                  <button type="button" onClick={handleForgotPassword} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>
+                    Forgot password?
+                  </button>
+                </div>
+                {resetSent && <p style={{ fontSize: 13, color: '#22c55e', textAlign: 'center' }}>Reset link sent — check your email.</p>}
                 {error && <p style={{ fontSize: 13, color: '#f87171' }}>{error}</p>}
                 <button type="submit" className="cta-btn" disabled={submitting}
                   style={{ width: '100%', padding: 15, background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 8px 24px rgba(34,197,94,0.25)' }}>
