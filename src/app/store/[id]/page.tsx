@@ -529,11 +529,8 @@ const [search, setSearch] = useState('')
                                       {profileMap[item.user_id].verified && (
                                         <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓</span>
                                       )}
-                                      {profileMap[item.user_id].tier === 'hunter' && (
-                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>⚡</span>
-                                      )}
                                       {profileMap[item.user_id].tier === 'tracker' && (
-                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>🎯</span>
+                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', border: '1px solid rgba(249,115,22,0.3)' }}>🔥 Tracker</span>
                                       )}
                                     </div>
                                   )}

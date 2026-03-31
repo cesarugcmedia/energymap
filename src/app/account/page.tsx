@@ -115,12 +115,8 @@ const TIERS = [
     description: null as string | null,
     inherits: 'Free' as string | null,
     features: [
-      'Flavor alerts — instant notifications',
-      'Saved favorite drinks',
       'Extended 25 mile radius',
-      'Early alerts before free users',
       'No staleness warning banners',
-      'Verified reporter badge',
     ],
   },
   {
@@ -138,10 +134,9 @@ const TIERS = [
     inherits: 'Hunter' as string | null,
     features: [
       'Community chat access',
-      '30-day stock history',
       'Custom store lists',
       'Leaderboard placement + badge',
-      'Dispute wrong reports',
+      'Verified reporter badge',
       'Photo proof uploads',
     ],
   },
@@ -561,8 +556,8 @@ function selectAndContinue(tierId: TierId) {
                   {(profile.tier === 'free'
                     ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
                     : profile.tier === 'hunter'
-                    ? ['Everything in Free', '⚡ 2× leaderboard points', 'Early stock alerts', 'Verified reporter badge']
-                    : ['Everything in Hunter', '🔥 5× leaderboard points', 'Priority alerts + analytics']
+                    ? ['Everything in Free', 'Extended 25 mile radius', 'No staleness banners']
+                    : ['Everything in Hunter', 'Community chat', 'Custom store lists', 'Verified reporter badge']
                   ).map((f) => (
                     <div key={f} className="flex items-center gap-2">
                       <span style={{ fontSize: 10, color: tierInfo.color }}>✓</span>
