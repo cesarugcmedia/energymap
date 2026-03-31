@@ -15,36 +15,41 @@ const PRICE_MAP: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
-  const { tier, userId, email } = await req.json()
+  try {
+    const { tier, userId, email } = await req.json()
 
-  if (!tier || !userId || !PRICE_MAP[tier]) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    if (!tier || !userId || !PRICE_MAP[tier]) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    // Check if user already has a Stripe customer ID
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single()
+
+    let customerId = profile?.stripe_customer_id
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({ email, metadata: { supabase_id: userId } })
+      customerId = customer.id
+      await supabaseAdmin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', userId)
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: PRICE_MAP[tier], quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?payment=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?payment=cancelled`,
+      metadata: { supabase_id: userId, tier },
+    })
+
+    return NextResponse.json({ url: session.url })
+  } catch (err: any) {
+    console.error('Stripe checkout error:', err)
+    return NextResponse.json({ error: err?.message ?? 'Stripe error' }, { status: 500 })
   }
-
-  // Check if user already has a Stripe customer ID
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('stripe_customer_id')
-    .eq('id', userId)
-    .single()
-
-  let customerId = profile?.stripe_customer_id
-
-  if (!customerId) {
-    const customer = await stripe.customers.create({ email, metadata: { supabase_id: userId } })
-    customerId = customer.id
-    await supabaseAdmin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', userId)
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    line_items: [{ price: PRICE_MAP[tier], quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?payment=success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?payment=cancelled`,
-    metadata: { supabase_id: userId, tier },
-  })
-
-  return NextResponse.json({ url: session.url })
 }

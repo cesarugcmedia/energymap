@@ -425,8 +425,8 @@ const [lists, setLists] = useState<any[]>([])
         setCheckoutError(json.error ?? 'Could not start checkout. Please try again.')
         setCheckoutLoading(false)
       }
-    } catch {
-      setCheckoutError('Could not connect to payment provider. Please try again.')
+    } catch (err: any) {
+      setCheckoutError(err?.message ?? 'Could not connect to payment provider. Please try again.')
       setCheckoutLoading(false)
     }
   }
