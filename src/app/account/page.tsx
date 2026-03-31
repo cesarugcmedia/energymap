@@ -431,6 +431,32 @@ const [lists, setLists] = useState<any[]>([])
     }
   }
 
+  async function deleteAccount() {
+    if (!user) return
+    const confirmed = window.confirm('Are you sure you want to delete your account? This cannot be undone.')
+    if (!confirmed) return
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const res = await fetch('/api/account/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId: user.id }),
+    })
+
+    const json = await res.json()
+    if (json.success) {
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    } else {
+      alert(json.error ?? 'Failed to delete account. Please try again.')
+    }
+  }
+
   async function deleteList(listId: string) {
     if (deletingListId) return
     setDeletingListId(listId)
@@ -932,7 +958,7 @@ function selectAndContinue(tierId: TierId) {
             {/* Danger zone */}
             <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.12)' }}>
               <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(239,68,68,0.5)', letterSpacing: '1.5px' }}>DANGER ZONE</p>
-              <button className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
+              <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
                 Delete Account
               </button>
             </div>
