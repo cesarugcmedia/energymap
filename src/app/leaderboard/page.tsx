@@ -42,16 +42,15 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     if (!user) return
+    setLoading(true)
+    setFetchError(false)
     supabase
-      .from('leaderboard_view')
-      .select('*')
-      .order('points', { ascending: false })
-      .limit(50)
+      .rpc('get_leaderboard', { p_timeframe: timeframe })
       .then(({ data, error }) => {
         if (error) { setFetchError(true) } else if (data) { setEntries(data) }
         setLoading(false)
       })
-  }, [user])
+  }, [user, timeframe])
 
   if (authLoading || !user) {
     return (
@@ -184,6 +183,7 @@ export default function LeaderboardPage() {
                           {entry.is_verified_reporter && <span style={{ fontSize: 9, fontWeight: 800, color: '#60a5fa', backgroundColor: 'rgba(59,130,246,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>✓</span>}
                           {entry.tier === 'hunter' && <span style={{ fontSize: 9, fontWeight: 800, color: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>⚡</span>}
                           {entry.tier === 'tracker' && <span style={{ fontSize: 9, fontWeight: 800, color: '#f97316', backgroundColor: 'rgba(249,115,22,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>🔥</span>}
+                          {Array.isArray(entry.badges) && entry.badges.includes('weekly_champion') && <span style={{ fontSize: 9, fontWeight: 800, color: '#ffd700', backgroundColor: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>👑 Champ</span>}
                         </div>
                       </div>
                     </div>

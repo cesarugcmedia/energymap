@@ -17,7 +17,8 @@ const BADGE_DEFS = [
   { id: 'scout',         icon: '📍', name: 'Scout',           desc: 'Added your first approved store',     color: '#3b82f6', glow: 'rgba(59,130,246,0.25)' },
   { id: 'pathfinder',    icon: '🗺️', name: 'Pathfinder',      desc: 'Added 5 approved stores',             color: '#06b6d4', glow: 'rgba(6,182,212,0.25)'  },
   { id: 'flavor_hunter', icon: '🎯', name: 'Flavor Hunter',   desc: 'Reported 5 different drinks',         color: '#ec4899', glow: 'rgba(236,72,153,0.25)' },
-  { id: 'verified',      icon: '✅', name: 'Verified',        desc: 'Trusted community reporter',          color: '#60a5fa', glow: 'rgba(96,165,250,0.25)'  },
+  { id: 'verified',         icon: '✅', name: 'Verified',          desc: 'Trusted community reporter',      color: '#60a5fa', glow: 'rgba(96,165,250,0.25)'  },
+  { id: 'weekly_champion',  icon: '👑', name: 'Weekly Champion',   desc: 'Top reporter of the week',        color: '#ffd700', glow: 'rgba(255,215,0,0.25)'   },
 ]
 
 function timeAgo(dateStr: string) {
