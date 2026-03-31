@@ -278,24 +278,33 @@ const [lists, setLists] = useState<any[]>([])
         isFreeBetaTracker = (count ?? 0) < 50
       }
 
-      // Grant selected tier immediately — Stripe billing confirms/cancels in the background
-      const profileTier = (selectedTier ?? 'free') as string
-      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: profileTier })
+      // Always create as free — Stripe webhook upgrades tier after payment
+      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: 'free' })
 
-      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
-
-      await refreshProfile()
-
-      // Redirect paid tiers (non-beta) to Stripe to set up billing
+      // Redirect paid tiers (non-beta) to Stripe BEFORE email confirmation check
       if (isPaidTier && !isFreeBetaTracker) {
-        const res = await fetch('/api/stripe/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email }),
-        })
-        const { url } = await res.json()
-        if (url) window.location.href = url
+        try {
+          const res = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email }),
+          })
+          const json = await res.json()
+          if (json.url) { window.location.href = json.url; return }
+          setError('Could not start checkout. Please try again.')
+        } catch {
+          setError('Could not connect to payment provider. Please try again.')
+        }
+        setSubmitting(false)
+        return
       }
+
+      // Free tier or beta tracker — proceed normally
+      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
+      if (isFreeBetaTracker) {
+        await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', data.user.id)
+      }
+      await refreshProfile()
     }
     setSubmitting(false)
   }
@@ -401,14 +410,23 @@ const [lists, setLists] = useState<any[]>([])
   async function startCheckout(tier: 'hunter' | 'tracker') {
     if (checkoutLoading || !user) return
     setCheckoutLoading(true)
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier, userId: user.id, email: user.email }),
-    })
-    const { url } = await res.json()
-    if (url) window.location.href = url
-    else setCheckoutLoading(false)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier, userId: user.id, email: user.email }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setError(data.error ?? 'Could not start checkout. Please try again.')
+        setCheckoutLoading(false)
+      }
+    } catch {
+      setError('Could not connect to payment provider. Please try again.')
+      setCheckoutLoading(false)
+    }
   }
 
   async function deleteList(listId: string) {
@@ -613,8 +631,8 @@ function selectAndContinue(tierId: TierId) {
                   </button>
                 )}
                 {profile.tier === 'hunter' && (
-                  <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: '#fff', boxShadow: '0 4px 12px rgba(168,85,247,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
-                    {checkoutLoading ? '...' : 'Upgrade to Tracker 🎯'}
+                  <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #f97316, #ea6c0a)', color: '#fff', boxShadow: '0 4px 12px rgba(249,115,22,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
+                    {checkoutLoading ? '...' : 'Upgrade to Tracker 🔥'}
                   </button>
                 )}
               </div>
