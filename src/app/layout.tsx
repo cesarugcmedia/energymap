@@ -11,7 +11,18 @@ const bebasNeue = Bebas_Neue({ subsets: ['latin'], weight: '400', variable: '--f
 
 export const metadata: Metadata = {
   title: 'Amped Map',
-  description: 'Find energy drinks near you',
+  description: 'Find energy drinks near you — powered by the community.',
+  openGraph: {
+    title: 'Amped Map',
+    description: 'Find energy drinks near you — powered by the community.',
+    siteName: 'Amped Map',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Amped Map',
+    description: 'Find energy drinks near you — powered by the community.',
+  },
 }
 
 export const viewport: Viewport = {
