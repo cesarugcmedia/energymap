@@ -281,6 +281,13 @@ const [lists, setLists] = useState<any[]>([])
       // Always create as free — Stripe webhook upgrades tier after payment
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: 'free' })
 
+      // Send welcome email (fire and forget)
+      fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username: username.trim(), tier: selectedTier }),
+      }).catch(() => {})
+
       // Redirect paid tiers (non-beta) to Stripe BEFORE email confirmation check
       if (isPaidTier && !isFreeBetaTracker) {
         try {
