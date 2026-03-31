@@ -82,18 +82,19 @@ export default async function Image() {
               marginBottom: 28,
             }}
           >
-            {/* Lightning bolt badge */}
+            {/* Lightning bolt badge — dark/grid style */}
             <div
               style={{
-                width: 100,
-                height: 100,
+                width: 110,
+                height: 110,
                 borderRadius: 28,
-                backgroundColor: '#22c55e',
+                backgroundColor: '#0f0f1a',
+                border: '2px solid rgba(34,197,94,0.5)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 56,
-                boxShadow: '0 0 60px rgba(34,197,94,0.5)',
+                fontSize: 58,
+                boxShadow: '0 0 40px rgba(34,197,94,0.3), inset 0 0 30px rgba(34,197,94,0.05)',
               }}
             >
               ⚡
@@ -120,8 +121,10 @@ export default async function Image() {
                   lineHeight: 1,
                   letterSpacing: -2,
                   fontFamily: 'sans-serif',
-                  background: 'linear-gradient(90deg, #22c55e, #4ade80)',
-                  color: '#22c55e',
+                  color: '#ffffff',
+                  textShadow: '0 0 40px rgba(34,197,94,0.8)',
+                  borderBottom: '5px solid #22c55e',
+                  paddingBottom: 4,
                 }}
               >
                 MAP
