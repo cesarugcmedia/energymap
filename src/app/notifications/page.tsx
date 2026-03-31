@@ -45,6 +45,7 @@ export default function NotificationsPage() {
       .from('notifications')
       .select('*, store:stores(id, name)')
       .eq('user_id', user!.id)
+      .lte('visible_after', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(50)
     if (data) setNotifications(data)

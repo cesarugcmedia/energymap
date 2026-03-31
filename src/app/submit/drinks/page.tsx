@@ -136,6 +136,21 @@ function DrinksContent() {
             ...(photoUrl ? { photo_url: photoUrl } : {}),
           }))
         )
+
+        // Fan-out stock update notifications to users who have this store saved
+        const [firstDrinkId, firstQuantity] = toSubmit[0]
+        const firstDrink = drinks.find((d) => d.id === firstDrinkId)
+        if (firstDrink && profile?.username) {
+          const drinkLabel = toSubmit.length > 1
+            ? `${firstDrink.name} +${toSubmit.length - 1} more`
+            : firstDrink.name
+          await supabase.rpc('notify_stock_update', {
+            p_store_id: storeId,
+            p_drink_name: drinkLabel,
+            p_quantity: firstQuantity,
+            p_reporter_username: profile.username,
+          })
+        }
       }
 
       router.replace(
