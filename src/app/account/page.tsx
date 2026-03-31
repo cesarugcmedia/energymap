@@ -269,14 +269,32 @@ const [lists, setLists] = useState<any[]>([])
     const { data, error: authError } = await supabase.auth.signUp({ email, password })
     if (authError) { setError(authError.message); setSubmitting(false); return }
     if (data.user) {
-      let actualTier = selectedTier ?? 'free'
+      const isPaidTier = selectedTier === 'hunter' || selectedTier === 'tracker'
+
+      // For tracker: check if beta spots still available
+      let isFreeBetaTracker = false
       if (selectedTier === 'tracker') {
-        // Re-check live count to handle race conditions
         const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
-        if ((count ?? 0) >= 50) actualTier = 'free'
+        isFreeBetaTracker = (count ?? 0) < 50
       }
-      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: actualTier })
+
+      // Create profile — paid tiers start as free until Stripe payment confirms
+      const profileTier = isFreeBetaTracker ? 'tracker' : 'free'
+      await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: profileTier })
+
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
+
+      // Redirect to Stripe for paid tiers (unless free beta tracker spot)
+      if (isPaidTier && !isFreeBetaTracker) {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email }),
+        })
+        const { url } = await res.json()
+        if (url) { window.location.href = url; return }
+      }
+
       await refreshProfile()
     }
     setSubmitting(false)
