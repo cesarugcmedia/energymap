@@ -406,25 +406,27 @@ const [lists, setLists] = useState<any[]>([])
   const [deletingListId, setDeletingListId] = useState<string | null>(null)
   const [removingStoreId, setRemovingStoreId] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   async function startCheckout(tier: 'hunter' | 'tracker') {
     if (checkoutLoading || !user) return
     setCheckoutLoading(true)
+    setCheckoutError(null)
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier, userId: user.id, email: user.email }),
       })
-      const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
+      const json = await res.json()
+      if (json.url) {
+        window.location.href = json.url
       } else {
-        setError(data.error ?? 'Could not start checkout. Please try again.')
+        setCheckoutError(json.error ?? 'Could not start checkout. Please try again.')
         setCheckoutLoading(false)
       }
     } catch {
-      setError('Could not connect to payment provider. Please try again.')
+      setCheckoutError('Could not connect to payment provider. Please try again.')
       setCheckoutLoading(false)
     }
   }
@@ -625,6 +627,9 @@ function selectAndContinue(tierId: TierId) {
                     </div>
                   ))}
                 </div>
+                {checkoutError && (
+                  <p className="text-xs text-red-400 mb-2">{checkoutError}</p>
+                )}
                 {profile.tier === 'free' && (
                   <button onClick={() => startCheckout('hunter')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
                     {checkoutLoading ? '...' : 'Upgrade to Hunter ⚡'}
