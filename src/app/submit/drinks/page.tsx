@@ -20,9 +20,13 @@ function DrinksContent() {
   const storeId = params.get('storeId') ?? ''
   const storeName = params.get('storeName') ?? ''
 
-  const { profile } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const isTracker = profile?.is_admin || profile?.tier === 'tracker'
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/account')
+  }, [user, authLoading])
 
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [loading, setLoading] = useState(true)

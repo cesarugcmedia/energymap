@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -14,7 +14,11 @@ const STORE_TYPES = [
 
 export default function AddStorePage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/account')
+  }, [user, authLoading])
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [type, setType] = useState<string | null>(null)
