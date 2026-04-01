@@ -587,6 +587,17 @@ function selectAndContinue(tierId: TierId) {
     )
   }
 
+  // Full-screen overlay during paid signup redirect to Stripe
+  const isPaidSignup = submitting && (selectedTier === 'hunter' || selectedTier === 'tracker')
+  if (isPaidSignup) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#070710', gap: 16 }}>
+        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <p style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Redirecting to payment...</p>
+      </div>
+    )
+  }
+
   if (user && !profile && !loading) return <SetupProfile userId={user.id} email={user.email ?? ''} />
   if (user && !profile) {
     return (
