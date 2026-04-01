@@ -708,9 +708,23 @@ function selectAndContinue(tierId: TierId) {
                   </button>
                 )}
                 {profile.tier === 'hunter' && (
-                  <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #f97316, #ea6c0a)', color: '#fff', boxShadow: '0 4px 12px rgba(249,115,22,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
-                    {checkoutLoading ? '...' : 'Upgrade to Tracker 🔥'}
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #f97316, #ea6c0a)', color: '#fff', boxShadow: '0 4px 12px rgba(249,115,22,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
+                      {checkoutLoading ? '...' : 'Upgrade to Tracker 🔥'}
+                    </button>
+                    {cancelError && <p className="text-xs text-red-400">{cancelError}</p>}
+                    <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
+                      {cancelLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                    </button>
+                  </div>
+                )}
+                {profile.tier === 'tracker' && (
+                  <div className="flex flex-col gap-2">
+                    {cancelError && <p className="text-xs text-red-400">{cancelError}</p>}
+                    <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
+                      {cancelLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1004,19 +1018,9 @@ function selectAndContinue(tierId: TierId) {
             {/* Danger zone */}
             <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.12)' }}>
               <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(239,68,68,0.5)', letterSpacing: '1.5px' }}>DANGER ZONE</p>
-              <div className="flex flex-col gap-2">
-                {(profile.tier === 'hunter' || profile.tier === 'tracker') && (
-                  <>
-                    {cancelError && <p className="text-xs text-red-400">{cancelError}</p>}
-                    <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
-                      {cancelLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                    </button>
-                  </>
-                )}
-                <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
-                  Delete Account
-                </button>
-              </div>
+              <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
+                Delete Account
+              </button>
             </div>
           </div>
         )}
