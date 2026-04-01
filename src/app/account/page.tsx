@@ -415,7 +415,35 @@ const [lists, setLists] = useState<any[]>([])
   const [removingStoreId, setRemovingStoreId] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
   const [resetSent, setResetSent] = useState(false)
+
+  async function cancelSubscription() {
+    if (cancelLoading || !user) return
+    const confirmed = window.confirm('Are you sure you want to cancel your subscription? You will be moved to the free tier immediately.')
+    if (!confirmed) return
+    setCancelLoading(true)
+    setCancelError(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setCancelLoading(false); return }
+    try {
+      const res = await fetch('/api/stripe/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        await refreshProfile()
+      } else {
+        setCancelError(json.error ?? 'Failed to cancel subscription.')
+      }
+    } catch (err: any) {
+      setCancelError(err?.message ?? 'Could not connect. Please try again.')
+    }
+    setCancelLoading(false)
+  }
 
   async function handleForgotPassword() {
     if (!email) { setError('Enter your email above first.'); return }
@@ -976,9 +1004,19 @@ function selectAndContinue(tierId: TierId) {
             {/* Danger zone */}
             <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.12)' }}>
               <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(239,68,68,0.5)', letterSpacing: '1.5px' }}>DANGER ZONE</p>
-              <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
-                Delete Account
-              </button>
+              <div className="flex flex-col gap-2">
+                {(profile.tier === 'hunter' || profile.tier === 'tracker') && (
+                  <>
+                    {cancelError && <p className="text-xs text-red-400">{cancelError}</p>}
+                    <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
+                      {cancelLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                    </button>
+                  </>
+                )}
+                <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         )}
