@@ -248,7 +248,27 @@ const [lists, setLists] = useState<any[]>([])
     if (searchParams.get('payment') === 'success') {
       refreshProfile()
     }
+    // If user cancelled Stripe and came back, reset to signup form
+    if (searchParams.get('payment') === 'cancelled') {
+      setSubmitting(false)
+      setSelectedTier(null)
+      setStep(1)
+      setMode('signup')
+    }
   }, [searchParams])
+
+  // Reset submitting state if page is restored from bfcache (browser back button)
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setSubmitting(false)
+        setSelectedTier(null)
+        setStep(1)
+      }
+    }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
+  }, [])
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
