@@ -459,6 +459,18 @@ const [lists, setLists] = useState<any[]>([])
     setCheckoutLoading(true)
     setCheckoutError(null)
     try {
+      // Check beta spots for tracker upgrades
+      if (tier === 'tracker') {
+        const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
+        const isFreeBeta = (count ?? 0) < 50
+        if (isFreeBeta) {
+          await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', user.id)
+          await refreshProfile()
+          setCheckoutLoading(false)
+          return
+        }
+      }
+
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
