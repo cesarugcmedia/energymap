@@ -715,60 +715,78 @@ function selectAndContinue(tierId: TierId) {
         {activeTab === 'overview' && (
           <div className="px-5 flex flex-col gap-4">
 
-            {/* Plan card */}
-            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${tierInfo.color}30` }}>
-              <div style={{ height: 3, background: `linear-gradient(90deg, ${tierInfo.color}, ${tierInfo.color}66)` }} />
-              <div className="p-4">
-                <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>YOUR PLAN</p>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${tierInfo.color}18`, border: `1px solid ${tierInfo.color}35` }}>
-                    <span style={{ fontSize: 20 }}>{tierInfo.icon}</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-base font-black" style={{ color: tierInfo.color }}>{tierInfo.label}</p>
-                    <p className="text-xs text-white/40">{profile.tier === 'free' ? 'Free forever' : profile.tier === 'hunter' ? '$5 / month' : '$10 / month'}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5 mb-3">
-                  {(profile.tier === 'free'
-                    ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
-                    : profile.tier === 'hunter'
-                    ? ['Everything in Free', 'Extended 25 mile radius', 'Early stock alerts']
-                    : ['Everything in Hunter', 'Community chat', 'Custom store lists', 'Verified reporter badge']
-                  ).map((f) => (
-                    <div key={f} className="flex items-center gap-2">
-                      <span style={{ fontSize: 10, color: tierInfo.color }}>✓</span>
-                      <span className="text-xs text-white/50">{f}</span>
+            {/* Plan section */}
+            <div>
+              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>YOUR PLAN</p>
+              {checkoutError && <p className="text-xs text-red-400 mb-2">{checkoutError}</p>}
+              <div className="flex gap-3">
+
+                {/* Current plan */}
+                <div className="flex-1 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${tierInfo.color}35` }}>
+                  <div style={{ height: 3, background: `linear-gradient(90deg, ${tierInfo.color}, ${tierInfo.color}66)` }} />
+                  <div className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span style={{ fontSize: 18 }}>{tierInfo.icon}</span>
+                      <div>
+                        <p className="text-sm font-black" style={{ color: tierInfo.color }}>{tierInfo.label}</p>
+                        <p className="text-[10px] text-white/40">{profile.tier === 'free' ? 'Free' : profile.tier === 'hunter' ? '$5/mo' : '$10/mo'}</p>
+                      </div>
                     </div>
-                  ))}
+                    <div className="flex flex-col gap-1">
+                      {(profile.tier === 'free'
+                        ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
+                        : profile.tier === 'hunter'
+                        ? ['Extended 25 mile radius', 'No staleness banners', 'Early stock alerts']
+                        : ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
+                      ).map((f) => (
+                        <div key={f} className="flex items-start gap-1.5">
+                          <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 2 }}>✓</span>
+                          <span className="text-[10px] text-white/50 leading-tight">{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(profile.tier === 'hunter' || profile.tier === 'tracker') && (
+                      <div className="mt-3">
+                        {cancelError && <p className="text-[10px] text-red-400 mb-1">{cancelError}</p>}
+                        <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-lg py-2 text-[11px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
+                          {cancelLoading ? 'Cancelling...' : 'Cancel'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {checkoutError && (
-                  <p className="text-xs text-red-400 mb-2">{checkoutError}</p>
-                )}
-                {profile.tier === 'free' && (
-                  <button onClick={() => startCheckout('hunter')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
-                    {checkoutLoading ? '...' : 'Upgrade to Hunter ⚡'}
-                  </button>
-                )}
-                {profile.tier === 'hunter' && (
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} className="w-full rounded-xl py-2.5 text-sm font-black" style={{ background: 'linear-gradient(135deg, #f97316, #ea6c0a)', color: '#fff', boxShadow: '0 4px 12px rgba(249,115,22,0.25)', opacity: checkoutLoading ? 0.6 : 1 }}>
-                      {checkoutLoading ? '...' : 'Upgrade to Tracker 🔥'}
-                    </button>
-                    {cancelError && <p className="text-xs text-red-400">{cancelError}</p>}
-                    <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
-                      {cancelLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                    </button>
-                  </div>
-                )}
-                {profile.tier === 'tracker' && (
-                  <div className="flex flex-col gap-2">
-                    {cancelError && <p className="text-xs text-red-400">{cancelError}</p>}
-                    <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
-                      {cancelLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                    </button>
-                  </div>
-                )}
+
+                {/* Upgrade plan */}
+                {profile.tier !== 'tracker' && (() => {
+                  const next = profile.tier === 'free'
+                    ? { id: 'hunter' as const, icon: '⚡', label: 'Hunter', color: '#22c55e', price: '$5/mo', features: ['Extended 25 mile radius', 'No staleness banners', 'Early stock alerts'] }
+                    : { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge'] }
+                  return (
+                    <div className="flex-1 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${next.color}35` }}>
+                      <div style={{ height: 3, background: `linear-gradient(90deg, ${next.color}, ${next.color}66)` }} />
+                      <div className="p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span style={{ fontSize: 18 }}>{next.icon}</span>
+                          <div>
+                            <p className="text-sm font-black" style={{ color: next.color }}>{next.label}</p>
+                            <p className="text-[10px] text-white/40">{next.price}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1 mb-3">
+                          {next.features.map((f) => (
+                            <div key={f} className="flex items-start gap-1.5">
+                              <span style={{ fontSize: 9, color: next.color, marginTop: 2 }}>✓</span>
+                              <span className="text-[10px] text-white/50 leading-tight">{f}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <button onClick={() => startCheckout(next.id)} disabled={checkoutLoading} className="w-full rounded-lg py-2 text-[11px] font-black" style={{ background: `linear-gradient(135deg, ${next.color}, ${next.color}bb)`, color: '#fff', opacity: checkoutLoading ? 0.6 : 1 }}>
+                          {checkoutLoading ? '...' : `Upgrade ${next.icon}`}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
 
