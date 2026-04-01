@@ -291,6 +291,8 @@ const [lists, setLists] = useState<any[]>([])
 
       // Redirect paid tiers (non-beta) to Stripe BEFORE email confirmation check
       if (isPaidTier && !isFreeBetaTracker) {
+        // Sign out immediately so the account page doesn't flash before Stripe redirect
+        await supabase.auth.signOut()
         try {
           const res = await fetch('/api/stripe/checkout', {
             method: 'POST',
