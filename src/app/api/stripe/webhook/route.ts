@@ -30,12 +30,38 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session
       const userId = session.metadata?.supabase_id
       const tier = session.metadata?.tier
+      const username = session.metadata?.username
       const subscriptionId = session.subscription as string
       if (userId && tier) {
-        await supabaseAdmin.from('profiles').update({
-          tier,
-          stripe_subscription_id: subscriptionId,
-        }).eq('id', userId)
+        const { data: existing } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle()
+
+        if (existing) {
+          // Existing profile (upgrade) — just update tier
+          await supabaseAdmin.from('profiles').update({
+            tier,
+            stripe_subscription_id: subscriptionId,
+          }).eq('id', userId)
+        } else {
+          // New paid signup — create profile with correct tier
+          await supabaseAdmin.from('profiles').insert({
+            id: userId,
+            username: username ?? '',
+            tier,
+            stripe_subscription_id: subscriptionId,
+          })
+          // Send welcome email
+          if (session.customer_details?.email) {
+            await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/welcome`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: session.customer_details.email, username, tier }),
+            }).catch(() => {})
+          }
+        }
       }
       break
     }

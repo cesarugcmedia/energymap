@@ -299,7 +299,26 @@ const [lists, setLists] = useState<any[]>([])
         isFreeBetaTracker = (count ?? 0) < 50
       }
 
-      // Always create as free — Stripe webhook upgrades tier after payment
+      // Paid tiers: sign out, go to Stripe — webhook creates profile after payment
+      if (isPaidTier && !isFreeBetaTracker) {
+        await supabase.auth.signOut()
+        try {
+          const res = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email, username: username.trim() }),
+          })
+          const json = await res.json()
+          if (json.url) { window.location.href = json.url; return }
+          setError(json.error ?? 'Could not start checkout. Please try again.')
+        } catch (err: any) {
+          setError(err?.message ?? 'Could not connect to payment provider. Please try again.')
+        }
+        setSubmitting(false)
+        return
+      }
+
+      // Free tier or beta tracker — create profile immediately
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: 'free' })
 
       // Send welcome email (fire and forget)
@@ -309,30 +328,6 @@ const [lists, setLists] = useState<any[]>([])
         body: JSON.stringify({ email, username: username.trim(), tier: selectedTier }),
       }).catch(() => {})
 
-      // Redirect paid tiers (non-beta) to Stripe BEFORE email confirmation check
-      if (isPaidTier && !isFreeBetaTracker) {
-        // Sign out immediately so the account page doesn't flash before Stripe redirect
-        await supabase.auth.signOut()
-        try {
-          const res = await fetch('/api/stripe/checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email }),
-          })
-          const json = await res.json()
-          if (json.url) { window.location.href = json.url; return }
-          // Stripe failed — sign out so user sees error on signup form
-          await supabase.auth.signOut()
-          setError(json.error ?? 'Could not start checkout. Please try again.')
-        } catch (err: any) {
-          await supabase.auth.signOut()
-          setError(err?.message ?? 'Could not connect to payment provider. Please try again.')
-        }
-        setSubmitting(false)
-        return
-      }
-
-      // Free tier or beta tracker — proceed normally
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       if (isFreeBetaTracker) {
         await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', data.user.id)

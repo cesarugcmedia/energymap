@@ -16,7 +16,7 @@ const PRICE_MAP: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { tier, userId, email } = await req.json()
+    const { tier, userId, email, username } = await req.json()
 
     if (!tier || !userId || !PRICE_MAP[tier]) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: PRICE_MAP[tier], quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?payment=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/account?payment=cancelled`,
-      metadata: { supabase_id: userId, tier },
+      metadata: { supabase_id: userId, tier, username: username ?? '' },
     })
 
     return NextResponse.json({ url: session.url })
