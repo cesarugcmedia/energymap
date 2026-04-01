@@ -299,9 +299,12 @@ const [lists, setLists] = useState<any[]>([])
           })
           const json = await res.json()
           if (json.url) { window.location.href = json.url; return }
-          setError('Could not start checkout. Please try again.')
-        } catch {
-          setError('Could not connect to payment provider. Please try again.')
+          // Stripe failed — sign out so user sees error on signup form
+          await supabase.auth.signOut()
+          setError(json.error ?? 'Could not start checkout. Please try again.')
+        } catch (err: any) {
+          await supabase.auth.signOut()
+          setError(err?.message ?? 'Could not connect to payment provider. Please try again.')
         }
         setSubmitting(false)
         return
@@ -1343,7 +1346,7 @@ function selectAndContinue(tierId: TierId) {
                   style={{ width: '100%', padding: 15, background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`, border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 8px 24px ${tier.glow}`, marginTop: 4 }}>
                   {submitting
                     ? <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-                    : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 50 ? 'Claim Beta Spot →' : 'Buy Tracker →') : 'Get Started →'}
+                    : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 50 ? 'Claim Beta Spot →' : 'Continue to Payment →') : 'Continue to Payment →'}
                 </button>
                 <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', lineHeight: 1.6 }}>
                   By signing up you agree to our Terms of Service and Privacy Policy.
