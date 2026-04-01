@@ -27,13 +27,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Clean up all user data before deleting auth user
-    await supabaseAdmin.from('message_reactions').delete().eq('user_id', userId)
-    await supabaseAdmin.from('messages').delete().eq('user_id', userId)
-    await supabaseAdmin.from('notifications').delete().eq('user_id', userId)
-    await supabaseAdmin.from('custom_lists').delete().eq('user_id', userId)
-    await supabaseAdmin.from('stock_reports').update({ reporter_id: null }).eq('reporter_id', userId)
-    await supabaseAdmin.from('stores').update({ submitted_by: null }).eq('submitted_by', userId)
+    // Clean up all user data via SQL function, then delete auth user
+    await supabaseAdmin.rpc('delete_user_account', { p_user_id: userId })
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
