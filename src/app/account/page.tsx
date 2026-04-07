@@ -1395,7 +1395,7 @@ function selectAndContinue(tierId: TierId) {
                     : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 50 ? 'Claim Beta Spot →' : 'Continue to Payment →') : 'Continue to Payment →'}
                 </button>
                 <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', lineHeight: 1.6 }}>
-                  By signing up you agree to our Terms of Service and Privacy Policy.
+                  By signing up you agree to our <a href="/terms" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Privacy Policy</a>.
                 </p>
               </form>
               <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
