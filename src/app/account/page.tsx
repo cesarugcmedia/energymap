@@ -194,6 +194,7 @@ const [lists, setLists] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [betaCount, setBetaCount] = useState<number>(0)
 
   // Stats
@@ -284,6 +285,7 @@ const [lists, setLists] = useState<any[]>([])
     setError(null)
     if (!username.trim()) { setError('Username is required.'); return }
     if (username.length < 3) { setError('Username must be at least 3 characters.'); return }
+    if (!agreedToTerms) { setError('You must agree to the Terms of Service and Privacy Policy.'); return }
     setSubmitting(true)
     const { data: existing } = await supabase.from('profiles').select('id').eq('username', username.trim()).maybeSingle()
     if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
@@ -1394,9 +1396,17 @@ function selectAndContinue(tierId: TierId) {
                     ? <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
                     : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 50 ? 'Claim Beta Spot →' : 'Continue to Payment →') : 'Continue to Payment →'}
                 </button>
-                <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', lineHeight: 1.6 }}>
-                  By signing up you agree to our <a href="/terms" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Privacy Policy</a>.
-                </p>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginTop: 4 }}>
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: '#22c55e', width: 14, height: 14, flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
+                    I agree to the <a href="/terms" target="_blank" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" target="_blank" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Privacy Policy</a>.
+                  </span>
+                </label>
               </form>
               <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
                 Already have an account?{' '}
