@@ -5,6 +5,7 @@ import BottomNav from '@/components/BottomNav'
 import SideNav from '@/components/SideNav'
 import MainWrapper from '@/components/MainWrapper'
 import AppStartGuard from '@/components/AppStartGuard'
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import { AuthProvider } from '@/contexts/AuthContext'
 
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
@@ -58,6 +59,7 @@ export default function RootLayout({
             }}
           />
           <AppStartGuard />
+          <ServiceWorkerRegister />
           {/* Desktop sidebar */}
           <SideNav />
           {/* Main content — offset by sidebar on desktop */}
