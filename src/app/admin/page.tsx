@@ -65,6 +65,7 @@ export default function AdminPage() {
   const [waitlist, setWaitlist] = useState<any[]>([])
   const [waitlistLoading, setWaitlistLoading] = useState(false)
   const [inviting, setInviting] = useState<Set<string>>(new Set())
+  const [deletingWaitlist, setDeletingWaitlist] = useState<Set<string>>(new Set())
   const [userSearch, setUserSearch] = useState('')
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
@@ -360,6 +361,23 @@ export default function AdminPage() {
     })
     if (res.ok) setWaitlist(await res.json())
     setWaitlistLoading(false)
+  }
+
+  async function deleteWaitlistEntry(email: string) {
+    if (!window.confirm(`Remove ${email} from the waitlist?`)) return
+    setDeletingWaitlist((prev) => new Set(prev).add(email))
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/waitlist', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+      body: JSON.stringify({ email }),
+    })
+    if (res.ok) {
+      setWaitlist((prev) => prev.filter((w) => w.email !== email))
+    } else {
+      window.alert('Failed to remove entry.')
+    }
+    setDeletingWaitlist((prev) => { const next = new Set(prev); next.delete(email); return next })
   }
 
   async function inviteUser(email: string) {
@@ -727,21 +745,31 @@ export default function AdminPage() {
                       )}
                     </p>
                   </div>
-                  <button
-                    onClick={() => inviteUser(w.email)}
-                    disabled={inviting.has(w.email)}
-                    className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5"
-                    style={{
-                      backgroundColor: w.invited_at ? 'rgba(34,197,94,0.1)' : '#22c55e',
-                      color: w.invited_at ? '#22c55e' : '#000',
-                      border: w.invited_at ? '1px solid rgba(34,197,94,0.3)' : 'none',
-                      opacity: inviting.has(w.email) ? 0.5 : 1,
-                    }}
-                  >
-                    {inviting.has(w.email)
-                      ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      : w.invited_at ? '✓ Resend' : '✉ Invite'}
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => inviteUser(w.email)}
+                      disabled={inviting.has(w.email)}
+                      className="rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5"
+                      style={{
+                        backgroundColor: w.invited_at ? 'rgba(34,197,94,0.1)' : '#22c55e',
+                        color: w.invited_at ? '#22c55e' : '#000',
+                        border: w.invited_at ? '1px solid rgba(34,197,94,0.3)' : 'none',
+                        opacity: inviting.has(w.email) ? 0.5 : 1,
+                      }}
+                    >
+                      {inviting.has(w.email)
+                        ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        : w.invited_at ? '✓ Resend' : '✉ Invite'}
+                    </button>
+                    <button
+                      onClick={() => deleteWaitlistEntry(w.email)}
+                      disabled={deletingWaitlist.has(w.email)}
+                      className="rounded-xl px-2.5 py-2 text-xs font-bold"
+                      style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', opacity: deletingWaitlist.has(w.email) ? 0.5 : 1 }}
+                    >
+                      {deletingWaitlist.has(w.email) ? '...' : '🗑'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

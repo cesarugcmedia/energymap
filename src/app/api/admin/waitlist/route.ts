@@ -22,6 +22,17 @@ async function verifyAdmin(req: NextRequest) {
   return profile?.is_admin ? user : null
 }
 
+export async function DELETE(req: NextRequest) {
+  if (!await verifyAdmin(req)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  const { email } = await req.json()
+  if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+  const { error } = await supabaseAdmin.from('waitlist').delete().eq('email', email)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
 export async function GET(req: NextRequest) {
   if (!await verifyAdmin(req)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
