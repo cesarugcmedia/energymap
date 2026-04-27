@@ -117,7 +117,6 @@ const TIERS = [
     description: null as string | null,
     inherits: null as string | null,
     features: [
-      'Community chat access',
       'Custom store lists',
       'Leaderboard placement + badge',
       'Verified reporter badge',
@@ -724,7 +723,7 @@ function selectAndContinue(tierId: TierId) {
                     <div className="flex flex-col gap-1">
                       {(profile.tier === 'free'
                         ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
-                        : ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
+                        : ['Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
                       ).map((f) => (
                         <div key={f} className="flex items-start gap-1.5">
                           <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 2 }}>✓</span>
@@ -745,7 +744,7 @@ function selectAndContinue(tierId: TierId) {
 
                 {/* Upgrade plan */}
                 {profile.tier !== 'tracker' && (() => {
-                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge'] }
+                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Custom store lists', 'Verified reporter badge', 'Leaderboard badge'] }
                   return (
                     <div className="flex-1 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${next.color}35` }}>
                       <div style={{ height: 3, background: `linear-gradient(90deg, ${next.color}, ${next.color}66)` }} />
