@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
 </html>`
 
     await resend.emails.send({
-      from: 'AmpedMap <no-reply@send.ampedmap.com>',
+      from: 'AmpedMap <no-reply@ampedmap.com>',
       to: email,
       subject: 'Welcome to AmpedMap ⚡',
       html,
