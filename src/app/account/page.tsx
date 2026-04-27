@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -157,6 +157,7 @@ const STATS = [
 function AccountPageInner() {
   const { user, profile, loading, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [mode, setMode] = useState<Mode>('signup')
   const [selectedTier, setSelectedTier] = useState<TierId | null>(null)
   const [step, setStep] = useState(1)
