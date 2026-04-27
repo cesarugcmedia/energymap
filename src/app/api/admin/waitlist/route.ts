@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/invite/accept?token=${newToken}`
 
-  await resend.emails.send({
+  const { error: sendError } = await resend.emails.send({
     from: 'AmpedMap <no-reply@send.ampedmap.com>',
     to: email,
     subject: "You're invited to Amped Map ⚡",
@@ -110,6 +110,11 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`,
   })
+
+  if (sendError) {
+    console.error('Resend error:', sendError)
+    return NextResponse.json({ error: sendError.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }
