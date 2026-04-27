@@ -44,7 +44,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
     const { data: existing } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle()
     if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
     await supabase.from('profiles').insert({ id: userId, username })
-    window.location.reload()
+    window.location.href = '/'
   }
 
   return (
@@ -228,7 +228,7 @@ const [lists, setLists] = useState<any[]>([])
   // Refresh profile after successful Stripe payment
   useEffect(() => {
     if (searchParams.get('payment') === 'success') {
-      refreshProfile()
+      refreshProfile().then(() => router.replace('/'))
     }
     // If user cancelled Stripe and came back, reset to signup form
     if (searchParams.get('payment') === 'cancelled') {
@@ -257,8 +257,8 @@ const [lists, setLists] = useState<any[]>([])
     setError(null)
     setSubmitting(true)
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    if (authError) setError('Invalid email or password.')
-    setSubmitting(false)
+    if (authError) { setError('Invalid email or password.'); setSubmitting(false); return }
+    router.replace('/')
   }
 
   async function handleSignUp(e: React.FormEvent) {
@@ -320,6 +320,7 @@ const [lists, setLists] = useState<any[]>([])
         await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', data.user.id)
       }
       await refreshProfile()
+      router.replace('/')
     }
     setSubmitting(false)
   }
