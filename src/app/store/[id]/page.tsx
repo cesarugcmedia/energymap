@@ -172,14 +172,24 @@ function StoreDetailContent({ id }: { id: string }) {
   }
 
   async function fetchStock() {
-    const { data, error } = await supabase
+    const { data: stockData, error } = await supabase
       .from('latest_stock')
-      .select('drink_id, quantity, reported_at, user_id, drink:drinks(name, brand, flavor)')
+      .select('drink_id, quantity, reported_at, user_id')
       .eq('store_id', id)
     if (error) { setStockError(true); setLoading(false); return }
-    if (data) {
-      setStock(data)
-      const userIds = [...new Set(data.map((d) => d.user_id).filter(Boolean))]
+
+    if (stockData && stockData.length > 0) {
+      const drinkIds = [...new Set(stockData.map((d) => d.drink_id).filter(Boolean))]
+      const { data: drinksData } = await supabase
+        .from('drinks')
+        .select('id, name, brand, flavor')
+        .in('id', drinkIds)
+      const drinksMap: Record<string, any> = {}
+      drinksData?.forEach((d) => { drinksMap[d.id] = d })
+      const merged = stockData.map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null }))
+      setStock(merged)
+
+      const userIds = [...new Set(stockData.map((d) => d.user_id).filter(Boolean))]
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
@@ -191,6 +201,8 @@ function StoreDetailContent({ id }: { id: string }) {
           setProfileMap(map)
         }
       }
+    } else {
+      setStock([])
     }
     setLoading(false)
   }
