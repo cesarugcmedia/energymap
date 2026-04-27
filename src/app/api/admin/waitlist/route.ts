@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const { data } = await supabaseAdmin
     .from('waitlist')
     .select('email, created_at, invited_at')
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
   return NextResponse.json(data ?? [])
 }
 

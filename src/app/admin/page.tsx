@@ -730,12 +730,22 @@ export default function AdminPage() {
               {waitlist.length} {waitlist.length === 1 ? 'SIGNUP' : 'SIGNUPS'} · {waitlist.filter((w) => w.invited_at).length} INVITED
             </p>
             <div className="flex flex-col gap-2.5">
-              {waitlist.map((w) => (
+              {waitlist.map((w, i) => (
                 <div
                   key={w.email}
                   className="rounded-2xl p-4 flex items-center justify-between gap-3"
-                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#1a1a24', border: `1px solid ${i < 60 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)'}` }}
                 >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black"
+                      style={{
+                        backgroundColor: i < 60 ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
+                        color: i < 60 ? '#22c55e' : 'rgba(255,255,255,0.3)',
+                      }}
+                    >
+                      {i + 1}
+                    </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{w.email}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -744,6 +754,7 @@ export default function AdminPage() {
                         <span style={{ color: '#22c55e' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
                       )}
                     </p>
+                  </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
