@@ -284,11 +284,13 @@ const [lists, setLists] = useState<any[]>([])
 
       // Paid tiers: sign out, go to Stripe — webhook creates profile after payment
       if (isPaidTier && !isFreeBetaTracker) {
+        const { data: { session: newSession } } = await supabase.auth.getSession()
+        const accessToken = newSession?.access_token
         await supabase.auth.signOut()
         try {
           const res = await fetch('/api/stripe/checkout', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) },
             body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email, username: username.trim() }),
           })
           const json = await res.json()
@@ -305,11 +307,13 @@ const [lists, setLists] = useState<any[]>([])
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: 'free' })
 
       // Send welcome email (fire and forget)
-      fetch('/api/email/welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, username: username.trim(), tier: selectedTier }),
-      }).catch(() => {})
+      supabase.auth.getSession().then(({ data: { session: s } }) => {
+        fetch('/api/email/welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s?.access_token ?? ''}` },
+          body: JSON.stringify({ email, username: username.trim(), tier: selectedTier }),
+        }).catch(() => {})
+      })
 
       if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       if (isFreeBetaTracker) {
@@ -474,9 +478,10 @@ const [lists, setLists] = useState<any[]>([])
         }
       }
 
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentSession?.access_token ?? ''}` },
         body: JSON.stringify({ tier, userId: user.id, email: user.email }),
       })
       const json = await res.json()

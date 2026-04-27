@@ -80,6 +80,14 @@ function DrinksContent() {
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+      alert('Only JPEG, PNG, WebP, or HEIC images are allowed.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Photo must be under 10 MB.')
+      return
+    }
     setPhoto(file)
     setPhotoPreview(URL.createObjectURL(file))
   }

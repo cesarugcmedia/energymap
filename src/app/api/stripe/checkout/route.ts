@@ -21,6 +21,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
+    // Verify the requesting user owns the userId being checked out for
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const token = authHeader.slice(7)
+    const { data: { user: authedUser }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    if (authError || !authedUser || authedUser.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Check if user already has a Stripe customer ID
     const { data: profile } = await supabaseAdmin
       .from('profiles')

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,6 +14,24 @@ export async function POST(req: NextRequest) {
 
     if (!email || !username) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    }
+
+    // Allow internal calls from the Stripe webhook (no auth header), or
+    // calls from an authenticated user whose token matches the email being welcomed.
+    const authHeader = req.headers.get('Authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7)
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+      if (error || !user || user.email !== email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    } else {
+      // No auth header — only allow from same-origin server (Stripe webhook internal fetch)
+      const origin = req.headers.get('origin')
+      if (origin) {
+        // Browser requests always have an origin header; block them without a token
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
     }
 
     const tierLabel = tier === 'tracker' ? '🔥 Tracker' : 'Free'

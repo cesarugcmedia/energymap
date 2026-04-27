@@ -174,12 +174,12 @@ export default function AdminPage() {
     if (!window.confirm(`Delete @${username}? This is permanent and cannot be undone.`)) return
     if (deletingUserId) return
     setDeletingUserId(userId)
-    const session = await supabase.auth.getSession()
-    const requesterId = session.data.session?.user.id
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { window.alert('Session expired. Please sign in again.'); return }
     const res = await fetch('/api/admin/delete-user', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, requesterId }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ userId }),
     })
     if (res.ok) {
       setUsers((prev) => prev.filter((u) => u.id !== userId))

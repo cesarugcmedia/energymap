@@ -7,21 +7,31 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const { userId, requesterId } = await req.json()
+  const { userId } = await req.json()
 
-  if (!userId || !requesterId) {
+  if (!userId) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
-  // Verify requester is an admin
-  const { data: requester } = await supabaseAdmin
+  // Verify the requester is an authenticated admin via bearer token
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const token = authHeader.slice(7)
+  const { data: { user: requester }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  if (authError || !requester) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: requesterProfile } = await supabaseAdmin
     .from('profiles')
     .select('is_admin')
-    .eq('id', requesterId)
+    .eq('id', requester.id)
     .single()
 
-  if (!requester?.is_admin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  if (!requesterProfile?.is_admin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Delete from Supabase Auth (cascades to profiles via FK)
