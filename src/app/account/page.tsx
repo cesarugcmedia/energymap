@@ -1305,7 +1305,12 @@ function selectAndContinue(tierId: TierId) {
                       ))}
                     </div>
                     <div style={{ marginTop: 18 }}>
-                      {t.comingSoon ? (
+                      {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' ? (
+                        <a href="/waitlist"
+                          style={{ display: 'block', width: '100%', padding: 12, background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: 12, color: '#000', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'center', textDecoration: 'none', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}>
+                          Join Waitlist →
+                        </a>
+                      ) : t.comingSoon ? (
                         <div style={{ width: '100%', padding: 12, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)' }}>
                           Notify Me When Available
                         </div>

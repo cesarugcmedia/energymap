@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const BYPASS_COOKIE = 'amped_bypass'
 
 export function middleware(req: NextRequest) {
-  if (process.env.WAITLIST_ACTIVE !== '1') return NextResponse.next()
+  if (process.env.MIDDLEWARE_WAITLIST_ACTIVE !== '1') return NextResponse.next()
 
   const { pathname } = req.nextUrl
 
