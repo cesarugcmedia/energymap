@@ -98,6 +98,7 @@ const [search, setSearch] = useState('')
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
   const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number } | null>(null)
+  const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
 
   useEffect(() => {
     fetchStore()
@@ -167,7 +168,7 @@ const [search, setSearch] = useState('')
   async function fetchStock() {
     const { data, error } = await supabase
       .from('latest_stock')
-      .select('*, drink:drinks(name, brand, flavor)')
+      .select('drink_id, quantity, reported_at, user_id, drink:drinks(name, brand, flavor)')
       .eq('store_id', id)
     if (error) { setStockError(true); setLoading(false); return }
     if (data) {
@@ -266,17 +267,26 @@ const [search, setSearch] = useState('')
     setDrinkEntries(updatedEntries)
 
     const toInsert = filled.filter((_, i) => !duplicateFlags[i])
-    if (toInsert.length > 0) {
-      await supabase.from('drinks').insert(
-        toInsert.map((e) => {
-          const brand = normalizeBrand(e.brand)
-          const flavor = e.flavor.trim()
-          return { brand, name: `${brand} ${flavor}`, flavor, submitted_by: user?.id ?? null }
-        })
-      )
+    const dupeNames = filled
+      .filter((_, i) => duplicateFlags[i])
+      .map((e) => `${normalizeBrand(e.brand)} ${e.flavor.trim()}`)
+
+    // All duplicates — show blocking popup
+    if (toInsert.length === 0) {
+      setDrinkDuplicatePopup(dupeNames)
+      setDrinkSubmitting(false)
+      return
     }
 
-    setDrinkResults({ added: toInsert.length, skipped: duplicateFlags.filter(Boolean).length })
+    await supabase.from('drinks').insert(
+      toInsert.map((e) => {
+        const brand = normalizeBrand(e.brand)
+        const flavor = e.flavor.trim()
+        return { brand, name: `${brand} ${flavor}`, flavor, submitted_by: user?.id ?? null }
+      })
+    )
+
+    setDrinkResults({ added: toInsert.length, skipped: dupeNames.length })
     setDrinkSubmitting(false)
   }
 
@@ -285,6 +295,7 @@ const [search, setSearch] = useState('')
     setDrinkEntries([{ id: '1', brand: '', flavor: '', duplicate: false }])
     setDrinkSubmitting(false)
     setDrinkResults(null)
+    setDrinkDuplicatePopup(null)
   }
 
   const latestReport = stock.reduce<any>((latest, item) => {
@@ -715,6 +726,52 @@ const [search, setSearch] = useState('')
                 </div>
               </>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Drink duplicate popup */}
+      {drinkDuplicatePopup && createPortal(
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDrinkDuplicatePopup(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl p-6 pb-10"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <div className="flex items-center gap-3 mb-3">
+              <span style={{ fontSize: 32 }}>🥤</span>
+              <p className="text-lg font-black text-white">
+                {drinkDuplicatePopup.length === 1 ? 'Already in the System' : 'Drinks Already Exist'}
+              </p>
+            </div>
+            <p className="text-sm text-white/50 leading-relaxed mb-4">
+              {drinkDuplicatePopup.length === 1
+                ? `"${drinkDuplicatePopup[0]}" is already in our drinks database. If it's at this store, use Report Stock to update its status.`
+                : 'These drinks are already in our database. Use Report Stock to update their status instead.'}
+            </p>
+            {drinkDuplicatePopup.length > 1 && (
+              <div className="flex flex-col gap-1.5 mb-4">
+                {drinkDuplicatePopup.map((d) => (
+                  <div key={d} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <span style={{ fontSize: 12 }}>⚠️</span>
+                    <p className="text-sm font-semibold text-white/70">{d}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              className="w-full rounded-2xl p-4 font-bold text-white"
+              style={{ backgroundColor: '#22c55e' }}
+              onClick={() => setDrinkDuplicatePopup(null)}
+            >
+              Got it
+            </button>
           </div>
         </div>,
         document.body

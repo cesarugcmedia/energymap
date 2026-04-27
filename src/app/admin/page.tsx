@@ -59,6 +59,7 @@ export default function AdminPage() {
   const [newFlavor, setNewFlavor] = useState('')
   const [addingDrink, setAddingDrink] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [drinkDuplicateMsg, setDrinkDuplicateMsg] = useState<string | null>(null)
   const [userSearch, setUserSearch] = useState('')
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
@@ -308,6 +309,20 @@ export default function AdminPage() {
       return
     }
     setAddingDrink(true)
+
+    // Duplicate check
+    const { data: existing } = await supabase
+      .from('drinks')
+      .select('id')
+      .ilike('brand', newBrand.trim())
+      .ilike('name', newName.trim())
+      .maybeSingle()
+    if (existing) {
+      setDrinkDuplicateMsg(`"${newBrand.trim()} ${newName.trim()}" already exists in the drinks database.`)
+      setAddingDrink(false)
+      return
+    }
+
     const { data, error } = await supabase
       .from('drinks')
       .insert({ brand: newBrand.trim(), name: newName.trim(), flavor: newFlavor.trim() || null })
@@ -726,6 +741,35 @@ export default function AdminPage() {
 
       {/* Edit Modal — rendered via portal into document.body so it sits outside
            the MainWrapper scroll container and iOS touch events can't leak through */}
+      {drinkDuplicateMsg && createPortal(
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDrinkDuplicateMsg(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl p-6 pb-10"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <div className="flex items-center gap-3 mb-3">
+              <span style={{ fontSize: 32 }}>🥤</span>
+              <p className="text-lg font-black text-white">Already in the System</p>
+            </div>
+            <p className="text-sm text-white/50 leading-relaxed mb-6">{drinkDuplicateMsg}</p>
+            <button
+              className="w-full rounded-2xl p-4 font-bold text-white"
+              style={{ backgroundColor: '#22c55e' }}
+              onClick={() => setDrinkDuplicateMsg(null)}
+            >
+              Got it
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {editStore && createPortal(
         <div
           className="fixed inset-0 flex flex-col justify-end z-50"

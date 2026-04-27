@@ -21,7 +21,7 @@ export function useNearbyStores(lat: number, lng: number) {
     setLoading(true)
     const { data, error } = await supabase
       .from('stores')
-      .select('*')
+      .select('id, name, type, address, lat, lng')
       .eq('status', 'approved')
     if (!error && data) {
       cachedStores = data

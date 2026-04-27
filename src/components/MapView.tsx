@@ -76,6 +76,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       center: [lng, lat],
       zoom: 14,
       attributionControl: false,
+      maxTileCacheSize: 50,
     })
 
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')

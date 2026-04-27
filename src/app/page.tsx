@@ -71,6 +71,7 @@ export default function MapPage() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [leafletMap, setLeafletMap] = useState<any>(null)
   const swipeStartY = useRef<number | null>(null)
+  const lastFetchRef = useRef<number>(Date.now())
 
   useEffect(() => {
     if (!selected) { setLastUpdated(null); return }
@@ -85,7 +86,10 @@ export default function MapPage() {
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') refetch()
+      if (document.visibilityState === 'visible' && Date.now() - lastFetchRef.current > 5 * 60 * 1000) {
+        lastFetchRef.current = Date.now()
+        refetch()
+      }
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
