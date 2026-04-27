@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const supabaseAdmin = createClient(
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
         // Browser requests always have an origin header; block them without a token
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
+    }
+
+    if (!checkRateLimit(`welcome:${email}`, 2, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
     const tierLabel = tier === 'tracker' ? '🔥 Tracker' : 'Free'

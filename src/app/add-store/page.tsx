@@ -93,6 +93,19 @@ export default function AddStorePage() {
       return
     }
 
+    // Daily submission cap: max 5 per user per 24 hours
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { count } = await supabase
+      .from('stores')
+      .select('id', { count: 'exact', head: true })
+      .eq('submitted_by', user!.id)
+      .gte('created_at', since)
+    if ((count ?? 0) >= 5) {
+      setError("You've reached the daily limit of 5 store submissions. Try again tomorrow.")
+      setSubmitting(false)
+      return
+    }
+
     const { error: dbError } = await supabase.from('stores').insert({
       name: name.trim(),
       address: address.trim(),

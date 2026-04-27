@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -30,6 +31,10 @@ export async function POST(req: NextRequest) {
     const { data: { user: authedUser }, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !authedUser || authedUser.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!checkRateLimit(`checkout:${authedUser.id}`, 3, 10 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
     // Check if user already has a Stripe customer ID
