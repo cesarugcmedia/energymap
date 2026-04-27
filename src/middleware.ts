@@ -12,6 +12,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith('/waitlist') ||
     pathname.startsWith('/api/waitlist') ||
     pathname.startsWith('/api/admin/bypass') ||
+    pathname.startsWith('/api/invite') ||
     pathname.startsWith('/_next') ||
     pathname === '/sw.js' ||
     pathname === '/offline' ||

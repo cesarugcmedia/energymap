@@ -34,7 +34,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users'>('stores')
+  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users' | 'waitlist'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<any[]>([])
@@ -60,6 +60,11 @@ export default function AdminPage() {
   const [addingDrink, setAddingDrink] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [drinkDuplicateMsg, setDrinkDuplicateMsg] = useState<string | null>(null)
+
+  // Waitlist state
+  const [waitlist, setWaitlist] = useState<any[]>([])
+  const [waitlistLoading, setWaitlistLoading] = useState(false)
+  const [inviting, setInviting] = useState<Set<string>>(new Set())
   const [userSearch, setUserSearch] = useState('')
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
@@ -347,6 +352,34 @@ export default function AdminPage() {
     setDrinks((prev) => prev.filter((d) => d.id !== id))
   }
 
+  async function fetchWaitlist() {
+    setWaitlistLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/waitlist', {
+      headers: { Authorization: `Bearer ${session!.access_token}` },
+    })
+    if (res.ok) setWaitlist(await res.json())
+    setWaitlistLoading(false)
+  }
+
+  async function inviteUser(email: string) {
+    setInviting((prev) => new Set(prev).add(email))
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+      body: JSON.stringify({ email }),
+    })
+    if (!res.ok) {
+      window.alert('Failed to send invite.')
+    } else {
+      setWaitlist((prev) =>
+        prev.map((w) => w.email === email ? { ...w, invited_at: new Date().toISOString() } : w)
+      )
+    }
+    setInviting((prev) => { const next = new Set(prev); next.delete(email); return next })
+  }
+
   return (
     <div className="min-h-screen ">
       {/* Header */}
@@ -357,7 +390,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : fetchUsers() }}
+              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : tab === 'waitlist' ? fetchWaitlist() : fetchUsers() }}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
             >
@@ -375,7 +408,7 @@ export default function AdminPage() {
 
         {/* Tab switcher */}
         <div className="flex rounded-xl p-1 gap-0.5" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'locations', 'drinks', 'users'] as const).map((t) => (
+          {(['stores', 'locations', 'drinks', 'users', 'waitlist'] as const).map((t) => (
             <button
               key={t}
               className="flex-1 rounded-lg py-2.5 text-[11px] font-bold"
@@ -388,9 +421,10 @@ export default function AdminPage() {
                 if (t === 'users' && users.length === 0) fetchUsers()
                 if (t === 'locations' && locations.length === 0) fetchLocations()
                 if (t === 'drinks' && drinks.length === 0) fetchDrinks()
+                if (t === 'waitlist' && waitlist.length === 0) fetchWaitlist()
               }}
             >
-              {t === 'stores' ? '🕐 Pending' : t === 'locations' ? '📍 Locs' : t === 'drinks' ? '🥤 Drinks' : '👤 Users'}
+              {t === 'stores' ? '🕐 Pending' : t === 'locations' ? '📍 Locs' : t === 'drinks' ? '🥤 Drinks' : t === 'users' ? '👤 Users' : '📋 List'}
             </button>
           ))}
         </div>
@@ -737,6 +771,58 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+      ) : tab === 'waitlist' ? (
+        waitlistLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : waitlist.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
+            <span style={{ fontSize: 40 }}>📋</span>
+            <p className="text-lg font-black text-white">No signups yet</p>
+            <p className="text-sm text-white/40">People who join the waitlist will appear here.</p>
+          </div>
+        ) : (
+          <div className="px-4 pb-6">
+            <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+              {waitlist.length} {waitlist.length === 1 ? 'SIGNUP' : 'SIGNUPS'} · {waitlist.filter((w) => w.invited_at).length} INVITED
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {waitlist.map((w) => (
+                <div
+                  key={w.email}
+                  className="rounded-2xl p-4 flex items-center justify-between gap-3"
+                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{w.email}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                      Joined {new Date(w.created_at).toLocaleDateString()}
+                      {w.invited_at && (
+                        <span style={{ color: '#22c55e' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => inviteUser(w.email)}
+                    disabled={inviting.has(w.email)}
+                    className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5"
+                    style={{
+                      backgroundColor: w.invited_at ? 'rgba(34,197,94,0.1)' : '#22c55e',
+                      color: w.invited_at ? '#22c55e' : '#000',
+                      border: w.invited_at ? '1px solid rgba(34,197,94,0.3)' : 'none',
+                      opacity: inviting.has(w.email) ? 0.5 : 1,
+                    }}
+                  >
+                    {inviting.has(w.email)
+                      ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      : w.invited_at ? '✓ Resend' : '✉ Invite'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
       )}
 
       {/* Edit Modal — rendered via portal into document.body so it sits outside
