@@ -208,7 +208,7 @@ export default function MapPage() {
             </button>
           ))}
           <button
-            onClick={() => leafletMap.setView([lat, lng], 15)}
+            onClick={() => leafletMap.flyTo({ center: [lng, lat], zoom: 15 })}
             className="w-10 h-10 rounded-full flex items-center justify-center"
             style={{
               backgroundColor: 'rgba(10,10,15,0.92)',
