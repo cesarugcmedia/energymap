@@ -39,7 +39,7 @@ Payments are processed by Stripe. By subscribing, you also agree to Stripe's Ter
           },
           {
             title: '5. User Content',
-            body: `By submitting content to AmpedMap (including stock reports, store listings, photos, and community messages), you grant us a non-exclusive, royalty-free license to display and use that content on the platform.
+            body: `By submitting content to AmpedMap (including stock reports and store listings), you grant us a non-exclusive, royalty-free license to display and use that content on the platform.
 
 You agree not to submit content that is:
 • False, misleading, or inaccurate.

@@ -121,7 +121,7 @@ const TIERS = [
       'Custom store lists',
       'Leaderboard placement + badge',
       'Verified reporter badge',
-      'Photo proof uploads',
+      'Priority stock alerts',
     ],
   },
 ]
