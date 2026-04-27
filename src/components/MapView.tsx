@@ -80,11 +80,59 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
 
-    map.on('load', () => { onMapReadyRef.current?.(map) })
+    // Inject pulse keyframes once
+    if (!document.getElementById('amped-map-styles')) {
+      const styleEl = document.createElement('style')
+      styleEl.id = 'amped-map-styles'
+      styleEl.textContent = `
+        @keyframes ampPulse {
+          0%   { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(3); opacity: 0; }
+        }
+        @keyframes ampPulse2 {
+          0%   { transform: scale(1); opacity: 0.35; }
+          100% { transform: scale(4.5); opacity: 0; }
+        }
+      `
+      document.head.appendChild(styleEl)
+    }
 
-    // User location dot
+    // Tune map colors to match app theme on style load
+    map.on('style.load', () => {
+      const style = map.getStyle()
+      style?.layers?.forEach((layer) => {
+        try {
+          if (layer.type === 'background') {
+            map.setPaintProperty(layer.id, 'background-color', '#070710')
+          }
+          if (layer.type === 'fill' && layer.id.toLowerCase().includes('water')) {
+            map.setPaintProperty(layer.id, 'fill-color', '#08091a')
+          }
+          if (layer.type === 'line' && layer.id.toLowerCase().includes('water')) {
+            map.setPaintProperty(layer.id, 'line-color', '#08091a')
+          }
+          if (layer.type === 'line' && /^road/.test(layer.id)) {
+            map.setPaintProperty(layer.id, 'line-color', [
+              'match', ['get', 'class'],
+              ['motorway', 'trunk'],    '#1a2e1e',
+              ['primary', 'secondary'], '#142014',
+              '#0f180f',
+            ])
+          }
+        } catch {}
+      })
+
+      onMapReadyRef.current?.(map)
+    })
+
+    // Pulsing user location dot
     const userEl = document.createElement('div')
-    userEl.style.cssText = 'width:16px;height:16px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 3px rgba(59,130,246,0.3);'
+    userEl.style.cssText = 'position:relative;width:16px;height:16px;'
+    userEl.innerHTML = `
+      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.45);animation:ampPulse 2s ease-out infinite;"></div>
+      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.2);animation:ampPulse2 2s ease-out infinite 0.6s;"></div>
+      <div style="position:relative;width:16px;height:16px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.7);"></div>
+    `
     userMarkerRef.current = new mapboxgl.Marker({ element: userEl, anchor: 'center' })
       .setLngLat([lng, lat])
       .addTo(map)
