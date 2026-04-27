@@ -33,8 +33,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const { count } = await supabaseAdmin
-    .from('waitlist')
-    .select('id', { count: 'exact', head: true })
-  return NextResponse.json({ count: count ?? 0 })
+  const [{ count: waitlistCount }, { count: profileCount }] = await Promise.all([
+    supabaseAdmin.from('waitlist').select('id', { count: 'exact', head: true }),
+    supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
+  ])
+  return NextResponse.json({ count: (waitlistCount ?? 0) + (profileCount ?? 0) })
 }

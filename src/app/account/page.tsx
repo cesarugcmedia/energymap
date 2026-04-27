@@ -286,7 +286,7 @@ const [lists, setLists] = useState<any[]>([])
       let isFreeBetaTracker = false
       if (selectedTier === 'tracker') {
         const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
-        isFreeBetaTracker = (count ?? 0) < 50
+        isFreeBetaTracker = (count ?? 0) < 60
       }
 
       // Paid tiers: sign out, go to Stripe — webhook creates profile after payment
@@ -477,7 +477,7 @@ const [lists, setLists] = useState<any[]>([])
       // Check beta spots for tracker upgrades
       if (tier === 'tracker') {
         const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
-        const isFreeBeta = (count ?? 0) < 50
+        const isFreeBeta = (count ?? 0) < 60
         if (isFreeBeta) {
           await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', user.id)
           await refreshProfile()
@@ -1279,14 +1279,14 @@ function selectAndContinue(tierId: TierId) {
                       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{t.period}</span>
                     </div>
                     {t.id === 'tracker' && (() => {
-                      const BETA_LIMIT = 50
+                      const BETA_LIMIT = 60
                       const remaining = Math.max(0, BETA_LIMIT - betaCount)
                       const spotsLeft = remaining > 0
                       return (
                         <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
                           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: 8 }}>
                             {spotsLeft
-                              ? `🔥 First 50 beta users get Tracker free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
+                              ? `🔥 First 60 beta users get Tracker free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
                               : '🔒 Beta is full. Tracker is $10/mo.'}
                           </p>
                           <div style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
@@ -1328,7 +1328,7 @@ function selectAndContinue(tierId: TierId) {
                         <div style={{ width: '100%', padding: 12, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)' }}>
                           Notify Me When Available
                         </div>
-                      ) : t.id === 'tracker' && betaCount >= 50 ? (
+                      ) : t.id === 'tracker' && betaCount >= 60 ? (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
                           style={{ width: '100%', padding: 12, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 16px rgba(168,85,247,0.3)' }}>
                           Buy Tracker — $10/mo →
@@ -1396,7 +1396,7 @@ function selectAndContinue(tierId: TierId) {
                   style={{ width: '100%', padding: 15, background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`, border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 8px 24px ${tier.glow}`, marginTop: 4 }}>
                   {submitting
                     ? <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-                    : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 50 ? 'Claim Beta Spot →' : 'Continue to Payment →') : 'Continue to Payment →'}
+                    : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 60 ? 'Claim Beta Spot →' : 'Continue to Payment →') : 'Continue to Payment →'}
                 </button>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginTop: 4 }}>
                   <input
