@@ -86,7 +86,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
   const [storeError, setStoreError] = useState(false)
-  const [stockError, setStockError] = useState(false)
+  const [stockError, setStockError] = useState<string | false>(false)
   const [loading, setLoading] = useState(true)
   const [profileMap, setProfileMap] = useState<Record<string, { username: string; verified: boolean; tier: string | null }>>({})
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
@@ -176,7 +176,7 @@ function StoreDetailContent({ id }: { id: string }) {
       .from('latest_stock')
       .select('drink_id, quantity, reported_at, user_id')
       .eq('store_id', id)
-    if (error) { setStockError(true); setLoading(false); return }
+    if (error) { setStockError(error.message); setLoading(false); return }
 
     if (stockData && stockData.length > 0) {
       const drinkIds = [...new Set(stockData.map((d) => d.drink_id).filter(Boolean))]
@@ -500,6 +500,9 @@ function StoreDetailContent({ id }: { id: string }) {
             <span style={{ fontSize: 48 }}>⚠️</span>
             <p className="text-lg font-black text-white">Couldn't load stock</p>
             <p className="text-sm text-white/40">Check your connection and try again.</p>
+            {typeof stockError === 'string' && (
+              <p className="text-xs font-mono mt-1 px-3 py-2 rounded-lg text-center" style={{ color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', maxWidth: 320 }}>{stockError}</p>
+            )}
             <button onClick={() => { setStockError(false); setLoading(true); fetchStock() }} className="mt-2 text-sm font-bold px-5 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>Retry</button>
           </div>
         ) : loading ? (
