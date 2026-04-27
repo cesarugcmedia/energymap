@@ -78,7 +78,7 @@ const TYPE_FILTERS = [
 export default function StoresPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
-  const isHunterPlus = profile?.is_admin || profile?.tier === 'hunter' || profile?.tier === 'tracker'
+  const isHunterPlus = profile?.is_admin || profile?.tier === 'tracker'
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')

@@ -74,7 +74,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const params = useSearchParams()
   const name = params.get('name') ?? ''
   const { user, profile } = useAuth()
-  const isHunterPlus = profile?.is_admin || profile?.tier === 'hunter' || profile?.tier === 'tracker'
+  const isHunterPlus = profile?.is_admin || profile?.tier === 'tracker'
   const isTracker = profile?.is_admin || profile?.tier === 'tracker'
 
   const [stock, setStock] = useState<any[]>([])

@@ -551,7 +551,6 @@ export default function CommunityPage() {
               <span style={{ fontSize: 13, fontWeight: 800, color: isMe ? '#22c55e' : '#fff' }}>{username}</span>
               {isMe && <span style={{ fontSize: 9, fontWeight: 800, color: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: 8, padding: '1px 6px' }}>YOU</span>}
               {msg.profile?.is_verified_reporter && <span style={{ fontSize: 9, fontWeight: 800, color: '#60a5fa', backgroundColor: 'rgba(59,130,246,0.1)', borderRadius: 8, padding: '1px 6px' }}>✓</span>}
-              {msg.profile?.tier === 'hunter' && <span style={{ fontSize: 9, fontWeight: 800, color: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: 8, padding: '1px 6px' }}>⚡</span>}
               {msg.profile?.tier === 'tracker' && <span style={{ fontSize: 9, fontWeight: 800, color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', borderRadius: 8, padding: '1px 6px' }}>🔥</span>}
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{timeAgo(msg.created_at)}</span>
             </div>
@@ -728,7 +727,6 @@ export default function CommunityPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{profile?.username}</p>
-                  {profile?.tier === 'hunter' && <p style={{ fontSize: 10, color: 'rgba(34,197,94,0.7)', fontWeight: 600 }}>⚡ Hunter</p>}
                 </div>
               </div>
             </div>

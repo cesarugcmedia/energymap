@@ -10,7 +10,6 @@ const supabaseAdmin = createClient(
 )
 
 const PRICE_MAP: Record<string, string> = {
-  hunter: process.env.STRIPE_PRICE_HUNTER!,
   tracker: process.env.STRIPE_PRICE_TRACKER!,
 }
 

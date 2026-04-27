@@ -62,8 +62,8 @@ export default function SideNav() {
     return true
   })
 
-  const tierLabel = profile?.is_admin ? 'Admin' : profile?.tier === 'tracker' ? 'Tracker' : profile?.tier === 'hunter' ? 'Hunter' : 'Free'
-  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? '#a855f7' : profile?.tier === 'hunter' ? '#22c55e' : 'rgba(255,255,255,0.35)'
+  const tierLabel = profile?.is_admin ? 'Admin' : profile?.tier === 'tracker' ? 'Tracker' : 'Free'
+  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? '#a855f7' : 'rgba(255,255,255,0.35)'
 
   return (
     <aside

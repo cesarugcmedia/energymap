@@ -28,7 +28,7 @@ We reserve the right to suspend or terminate accounts that violate these terms.`
           },
           {
             title: '4. Subscriptions and Payments',
-            body: `AmpedMap offers free and paid subscription tiers (Hunter at $5/month, Tracker at $10/month). By subscribing to a paid tier:
+            body: `AmpedMap offers free and paid subscription tiers (Tracker at $10/month). By subscribing to a paid tier:
 
 • You authorize us to charge your payment method on a recurring monthly basis.
 • Subscriptions renew automatically unless cancelled.

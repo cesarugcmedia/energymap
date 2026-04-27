@@ -181,7 +181,6 @@ export default function LeaderboardPage() {
                           </span>
                           {isMe && <span style={{ fontSize: 9, fontWeight: 800, color: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>YOU</span>}
                           {entry.is_verified_reporter && <span style={{ fontSize: 9, fontWeight: 800, color: '#60a5fa', backgroundColor: 'rgba(59,130,246,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>✓</span>}
-                          {entry.tier === 'hunter' && <span style={{ fontSize: 9, fontWeight: 800, color: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>⚡</span>}
                           {entry.tier === 'tracker' && <span style={{ fontSize: 9, fontWeight: 800, color: '#f97316', backgroundColor: 'rgba(249,115,22,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>🔥</span>}
                           {Array.isArray(entry.badges) && entry.badges.includes('weekly_champion') && <span style={{ fontSize: 9, fontWeight: 800, color: '#ffd700', backgroundColor: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>👑 Champ</span>}
                         </div>
@@ -228,18 +227,18 @@ export default function LeaderboardPage() {
 
             {/* Upgrade CTA — hidden for tracker (top tier) */}
             {profile?.tier !== 'tracker' && !profile?.is_admin && (
-              <div style={{ marginTop: 16, background: profile?.tier === 'hunter' ? 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(249,115,22,0.02) 100%)' : 'linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(34,197,94,0.02) 100%)', border: `1px solid ${profile?.tier === 'hunter' ? 'rgba(249,115,22,0.15)' : 'rgba(34,197,94,0.15)'}`, borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', animation: 'fadeUp 0.5s ease 0.25s both' }}>
+              <div style={{ marginTop: 16, background: 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(249,115,22,0.02) 100%)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', animation: 'fadeUp 0.5s ease 0.25s both' }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 3 }}>
-                    {profile?.tier === 'hunter' ? '🔥 Tracker members get early alerts + chat' : '⚡ Hunter members get early stock alerts'}
+                    🔥 Tracker members get early alerts + chat
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                    {profile?.tier === 'hunter' ? 'Community chat, custom lists, and verified badge' : 'Extended radius, no staleness banners, early alerts'}
+                    Community chat, custom lists, and verified badge
                   </p>
                 </div>
                 <button
                   onClick={() => router.push('/account')}
-                  style={{ padding: '10px 20px', background: profile?.tier === 'hunter' ? 'linear-gradient(135deg, #f97316, #ea6c0a)' : 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: profile?.tier === 'hunter' ? '0 4px 14px rgba(249,115,22,0.25)' : '0 4px 14px rgba(34,197,94,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #f97316, #ea6c0a)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(249,115,22,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   Upgrade →
                 </button>
               </div>

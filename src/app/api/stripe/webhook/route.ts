@@ -10,7 +10,6 @@ const supabaseAdmin = createClient(
 )
 
 const PRICE_TO_TIER: Record<string, string> = {
-  [process.env.STRIPE_PRICE_HUNTER!]: 'hunter',
   [process.env.STRIPE_PRICE_TRACKER!]: 'tracker',
 }
 

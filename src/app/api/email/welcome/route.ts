@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    const tierLabel = tier === 'tracker' ? '🔥 Tracker' : tier === 'hunter' ? '⚡ Hunter' : 'Free'
+    const tierLabel = tier === 'tracker' ? '🔥 Tracker' : 'Free'
 
     const html = `
 <!DOCTYPE html>

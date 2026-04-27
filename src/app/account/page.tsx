@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
 type Mode = 'signin' | 'signup'
-type TierId = 'free' | 'hunter' | 'tracker'
+type TierId = 'free' | 'tracker'
 
 const BADGE_DEFS = [
   { id: 'early_adopter', icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)' },
@@ -104,25 +104,6 @@ const TIERS = [
     ],
   },
   {
-    id: 'hunter' as TierId,
-    name: 'Hunter',
-    price: '$5',
-    period: '/month',
-    color: '#22c55e',
-    glow: 'rgba(34,197,94,0.25)',
-    border: 'rgba(34,197,94,0.5)',
-    icon: '⚡',
-    tag: null as string | null,
-    comingSoon: false,
-    description: null as string | null,
-    inherits: 'Free' as string | null,
-    features: [
-      'Extended 25 mile radius',
-      'No staleness warning banners',
-      'Early stock alerts',
-    ],
-  },
-  {
     id: 'tracker' as TierId,
     name: 'Tracker',
     price: '$10',
@@ -134,7 +115,7 @@ const TIERS = [
     tag: 'EARLY ACCESS' as string | null,
     comingSoon: false,
     description: null as string | null,
-    inherits: 'Hunter' as string | null,
+    inherits: null as string | null,
     features: [
       'Community chat access',
       'Custom store lists',
@@ -292,7 +273,7 @@ const [lists, setLists] = useState<any[]>([])
     const { data, error: authError } = await supabase.auth.signUp({ email, password })
     if (authError) { setError(authError.message); setSubmitting(false); return }
     if (data.user) {
-      const isPaidTier = selectedTier === 'hunter' || selectedTier === 'tracker'
+      const isPaidTier = selectedTier === 'tracker'
 
       // For tracker: check if beta spots still available
       let isFreeBetaTracker = false
@@ -476,7 +457,7 @@ const [lists, setLists] = useState<any[]>([])
     setResetSent(true)
   }
 
-  async function startCheckout(tier: 'hunter' | 'tracker') {
+  async function startCheckout(tier: 'tracker') {
     if (checkoutLoading || !user) return
     setCheckoutLoading(true)
     setCheckoutError(null)
@@ -605,7 +586,7 @@ function selectAndContinue(tierId: TierId) {
   }
 
   // Full-screen overlay during paid signup redirect to Stripe
-  const isPaidSignup = submitting && (selectedTier === 'hunter' || selectedTier === 'tracker')
+  const isPaidSignup = submitting && selectedTier === 'tracker'
   if (isPaidSignup) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#070710', gap: 16 }}>
@@ -652,7 +633,6 @@ function selectAndContinue(tierId: TierId) {
 
     const TIER_LABEL: Record<string, { label: string; color: string; icon: string }> = {
       free:    { label: 'Free',    color: '#6b7280', icon: '🗺️' },
-      hunter:  { label: 'Hunter',  color: '#22c55e', icon: '⚡' },
       tracker: { label: 'Tracker', color: '#f97316', icon: '🔥' },
     }
     const tierInfo = TIER_LABEL[profile.tier ?? 'free']
@@ -731,14 +711,12 @@ function selectAndContinue(tierId: TierId) {
                       <span style={{ fontSize: 18 }}>{tierInfo.icon}</span>
                       <div>
                         <p className="text-sm font-black" style={{ color: tierInfo.color }}>{tierInfo.label}</p>
-                        <p className="text-[10px] text-white/40">{profile.tier === 'free' ? 'Free' : profile.tier === 'hunter' ? '$5/mo' : '$10/mo'}</p>
+                        <p className="text-[10px] text-white/40">{profile.tier === 'free' ? 'Free' : '$10/mo'}</p>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
                       {(profile.tier === 'free'
                         ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
-                        : profile.tier === 'hunter'
-                        ? ['Extended 25 mile radius', 'No staleness banners', 'Early stock alerts']
                         : ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
                       ).map((f) => (
                         <div key={f} className="flex items-start gap-1.5">
@@ -747,7 +725,7 @@ function selectAndContinue(tierId: TierId) {
                         </div>
                       ))}
                     </div>
-                    {(profile.tier === 'hunter' || profile.tier === 'tracker') && (
+                    {profile.tier === 'tracker' && (
                       <div className="mt-3">
                         {cancelError && <p className="text-[10px] text-red-400 mb-1">{cancelError}</p>}
                         <button onClick={cancelSubscription} disabled={cancelLoading} className="w-full rounded-lg py-2 text-[11px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', opacity: cancelLoading ? 0.6 : 1 }}>
@@ -760,9 +738,7 @@ function selectAndContinue(tierId: TierId) {
 
                 {/* Upgrade plan */}
                 {profile.tier !== 'tracker' && (() => {
-                  const next = profile.tier === 'free'
-                    ? { id: 'hunter' as const, icon: '⚡', label: 'Hunter', color: '#22c55e', price: '$5/mo', features: ['Extended 25 mile radius', 'No staleness banners', 'Early stock alerts'] }
-                    : { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge'] }
+                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Community chat', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge'] }
                   return (
                     <div className="flex-1 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${next.color}35` }}>
                       <div style={{ height: 3, background: `linear-gradient(90deg, ${next.color}, ${next.color}66)` }} />
