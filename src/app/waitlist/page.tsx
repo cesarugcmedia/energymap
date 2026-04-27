@@ -79,12 +79,15 @@ export default async function WaitlistPage() {
         {/* Social proof */}
         {count > 0 && (
           <div
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl mb-5 w-fit"
-            style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full mb-5 w-fit"
+            style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}
           >
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+            <div className="relative w-2 h-2 shrink-0">
+              <div className="animate-ping absolute inset-0 rounded-full opacity-50" style={{ backgroundColor: '#22c55e' }} />
+              <div className="relative w-2 h-2 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+            </div>
             <p className="text-xs font-bold" style={{ color: 'rgba(34,197,94,0.9)' }}>
-              {count.toLocaleString()} {count === 1 ? 'person' : 'people'} on the waitlist
+              <span style={{ color: '#22c55e', fontSize: 13 }}>{count.toLocaleString()}</span> people waiting to join
             </p>
           </div>
         )}

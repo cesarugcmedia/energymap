@@ -1253,10 +1253,16 @@ function selectAndContinue(tierId: TierId) {
               <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 30, letterSpacing: 2, marginBottom: 6 }}>Choose Your Plan</h2>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Start free, upgrade anytime</p>
               {waitlistCount !== null && waitlistCount > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 20, padding: '5px 12px' }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#22c55e' }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(34,197,94,0.9)' }}>
-                    {waitlistCount.toLocaleString()} {waitlistCount === 1 ? 'person' : 'people'} on the waitlist
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 12, backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 24, padding: '8px 16px' }}>
+                  <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
+                    <div className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: '#22c55e', opacity: 0.5 }} />
+                    <div style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#22c55e' }}>
+                    {waitlistCount.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.5)' }}>
+                    people waiting to join
                   </span>
                 </div>
               )}
