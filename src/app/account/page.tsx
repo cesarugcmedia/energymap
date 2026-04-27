@@ -177,6 +177,7 @@ const [lists, setLists] = useState<any[]>([])
   const [confirmEmail, setConfirmEmail] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [betaCount, setBetaCount] = useState<number>(0)
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null)
 
   // Stats
   const [reportCount, setReportCount] = useState<number>(0)
@@ -223,6 +224,12 @@ const [lists, setLists] = useState<any[]>([])
       .select('id', { count: 'exact', head: true })
       .eq('tier', 'tracker')
       .then(({ count }) => setBetaCount(count ?? 0))
+  }, [])
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1') {
+      fetch('/api/waitlist').then((r) => r.json()).then((d) => setWaitlistCount(d.count ?? 0))
+    }
   }, [])
 
   // Refresh profile after successful Stripe payment
@@ -1245,6 +1252,14 @@ function selectAndContinue(tierId: TierId) {
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 30, letterSpacing: 2, marginBottom: 6 }}>Choose Your Plan</h2>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Start free, upgrade anytime</p>
+              {waitlistCount !== null && waitlistCount > 0 && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 20, padding: '5px 12px' }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(34,197,94,0.9)' }}>
+                    {waitlistCount.toLocaleString()} {waitlistCount === 1 ? 'person' : 'people'} on the waitlist
+                  </span>
+                </div>
+              )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
               {TIERS.map((t, i) => (
