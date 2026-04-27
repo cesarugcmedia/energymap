@@ -27,6 +27,7 @@ export default function AddStorePage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [duplicate, setDuplicate] = useState<'approved' | 'pending' | null>(null)
   const [manualCoords, setManualCoords] = useState(false)
   const [manualLat, setManualLat] = useState('')
   const [manualLng, setManualLng] = useState('')
@@ -76,6 +77,21 @@ export default function AddStorePage() {
     }
     setError(null)
     setSubmitting(true)
+
+    // Check for duplicate address
+    const { data: existing } = await supabase
+      .from('stores')
+      .select('status')
+      .ilike('address', address.trim())
+      .in('status', ['approved', 'pending'])
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) {
+      setDuplicate(existing.status === 'approved' ? 'approved' : 'pending')
+      setSubmitting(false)
+      return
+    }
 
     const { error: dbError } = await supabase.from('stores').insert({
       name: name.trim(),
@@ -323,6 +339,41 @@ export default function AddStorePage() {
         )}
       </button>
       </div>
+
+      {/* Duplicate store modal */}
+      {duplicate && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDuplicate(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl p-6 pb-10"
+            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <div className="flex items-center gap-3 mb-3">
+              <span style={{ fontSize: 32 }}>{duplicate === 'approved' ? '🗺️' : '⏳'}</span>
+              <p className="text-lg font-black text-white">
+                {duplicate === 'approved' ? 'Already on the Map' : 'Already Submitted'}
+              </p>
+            </div>
+            <p className="text-sm text-white/50 leading-relaxed mb-6">
+              {duplicate === 'approved'
+                ? 'This store already exists on the map. You can find it by searching nearby stores.'
+                : 'This store has already been submitted and is currently pending approval. Check back soon!'}
+            </p>
+            <button
+              className="w-full rounded-2xl p-4 font-bold text-white"
+              style={{ backgroundColor: '#22c55e' }}
+              onClick={() => setDuplicate(null)}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
