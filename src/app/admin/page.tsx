@@ -371,7 +371,8 @@ export default function AdminPage() {
       body: JSON.stringify({ email }),
     })
     if (!res.ok) {
-      window.alert('Failed to send invite.')
+      const body = await res.json().catch(() => ({}))
+      window.alert(`Failed to send invite: ${body.error ?? res.status}`)
     } else {
       setWaitlist((prev) =>
         prev.map((w) => w.email === email ? { ...w, invited_at: new Date().toISOString() } : w)
