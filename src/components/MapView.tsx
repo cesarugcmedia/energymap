@@ -12,8 +12,6 @@ const TYPE_ICON: Record<string, string> = {
   other: '📍',
 }
 
-const CLUSTER_MAX_ZOOM = 13
-
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 3958.8
   const dLat = ((lat2 - lat1) * Math.PI) / 180
@@ -85,7 +83,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
 
-  // Always-current refs so event handlers never go stale
   const onMapReadyRef = useRef(onMapReady)
   onMapReadyRef.current = onMapReady
   const onSelectStoreRef = useRef(onSelectStore)
@@ -95,8 +92,37 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   const selectedRef = useRef<Store | null>(selected)
   selectedRef.current = selected
 
-  // Keep a ref to the latest rebuild fn so the zoomend listener always calls it
-  const rebuildRef = useRef<() => void>(() => {})
+  // Always-current sync function — called by map events and React effects
+  const syncRef = useRef<() => void>(() => {})
+  syncRef.current = () => {
+    const map = mapRef.current
+    if (!map || !map.isStyleLoaded()) return
+
+    // Ask Mapbox which store points are currently NOT in a cluster
+    const visible = map.queryRenderedFeatures(undefined, { layers: ['unclustered-detect'] })
+    const visibleIds = new Set(visible.map((f) => f.properties?.id as string))
+
+    // Remove all existing individual markers
+    unclusteredMarkersRef.current.forEach((m) => m.remove())
+    unclusteredMarkersRef.current = []
+
+    // Place an emoji marker for every visible unclustered store (except selected)
+    storesRef.current.forEach((store) => {
+      if (!visibleIds.has(store.id)) return
+      if (store.id === selectedRef.current?.id) return
+
+      const el = createStoreEl(store, false)
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        onSelectStoreRef.current(store)
+      })
+      unclusteredMarkersRef.current.push(
+        new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([store.lng, store.lat])
+          .addTo(map)
+      )
+    })
+  }
 
   // Initialize map once
   useEffect(() => {
@@ -196,12 +222,12 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         })
       }
 
-      // ── GeoJSON cluster source ───────────────────────────────
+      // ── Stores source with clustering ────────────────────────
       map.addSource('stores', {
         type: 'geojson',
         data: storesToGeoJSON(storesRef.current),
         cluster: true,
-        clusterMaxZoom: CLUSTER_MAX_ZOOM,
+        clusterMaxZoom: 13,
         clusterRadius: 55,
       })
 
@@ -237,7 +263,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         },
       })
 
-      // Cluster count label
+      // Cluster count
       map.addLayer({
         id: 'cluster-count',
         type: 'symbol',
@@ -252,9 +278,18 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         paint: { 'text-color': '#22c55e' },
       })
 
-      // No GL layer for unclustered points — HTML markers handle those
+      // Invisible detection layer for unclustered points —
+      // lets queryRenderedFeatures tell us exactly which stores
+      // are currently NOT in a cluster, at any zoom level
+      map.addLayer({
+        id: 'unclustered-detect',
+        type: 'circle',
+        source: 'stores',
+        filter: ['!', ['has', 'point_count']],
+        paint: { 'circle-radius': 1, 'circle-opacity': 0 },
+      })
 
-      // ── Cluster click → zoom in ──────────────────────────────
+      // Cluster click → zoom in
       map.on('click', 'clusters', (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
         const clusterId = features[0]?.properties?.cluster_id
@@ -275,8 +310,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
 
-      // Rebuild HTML markers whenever zoom animation ends
-      map.on('zoomend', () => rebuildRef.current())
+      // Sync HTML markers whenever the map settles (zoom, pan, or data load)
+      map.on('idle', () => syncRef.current())
 
       onMapReadyRef.current?.(map)
     })
@@ -308,12 +343,12 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep user marker position in sync
+  // Keep user marker in sync with location
   useEffect(() => {
     userMarkerRef.current?.setLngLat([lng, lat])
   }, [lat, lng])
 
-  // Update GeoJSON source and HTML markers when stores change
+  // Update GeoJSON source when stores arrive
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -332,11 +367,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     const src = map.getSource('stores') as mapboxgl.GeoJSONSource | undefined
     src?.setData(storesToGeoJSON(stores))
-
-    rebuildRef.current()
+    // idle event will fire after tiles update and trigger syncRef
   }, [stores, lat, lng]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update selected HTML marker + refresh individual markers to exclude it
+  // Selected store — full orb with pulse rings + name pill
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -351,35 +385,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         .addTo(map)
     }
 
-    rebuildRef.current()
+    // Re-sync so the newly-selected store is excluded from plain markers
+    syncRef.current()
   }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Keep rebuildRef pointing at the latest closure over stores/selected
-  rebuildRef.current = () => {
-    const map = mapRef.current
-    if (!map) return
-
-    // Remove old individual markers
-    unclusteredMarkersRef.current.forEach((m) => m.remove())
-    unclusteredMarkersRef.current = []
-
-    // Only show individual HTML markers when past the cluster threshold
-    if (map.getZoom() <= CLUSTER_MAX_ZOOM) return
-
-    storesRef.current.forEach((store) => {
-      if (store.id === selectedRef.current?.id) return // selected has its own marker
-      const el = createStoreEl(store, false)
-      el.addEventListener('click', (e) => {
-        e.stopPropagation()
-        onSelectStoreRef.current(store)
-      })
-      unclusteredMarkersRef.current.push(
-        new mapboxgl.Marker({ element: el, anchor: 'bottom' })
-          .setLngLat([store.lng, store.lat])
-          .addTo(map)
-      )
-    })
-  }
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }
