@@ -652,12 +652,6 @@ function selectAndContinue(tierId: TierId) {
     return (
       <div className="bg-[#070710]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
 
-        {/* ── Sticky header ── */}
-        <div style={{ position: 'sticky', top: 'calc(56px + env(safe-area-inset-top))', zIndex: 40, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backgroundColor: 'rgba(7,7,16,0.85)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ fontSize: 16, fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>Account</p>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}35` }}>{tierInfo.icon} {tierInfo.label}</span>
-        </div>
-
         {/* ── Profile card (always visible) ── */}
         <div className="px-5 pt-4 pb-3">
           <div className="rounded-2xl p-5" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.2)', position: 'relative', overflow: 'hidden' }}>
