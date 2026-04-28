@@ -7,6 +7,7 @@ import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import NotificationBell from '@/components/NotificationBell'
+import { BRAND_COLORS } from '@/components/BrandLogo'
 import type { Quantity, Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
@@ -82,13 +83,6 @@ const TYPE_FILTERS = [
   { value: 'other',       label: '📍 Other'   },
 ]
 
-const SORT_OPTIONS = [
-  { value: 'distance', label: '📍 Nearest'      },
-  { value: 'stocked',  label: '✅ Most Stocked'  },
-  { value: 'freshest', label: '🕐 Freshest'      },
-]
-
-type SortMode = 'distance' | 'stocked' | 'freshest'
 
 export default function StoresPage() {
   const router = useRouter()
@@ -109,7 +103,9 @@ export default function StoresPage() {
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
-  const [sort, setSort] = useState<SortMode>('distance')
+  const [storeBrands, setStoreBrands] = useState<Record<string, string[]>>({})
+  const [availableBrands, setAvailableBrands] = useState<string[]>([])
+  const [brandFilter, setBrandFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -123,16 +119,45 @@ export default function StoresPage() {
     if (stores.length === 0) return
     supabase
       .from('latest_stock')
-      .select('store_id, quantity, reported_at')
+      .select('store_id, drink_id, quantity, reported_at')
       .in('store_id', stores.map((s) => s.id))
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!data) return
+
         const grouped: Record<string, any[]> = {}
         data.forEach((row) => {
           if (!grouped[row.store_id]) grouped[row.store_id] = []
           grouped[row.store_id].push(row)
         })
         setStoreStock(grouped)
+
+        const drinkIds = [...new Set(data.map((d) => d.drink_id).filter(Boolean))]
+        if (drinkIds.length === 0) return
+
+        const { data: drinksData } = await supabase
+          .from('drinks')
+          .select('id, brand')
+          .in('id', drinkIds)
+        if (!drinksData) return
+
+        const drinkBrandMap: Record<string, string> = {}
+        drinksData.forEach((d) => { drinkBrandMap[d.id] = d.brand })
+
+        const brandsByStore: Record<string, Set<string>> = {}
+        const allBrands = new Set<string>()
+        data.forEach((row) => {
+          const brand = drinkBrandMap[row.drink_id]
+          if (brand && row.quantity !== 'out') {
+            if (!brandsByStore[row.store_id]) brandsByStore[row.store_id] = new Set()
+            brandsByStore[row.store_id].add(brand)
+            allBrands.add(brand)
+          }
+        })
+
+        setStoreBrands(Object.fromEntries(
+          Object.entries(brandsByStore).map(([k, v]) => [k, Array.from(v)])
+        ))
+        setAvailableBrands(Array.from(allBrands).sort())
       })
   }, [stores])
 
@@ -219,26 +244,10 @@ export default function StoresPage() {
   )
 
   const sorted = [...stores]
-    .sort((a, b) => {
-      if (sort === 'stocked') {
-        const aStock = storeStock[a.id] ?? []
-        const bStock = storeStock[b.id] ?? []
-        const aPct = aStock.length > 0 ? aStock.filter((s) => s.quantity !== 'out').length / aStock.length : -1
-        const bPct = bStock.length > 0 ? bStock.filter((s) => s.quantity !== 'out').length / bStock.length : -1
-        return bPct - aPct
-      }
-      if (sort === 'freshest') {
-        const aLatest = getLatestReport(storeStock[a.id] ?? [])
-        const bLatest = getLatestReport(storeStock[b.id] ?? [])
-        if (!aLatest && !bLatest) return 0
-        if (!aLatest) return 1
-        if (!bLatest) return -1
-        return new Date(bLatest.reported_at).getTime() - new Date(aLatest.reported_at).getTime()
-      }
-      return getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)
-    })
+    .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))
     .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
     .filter((s) => typeFilter === null || s.type === typeFilter)
+    .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
     .filter((s) => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
@@ -331,19 +340,27 @@ export default function StoresPage() {
           })}
         </div>
 
-        {/* Sort */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
-          {SORT_OPTIONS.map((s) => {
-            const active = sort === s.value
-            return (
-              <button key={s.value} className="pill-btn"
-                onClick={() => setSort(s.value as SortMode)}
-                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#a78bfa' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#a78bfa' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
-                {s.label}
-              </button>
-            )
-          })}
-        </div>
+        {/* Brand filter */}
+        {availableBrands.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+            <button className="pill-btn"
+              onClick={() => setBrandFilter(null)}
+              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: brandFilter === null ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: brandFilter === null ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)', color: brandFilter === null ? '#22c55e' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+              All Brands
+            </button>
+            {availableBrands.map((brand) => {
+              const color = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.6)'
+              const active = brandFilter === brand
+              return (
+                <button key={brand} className="pill-btn"
+                  onClick={() => setBrandFilter(active ? null : brand)}
+                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? color : 'rgba(255,255,255,0.1)', backgroundColor: active ? `${color}22` : 'rgba(255,255,255,0.04)', color: active ? color : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                  {brand}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* Nearest / You're At card */}
         {loading ? (
