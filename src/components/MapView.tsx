@@ -317,11 +317,13 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
 
-      // Sync on zoom + move end (faster than idle) and when cluster data updates
-      map.on('zoomend', () => syncRef.current())
-      map.on('moveend', () => syncRef.current())
+      // Wait for one render frame after zoom/move/data so queryRenderedFeatures
+      // reads the freshly drawn cluster state, not the previous frame's state
+      const syncAfterRender = () => map.once('render', () => syncRef.current())
+      map.on('zoomend', syncAfterRender)
+      map.on('moveend', syncAfterRender)
       map.on('sourcedata', (e: mapboxgl.MapSourceDataEvent) => {
-        if (e.sourceId === 'stores' && e.isSourceLoaded) syncRef.current()
+        if (e.sourceId === 'stores' && e.isSourceLoaded) syncAfterRender()
       })
 
       onMapReadyRef.current?.(map)
