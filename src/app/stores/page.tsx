@@ -402,7 +402,8 @@ export default function StoresPage() {
                 {!isAtStore && (
                   <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                     onClick={() => openDirections(nearest.lat, nearest.lng)}>
-                    🧭 Directions
+                    Directions
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                 )}
               </div>
@@ -514,7 +515,8 @@ export default function StoresPage() {
                     </button>
                     <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                       onClick={() => openDirections(store.lat, store.lng)}>
-                      Directions →
+                      Directions
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </button>
                   </div>
                 </div>

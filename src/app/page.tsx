@@ -336,10 +336,12 @@ export default function MapPage() {
                 border: '1.5px solid rgba(255,255,255,0.5)',
                 color: 'rgba(255,255,255,0.9)',
                 boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
               onClick={() => openDirections(selected.lat, selected.lng)}
             >
-              Directions →
+              Directions
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button
               className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
