@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { BRAND_COLORS } from '@/components/BrandLogo'
+import BrandLogo, { BRAND_COLORS } from '@/components/BrandLogo'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
 
@@ -253,17 +253,17 @@ function DrinksContent() {
                   style={{
                     borderRadius: 16, overflow: 'hidden',
                     backgroundColor: '#1a1a24',
-                    border: `1.5px solid ${hasBrandSelection ? 'rgba(34,197,94,0.6)' : `${color}55`}`,
+                    border: `1px solid ${hasBrandSelection ? 'rgba(34,197,94,0.4)' : `${color}33`}`,
                     boxShadow: hasBrandSelection
-                      ? '0 0 12px rgba(34,197,94,0.2), 0 0 24px rgba(34,197,94,0.08)'
-                      : `0 0 12px ${color}22, 0 0 24px ${color}0d`,
+                      ? 'inset 3px 0 0 #22c55e, 0 0 14px rgba(34,197,94,0.15)'
+                      : `inset 3px 0 0 ${color}, 0 0 14px ${color}1a`,
                   }}
                 >
                   <button
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 16, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                     onClick={() => toggleBrand(brand)}
                   >
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
+                    <BrandLogo brand={brand} size={36} />
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#fff' }}>{brand}</p>
                       <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
@@ -354,19 +354,22 @@ function DrinksContent() {
                                   <button
                                     key={opt.value}
                                     style={{
-                                      flex: 1, padding: '12px 0',
-                                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                                      backgroundColor: selected === opt.value ? opt.bg : 'rgba(255,255,255,0.03)',
+                                      flex: 1, padding: '14px 0',
+                                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                      backgroundColor: selected === opt.value ? opt.bg : 'rgba(255,255,255,0.02)',
                                       borderRight: opt.value !== 'full' ? '1px solid rgba(255,255,255,0.06)' : 'none',
                                       border: 'none', cursor: 'pointer',
                                     }}
                                     onClick={() => selectQuantity(drink.id, opt.value)}
                                   >
-                                    <span style={{ fontSize: 16, lineHeight: 1 }}>
-                                      {opt.value === 'out' ? '❌' : opt.value === 'low' ? '🟡' : opt.value === 'medium' ? '🟠' : '✅'}
-                                    </span>
-                                    <span style={{ fontSize: 10, fontWeight: 700, color: selected === opt.value ? opt.color : 'rgba(255,255,255,0.35)' }}>
-                                      {opt.label}
+                                    <div style={{
+                                      width: 10, height: 10, borderRadius: '50%',
+                                      backgroundColor: opt.color,
+                                      opacity: selected === opt.value ? 1 : 0.3,
+                                      boxShadow: selected === opt.value ? `0 0 8px ${opt.color}` : 'none',
+                                    }} />
+                                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: selected === opt.value ? opt.color : 'rgba(255,255,255,0.3)' }}>
+                                      {opt.label.toUpperCase()}
                                     </span>
                                   </button>
                                 ))}

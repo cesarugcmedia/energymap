@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
-import { BRAND_COLORS } from '@/components/BrandLogo'
+import BrandLogo, { BRAND_COLORS } from '@/components/BrandLogo'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -547,14 +547,15 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     className="rounded-2xl overflow-hidden"
                     style={{
                       backgroundColor: '#1a1a24',
-                      border: `1.5px solid ${brandColor}55`,
-                      boxShadow: `0 0 12px ${brandColor}22, 0 0 24px ${brandColor}0d`,
+                      border: `1px solid ${brandColor}33`,
+                      boxShadow: `inset 3px 0 0 ${brandColor}, 0 0 14px ${brandColor}1a`,
                     }}
                   >
                     <button
                       className="w-full flex items-center gap-3 p-4 text-left"
                       onClick={() => toggleBrand(brand)}
                     >
+                      <BrandLogo brand={brand} size={36} />
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-black text-white">{brand}</p>
                         <div className="flex items-center gap-2 mt-1.5">
@@ -586,13 +587,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           return (
                             <div key={item.drink_id}>
                               <div
-                                className="flex items-center rounded-xl p-3"
+                                className="flex items-center"
                                 style={{
                                   backgroundColor: 'rgba(255,255,255,0.04)',
-                                  border: `1.5px solid ${q?.border ?? `${brandColor}44`}`,
-                                  boxShadow: `0 0 8px ${q?.color ?? brandColor}22`,
+                                  border: `1px solid ${q?.border ?? `${brandColor}33`}`,
+                                  boxShadow: `inset 3px 0 0 ${q?.color ?? brandColor}, 0 0 8px ${q?.color ?? brandColor}18`,
                                   borderRadius: isTracker && historyOpen ? '12px 12px 0 0' : 12,
                                   cursor: isTracker ? 'pointer' : 'default',
+                                  padding: 12,
                                 }}
                                 onClick={() => toggleHistory(item.drink_id)}
                               >
