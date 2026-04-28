@@ -764,10 +764,10 @@ function selectAndContinue(tierId: TierId) {
                             <p className="text-[10px] text-white/40">{next.price}</p>
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 mb-3">
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px', marginBottom: 12 }}>
                           {next.features.map((f) => (
                             <div key={f} className="flex items-start gap-1.5">
-                              <span style={{ fontSize: 9, color: next.color, marginTop: 2 }}>✓</span>
+                              <span style={{ fontSize: 9, color: next.color, marginTop: 2, flexShrink: 0 }}>✓</span>
                               <span className="text-[10px] text-white/50 leading-tight">{f}</span>
                             </div>
                           ))}
@@ -1263,12 +1263,14 @@ function selectAndContinue(tierId: TierId) {
                           </span>
                         </div>
                       )}
-                      {t.features.map((f, fi) => (
-                        <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>{f}</span>
-                        </div>
-                      ))}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+                        {t.features.map((f, fi) => (
+                          <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                            <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div style={{ marginTop: 18 }}>
                       {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' ? (
