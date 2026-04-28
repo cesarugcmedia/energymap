@@ -39,18 +39,18 @@ function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
     : ''
 
   const el = document.createElement('div')
-  el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;'
+  el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;pointer-events:auto;'
   el.innerHTML = `
     <div style="position:relative;width:${orbSize}px;height:${orbSize}px;">
       ${pulseRings}
       <div style="width:${orbSize}px;height:${orbSize}px;background:${orbBg};border:1.5px solid ${orbBorder};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:${orbGlow};">
-        <span style="font-size:${isSelected ? 22 : 17}px;line-height:1;">${emoji}</span>
+        <span style="font-size:${isSelected ? 22 : 17}px;line-height:1;pointer-events:none;">${emoji}</span>
       </div>
     </div>
     ${isSelected
-      ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(34,197,94,0.45);border-radius:7px;padding:3px 9px;white-space:nowrap;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(34,197,94,0.25);">${name}</div>`
+      ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(34,197,94,0.45);border-radius:7px;padding:3px 9px;white-space:nowrap;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(34,197,94,0.25);pointer-events:none;">${name}</div>`
       : ''}
-    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(34,197,94,0.5));"></div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(34,197,94,0.5));pointer-events:none;"></div>
   `
   return el
 }
@@ -79,7 +79,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const selectedMarkerRef = useRef<mapboxgl.Marker | null>(null)
-  const unclusteredMarkersRef = useRef<mapboxgl.Marker[]>([])
+  // Diff-based: keyed by store id so we only add/remove what changed
+  const markersByIdRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
 
@@ -92,35 +93,49 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   const selectedRef = useRef<Store | null>(selected)
   selectedRef.current = selected
 
-  // Always-current sync function — called by map events and React effects
+  // Always-current sync — diffs existing markers instead of full rebuild
   const syncRef = useRef<() => void>(() => {})
   syncRef.current = () => {
     const map = mapRef.current
     if (!map || !map.isStyleLoaded()) return
 
-    // Ask Mapbox which store points are currently NOT in a cluster
+    // Which stores are currently rendered as individual (unclustered) points?
     const visible = map.queryRenderedFeatures({ layers: ['unclustered-detect'] })
-    const visibleIds = new Set(visible.map((f) => f.properties?.id as string))
+    const visibleIds = new Set(visible.map((f) => String(f.properties?.id)))
+    const selectedId = selectedRef.current?.id
 
-    // Remove all existing individual markers
-    unclusteredMarkersRef.current.forEach((m) => m.remove())
-    unclusteredMarkersRef.current = []
+    // Remove markers that are no longer unclustered or are now selected
+    markersByIdRef.current.forEach((marker, id) => {
+      if (!visibleIds.has(id) || id === selectedId) {
+        marker.remove()
+        markersByIdRef.current.delete(id)
+      }
+    })
 
-    // Place an emoji marker for every visible unclustered store (except selected)
+    // Add markers for newly unclustered stores
     storesRef.current.forEach((store) => {
       if (!visibleIds.has(store.id)) return
-      if (store.id === selectedRef.current?.id) return
+      if (store.id === selectedId) return
+      if (markersByIdRef.current.has(store.id)) return // already present
 
       const el = createStoreEl(store, false)
-      el.addEventListener('click', (e) => {
+
+      // Support both touch and mouse clicks for immediate response
+      const select = (e: Event) => {
         e.stopPropagation()
         onSelectStoreRef.current(store)
+      }
+      el.addEventListener('click', select)
+      el.addEventListener('touchend', (e) => {
+        e.stopPropagation()
+        // Don't preventDefault — let the click fire naturally on mobile too
+        onSelectStoreRef.current(store)
       })
-      unclusteredMarkersRef.current.push(
-        new mapboxgl.Marker({ element: el, anchor: 'bottom' })
-          .setLngLat([store.lng, store.lat])
-          .addTo(map)
-      )
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([store.lng, store.lat])
+        .addTo(map)
+      markersByIdRef.current.set(store.id, marker)
     })
   }
 
@@ -199,7 +214,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         } catch {}
       })
 
-      // 3D buildings
       if (!map.getLayer('amped-3d-buildings')) {
         map.addLayer({
           id: 'amped-3d-buildings',
@@ -222,7 +236,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         })
       }
 
-      // ── Stores source with clustering ────────────────────────
       map.addSource('stores', {
         type: 'geojson',
         data: storesToGeoJSON(storesRef.current),
@@ -231,7 +244,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         clusterRadius: 55,
       })
 
-      // Cluster outer glow
       map.addLayer({
         id: 'cluster-glow',
         type: 'circle',
@@ -244,7 +256,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         },
       })
 
-      // Cluster circle body
       map.addLayer({
         id: 'clusters',
         type: 'circle',
@@ -263,7 +274,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         },
       })
 
-      // Cluster count
       map.addLayer({
         id: 'cluster-count',
         type: 'symbol',
@@ -278,9 +288,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         paint: { 'text-color': '#22c55e' },
       })
 
-      // Invisible detection layer for unclustered points —
-      // lets queryRenderedFeatures tell us exactly which stores
-      // are currently NOT in a cluster, at any zoom level
+      // Invisible layer — used only for queryRenderedFeatures to detect unclustered points
       map.addLayer({
         id: 'unclustered-detect',
         type: 'circle',
@@ -289,7 +297,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         paint: { 'circle-radius': 1, 'circle-opacity': 0 },
       })
 
-      // Cluster click → zoom in
       map.on('click', 'clusters', (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
         const clusterId = features[0]?.properties?.cluster_id
@@ -310,13 +317,16 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
 
-      // Sync HTML markers whenever the map settles (zoom, pan, or data load)
-      map.on('idle', () => syncRef.current())
+      // Sync on zoom + move end (faster than idle) and when cluster data updates
+      map.on('zoomend', () => syncRef.current())
+      map.on('moveend', () => syncRef.current())
+      map.on('sourcedata', (e: mapboxgl.MapSourceDataEvent) => {
+        if (e.sourceId === 'stores' && e.isSourceLoaded) syncRef.current()
+      })
 
       onMapReadyRef.current?.(map)
     })
 
-    // Pulsing user dot
     const userEl = document.createElement('div')
     userEl.style.cssText = 'position:relative;width:16px;height:16px;'
     userEl.innerHTML = `
@@ -333,8 +343,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     return () => {
       selectedMarkerRef.current?.remove()
       selectedMarkerRef.current = null
-      unclusteredMarkersRef.current.forEach((m) => m.remove())
-      unclusteredMarkersRef.current = []
+      markersByIdRef.current.forEach((m) => m.remove())
+      markersByIdRef.current.clear()
       userMarkerRef.current?.remove()
       userMarkerRef.current = null
       fittedRef.current = false
@@ -343,12 +353,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep user marker in sync with location
   useEffect(() => {
     userMarkerRef.current?.setLngLat([lng, lat])
   }, [lat, lng])
 
-  // Update GeoJSON source when stores arrive
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -367,10 +375,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     const src = map.getSource('stores') as mapboxgl.GeoJSONSource | undefined
     src?.setData(storesToGeoJSON(stores))
-    // idle event will fire after tiles update and trigger syncRef
+    // sourcedata event will fire and trigger syncRef after data updates
   }, [stores, lat, lng]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Selected store — full orb with pulse rings + name pill
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -385,7 +392,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         .addTo(map)
     }
 
-    // Re-sync so the newly-selected store is excluded from plain markers
+    // Remove the plain marker for the newly-selected store (or restore the deselected one)
     syncRef.current()
   }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
 
