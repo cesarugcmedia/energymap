@@ -360,12 +360,25 @@ export default function AdminPage() {
 
   async function fetchFlags() {
     setFlagsLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('store_flags')
-      .select('id, reason, notes, created_at, resolved, store_id, user_id, store:stores(id, name, address, type), reporter:profiles(username)')
+      .select('id, reason, notes, created_at, resolved, store_id, user_id')
       .eq('resolved', false)
       .order('created_at', { ascending: false })
-    if (data) setFlags(data)
+    if (error || !data) { setFlagsLoading(false); return }
+
+    const storeIds = [...new Set(data.map((f: any) => f.store_id).filter(Boolean))]
+    const userIds  = [...new Set(data.map((f: any) => f.user_id).filter(Boolean))]
+
+    const [storesRes, profilesRes] = await Promise.all([
+      storeIds.length > 0 ? supabase.from('stores').select('id, name, address, type').in('id', storeIds) : Promise.resolve({ data: [] }),
+      userIds.length  > 0 ? supabase.from('profiles').select('id, username').in('id', userIds)           : Promise.resolve({ data: [] }),
+    ])
+
+    const storesMap: Record<string, any>   = Object.fromEntries((storesRes.data   ?? []).map((s: any) => [s.id, s]))
+    const profilesMap: Record<string, any> = Object.fromEntries((profilesRes.data ?? []).map((p: any) => [p.id, p]))
+
+    setFlags(data.map((f: any) => ({ ...f, store: storesMap[f.store_id] ?? null, reporter: profilesMap[f.user_id] ?? null })))
     setFlagsLoading(false)
   }
 
