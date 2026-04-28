@@ -34,7 +34,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users' | 'waitlist'>('stores')
+  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags'>('stores')
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<any[]>([])
@@ -60,6 +60,11 @@ export default function AdminPage() {
   const [addingDrink, setAddingDrink] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [drinkDuplicateMsg, setDrinkDuplicateMsg] = useState<string | null>(null)
+
+  // Flags state
+  const [flags, setFlags] = useState<any[]>([])
+  const [flagsLoading, setFlagsLoading] = useState(false)
+  const [resolvingFlag, setResolvingFlag] = useState<Set<string>>(new Set())
 
   // Waitlist state
   const [waitlist, setWaitlist] = useState<any[]>([])
@@ -353,6 +358,24 @@ export default function AdminPage() {
     setDrinks((prev) => prev.filter((d) => d.id !== id))
   }
 
+  async function fetchFlags() {
+    setFlagsLoading(true)
+    const { data } = await supabase
+      .from('store_flags')
+      .select('id, reason, notes, created_at, resolved, store_id, user_id, store:stores(id, name, address, type), reporter:profiles(username)')
+      .eq('resolved', false)
+      .order('created_at', { ascending: false })
+    if (data) setFlags(data)
+    setFlagsLoading(false)
+  }
+
+  async function resolveFlag(flagId: string) {
+    setResolvingFlag((prev) => new Set(prev).add(flagId))
+    const { error } = await supabase.from('store_flags').update({ resolved: true }).eq('id', flagId)
+    if (!error) setFlags((prev) => prev.filter((f) => f.id !== flagId))
+    setResolvingFlag((prev) => { const next = new Set(prev); next.delete(flagId); return next })
+  }
+
   async function fetchWaitlist() {
     setWaitlistLoading(true)
     const { data: { session } } = await supabase.auth.getSession()
@@ -409,7 +432,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : tab === 'waitlist' ? fetchWaitlist() : fetchUsers() }}
+              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : tab === 'waitlist' ? fetchWaitlist() : tab === 'flags' ? fetchFlags() : fetchUsers() }}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
             >
@@ -426,14 +449,15 @@ export default function AdminPage() {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex rounded-xl p-1 gap-0.5" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'locations', 'drinks', 'users', 'waitlist'] as const).map((t) => (
+        <div className="flex rounded-xl p-1 gap-0.5 overflow-x-auto" style={{ backgroundColor: '#1a1a24' }}>
+          {(['stores', 'locations', 'drinks', 'users', 'waitlist', 'flags'] as const).map((t) => (
             <button
               key={t}
-              className="flex-1 rounded-lg py-2.5 text-[11px] font-bold"
+              className="flex-1 rounded-lg py-2.5 text-[11px] font-bold shrink-0"
               style={{
                 backgroundColor: tab === t ? '#22c55e' : 'transparent',
                 color: tab === t ? '#000' : 'rgba(255,255,255,0.4)',
+                minWidth: 48,
               }}
               onClick={() => {
                 setTab(t)
@@ -441,15 +465,83 @@ export default function AdminPage() {
                 if (t === 'locations' && locations.length === 0) fetchLocations()
                 if (t === 'drinks' && drinks.length === 0) fetchDrinks()
                 if (t === 'waitlist' && waitlist.length === 0) fetchWaitlist()
+                if (t === 'flags' && flags.length === 0) fetchFlags()
               }}
             >
-              {t === 'stores' ? '🕐 Pending' : t === 'locations' ? '📍 Locs' : t === 'drinks' ? '🥤 Drinks' : t === 'users' ? '👤 Users' : '📋 List'}
+              {t === 'stores' ? '🕐' : t === 'locations' ? '📍' : t === 'drinks' ? '🥤' : t === 'users' ? '👤' : t === 'waitlist' ? '📋' : '🚩'}
             </button>
           ))}
         </div>
       </div>
 
-      {tab === 'locations' ? (
+      {tab === 'flags' ? (
+        flagsLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : flags.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <span style={{ fontSize: 40 }}>🚩</span>
+            <p className="text-lg font-bold text-white">No open flags</p>
+            <p className="text-sm text-white/40">All location reports have been resolved.</p>
+          </div>
+        ) : (
+          <div className="px-4 pb-6">
+            <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+              {flags.length} OPEN FLAG{flags.length !== 1 ? 'S' : ''}
+            </p>
+            <div className="flex flex-col gap-3">
+              {flags.map((flag) => {
+                const store = flag.store as any
+                const reporter = flag.reporter as any
+                return (
+                  <div
+                    key={flag.id}
+                    className="rounded-2xl p-4"
+                    style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.2)' }}
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <span style={{ fontSize: 22 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{store?.name ?? 'Unknown store'}</p>
+                        {store?.address && <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>}
+                      </div>
+                      <span className="text-[10px] font-semibold shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>{timeAgo(flag.created_at)}</span>
+                    </div>
+                    <div
+                      className="rounded-xl px-3.5 py-2.5 mb-3"
+                      style={{ backgroundColor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)' }}
+                    >
+                      <p className="text-sm font-semibold" style={{ color: '#fca5a5' }}>{flag.reason}</p>
+                      {flag.notes && <p className="text-xs mt-1 text-white/45 leading-relaxed">{flag.notes}</p>}
+                    </div>
+                    {reporter?.username && (
+                      <p className="text-xs text-white/30 mb-3">Reported by @{reporter.username}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 rounded-xl p-2.5 text-xs font-bold"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
+                        onClick={() => store && openEdit(store)}
+                      >
+                        ✏️ Edit Location
+                      </button>
+                      <button
+                        className="flex-1 rounded-xl p-2.5 text-xs font-bold flex items-center justify-center"
+                        style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
+                        disabled={resolvingFlag.has(flag.id)}
+                        onClick={() => resolveFlag(flag.id)}
+                      >
+                        {resolvingFlag.has(flag.id) ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : '✓ Resolve'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      ) : tab === 'locations' ? (
         locationsLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />

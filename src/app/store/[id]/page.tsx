@@ -92,6 +92,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
   const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
   const [historyLoading, setHistoryLoading] = useState<Set<string>>(new Set())
+  const [showFlag, setShowFlag] = useState(false)
+  const [flagReason, setFlagReason] = useState('')
+  const [flagNotes, setFlagNotes] = useState('')
+  const [flagSubmitting, setFlagSubmitting] = useState(false)
+  const [flagDone, setFlagDone] = useState(false)
   const [showAddToList, setShowAddToList] = useState(false)
   const [userLists, setUserLists] = useState<any[]>([])
   const [listsLoading, setListsLoading] = useState(false)
@@ -292,6 +297,27 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     setDrinkSubmitting(false)
   }
 
+  async function submitFlag() {
+    if (!flagReason) return
+    setFlagSubmitting(true)
+    await supabase.from('store_flags').insert({
+      store_id: id,
+      user_id: user?.id ?? null,
+      reason: flagReason,
+      notes: flagNotes.trim() || null,
+    })
+    setFlagSubmitting(false)
+    setFlagDone(true)
+  }
+
+  function closeFlag() {
+    setShowFlag(false)
+    setFlagReason('')
+    setFlagNotes('')
+    setFlagSubmitting(false)
+    setFlagDone(false)
+  }
+
   function closeAddDrink() {
     setShowAddDrink(false)
     setDrinkEntries([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
@@ -381,6 +407,13 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               </span>
             </div>
           )}
+          <button
+            onClick={() => setShowFlag(true)}
+            title="Flag incorrect location"
+            style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 13 }}>🚩</span>
+          </button>
         </div>
       </div>
 
@@ -841,6 +874,100 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               >
                 Got it
               </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {/* ── Flag location modal ──────────────────────────────────── */}
+        {showFlag && createPortal(
+          <div
+            className="fixed inset-0 flex flex-col justify-end z-50"
+            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) closeFlag() }}
+          >
+            <div
+              className="rounded-t-3xl p-5"
+              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+
+              {flagDone ? (
+                <div className="flex flex-col items-center text-center gap-3 py-4">
+                  <span style={{ fontSize: 48 }}>✅</span>
+                  <p className="text-xl font-black text-white">Thanks for the report!</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>We'll review this location and correct any issues.</p>
+                  <button
+                    className="mt-2 w-full rounded-2xl p-3.5 font-bold text-white"
+                    style={{ backgroundColor: '#22c55e' }}
+                    onClick={closeFlag}
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <span style={{ fontSize: 20 }}>🚩</span>
+                    <p className="text-lg font-black text-white">Flag Location</p>
+                  </div>
+                  <p className="text-xs mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>Something wrong with this location? Let us know so we can fix it.</p>
+
+                  <p className="text-[10px] font-bold mb-2.5" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>REASON</p>
+                  <div className="flex flex-col gap-2 mb-4">
+                    {['Wrong location on map', 'Wrong address', "Store doesn't exist", 'Duplicate store', 'Other'].map((reason) => (
+                      <button
+                        key={reason}
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-left"
+                        style={{
+                          backgroundColor: flagReason === reason ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
+                          border: `1.5px solid ${flagReason === reason ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                        }}
+                        onClick={() => setFlagReason(reason)}
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                          style={{ borderColor: flagReason === reason ? '#ef4444' : 'rgba(255,255,255,0.2)' }}
+                        >
+                          {flagReason === reason && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ef4444' }} />}
+                        </div>
+                        <span className="text-sm font-semibold" style={{ color: flagReason === reason ? '#fff' : 'rgba(255,255,255,0.6)' }}>{reason}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="text-[10px] font-bold mb-2" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>NOTES (OPTIONAL)</p>
+                  <textarea
+                    placeholder="Describe the issue in more detail..."
+                    value={flagNotes}
+                    onChange={(e) => setFlagNotes(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none resize-none mb-4"
+                    style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  />
+
+                  <div className="flex gap-2.5">
+                    <button
+                      className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                      onClick={closeFlag}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
+                      style={{ backgroundColor: !flagReason || flagSubmitting ? 'rgba(239,68,68,0.35)' : '#ef4444' }}
+                      disabled={!flagReason || flagSubmitting}
+                      onClick={submitFlag}
+                    >
+                      {flagSubmitting
+                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : 'Submit Flag'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>,
           document.body
