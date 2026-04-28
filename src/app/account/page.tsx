@@ -652,13 +652,20 @@ function selectAndContinue(tierId: TierId) {
     return (
       <div className="bg-[#070710]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
 
+        {/* ── Sticky header ── */}
+        <div style={{ position: 'sticky', top: 'calc(56px + env(safe-area-inset-top))', zIndex: 40, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backgroundColor: 'rgba(7,7,16,0.85)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 16, fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>Account</p>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}35` }}>{tierInfo.icon} {tierInfo.label}</span>
+        </div>
+
         {/* ── Profile card (always visible) ── */}
         <div className="px-5 pt-4 pb-3">
           <div className="rounded-2xl p-5" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.2)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #22c55e, #4ade80)' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #22c55e, #4ade80, #22c55e)' }} />
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: 'radial-gradient(circle at top right, rgba(34,197,94,0.08), transparent 70%)', pointerEvents: 'none' }} />
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.3)', boxShadow: '0 4px 16px rgba(34,197,94,0.2)' }}>
-                <span className="text-2xl font-black" style={{ color: '#22c55e' }}>{profile.username[0].toUpperCase()}</span>
+              <div className="rounded-full flex items-center justify-center shrink-0" style={{ width: 60, height: 60, background: 'linear-gradient(135deg, rgba(34,197,94,0.25), rgba(34,197,94,0.1))', border: '2px solid rgba(34,197,94,0.4)', boxShadow: '0 4px 20px rgba(34,197,94,0.25)' }}>
+                <span style={{ fontSize: 26, fontWeight: 900, color: '#22c55e' }}>{profile.username[0].toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-lg font-black text-white truncate">@{profile.username}</p>
@@ -671,13 +678,13 @@ function selectAndContinue(tierId: TierId) {
               </div>
             </div>
             {/* Stat row */}
-            <div className="flex" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
+            <div className="flex rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
               {[
                 { value: reportCount, label: 'Reports', color: '#22c55e' },
                 { value: storeCount,  label: 'Stores Added', color: '#f97316' },
                 { value: `${memberDays}d`, label: 'Member For', color: '#a78bfa' },
               ].map((s, i) => (
-                <div key={s.label} className="flex-1 text-center" style={{ borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                <div key={s.label} className="flex-1 text-center py-3" style={{ borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                   <p className="text-xl font-black" style={{ color: s.color }}>{statsLoading ? '–' : s.value}</p>
                   <p className="text-[10px] font-semibold text-white/35 mt-0.5">{s.label}</p>
                 </div>
@@ -810,15 +817,15 @@ function selectAndContinue(tierId: TierId) {
                   <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>RECENT REPORTS</p>
                   <button onClick={() => setActiveTab('reports')} className="text-xs font-bold" style={{ color: '#22c55e' }}>See all →</button>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5">
                   {recentReports.slice(0, 3).map((r) => {
                     const drink = r.drink as any
                     const store = r.store as any
                     const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
                     const q = QUANTITY_CONFIG[r.quantity as string] ?? QUANTITY_CONFIG.full
                     return (
-                      <div key={r.id} className="flex items-center gap-3 px-1 py-1.5 rounded-xl">
-                        <div className="px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
+                      <div key={r.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', boxShadow: `inset 3px 0 0 ${q.color}` }}>
+                        <div className="shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
                           <span className="text-[10px] font-black" style={{ color: q.color }}>{q.label}</span>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -903,7 +910,7 @@ function selectAndContinue(tierId: TierId) {
                 {lists.map((list) => {
                   const count = list.list_stores?.[0]?.count ?? 0
                   return (
-                    <div key={list.id} className="rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }} onClick={() => openList(list)}>
+                    <div key={list.id} className="rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 3px 0 0 #a78bfa' }} onClick={() => openList(list)}>
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)' }}>
                         <span style={{ fontSize: 16 }}>📑</span>
                       </div>
@@ -912,7 +919,7 @@ function selectAndContinue(tierId: TierId) {
                         <p className="text-xs text-white/40">{count} store{count !== 1 ? 's' : ''}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-white/30 text-sm">›</span>
+                        <span className="text-white/20 text-sm">›</span>
                         <button onClick={(e) => { e.stopPropagation(); deleteList(list.id) }} disabled={!!deletingListId} className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', opacity: deletingListId === list.id ? 0.4 : 1 }}>
                           {deletingListId === list.id ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <span className="text-[10px]" style={{ color: '#ef4444' }}>✕</span>}
                         </button>
@@ -953,8 +960,8 @@ function selectAndContinue(tierId: TierId) {
                     const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
                     const q = QUANTITY_CONFIG[r.quantity as string] ?? QUANTITY_CONFIG.full
                     return (
-                      <div key={r.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
+                      <div key={r.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', boxShadow: `inset 3px 0 0 ${q.color}` }}>
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
                           <span className="text-[10px] font-black" style={{ color: q.color }}>{q.label}</span>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -986,7 +993,7 @@ function selectAndContinue(tierId: TierId) {
           <div className="px-5 flex flex-col gap-4">
 
             {/* Profile */}
-            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 3px 0 0 #22c55e' }}>
               <p className="text-[10px] font-bold mb-4" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>PROFILE</p>
 
               {editingUsername ? (
@@ -1039,7 +1046,7 @@ function selectAndContinue(tierId: TierId) {
             </div>
 
             {/* Notifications */}
-            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 3px 0 0 #a78bfa' }}>
               <p className="text-[10px] font-bold mb-4" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>NOTIFICATIONS</p>
               {[
                 { label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
@@ -1063,14 +1070,16 @@ function selectAndContinue(tierId: TierId) {
             </div>
 
             {/* Sign out */}
-            <button onClick={handleSignOut} className="w-full rounded-2xl py-3.5 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
-              Sign Out
+            <button onClick={handleSignOut} className="w-full rounded-2xl py-3.5 text-sm font-bold flex items-center justify-center gap-2" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+              <span>Sign Out</span>
+              <span style={{ fontSize: 13, opacity: 0.7 }}>→</span>
             </button>
 
             {/* Danger zone */}
-            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.12)' }}>
-              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(239,68,68,0.5)', letterSpacing: '1.5px' }}>DANGER ZONE</p>
-              <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
+            <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.15)', boxShadow: 'inset 3px 0 0 #ef4444' }}>
+              <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(239,68,68,0.6)', letterSpacing: '1.5px' }}>DANGER ZONE</p>
+              <p className="text-xs text-white/30 mb-3">Permanently deletes your account and all data. This cannot be undone.</p>
+              <button onClick={deleteAccount} className="w-full rounded-xl py-3 text-sm font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)', color: '#ef4444' }}>
                 Delete Account
               </button>
             </div>
