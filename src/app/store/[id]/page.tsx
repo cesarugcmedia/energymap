@@ -174,7 +174,7 @@ function StoreDetailContent({ id }: { id: string }) {
   async function fetchStock() {
     const { data: stockData, error } = await supabase
       .from('latest_stock')
-      .select('drink_id, quantity, reported_at, user_id')
+      .select('drink_id, quantity, reported_at')
       .eq('store_id', id)
     if (error) { setStockError(error.message); setLoading(false); return }
 
@@ -188,19 +188,6 @@ function StoreDetailContent({ id }: { id: string }) {
       drinksData?.forEach((d) => { drinksMap[d.id] = d })
       const merged = stockData.map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null }))
       setStock(merged)
-
-      const userIds = [...new Set(stockData.map((d) => d.user_id).filter(Boolean))]
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, is_verified_reporter, tier')
-          .in('id', userIds)
-        if (profiles) {
-          const map: Record<string, { username: string; verified: boolean; tier: string | null }> = {}
-          profiles.forEach((p) => { map[p.id] = { username: p.username, verified: p.is_verified_reporter, tier: p.tier ?? null } })
-          setProfileMap(map)
-        }
-      }
     } else {
       setStock([])
     }
