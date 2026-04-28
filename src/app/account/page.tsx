@@ -117,10 +117,15 @@ const TIERS = [
     description: null as string | null,
     inherits: null as string | null,
     features: [
+      'Live stock map',
+      'View & submit reports',
+      'Add missing stores',
+      'Community leaderboard',
       'Custom store lists',
-      'Leaderboard placement + badge',
       'Verified reporter badge',
+      'Leaderboard placement + badge',
       'Priority stock alerts',
+      'Report history',
     ],
   },
 ]
@@ -135,7 +140,6 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
 const ACCOUNT_TABS = [
   { id: 'overview',  label: 'Overview', icon: '📊' },
   { id: 'lists',     label: 'Lists',    icon: '📑' },
-  { id: 'reports',   label: 'Reports',  icon: '📋' },
   { id: 'settings',  label: 'Settings', icon: '⚙️' },
 ]
 
@@ -199,7 +203,7 @@ const [lists, setLists] = useState<any[]>([])
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'overview' | 'lists' | 'reports' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'lists' | 'settings'>('overview')
 
   // All reports (Reports tab, paginated)
   const [allReports, setAllReports] = useState<any[]>([])
@@ -572,10 +576,6 @@ const [lists, setLists] = useState<any[]>([])
   useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_location', String(notifLocation)) }, [notifLocation])
   useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_email', String(notifEmail)) }, [notifEmail])
 
-  // Fetch reports when tab opens
-  useEffect(() => {
-    if (activeTab === 'reports' && user && allReports.length === 0) fetchAllReports(0)
-  }, [activeTab, user])
 
 function selectAndContinue(tierId: TierId) {
     setSelectedTier(tierId)
@@ -736,8 +736,8 @@ function selectAndContinue(tierId: TierId) {
                     </div>
                     <div className="flex flex-col gap-1">
                       {(profile.tier === 'free'
-                        ? ['Real-time stock reports', 'Community leaderboard', 'Basic drink search']
-                        : ['Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
+                        ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
+                        : ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard', 'Custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge', 'Priority stock alerts', 'Report history']
                       ).map((f) => (
                         <div key={f} className="flex items-start gap-1.5">
                           <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 2 }}>✓</span>
@@ -758,7 +758,7 @@ function selectAndContinue(tierId: TierId) {
 
                 {/* Upgrade plan */}
                 {profile.tier !== 'tracker' && (() => {
-                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Custom store lists', 'Verified reporter badge', 'Leaderboard badge'] }
+                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard', 'Custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge', 'Priority stock alerts', 'Report history'] }
                   return (
                     <div className="flex-1 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${next.color}35` }}>
                       <div style={{ height: 3, background: `linear-gradient(90deg, ${next.color}, ${next.color}66)` }} />
@@ -815,7 +815,6 @@ function selectAndContinue(tierId: TierId) {
               <div className="rounded-2xl p-4" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>RECENT REPORTS</p>
-                  <button onClick={() => setActiveTab('reports')} className="text-xs font-bold" style={{ color: '#22c55e' }}>See all →</button>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {recentReports.slice(0, 3).map((r) => {
@@ -929,62 +928,6 @@ function selectAndContinue(tierId: TierId) {
                 })}
               </div>
             )}
-          </div>
-        )}
-
-        {/* ── REPORTS TAB ── */}
-        {activeTab === 'reports' && (
-          <div className="px-5">
-            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div>
-                  <p className="text-sm font-black text-white">My Reports</p>
-                  <p className="text-xs text-white/40 mt-0.5">{reportCount} total submissions</p>
-                </div>
-                {profile.is_verified_reporter && (
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>✓ VERIFIED</span>
-                )}
-              </div>
-              {allReportsLoading && allReports.length === 0 ? (
-                <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" /></div>
-              ) : allReports.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10">
-                  <span style={{ fontSize: 32 }}>📋</span>
-                  <p className="text-sm text-white/40">No reports yet</p>
-                </div>
-              ) : (
-                <div>
-                  {allReports.map((r) => {
-                    const drink = r.drink as any
-                    const store = r.store as any
-                    const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
-                    const q = QUANTITY_CONFIG[r.quantity as string] ?? QUANTITY_CONFIG.full
-                    return (
-                      <div key={r.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', boxShadow: `inset 3px 0 0 ${q.color}` }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
-                          <span className="text-[10px] font-black" style={{ color: q.color }}>{q.label}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{drinkLabel || 'Unknown drink'}</p>
-                          <p className="text-xs text-white/40 truncate">{store?.name ?? 'Unknown store'}</p>
-                        </div>
-                        <p className="text-[10px] text-white/30 shrink-0">{timeAgo(r.reported_at)}</p>
-                      </div>
-                    )
-                  })}
-                  {allReportsHasMore && (
-                    <button
-                      onClick={() => fetchAllReports(allReportsPage + 1)}
-                      disabled={allReportsLoading}
-                      className="w-full py-3 text-sm font-bold"
-                      style={{ color: allReportsLoading ? 'rgba(255,255,255,0.2)' : '#22c55e' }}
-                    >
-                      {allReportsLoading ? 'Loading…' : 'Load more'}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         )}
 
