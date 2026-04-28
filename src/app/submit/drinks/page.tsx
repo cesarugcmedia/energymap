@@ -314,9 +314,21 @@ function DrinksContent() {
                                 <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#fff' }}>
                                   {drink.flavor ?? drink.name}
                                 </p>
-                                {drink.flavor && (
-                                  <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{drink.name}</p>
-                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+                                  {drink.flavor && (
+                                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{drink.name}</p>
+                                  )}
+                                  {drink.caffeine_mg && (
+                                    <span style={{
+                                      fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
+                                      backgroundColor: 'rgba(34,197,94,0.1)',
+                                      color: 'rgba(34,197,94,0.85)',
+                                      border: '1px solid rgba(34,197,94,0.25)',
+                                    }}>
+                                      ⚡ {drink.caffeine_mg}mg
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               {selected ? (
                                 <div style={{

@@ -100,7 +100,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [creatingList, setCreatingList] = useState(false)
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
-  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', duplicate: false }])
+  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
   const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number } | null>(null)
   const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
@@ -181,7 +181,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       const drinkIds = [...new Set(stockData.map((d) => d.drink_id).filter(Boolean))]
       const { data: drinksData } = await supabase
         .from('drinks')
-        .select('id, name, brand, flavor')
+        .select('id, name, brand, flavor, caffeine_mg')
         .in('id', drinkIds)
       const drinksMap: Record<string, any> = {}
       drinksData?.forEach((d) => { drinksMap[d.id] = d })
@@ -222,7 +222,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     }
   }
 
-  function updateEntry(id: string, field: 'brand' | 'flavor', value: string) {
+  function updateEntry(id: string, field: 'brand' | 'flavor' | 'caffeine_mg', value: string) {
     setDrinkEntries((prev) => prev.map((e) => e.id === id ? { ...e, [field]: value, duplicate: false } : e))
   }
 
@@ -231,7 +231,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
 
   function addEntry() {
-    setDrinkEntries((prev) => [...prev, { id: String(Date.now()), brand: '', flavor: '', duplicate: false }])
+    setDrinkEntries((prev) => [...prev, { id: String(Date.now()), brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   }
 
   function removeEntry(id: string) {
@@ -283,7 +283,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       toInsert.map((e) => {
         const brand = normalizeBrand(e.brand)
         const flavor = e.flavor.trim()
-        return { brand, name: `${brand} ${flavor}`, flavor, submitted_by: user?.id ?? null }
+        const caffeine_mg = e.caffeine_mg.trim() ? parseInt(e.caffeine_mg.trim()) : null
+        return { brand, name: `${brand} ${flavor}`, flavor, caffeine_mg, submitted_by: user?.id ?? null }
       })
     )
 
@@ -293,7 +294,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   function closeAddDrink() {
     setShowAddDrink(false)
-    setDrinkEntries([{ id: '1', brand: '', flavor: '', duplicate: false }])
+    setDrinkEntries([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
     setDrinkSubmitting(false)
     setDrinkResults(null)
     setDrinkDuplicatePopup(null)
@@ -599,11 +600,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   <p className="text-sm font-semibold text-white truncate">
                                     {item.drink?.flavor ?? item.drink?.name}
                                   </p>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                     {isHunterPlus ? (
                                       <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
                                     ) : (
                                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${freshColor}18`, color: freshColor, border: `1px solid ${freshColor}44` }}>{stalenessLabel(item.reported_at)}</span>
+                                    )}
+                                    {item.drink?.caffeine_mg && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: 'rgba(34,197,94,0.85)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                                        ⚡ {item.drink.caffeine_mg}mg
+                                      </span>
                                     )}
                                   </div>
                                 </div>
@@ -732,6 +738,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           placeholder="Flavor (e.g. Ultra White)"
                           value={entry.flavor}
                           onChange={(e) => updateEntry(entry.id, 'flavor', e.target.value)}
+                          className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none mb-2"
+                          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Caffeine mg (optional, e.g. 200)"
+                          value={entry.caffeine_mg}
+                          onChange={(e) => updateEntry(entry.id, 'caffeine_mg', e.target.value)}
                           className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none"
                           style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
                         />

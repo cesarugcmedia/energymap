@@ -15,6 +15,7 @@ export interface Drink {
   name: string
   brand: string
   flavor: string
+  caffeine_mg: number | null
 }
 
 export interface StockReport {
