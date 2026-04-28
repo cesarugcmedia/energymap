@@ -97,12 +97,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [flagNotes, setFlagNotes] = useState('')
   const [flagSubmitting, setFlagSubmitting] = useState(false)
   const [flagDone, setFlagDone] = useState(false)
-  const [showAddToList, setShowAddToList] = useState(false)
-  const [userLists, setUserLists] = useState<any[]>([])
-  const [listsLoading, setListsLoading] = useState(false)
-  const [addedToLists, setAddedToLists] = useState<Set<string>>(new Set())
-  const [newListName, setNewListName] = useState('')
-  const [creatingList, setCreatingList] = useState(false)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favoriteId, setFavoriteId] = useState<string | null>(null)
+  const [favoritingLoading, setFavoritingLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
@@ -113,6 +110,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   useEffect(() => {
     fetchStore()
     fetchStock()
+    fetchFavorite()
 
     const channel = supabase
       .channel(`store-detail:${id}`)
@@ -128,51 +126,29 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     else if (error) setStoreError(true)
   }
 
-  async function openAddToList() {
-    setShowAddToList(true)
-    if (userLists.length === 0) {
-      setListsLoading(true)
-      const { data: listsData } = await supabase
-        .from('custom_lists')
-        .select('id, name')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-      if (listsData) setUserLists(listsData)
-      const { data: existingData } = await supabase
-        .from('list_stores')
-        .select('list_id')
-        .eq('store_id', id)
-        .in('list_id', (listsData ?? []).map((l: any) => l.id))
-      if (existingData) setAddedToLists(new Set(existingData.map((ls: any) => ls.list_id)))
-      setListsLoading(false)
-    }
-  }
-
-  async function toggleStoreInList(listId: string) {
-    if (addedToLists.has(listId)) {
-      await supabase.from('list_stores').delete().eq('list_id', listId).eq('store_id', id)
-      setAddedToLists((prev) => { const next = new Set(prev); next.delete(listId); return next })
-    } else {
-      await supabase.from('list_stores').insert({ list_id: listId, store_id: id })
-      setAddedToLists((prev) => new Set(prev).add(listId))
-    }
-  }
-
-  async function createAndAddList() {
-    if (!newListName.trim() || !user) return
-    setCreatingList(true)
+  async function fetchFavorite() {
+    if (!user) return
     const { data } = await supabase
-      .from('custom_lists')
-      .insert({ user_id: user.id, name: newListName.trim() })
-      .select()
-      .single()
-    if (data) {
-      setUserLists((prev) => [data, ...prev])
-      await supabase.from('list_stores').insert({ list_id: data.id, store_id: id })
-      setAddedToLists((prev) => new Set(prev).add(data.id))
+      .from('favorites')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('store_id', id)
+      .maybeSingle()
+    if (data) { setIsFavorited(true); setFavoriteId(data.id) }
+  }
+
+  async function toggleFavorite() {
+    if (!user || favoritingLoading) return
+    setFavoritingLoading(true)
+    if (isFavorited && favoriteId) {
+      await supabase.from('favorites').delete().eq('id', favoriteId)
+      setIsFavorited(false)
+      setFavoriteId(null)
+    } else {
+      const { data } = await supabase.from('favorites').insert({ user_id: user.id, store_id: id }).select('id').single()
+      if (data) { setIsFavorited(true); setFavoriteId(data.id) }
     }
-    setNewListName('')
-    setCreatingList(false)
+    setFavoritingLoading(false)
   }
 
   async function fetchStock() {
@@ -410,6 +386,20 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             </div>
           )}
           <button
+            onClick={toggleFavorite}
+            disabled={favoritingLoading}
+            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            style={{
+              width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
+              backgroundColor: isFavorited ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${isFavorited ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span style={{ fontSize: 13 }}>{isFavorited ? '❤️' : '🤍'}</span>
+          </button>
+          <button
             onClick={() => setShowFlag(true)}
             title="Flag incorrect location"
             style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
@@ -478,21 +468,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           >
             <span style={{ fontSize: 15 }}>🥤</span> Add Drink
           </button>
-          {isTracker && (
-            <button
-              style={{
-                width: 52, borderRadius: 14, cursor: 'pointer',
-                backgroundColor: 'rgba(139,92,246,0.1)',
-                border: '1.5px solid rgba(139,92,246,0.35)',
-                fontSize: 18,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 12px rgba(139,92,246,0.15)',
-              }}
-              onClick={openAddToList}
-            >
-              📑
-            </button>
-          )}
         </div>
 
         {/* ── Info chip ─────────────────────────────────────────────── */}
@@ -976,83 +951,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           document.body
         )}
 
-        {/* ── Add to List modal ─────────────────────────────────────── */}
-        {showAddToList && createPortal(
-          <div
-            className="fixed inset-0 flex flex-col justify-end z-50"
-            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-            onClick={(e) => { if (e.target === e.currentTarget) { setShowAddToList(false); setNewListName('') } }}
-          >
-            <div
-              className="rounded-t-3xl p-5"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-              <p className="text-lg font-black text-white mb-1">📑 Add to List</p>
-              <p className="text-xs text-white/40 mb-4">Save <span className="text-white font-semibold">{name}</span> to a custom list.</p>
-
-              {listsLoading ? (
-                <div className="flex justify-center py-4">
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 mb-4 max-h-[40vh] overflow-y-auto">
-                  {userLists.map((list) => {
-                    const added = addedToLists.has(list.id)
-                    return (
-                      <button
-                        key={list.id}
-                        className="flex items-center gap-3 rounded-xl p-3.5 text-left"
-                        style={{
-                          backgroundColor: added ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${added ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                        }}
-                        onClick={() => toggleStoreInList(list.id)}
-                      >
-                        <span style={{ fontSize: 18 }}>📑</span>
-                        <span className="flex-1 text-sm font-semibold text-white">{list.name}</span>
-                        <span className="text-base">{added ? '✅' : '○'}</span>
-                      </button>
-                    )
-                  })}
-                  {userLists.length === 0 && (
-                    <p className="text-sm text-white/30 text-center py-2">No lists yet. Create one below.</p>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
-                  placeholder="New list name..."
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') createAndAddList() }}
-                />
-                <button
-                  onClick={createAndAddList}
-                  disabled={!newListName.trim() || creatingList}
-                  className="px-4 rounded-xl text-sm font-bold text-black"
-                  style={{ backgroundColor: !newListName.trim() || creatingList ? 'rgba(139,92,246,0.4)' : '#a78bfa' }}
-                >
-                  {creatingList ? '...' : '+ Create'}
-                </button>
-              </div>
-
-              <button
-                className="w-full rounded-xl p-3.5 font-semibold text-sm"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
-                onClick={() => { setShowAddToList(false); setNewListName('') }}
-              >
-                Done
-              </button>
-            </div>
-          </div>,
-          document.body
-        )}
 
       </div>
     </div>
