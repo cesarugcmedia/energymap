@@ -34,9 +34,11 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags'>('stores')
+  const [tab, setTab] = useState<null | 'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags'>(null)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [flagsCount, setFlagsCount] = useState(0)
   const [stores, setStores] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [users, setUsers] = useState<any[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [locations, setLocations] = useState<any[]>([])
@@ -92,7 +94,7 @@ export default function AdminPage() {
       }
       setAuthed(true)
       setAuthLoading(false)
-      fetchPending()
+      fetchCounts()
     })
   }, [])
 
@@ -110,6 +112,15 @@ export default function AdminPage() {
   }
 
   if (!authed) return null
+
+  async function fetchCounts() {
+    const [{ count: pc }, { count: fc }] = await Promise.all([
+      supabase.from('stores').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('store_flags').select('id', { count: 'exact', head: true }).eq('resolved', false),
+    ])
+    setPendingCount(pc ?? 0)
+    setFlagsCount(fc ?? 0)
+  }
 
   async function fetchPending() {
     setLoading(true)
@@ -217,6 +228,7 @@ export default function AdminPage() {
       return
     }
     setStores((prev) => prev.filter((s) => s.id !== id))
+    setPendingCount((c) => Math.max(0, c - 1))
   }
 
   async function rejectStore(id: string) {
@@ -231,6 +243,7 @@ export default function AdminPage() {
 
     if (!updateError && updated && updated.length > 0) {
       setStores((prev) => prev.filter((s) => s.id !== id))
+      setPendingCount((c) => Math.max(0, c - 1))
       return
     }
 
@@ -243,6 +256,7 @@ export default function AdminPage() {
 
     if (!deleteError && deleted && deleted.length > 0) {
       setStores((prev) => prev.filter((s) => s.id !== id))
+      setPendingCount((c) => Math.max(0, c - 1))
       return
     }
 
@@ -385,7 +399,7 @@ export default function AdminPage() {
   async function resolveFlag(flagId: string) {
     setResolvingFlag((prev) => new Set(prev).add(flagId))
     const { error } = await supabase.from('store_flags').update({ resolved: true }).eq('id', flagId)
-    if (!error) setFlags((prev) => prev.filter((f) => f.id !== flagId))
+    if (!error) { setFlags((prev) => prev.filter((f) => f.id !== flagId)); setFlagsCount((c) => Math.max(0, c - 1)) }
     setResolvingFlag((prev) => { const next = new Set(prev); next.delete(flagId); return next })
   }
 
@@ -435,59 +449,146 @@ export default function AdminPage() {
     setInviting((prev) => { const next = new Set(prev); next.delete(email); return next })
   }
 
+  const SECTION_LABELS: Record<string, string> = {
+    stores: 'Pending Stores',
+    locations: 'Locations',
+    drinks: 'Drinks',
+    users: 'Users',
+    waitlist: 'Waitlist',
+    flags: 'Location Flags',
+  }
+
+  function navigate(section: typeof tab) {
+    setTab(section)
+    if (section === 'stores') fetchPending()
+    else if (section === 'locations' && locations.length === 0) fetchLocations()
+    else if (section === 'drinks' && drinks.length === 0) fetchDrinks()
+    else if (section === 'users' && users.length === 0) fetchUsers()
+    else if (section === 'waitlist' && waitlist.length === 0) fetchWaitlist()
+    else if (section === 'flags') fetchFlags()
+  }
+
+  function refreshCurrentTab() {
+    if (tab === 'stores') fetchPending()
+    else if (tab === 'locations') fetchLocations()
+    else if (tab === 'drinks') fetchDrinks()
+    else if (tab === 'users') fetchUsers()
+    else if (tab === 'waitlist') fetchWaitlist()
+    else if (tab === 'flags') fetchFlags()
+  }
+
   return (
-    <div className="min-h-screen ">
-      {/* Header */}
-      <div className="px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-2xl font-black text-white">🔧 Admin</p>
-          </div>
-          <div className="flex gap-2">
+    <div className="min-h-screen">
+      {/* Sticky header */}
+      <div
+        style={{
+          position: 'sticky', top: 0, zIndex: 20,
+          backgroundColor: 'rgba(7,7,16,0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
+          {tab !== null && (
             <button
-              onClick={() => { tab === 'stores' ? fetchPending() : tab === 'locations' ? fetchLocations() : tab === 'drinks' ? fetchDrinks() : tab === 'waitlist' ? fetchWaitlist() : tab === 'flags' ? fetchFlags() : fetchUsers() }}
-              className="text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+              onClick={() => setTab(null)}
+              style={{
+                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                backgroundColor: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 12L6 8l4-4" stroke="rgba(255,255,255,0.75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+          <p style={{ flex: 1, margin: 0, fontSize: tab === null ? 20 : 16, fontWeight: 900, color: '#fff' }}>
+            {tab === null ? '🔧 Admin' : SECTION_LABELS[tab]}
+          </p>
+          {tab !== null && (
+            <button
+              onClick={refreshCurrentTab}
+              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)', border: 'none' }}
             >
               ↻ Refresh
             </button>
-            <button
-              onClick={handleLogout}
-              className="text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        {/* Tab switcher */}
-        <div className="flex rounded-xl p-1 gap-0.5 overflow-x-auto" style={{ backgroundColor: '#1a1a24' }}>
-          {(['stores', 'locations', 'drinks', 'users', 'waitlist', 'flags'] as const).map((t) => (
-            <button
-              key={t}
-              className="flex-1 rounded-lg py-2.5 text-[11px] font-bold shrink-0"
-              style={{
-                backgroundColor: tab === t ? '#22c55e' : 'transparent',
-                color: tab === t ? '#000' : 'rgba(255,255,255,0.4)',
-                minWidth: 48,
-              }}
-              onClick={() => {
-                setTab(t)
-                if (t === 'users' && users.length === 0) fetchUsers()
-                if (t === 'locations' && locations.length === 0) fetchLocations()
-                if (t === 'drinks' && drinks.length === 0) fetchDrinks()
-                if (t === 'waitlist' && waitlist.length === 0) fetchWaitlist()
-                if (t === 'flags' && flags.length === 0) fetchFlags()
-              }}
-            >
-              {t === 'stores' ? '🕐' : t === 'locations' ? '📍' : t === 'drinks' ? '🥤' : t === 'users' ? '👤' : t === 'waitlist' ? '📋' : '🚩'}
-            </button>
-          ))}
+          )}
+          <button
+            onClick={handleLogout}
+            style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            Sign Out
+          </button>
         </div>
       </div>
 
-      {tab === 'flags' ? (
+      {/* Dashboard home */}
+      {tab === null && (
+        <div style={{ padding: '24px 16px 32px' }}>
+          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>NEEDS ATTENTION</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+            {[
+              { key: 'stores', icon: '🕐', label: 'Pending Stores', count: pendingCount, badgeColor: '#f97316', desc: 'Review submissions' },
+              { key: 'flags',  icon: '🚩', label: 'Location Flags',  count: flagsCount,   badgeColor: '#ef4444', desc: 'Fix reported issues' },
+            ].map(({ key, icon, label, count, badgeColor, desc }) => (
+              <button
+                key={key}
+                onClick={() => navigate(key as any)}
+                style={{
+                  borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
+                  backgroundColor: '#1a1a24',
+                  border: `1.5px solid ${count > 0 ? `${badgeColor}44` : 'rgba(255,255,255,0.07)'}`,
+                  boxShadow: count > 0 ? `0 0 20px ${badgeColor}18` : 'none',
+                  position: 'relative',
+                }}
+              >
+                {count > 0 && (
+                  <div style={{
+                    position: 'absolute', top: 12, right: 12,
+                    minWidth: 22, height: 22, borderRadius: 11, padding: '0 6px',
+                    backgroundColor: badgeColor,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 900, color: '#fff',
+                  }}>{count}</div>
+                )}
+                <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
+                <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{desc}</p>
+              </button>
+            ))}
+          </div>
+
+          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>MANAGE</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[
+              { key: 'locations', icon: '📍', label: 'Locations',  desc: 'Edit & delete stores' },
+              { key: 'drinks',    icon: '🥤', label: 'Drinks',     desc: 'Add & remove drinks' },
+              { key: 'users',     icon: '👤', label: 'Users',      desc: 'Verify & manage users' },
+              { key: 'waitlist',  icon: '📋', label: 'Waitlist',   desc: 'Invite signups' },
+            ].map(({ key, icon, label, desc }) => (
+              <button
+                key={key}
+                onClick={() => navigate(key as any)}
+                style={{
+                  borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
+                  backgroundColor: '#1a1a24',
+                  border: '1.5px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
+                <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab !== null && (tab === 'flags' ? (
         flagsLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
@@ -968,7 +1069,7 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
-      )}
+      ))}
 
       {/* Edit Modal — rendered via portal into document.body so it sits outside
            the MainWrapper scroll container and iOS touch events can't leak through */}
