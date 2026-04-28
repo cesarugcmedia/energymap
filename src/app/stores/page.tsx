@@ -514,7 +514,7 @@ export default function StoresPage() {
                     </button>
                     <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                       onClick={() => openDirections(store.lat, store.lng)}>
-                      🧭 Directions
+                      Directions →
                     </button>
                   </div>
                 </div>

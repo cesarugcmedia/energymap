@@ -339,7 +339,7 @@ export default function MapPage() {
               }}
               onClick={() => openDirections(selected.lat, selected.lng)}
             >
-              🧭 Directions
+              Directions →
             </button>
             <button
               className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
