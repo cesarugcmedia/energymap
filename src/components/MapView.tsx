@@ -99,9 +99,16 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     const map = mapRef.current
     if (!map || !map.isStyleLoaded()) return
 
-    // Which stores are currently rendered as individual (unclustered) points?
-    const visible = map.queryRenderedFeatures({ layers: ['unclustered-detect'] })
-    const visibleIds = new Set(visible.map((f) => String(f.properties?.id)))
+    // Past clusterMaxZoom (13) every store is individual — no need to query
+    // the GL canvas; use the store array directly for instant response.
+    // At zoom ≤ 13 some stores may still be clustered, so query the canvas.
+    let visibleIds: Set<string>
+    if (map.getZoom() > 13) {
+      visibleIds = new Set(storesRef.current.map((s) => s.id))
+    } else {
+      const visible = map.queryRenderedFeatures({ layers: ['unclustered-detect'] })
+      visibleIds = new Set(visible.map((f) => String(f.properties?.id)))
+    }
     const selectedId = selectedRef.current?.id
 
     // Remove markers that are no longer unclustered or are now selected
@@ -317,13 +324,21 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
 
-      // Wait for one render frame after zoom/move/data so queryRenderedFeatures
-      // reads the freshly drawn cluster state, not the previous frame's state
-      const syncAfterRender = () => map.once('render', () => syncRef.current())
-      map.on('zoomend', syncAfterRender)
-      map.on('moveend', syncAfterRender)
+      // zoomend: call sync directly — at zoom > 13 we bypass queryRenderedFeatures
+      // entirely so there's no canvas-read lag. At zoom ≤ 13 wait one frame so
+      // queryRenderedFeatures reads the freshly drawn cluster state.
+      map.on('zoomend', () => {
+        if (map.getZoom() > 13) {
+          syncRef.current()
+        } else {
+          map.once('render', () => syncRef.current())
+        }
+      })
+      map.on('moveend', () => map.once('render', () => syncRef.current()))
       map.on('sourcedata', (e: mapboxgl.MapSourceDataEvent) => {
-        if (e.sourceId === 'stores' && e.isSourceLoaded) syncAfterRender()
+        if (e.sourceId === 'stores' && e.isSourceLoaded) {
+          map.once('render', () => syncRef.current())
+        }
       })
 
       onMapReadyRef.current?.(map)
