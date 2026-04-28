@@ -12,6 +12,8 @@ const TYPE_ICON: Record<string, string> = {
   other: '📍',
 }
 
+const CLUSTER_MAX_ZOOM = 13
+
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 3958.8
   const dLat = ((lat2 - lat1) * Math.PI) / 180
@@ -79,6 +81,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const selectedMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const unclusteredMarkersRef = useRef<mapboxgl.Marker[]>([])
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
   const onMapReadyRef = useRef(onMapReady)
@@ -87,6 +90,42 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   onSelectStoreRef.current = onSelectStore
   const storesRef = useRef<Store[]>(stores)
   storesRef.current = stores
+  const selectedRef = useRef<Store | null>(selected)
+  selectedRef.current = selected
+
+  // Rebuild HTML markers for individual (unclustered) stores.
+  // Called after zoomend, stores change, or selected change.
+  function rebuildUnclustered(map: mapboxgl.Map) {
+    const isZoomedIn = map.getZoom() > CLUSTER_MAX_ZOOM
+
+    // Toggle GL fallback circles: visible only when zoomed out (before HTML markers take over)
+    try {
+      const vis = isZoomedIn ? 'none' : 'visible'
+      map.setLayoutProperty('unclustered-glow', 'visibility', vis)
+      map.setLayoutProperty('unclustered-point', 'visibility', vis)
+    } catch {}
+
+    // Clear old HTML markers for individual stores
+    unclusteredMarkersRef.current.forEach((m) => m.remove())
+    unclusteredMarkersRef.current = []
+
+    if (!isZoomedIn) return
+
+    // Place emoji orb markers for every non-selected store
+    storesRef.current.forEach((store) => {
+      if (store.id === selectedRef.current?.id) return
+      const el = createStoreEl(store, false)
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        onSelectStoreRef.current(store)
+      })
+      unclusteredMarkersRef.current.push(
+        new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([store.lng, store.lat])
+          .addTo(map)
+      )
+    })
+  }
 
   // Initialize map once
   useEffect(() => {
@@ -128,7 +167,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     }
 
     map.on('style.load', () => {
-      // Atmospheric fog
       map.setFog({
         color: '#070710',
         'high-color': '#0d0d1e',
@@ -200,7 +238,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         type: 'geojson',
         data: storesToGeoJSON(storesRef.current),
         cluster: true,
-        clusterMaxZoom: 13,
+        clusterMaxZoom: CLUSTER_MAX_ZOOM,
         clusterRadius: 55,
       })
 
@@ -249,12 +287,11 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           'text-size': 13,
           'text-allow-overlap': true,
         },
-        paint: {
-          'text-color': '#22c55e',
-        },
+        paint: { 'text-color': '#22c55e' },
       })
 
-      // Unclustered store — outer glow ring
+      // Unclustered store — GL circles shown only when zoomed out
+      // (replaced by HTML markers when zoomed in past CLUSTER_MAX_ZOOM)
       map.addLayer({
         id: 'unclustered-glow',
         type: 'circle',
@@ -264,11 +301,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           'circle-color': 'rgba(34,197,94,0.1)',
           'circle-radius': 24,
           'circle-blur': 0.6,
-          'circle-opacity': 1,
         },
       })
 
-      // Unclustered store — orb body
       map.addLayer({
         id: 'unclustered-point',
         type: 'circle',
@@ -300,7 +335,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         )
       })
 
-      // ── Unclustered store click → select ────────────────────
+      // ── Unclustered GL circle click (zoomed-out fallback) ────
       map.on('click', 'unclustered-point', (e) => {
         const id = e.features?.[0]?.properties?.id
         if (!id) return
@@ -308,11 +343,16 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         if (store) onSelectStoreRef.current(store)
       })
 
-      // Cursor changes
       map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
       map.on('mouseenter', 'unclustered-point', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'unclustered-point', () => { map.getCanvas().style.cursor = '' })
+
+      // Rebuild HTML markers on every zoom end
+      map.on('zoomend', () => rebuildUnclustered(map))
+
+      // Run once in case stores are already loaded
+      rebuildUnclustered(map)
 
       onMapReadyRef.current?.(map)
     })
@@ -334,6 +374,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     return () => {
       selectedMarkerRef.current?.remove()
       selectedMarkerRef.current = null
+      unclusteredMarkersRef.current.forEach((m) => m.remove())
+      unclusteredMarkersRef.current = []
       userMarkerRef.current?.remove()
       userMarkerRef.current = null
       fittedRef.current = false
@@ -347,12 +389,11 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     userMarkerRef.current?.setLngLat([lng, lat])
   }, [lat, lng])
 
-  // Update GeoJSON source when stores change
+  // Update GeoJSON source + rebuild HTML markers when stores change
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
 
-    // Fit bounds on first store load
     if (!fittedRef.current && stores.length > 0) {
       fittedRef.current = true
       const nearby = stores.filter((s) => haversine(lat, lng, s.lat, s.lng) <= 25)
@@ -367,9 +408,11 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     const src = map.getSource('stores') as mapboxgl.GeoJSONSource | undefined
     src?.setData(storesToGeoJSON(stores))
-  }, [stores, lat, lng])
 
-  // Selected store — single HTML marker for the full orb + pulse + name treatment
+    rebuildUnclustered(map)
+  }, [stores, lat, lng]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Selected store — single HTML marker with full orb + pulse + name treatment
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -383,7 +426,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         .setLngLat([selected.lng, selected.lat])
         .addTo(map)
     }
-  }, [selected])
+
+    // Rebuild unclustered so the newly-selected store is excluded from plain markers
+    rebuildUnclustered(map)
+  }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }
