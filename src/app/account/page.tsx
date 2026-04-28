@@ -728,13 +728,13 @@ function selectAndContinue(tierId: TierId) {
                         <p className="text-[10px] text-white/40">{profile.tier === 'free' ? 'Free' : '$10/mo'}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div style={{ display: 'grid', gridTemplateColumns: profile.tier === 'tracker' ? '1fr 1fr' : '1fr', gap: profile.tier === 'tracker' ? '6px 10px' : '4px' }}>
                       {(profile.tier === 'free'
                         ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
                         : ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard', 'Custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge', 'Priority stock alerts', 'Report history']
                       ).map((f) => (
                         <div key={f} className="flex items-start gap-1.5">
-                          <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 2 }}>✓</span>
+                          <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 2, flexShrink: 0 }}>✓</span>
                           <span className="text-[10px] text-white/50 leading-tight">{f}</span>
                         </div>
                       ))}
