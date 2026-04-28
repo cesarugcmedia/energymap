@@ -269,11 +269,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       const style = map.getStyle()
       style?.layers?.forEach((layer) => {
         try {
-          // Drop all symbol layers — saves glyph font + sprite downloads
-          if (layer.type === 'symbol') {
-            map.removeLayer(layer.id)
-            return
-          }
           if (layer.type === 'background') {
             map.setPaintProperty(layer.id, 'background-color', '#070710')
           }
