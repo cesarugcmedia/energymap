@@ -72,7 +72,7 @@ function getLatestReport(stock: any[]) {
 }
 
 const FREE_RADIUS_OPTIONS = [5, 10]
-const HUNTER_RADIUS_OPTIONS = [10, 25, 50, 100, null]
+const HUNTER_RADIUS_OPTIONS = [10, 15, 20, 25, null]
 
 const TYPE_FILTERS = [
   { value: null,          label: 'All'       },
@@ -88,14 +88,7 @@ const SORT_OPTIONS = [
   { value: 'freshest', label: '🕐 Freshest'      },
 ]
 
-const STOCK_FILTERS = [
-  { value: 'all',         label: 'All'         },
-  { value: 'has_reports', label: 'Has Reports' },
-  { value: 'in_stock',    label: 'In Stock'    },
-]
-
 type SortMode = 'distance' | 'stocked' | 'freshest'
-type StockFilter = 'all' | 'has_reports' | 'in_stock'
 
 export default function StoresPage() {
   const router = useRouter()
@@ -116,7 +109,6 @@ export default function StoresPage() {
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
-  const [stockFilter, setStockFilter] = useState<StockFilter>('all')
   const [sort, setSort] = useState<SortMode>('distance')
   const [search, setSearch] = useState('')
 
@@ -248,12 +240,6 @@ export default function StoresPage() {
     .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
     .filter((s) => typeFilter === null || s.type === typeFilter)
     .filter((s) => {
-      const stock = storeStock[s.id] ?? []
-      if (stockFilter === 'has_reports') return stock.length > 0
-      if (stockFilter === 'in_stock') return stock.filter((i) => i.quantity !== 'out').length > 0
-      return true
-    })
-    .filter((s) => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
       return s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q)
@@ -346,7 +332,7 @@ export default function StoresPage() {
         </div>
 
         {/* Sort */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
           {SORT_OPTIONS.map((s) => {
             const active = sort === s.value
             return (
@@ -354,20 +340,6 @@ export default function StoresPage() {
                 onClick={() => setSort(s.value as SortMode)}
                 style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#a78bfa' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#a78bfa' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
                 {s.label}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Stock filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
-          {STOCK_FILTERS.map((f) => {
-            const active = stockFilter === f.value
-            return (
-              <button key={f.value} className="pill-btn"
-                onClick={() => setStockFilter(f.value as StockFilter)}
-                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#f97316' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#f97316' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
-                {f.label}
               </button>
             )
           })}
