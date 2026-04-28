@@ -64,16 +64,38 @@ function openDirections(destLat: number, destLng: number) {
   }
 }
 
+function getLatestReport(stock: any[]) {
+  return stock.reduce<any>((latest, item) => {
+    if (!latest) return item
+    return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
+  }, null)
+}
+
 const FREE_RADIUS_OPTIONS = [5, 10]
-const HUNTER_RADIUS_OPTIONS = [10, 25, 50, 100, null] // null = All
+const HUNTER_RADIUS_OPTIONS = [10, 25, 50, 100, null]
 
 const TYPE_FILTERS = [
-  { value: null,          label: 'All'         },
-  { value: 'gas_station', label: '⛽ Gas'       },
-  { value: 'convenience', label: '🏪 Conv.'     },
-  { value: 'grocery',     label: '🛒 Grocery'   },
-  { value: 'other',       label: '📍 Other'     },
+  { value: null,          label: 'All'       },
+  { value: 'gas_station', label: '⛽ Gas'     },
+  { value: 'convenience', label: '🏪 Conv.'   },
+  { value: 'grocery',     label: '🛒 Grocery' },
+  { value: 'other',       label: '📍 Other'   },
 ]
+
+const SORT_OPTIONS = [
+  { value: 'distance', label: '📍 Nearest'      },
+  { value: 'stocked',  label: '✅ Most Stocked'  },
+  { value: 'freshest', label: '🕐 Freshest'      },
+]
+
+const STOCK_FILTERS = [
+  { value: 'all',         label: 'All'         },
+  { value: 'has_reports', label: 'Has Reports' },
+  { value: 'in_stock',    label: 'In Stock'    },
+]
+
+type SortMode = 'distance' | 'stocked' | 'freshest'
+type StockFilter = 'all' | 'has_reports' | 'in_stock'
 
 export default function StoresPage() {
   const router = useRouter()
@@ -94,6 +116,8 @@ export default function StoresPage() {
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [stockFilter, setStockFilter] = useState<StockFilter>('all')
+  const [sort, setSort] = useState<SortMode>('distance')
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -198,17 +222,44 @@ export default function StoresPage() {
     )
   }
 
+  const byDistance = [...stores].sort((a, b) =>
+    getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)
+  )
+
   const sorted = [...stores]
-    .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))
+    .sort((a, b) => {
+      if (sort === 'stocked') {
+        const aStock = storeStock[a.id] ?? []
+        const bStock = storeStock[b.id] ?? []
+        const aPct = aStock.length > 0 ? aStock.filter((s) => s.quantity !== 'out').length / aStock.length : -1
+        const bPct = bStock.length > 0 ? bStock.filter((s) => s.quantity !== 'out').length / bStock.length : -1
+        return bPct - aPct
+      }
+      if (sort === 'freshest') {
+        const aLatest = getLatestReport(storeStock[a.id] ?? [])
+        const bLatest = getLatestReport(storeStock[b.id] ?? [])
+        if (!aLatest && !bLatest) return 0
+        if (!aLatest) return 1
+        if (!bLatest) return -1
+        return new Date(bLatest.reported_at).getTime() - new Date(aLatest.reported_at).getTime()
+      }
+      return getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)
+    })
     .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
     .filter((s) => typeFilter === null || s.type === typeFilter)
+    .filter((s) => {
+      const stock = storeStock[s.id] ?? []
+      if (stockFilter === 'has_reports') return stock.length > 0
+      if (stockFilter === 'in_stock') return stock.filter((i) => i.quantity !== 'out').length > 0
+      return true
+    })
     .filter((s) => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
       return s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q)
     })
 
-  const nearest = sorted[0] ?? null
+  const nearest = byDistance[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
   const isAtStore = nearestDist !== null && nearestDist < 0.15
 
@@ -222,9 +273,10 @@ export default function StoresPage() {
         .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
         .action-btn:active { transform: translateY(0); }
         .pill-btn { transition: all 0.15s ease; cursor: pointer; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* Background */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(34,197,94,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
 
@@ -234,7 +286,9 @@ export default function StoresPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
           <div>
             <h1 className="text-2xl font-black text-white" style={{ letterSpacing: '-0.5px' }}>Nearby Stores</h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Sorted by distance</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+              {loading ? 'Loading…' : `${sorted.length} store${sorted.length !== 1 ? 's' : ''} found`}
+            </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -278,13 +332,41 @@ export default function StoresPage() {
         </div>
 
         {/* Type filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
           {TYPE_FILTERS.map((f) => {
             const active = typeFilter === f.value
             return (
               <button key={f.value ?? 'all'} className="pill-btn"
                 onClick={() => setTypeFilter(f.value)}
                 style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#22c55e' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Sort */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+          {SORT_OPTIONS.map((s) => {
+            const active = sort === s.value
+            return (
+              <button key={s.value} className="pill-btn"
+                onClick={() => setSort(s.value as SortMode)}
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#a78bfa' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#a78bfa' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                {s.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Stock filter */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+          {STOCK_FILTERS.map((f) => {
+            const active = stockFilter === f.value
+            return (
+              <button key={f.value} className="pill-btn"
+                onClick={() => setStockFilter(f.value as StockFilter)}
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#f97316' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#f97316' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
                 {f.label}
               </button>
             )
@@ -354,21 +436,15 @@ export default function StoresPage() {
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Try a different search or filter</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24, animation: 'fadeUp 0.5s ease 0.12s both' }}>
-            {sorted.map((store, i) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100, animation: 'fadeUp 0.5s ease 0.12s both' }}>
+            {sorted.map((store) => {
               const stock = storeStock[store.id] ?? []
               const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
-              const latestReport = stock.reduce<any>((latest, item) => {
-                if (!latest) return item
-                return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
-              }, null)
+              const latestReport = getLatestReport(stock)
               const inStockCount = stock.filter((s) => s.quantity !== 'out').length
               const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
-              const barColor =
-                stock.length === 0 ? '#333'
-                : pct === 0 ? '#ef4444'
-                : pct >= 75 ? '#22c55e'
-                : '#f59e0b'
+              const hasReports = stock.length > 0
+              const barColor = !hasReports ? '#333' : pct === 0 ? '#ef4444' : pct >= 75 ? '#22c55e' : '#f59e0b'
 
               return (
                 <div key={store.id} className="store-card"
@@ -387,24 +463,35 @@ export default function StoresPage() {
                     <p style={{ fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>{dist} mi</p>
                   </div>
 
-                  {/* Progress bar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0 }}>
-                      {stock.length === 0 ? 'No reports' : `${inStockCount}/${stock.length} in stock`}
-                    </span>
-                  </div>
-
-                  {/* Freshness */}
-                  {latestReport && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at) }}>
-                        Updated {timeAgo(latestReport.reported_at)}
-                      </span>
-                    </div>
+                  {/* Stock bar or Be First CTA */}
+                  {hasReports ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0 }}>
+                          {inStockCount}/{stock.length} in stock
+                        </span>
+                      </div>
+                      {latestReport && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at) }}>
+                            Updated {timeAgo(latestReport.reported_at)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <button
+                      className="action-btn"
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, padding: '10px 0', borderRadius: 12, backgroundColor: 'rgba(34,197,94,0.06)', border: '1px dashed rgba(34,197,94,0.3)', cursor: 'pointer' }}
+                      onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
+                    >
+                      <span style={{ fontSize: 13 }}>⚡</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(34,197,94,0.8)', fontFamily: "'DM Sans', sans-serif" }}>Be the first to report here →</span>
+                    </button>
                   )}
 
                   {/* Live update notifications */}
@@ -425,13 +512,17 @@ export default function StoresPage() {
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
-                      onClick={() => openDirections(store.lat, store.lng)}>
-                      🧭 Directions
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 12, padding: '10px 0', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}
+                      onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
+                      ⚡ Report
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
                       View Stock
+                    </button>
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                      onClick={() => openDirections(store.lat, store.lng)}>
+                      🧭 Go
                     </button>
                   </div>
                 </div>
