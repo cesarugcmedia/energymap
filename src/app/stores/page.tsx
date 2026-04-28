@@ -107,7 +107,7 @@ export default function StoresPage() {
     if (stores.length === 0) return
     supabase
       .from('latest_stock')
-      .select('*, drink:drinks(name, brand, flavor)')
+      .select('store_id, quantity, reported_at')
       .in('store_id', stores.map((s) => s.id))
       .then(({ data }) => {
         if (!data) return
@@ -372,7 +372,7 @@ export default function StoresPage() {
 
               return (
                 <div key={store.id} className="store-card"
-                  style={{ backgroundColor: '#1a1a24', borderRadius: 18, padding: 16, border: '1px solid rgba(255,255,255,0.07)' }}>
+                  style={{ backgroundColor: '#1a1a24', borderRadius: 18, padding: 16, border: `1px solid ${barColor === '#333' ? 'rgba(255,255,255,0.07)' : `${barColor}33`}`, boxShadow: `inset 3px 0 0 ${barColor === '#333' ? 'rgba(255,255,255,0.08)' : barColor}` }}>
 
                   {/* Top row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}

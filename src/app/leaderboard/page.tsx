@@ -230,10 +230,10 @@ export default function LeaderboardPage() {
               <div style={{ marginTop: 16, background: 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(249,115,22,0.02) 100%)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', animation: 'fadeUp 0.5s ease 0.25s both' }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 3 }}>
-                    🔥 Tracker members get early alerts + chat
+                    🔥 Tracker members get early alerts + history
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                    Community chat, custom lists, and verified badge
+                    Full report history, custom lists, and verified badge
                   </p>
                 </div>
                 <button
