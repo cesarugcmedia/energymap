@@ -55,17 +55,6 @@ function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
   return el
 }
 
-function storesToGeoJSON(stores: Store[]): GeoJSON.FeatureCollection {
-  return {
-    type: 'FeatureCollection',
-    features: stores.map((s) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
-      properties: { id: s.id, name: s.name, type: s.type },
-    })),
-  }
-}
-
 interface MapViewProps {
   lat: number
   lng: number
@@ -78,73 +67,13 @@ interface MapViewProps {
 export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const selectedMarkerRef = useRef<mapboxgl.Marker | null>(null)
-  // Diff-based: keyed by store id so we only add/remove what changed
-  const markersByIdRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
+  const markersRef = useRef<mapboxgl.Marker[]>([])
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
-
   const onMapReadyRef = useRef(onMapReady)
   onMapReadyRef.current = onMapReady
   const onSelectStoreRef = useRef(onSelectStore)
   onSelectStoreRef.current = onSelectStore
-  const storesRef = useRef<Store[]>(stores)
-  storesRef.current = stores
-  const selectedRef = useRef<Store | null>(selected)
-  selectedRef.current = selected
-
-  // Always-current sync — diffs existing markers instead of full rebuild
-  const syncRef = useRef<() => void>(() => {})
-  syncRef.current = () => {
-    const map = mapRef.current
-    if (!map || !map.isStyleLoaded()) return
-
-    // Past clusterMaxZoom (13) every store is individual — no need to query
-    // the GL canvas; use the store array directly for instant response.
-    // At zoom ≤ 13 some stores may still be clustered, so query the canvas.
-    let visibleIds: Set<string>
-    if (map.getZoom() > 13) {
-      visibleIds = new Set(storesRef.current.map((s) => s.id))
-    } else {
-      const visible = map.queryRenderedFeatures({ layers: ['unclustered-detect'] })
-      visibleIds = new Set(visible.map((f) => String(f.properties?.id)))
-    }
-    const selectedId = selectedRef.current?.id
-
-    // Remove markers that are no longer unclustered or are now selected
-    markersByIdRef.current.forEach((marker, id) => {
-      if (!visibleIds.has(id) || id === selectedId) {
-        marker.remove()
-        markersByIdRef.current.delete(id)
-      }
-    })
-
-    // Add markers for newly unclustered stores
-    storesRef.current.forEach((store) => {
-      if (!visibleIds.has(store.id)) return
-      if (store.id === selectedId) return
-      if (markersByIdRef.current.has(store.id)) return // already present
-
-      const el = createStoreEl(store, false)
-
-      // Support both touch and mouse clicks for immediate response
-      const select = (e: Event) => {
-        e.stopPropagation()
-        onSelectStoreRef.current(store)
-      }
-      el.addEventListener('click', select)
-      el.addEventListener('touchend', (e) => {
-        e.stopPropagation()
-        // Don't preventDefault — let the click fire naturally on mobile too
-        onSelectStoreRef.current(store)
-      })
-
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
-        .setLngLat([store.lng, store.lat])
-        .addTo(map)
-      markersByIdRef.current.set(store.id, marker)
-    })
-  }
 
   // Initialize map once
   useEffect(() => {
@@ -243,111 +172,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         })
       }
 
-      map.addSource('stores', {
-        type: 'geojson',
-        data: storesToGeoJSON(storesRef.current),
-        cluster: true,
-        clusterMaxZoom: 13,
-        clusterRadius: 55,
-      })
-
-      map.addLayer({
-        id: 'cluster-glow',
-        type: 'circle',
-        source: 'stores',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-color': 'rgba(34,197,94,0.12)',
-          'circle-radius': ['step', ['get', 'point_count'], 32, 10, 40, 30, 48],
-          'circle-blur': 0.7,
-        },
-      })
-
-      map.addLayer({
-        id: 'clusters',
-        type: 'circle',
-        source: 'stores',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-color': 'rgba(10,10,18,0.92)',
-          'circle-radius': ['step', ['get', 'point_count'], 20, 10, 26, 30, 32],
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': [
-            'step', ['get', 'point_count'],
-            'rgba(34,197,94,0.75)',
-            10, 'rgba(249,115,22,0.75)',
-            30, 'rgba(239,68,68,0.75)',
-          ],
-        },
-      })
-
-      map.addLayer({
-        id: 'cluster-count',
-        type: 'symbol',
-        source: 'stores',
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': '{point_count_abbreviated}',
-          'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
-          'text-size': 13,
-          'text-allow-overlap': true,
-        },
-        paint: { 'text-color': '#22c55e' },
-      })
-
-      // Invisible layer — used only for queryRenderedFeatures to detect unclustered points
-      map.addLayer({
-        id: 'unclustered-detect',
-        type: 'circle',
-        source: 'stores',
-        filter: ['!', ['has', 'point_count']],
-        paint: { 'circle-radius': 1, 'circle-opacity': 0 },
-      })
-
-      map.on('click', 'clusters', (e) => {
-        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
-        if (!features[0]) return
-        const center = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
-        const clusterId = features[0].properties?.cluster_id
-        if (!clusterId) return
-        ;(map.getSource('stores') as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
-          clusterId,
-          (err, expansionZoom) => {
-            if (err) return
-            // Always land past clusterMaxZoom (13) so individual icons appear
-            // immediately — skip intermediate cluster levels on a single tap
-            map.easeTo({
-              center,
-              zoom: Math.max(expansionZoom ?? 14, 14),
-              duration: 400,
-            })
-          }
-        )
-      })
-
-      map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
-      map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
-
-      // zoomend: call sync directly — at zoom > 13 we bypass queryRenderedFeatures
-      // entirely so there's no canvas-read lag. At zoom ≤ 13 wait one frame so
-      // queryRenderedFeatures reads the freshly drawn cluster state.
-      map.on('zoomend', () => {
-        if (map.getZoom() > 13) {
-          syncRef.current()
-        } else {
-          map.once('render', () => syncRef.current())
-        }
-      })
-      map.on('moveend', () => map.once('render', () => syncRef.current()))
-      map.on('sourcedata', (e: mapboxgl.MapSourceDataEvent) => {
-        if (e.sourceId === 'stores' && e.isSourceLoaded) {
-          map.once('render', () => syncRef.current())
-        }
-      })
-
       onMapReadyRef.current?.(map)
     })
 
+    // Pulsing user dot
     const userEl = document.createElement('div')
     userEl.style.cssText = 'position:relative;width:16px;height:16px;'
     userEl.innerHTML = `
@@ -362,10 +190,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     mapRef.current = map
 
     return () => {
-      selectedMarkerRef.current?.remove()
-      selectedMarkerRef.current = null
-      markersByIdRef.current.forEach((m) => m.remove())
-      markersByIdRef.current.clear()
+      markersRef.current.forEach((m) => m.remove())
+      markersRef.current = []
       userMarkerRef.current?.remove()
       userMarkerRef.current = null
       fittedRef.current = false
@@ -374,13 +200,18 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep user marker in sync with location
   useEffect(() => {
     userMarkerRef.current?.setLngLat([lng, lat])
   }, [lat, lng])
 
+  // Rebuild store markers whenever stores or selection changes
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
+
+    markersRef.current.forEach((m) => m.remove())
+    markersRef.current = []
 
     if (!fittedRef.current && stores.length > 0) {
       fittedRef.current = true
@@ -394,28 +225,22 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       )
     }
 
-    const src = map.getSource('stores') as mapboxgl.GeoJSONSource | undefined
-    src?.setData(storesToGeoJSON(stores))
-    // sourcedata event will fire and trigger syncRef after data updates
-  }, [stores, lat, lng]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-
-    selectedMarkerRef.current?.remove()
-    selectedMarkerRef.current = null
-
-    if (selected) {
-      const el = createStoreEl(selected, true)
-      selectedMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
-        .setLngLat([selected.lng, selected.lat])
+    stores.forEach((store) => {
+      const el = createStoreEl(store, selected?.id === store.id)
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        onSelectStoreRef.current(store)
+      })
+      el.addEventListener('touchend', (e) => {
+        e.stopPropagation()
+        onSelectStoreRef.current(store)
+      })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([store.lng, store.lat])
         .addTo(map)
-    }
-
-    // Remove the plain marker for the newly-selected store (or restore the deselected one)
-    syncRef.current()
-  }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
+      markersRef.current.push(marker)
+    })
+  }, [stores, selected, lat, lng]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }
