@@ -1263,14 +1263,12 @@ function selectAndContinue(tierId: TierId) {
                           </span>
                         </div>
                       )}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
-                        {t.features.map((f, fi) => (
-                          <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-                            <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>{f}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {t.features.map((f, fi) => (
+                        <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>{f}</span>
+                        </div>
+                      ))}
                     </div>
                     <div style={{ marginTop: 18 }}>
                       {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' ? (
