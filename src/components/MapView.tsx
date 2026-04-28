@@ -227,10 +227,12 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       style: 'mapbox://styles/mapbox/dark-v11',
       center: [lng, lat],
       zoom: 14,
+      minZoom: 4,
       pitch: 45,
       bearing: -10,
       attributionControl: false,
       maxTileCacheSize: 50,
+      fadeDuration: 0,
     })
 
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
@@ -267,6 +269,11 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       const style = map.getStyle()
       style?.layers?.forEach((layer) => {
         try {
+          // Drop all symbol layers — saves glyph font + sprite downloads
+          if (layer.type === 'symbol') {
+            map.removeLayer(layer.id)
+            return
+          }
           if (layer.type === 'background') {
             map.setPaintProperty(layer.id, 'background-color', '#070710')
           }
