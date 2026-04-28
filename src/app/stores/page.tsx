@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
@@ -96,7 +96,7 @@ export default function StoresPage() {
   const { location, loading: locLoading, error: locError } = useLocation()
   const lat = location?.coords.latitude ?? 0
   const lng = location?.coords.longitude ?? 0
-  const { stores, loading: storesLoading } = useNearbyStores(lat, lng)
+  const { stores, loading: storesLoading, refetch: refetchStores } = useNearbyStores(lat, lng)
   const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
@@ -209,11 +209,11 @@ export default function StoresPage() {
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') window.location.reload()
+      if (document.visibilityState === 'visible') refetchStores()
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
-  }, [])
+  }, [refetchStores])
 
   const loading = locLoading || storesLoading
 
@@ -239,20 +239,19 @@ export default function StoresPage() {
     )
   }
 
-  const byDistance = [...stores].sort((a, b) =>
-    getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)
+  const byDistance = useMemo(() =>
+    [...stores].sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)),
+    [stores, lat, lng]
   )
 
-  const sorted = [...stores]
-    .sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng))
-    .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
-    .filter((s) => typeFilter === null || s.type === typeFilter)
-    .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
-    .filter((s) => {
-      if (!search.trim()) return true
-      const q = search.toLowerCase()
-      return s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q)
-    })
+  const sorted = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return byDistance
+      .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
+      .filter((s) => typeFilter === null || s.type === typeFilter)
+      .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
+      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
+  }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng])
 
   const nearest = byDistance[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
