@@ -468,10 +468,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           <button
             style={{
               flex: 1, borderRadius: 14, padding: '13px 0', cursor: 'pointer',
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              border: '1.5px solid rgba(255,255,255,0.14)',
-              fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.85)',
+              backgroundColor: 'rgba(59,130,246,0.1)',
+              border: '1.5px solid rgba(59,130,246,0.4)',
+              fontSize: 14, fontWeight: 700, color: '#93c5fd',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              boxShadow: '0 0 18px rgba(59,130,246,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
             onClick={() => setShowAddDrink(true)}
           >
