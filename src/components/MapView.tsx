@@ -99,7 +99,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     if (!map || !map.isStyleLoaded()) return
 
     // Ask Mapbox which store points are currently NOT in a cluster
-    const visible = map.queryRenderedFeatures(undefined, { layers: ['unclustered-detect'] })
+    const visible = map.queryRenderedFeatures({ layers: ['unclustered-detect'] })
     const visibleIds = new Set(visible.map((f) => f.properties?.id as string))
 
     // Remove all existing individual markers
