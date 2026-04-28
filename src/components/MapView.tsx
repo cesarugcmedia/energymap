@@ -306,15 +306,19 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
       map.on('click', 'clusters', (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
-        const clusterId = features[0]?.properties?.cluster_id
+        if (!features[0]) return
+        const center = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
+        const clusterId = features[0].properties?.cluster_id
         if (!clusterId) return
         ;(map.getSource('stores') as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
           clusterId,
-          (err, zoom) => {
+          (err, expansionZoom) => {
             if (err) return
+            // Always land past clusterMaxZoom (13) so individual icons appear
+            // immediately — skip intermediate cluster levels on a single tap
             map.easeTo({
-              center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
-              zoom: zoom ?? 14,
+              center,
+              zoom: Math.max(expansionZoom ?? 14, 14),
               duration: 400,
             })
           }
