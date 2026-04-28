@@ -506,7 +506,7 @@ export default function StoresPage() {
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 12, padding: '10px 0', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
-                      ⚡ Report
+                      ⚡ Report Stock
                     </button>
                     <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>

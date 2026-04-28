@@ -405,10 +405,10 @@ function AccountPageInner() {
     const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword })
     if (pwErr) { setPasswordError(pwErr.message); setSavingPassword(false); return }
     setSavingPassword(false)
-    setPasswordSuccess(true)
     setNewPassword('')
     setConfirmPassword('')
-    setTimeout(() => { setChangingPassword(false); setPasswordSuccess(false) }, 1500)
+    setChangingPassword(false)
+    showToast('Password updated!')
   }
 
   const [removingFavoriteId, setRemovingFavoriteId] = useState<string | null>(null)
@@ -815,7 +815,7 @@ function selectAndContinue(tierId: TierId) {
               SAVED STORES · {favorites.length}
             </p>
             {favoritesLoading ? (
-              <div className="flex justify-center py-6"><div className="w-6 h-6 border-2 border-[#ef4444] border-t-transparent rounded-full animate-spin" /></div>
+              <div className="flex justify-center py-6"><div className="w-6 h-6 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" /></div>
             ) : favorites.length === 0 ? (
               <div className="rounded-2xl p-6 flex flex-col items-center gap-2 text-center" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <span style={{ fontSize: 32 }}>🤍</span>
@@ -888,7 +888,6 @@ function selectAndContinue(tierId: TierId) {
                     style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.1)' }}
                     placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   {passwordError && <p className="text-xs text-red-400 mb-2">{passwordError}</p>}
-                  {passwordSuccess && <p className="text-xs mb-2" style={{ color: '#22c55e' }}>Password updated!</p>}
                   <div className="flex gap-2">
                     <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} className="flex-1 rounded-xl py-2.5 text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
                     <button onClick={savePassword} disabled={savingPassword} className="flex-1 rounded-xl py-2.5 text-sm font-bold text-black" style={{ backgroundColor: savingPassword ? 'rgba(34,197,94,0.4)' : '#22c55e' }}>

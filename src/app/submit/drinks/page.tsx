@@ -416,7 +416,10 @@ function DrinksContent() {
               disabled={submitting}
             >
               {submitting ? (
-                <div className="w-5 h-5 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                <>
+                  <div className="w-5 h-5 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                  Submitting…
+                </>
               ) : (
                 <>⚡ Submit {selectionCount} Report{selectionCount !== 1 ? 's' : ''}</>
               )}

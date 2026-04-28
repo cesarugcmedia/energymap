@@ -115,7 +115,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
-  const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number } | null>(null)
+  const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number; names: string[] } | null>(null)
   const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
 
   useEffect(() => {
@@ -281,7 +281,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       })
     )
 
-    setDrinkResults({ added: toInsert.length, skipped: dupeNames.length })
+    const addedNames = toInsert.map((e) => `${normalizeBrand(e.brand)} ${e.flavor.trim()}`)
+    setDrinkResults({ added: toInsert.length, skipped: dupeNames.length, names: addedNames })
     setDrinkSubmitting(false)
   }
 
@@ -722,12 +723,21 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   <p className="text-xl font-black text-white">
                     {drinkResults.added > 0 ? `${drinkResults.added} Drink${drinkResults.added !== 1 ? 's' : ''} Added!` : 'Nothing Added'}
                   </p>
-                  <p className="text-sm text-white/45 leading-relaxed">
-                    {drinkResults.added > 0 && `${drinkResults.added} drink${drinkResults.added !== 1 ? 's' : ''} added successfully.`}
-                    {drinkResults.skipped > 0 && ` ${drinkResults.skipped} skipped — already in the system.`}
-                  </p>
+                  {drinkResults.names.length > 0 && (
+                    <div className="w-full flex flex-col gap-1.5">
+                      {drinkResults.names.map((name) => (
+                        <div key={name} className="rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/80 text-left"
+                          style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.18)' }}>
+                          ✓ {name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {drinkResults.skipped > 0 && (
+                    <p className="text-xs text-white/35">{drinkResults.skipped} skipped — already in the system.</p>
+                  )}
                   <button
-                    className="mt-2 w-full rounded-2xl p-3.5 font-bold text-white"
+                    className="mt-1 w-full rounded-2xl p-3.5 font-bold text-white"
                     style={{ backgroundColor: '#22c55e' }}
                     onClick={closeAddDrink}
                   >

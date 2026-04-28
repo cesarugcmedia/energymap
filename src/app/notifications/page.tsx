@@ -29,6 +29,7 @@ export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth()
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmClear, setConfirmClear] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -61,10 +62,10 @@ export default function NotificationsPage() {
   }
 
   async function clearAll() {
-    if (!window.confirm('Clear all notifications?')) return
     const { error } = await supabase.from('notifications').delete().eq('user_id', user!.id)
-    if (error) { console.error('Failed to clear notifications:', error.message); return }
+    if (error) { setConfirmClear(false); return }
     setNotifications([])
+    setConfirmClear(false)
   }
 
   if (authLoading || !user) {
@@ -88,13 +89,32 @@ export default function NotificationsPage() {
           <p className="text-xs text-white/40 mt-0.5">Updates on your stores and reports</p>
         </div>
         {notifications.length > 0 && (
-          <button
-            onClick={clearAll}
-            className="text-xs font-bold px-3 py-1.5 rounded-full"
-            style={{ color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.06)' }}
-          >
-            Clear All
-          </button>
+          confirmClear ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={clearAll}
+                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+              >
+                Clear All
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="text-xs font-bold px-3 py-1.5 rounded-full"
+              style={{ color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+            >
+              Clear All
+            </button>
+          )
         )}
       </div>
 
