@@ -55,6 +55,17 @@ function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
   return el
 }
 
+function storesToGeoJSON(stores: Store[]): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: stores.map((s) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+      properties: { id: s.id, name: s.name, type: s.type },
+    })),
+  }
+}
+
 interface MapViewProps {
   lat: number
   lng: number
@@ -67,13 +78,15 @@ interface MapViewProps {
 export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const markersRef = useRef<mapboxgl.Marker[]>([])
+  const selectedMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
   const onMapReadyRef = useRef(onMapReady)
   onMapReadyRef.current = onMapReady
   const onSelectStoreRef = useRef(onSelectStore)
   onSelectStoreRef.current = onSelectStore
+  const storesRef = useRef<Store[]>(stores)
+  storesRef.current = stores
 
   // Initialize map once
   useEffect(() => {
@@ -94,7 +107,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
 
-    // Inject keyframes once
     if (!document.getElementById('amped-map-styles')) {
       const styleEl = document.createElement('style')
       styleEl.id = 'amped-map-styles'
@@ -137,7 +149,6 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           if (layer.type === 'line' && layer.id.toLowerCase().includes('water')) {
             map.setPaintProperty(layer.id, 'line-color', '#08091a')
           }
-          // Neon road tints — brighter greens for major roads
           if (layer.type === 'line' && /^road/.test(layer.id)) {
             map.setPaintProperty(layer.id, 'line-color', [
               'match', ['get', 'class'],
@@ -147,14 +158,13 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
               '#0a1a0d',
             ])
           }
-          // Hide default building fill so 3D layer shows cleanly
           if (layer.id === 'building') {
             map.setPaintProperty(layer.id, 'fill-color', '#0a0f0d')
           }
         } catch {}
       })
 
-      // 3D buildings with dark green tint
+      // 3D buildings
       if (!map.getLayer('amped-3d-buildings')) {
         map.addLayer({
           id: 'amped-3d-buildings',
@@ -185,6 +195,125 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         })
       }
 
+      // ── Clustered stores source ──────────────────────────────
+      map.addSource('stores', {
+        type: 'geojson',
+        data: storesToGeoJSON(storesRef.current),
+        cluster: true,
+        clusterMaxZoom: 13,
+        clusterRadius: 55,
+      })
+
+      // Cluster outer glow
+      map.addLayer({
+        id: 'cluster-glow',
+        type: 'circle',
+        source: 'stores',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': 'rgba(34,197,94,0.12)',
+          'circle-radius': ['step', ['get', 'point_count'], 32, 10, 40, 30, 48],
+          'circle-blur': 0.7,
+          'circle-opacity': 1,
+        },
+      })
+
+      // Cluster circle body
+      map.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'stores',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': 'rgba(10,10,18,0.92)',
+          'circle-radius': ['step', ['get', 'point_count'], 20, 10, 26, 30, 32],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': [
+            'step', ['get', 'point_count'],
+            'rgba(34,197,94,0.75)',
+            10, 'rgba(249,115,22,0.75)',
+            30, 'rgba(239,68,68,0.75)',
+          ],
+        },
+      })
+
+      // Cluster count label
+      map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'stores',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
+          'text-size': 13,
+          'text-allow-overlap': true,
+        },
+        paint: {
+          'text-color': '#22c55e',
+        },
+      })
+
+      // Unclustered store — outer glow ring
+      map.addLayer({
+        id: 'unclustered-glow',
+        type: 'circle',
+        source: 'stores',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': 'rgba(34,197,94,0.1)',
+          'circle-radius': 24,
+          'circle-blur': 0.6,
+          'circle-opacity': 1,
+        },
+      })
+
+      // Unclustered store — orb body
+      map.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'stores',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': 'rgba(14,14,22,0.92)',
+          'circle-radius': 14,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': 'rgba(34,197,94,0.55)',
+        },
+      })
+
+      // ── Cluster click → zoom in ──────────────────────────────
+      map.on('click', 'clusters', (e) => {
+        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
+        const clusterId = features[0]?.properties?.cluster_id
+        if (!clusterId) return
+        ;(map.getSource('stores') as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
+          clusterId,
+          (err, zoom) => {
+            if (err) return
+            map.easeTo({
+              center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
+              zoom: zoom ?? 14,
+              duration: 400,
+            })
+          }
+        )
+      })
+
+      // ── Unclustered store click → select ────────────────────
+      map.on('click', 'unclustered-point', (e) => {
+        const id = e.features?.[0]?.properties?.id
+        if (!id) return
+        const store = storesRef.current.find((s) => s.id === id)
+        if (store) onSelectStoreRef.current(store)
+      })
+
+      // Cursor changes
+      map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer' })
+      map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = '' })
+      map.on('mouseenter', 'unclustered-point', () => { map.getCanvas().style.cursor = 'pointer' })
+      map.on('mouseleave', 'unclustered-point', () => { map.getCanvas().style.cursor = '' })
+
       onMapReadyRef.current?.(map)
     })
 
@@ -203,8 +332,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     mapRef.current = map
 
     return () => {
-      markersRef.current.forEach((m) => m.remove())
-      markersRef.current = []
+      selectedMarkerRef.current?.remove()
+      selectedMarkerRef.current = null
       userMarkerRef.current?.remove()
       userMarkerRef.current = null
       fittedRef.current = false
@@ -218,13 +347,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     userMarkerRef.current?.setLngLat([lng, lat])
   }, [lat, lng])
 
-  // Rebuild store markers whenever stores or selection changes
+  // Update GeoJSON source when stores change
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-
-    markersRef.current.forEach((m) => m.remove())
-    markersRef.current = []
 
     // Fit bounds on first store load
     if (!fittedRef.current && stores.length > 0) {
@@ -239,18 +365,25 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       )
     }
 
-    stores.forEach((store) => {
-      const el = createStoreEl(store, selected?.id === store.id)
-      el.addEventListener('click', (e) => {
-        e.stopPropagation()
-        onSelectStoreRef.current(store)
-      })
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
-        .setLngLat([store.lng, store.lat])
+    const src = map.getSource('stores') as mapboxgl.GeoJSONSource | undefined
+    src?.setData(storesToGeoJSON(stores))
+  }, [stores, lat, lng])
+
+  // Selected store — single HTML marker for the full orb + pulse + name treatment
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    selectedMarkerRef.current?.remove()
+    selectedMarkerRef.current = null
+
+    if (selected) {
+      const el = createStoreEl(selected, true)
+      selectedMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([selected.lng, selected.lat])
         .addTo(map)
-      markersRef.current.push(marker)
-    })
-  }, [stores, selected, lat, lng])
+    }
+  }, [selected])
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }
