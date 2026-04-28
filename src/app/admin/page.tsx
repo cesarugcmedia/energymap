@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { BRAND_COLORS } from '@/components/BrandLogo'
+import Toast from '@/components/Toast'
 
 const TYPE_ICON: Record<string, string> = {
   gas_station: '⛽',
@@ -67,6 +68,17 @@ export default function AdminPage() {
   const [flags, setFlags] = useState<any[]>([])
   const [flagsLoading, setFlagsLoading] = useState(false)
   const [resolvingFlag, setResolvingFlag] = useState<Set<string>>(new Set())
+
+  // Toast
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  function showToast(message: string) {
+    clearTimeout(toastTimer.current)
+    setToastMessage(message)
+    setToastVisible(true)
+    toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
+  }
 
   // Waitlist state
   const [waitlist, setWaitlist] = useState<any[]>([])
@@ -220,21 +232,17 @@ export default function AdminPage() {
       .eq('id', id)
       .select('id')
     if (error || !data || data.length === 0) {
-      window.alert(
-        `Could not approve store — Supabase RLS is blocking this action.\n\n` +
-        `Go to: Supabase Dashboard → Authentication → Policies → stores\n` +
-        `Make sure there is an UPDATE policy allowing authenticated users.`
-      )
+      showToast('Could not approve store — check permissions')
       return
     }
     setStores((prev) => prev.filter((s) => s.id !== id))
     setPendingCount((c) => Math.max(0, c - 1))
+    showToast('Store approved')
   }
 
   async function rejectStore(id: string) {
     if (!window.confirm('Reject this store submission?')) return
 
-    // Try update first; use .select() so we can detect silent RLS blocks (0 rows returned = blocked)
     const { data: updated, error: updateError } = await supabase
       .from('stores')
       .update({ status: 'rejected' })
@@ -244,10 +252,10 @@ export default function AdminPage() {
     if (!updateError && updated && updated.length > 0) {
       setStores((prev) => prev.filter((s) => s.id !== id))
       setPendingCount((c) => Math.max(0, c - 1))
+      showToast('Store rejected')
       return
     }
 
-    // Update was silently blocked or errored — try delete
     const { data: deleted, error: deleteError } = await supabase
       .from('stores')
       .delete()
@@ -257,14 +265,11 @@ export default function AdminPage() {
     if (!deleteError && deleted && deleted.length > 0) {
       setStores((prev) => prev.filter((s) => s.id !== id))
       setPendingCount((c) => Math.max(0, c - 1))
+      showToast('Store rejected')
       return
     }
 
-    window.alert(
-      `Could not reject store — Supabase RLS is blocking this action.\n\n` +
-      `Go to: Supabase Dashboard → Table Editor → stores → RLS Policies\n` +
-      `Add an UPDATE and DELETE policy that allows authenticated users.`
-    )
+    showToast('Could not reject store — check permissions')
   }
 
   function openEdit(store: any) {
@@ -399,7 +404,11 @@ export default function AdminPage() {
   async function resolveFlag(flagId: string) {
     setResolvingFlag((prev) => new Set(prev).add(flagId))
     const { error } = await supabase.from('store_flags').update({ resolved: true }).eq('id', flagId)
-    if (!error) { setFlags((prev) => prev.filter((f) => f.id !== flagId)); setFlagsCount((c) => Math.max(0, c - 1)) }
+    if (!error) {
+      setFlags((prev) => prev.filter((f) => f.id !== flagId))
+      setFlagsCount((c) => Math.max(0, c - 1))
+      showToast('Flag resolved')
+    }
     setResolvingFlag((prev) => { const next = new Set(prev); next.delete(flagId); return next })
   }
 
@@ -481,6 +490,7 @@ export default function AdminPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#070710', position: 'relative' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      <Toast message={toastMessage} visible={toastVisible} />
       {/* Sticky header */}
       <div
         style={{

@@ -423,7 +423,9 @@ export default function StoresPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
             <span style={{ fontSize: 40 }}>🏪</span>
             <p style={{ fontSize: 16, fontWeight: 700 }}>No stores found</p>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Try a different search or filter</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', paddingInline: 24 }}>
+              {brandFilter ? `No stores with ${brandFilter} in stock nearby` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area` : search ? `No stores matching "${search}"` : 'No stores in range — try a wider radius'}
+            </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100, animation: 'fadeUp 0.5s ease 0.12s both' }}>
@@ -468,7 +470,7 @@ export default function StoresPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                           <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
                           <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at) }}>
-                            Updated {timeAgo(latestReport.reported_at)}
+                            {timeAgo(latestReport.reported_at)}
                           </span>
                         </div>
                       )}

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 import BrandLogo, { BRAND_COLORS } from '@/components/BrandLogo'
+import Toast from '@/components/Toast'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -100,6 +101,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [isFavorited, setIsFavorited] = useState(false)
   const [favoriteId, setFavoriteId] = useState<string | null>(null)
   const [favoritingLoading, setFavoritingLoading] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  function showToast(message: string) {
+    clearTimeout(toastTimer.current)
+    setToastMessage(message)
+    setToastVisible(true)
+    toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
+  }
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
@@ -144,9 +155,10 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       await supabase.from('favorites').delete().eq('id', favoriteId)
       setIsFavorited(false)
       setFavoriteId(null)
+      showToast('Removed from favorites')
     } else {
       const { data } = await supabase.from('favorites').insert({ user_id: user.id, store_id: id }).select('id').single()
-      if (data) { setIsFavorited(true); setFavoriteId(data.id) }
+      if (data) { setIsFavorited(true); setFavoriteId(data.id); showToast('Added to favorites') }
     }
     setFavoritingLoading(false)
   }
@@ -284,6 +296,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     })
     setFlagSubmitting(false)
     setFlagDone(true)
+    showToast('Flag submitted — thanks!')
   }
 
   function closeFlag() {
@@ -408,6 +421,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           </button>
         </div>
       </div>
+
+      <Toast message={toastMessage} visible={toastVisible} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 

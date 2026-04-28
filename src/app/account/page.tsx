@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import Toast from '@/components/Toast'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -189,6 +190,17 @@ function AccountPageInner() {
   const [newUsername, setNewUsername] = useState('')
   const [usernameError, setUsernameError] = useState<string | null>(null)
   const [savingUsername, setSavingUsername] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  function showToast(message: string) {
+    clearTimeout(toastTimer.current)
+    setToastMessage(message)
+    setToastVisible(true)
+    toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
+  }
+
   const [changingPassword, setChangingPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -276,7 +288,7 @@ function AccountPageInner() {
     const { data: existing } = await supabase.from('profiles').select('id').eq('username', username.trim()).maybeSingle()
     if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
     const { data, error: authError } = await supabase.auth.signUp({ email, password })
-    if (authError) { setError(authError.message); setSubmitting(false); return }
+    if (authError) { setError('Could not create account. Please try again.'); setSubmitting(false); return }
     if (data.user) {
       const isPaidTier = selectedTier === 'tracker'
 
@@ -381,6 +393,7 @@ function AccountPageInner() {
     setSavingUsername(false)
     setEditingUsername(false)
     setNewUsername('')
+    showToast('Username saved!')
   }
 
   async function savePassword() {
@@ -609,6 +622,8 @@ function selectAndContinue(tierId: TierId) {
     const tierInfo = TIER_LABEL[profile.tier ?? 'free']
     return (
       <div className="bg-[#070710]" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+
+        <Toast message={toastMessage} visible={toastVisible} />
 
         {/* ── Profile card (always visible) ── */}
         <div className="px-5 pt-4 pb-3">

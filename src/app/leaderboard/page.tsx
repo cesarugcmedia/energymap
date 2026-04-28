@@ -127,7 +127,7 @@ export default function LeaderboardPage() {
         ) : entries.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
             <span style={{ fontSize: 48 }}>🏆</span>
-            <p style={{ fontSize: 18, fontWeight: 800 }}>No reporters yet</p>
+            <p style={{ fontSize: 18, fontWeight: 800 }}>No reports yet</p>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Be the first to submit a report!</p>
           </div>
         ) : (
