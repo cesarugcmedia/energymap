@@ -226,7 +226,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/dark-v11',
       center: [lng, lat],
-      zoom: 12,
+      zoom: 11,
       minZoom: 4,
       pitch: 45,
       bearing: -10,
