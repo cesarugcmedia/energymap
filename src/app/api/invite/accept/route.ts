@@ -23,10 +23,11 @@ export async function GET(req: NextRequest) {
   }
 
   const res = NextResponse.redirect(new URL('/account', req.url))
-  res.cookies.set('amped_bypass', process.env.ADMIN_BYPASS_SECRET!, {
+  // Store the verified invite token as its own cookie — no dependency on ADMIN_BYPASS_SECRET
+  res.cookies.set('amped_invited', token, {
     httpOnly: true,
     secure: true,
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 30,
     path: '/',
   })

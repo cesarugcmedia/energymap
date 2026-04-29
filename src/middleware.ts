@@ -25,7 +25,14 @@ export function middleware(req: NextRequest) {
 
   // Admin bypass cookie grants full app access
   const bypass = req.cookies.get(BYPASS_COOKIE)
-  if (bypass?.value === process.env.ADMIN_BYPASS_SECRET) {
+  if (bypass?.value && bypass.value === process.env.ADMIN_BYPASS_SECRET) {
+    return NextResponse.next()
+  }
+
+  // Invite bypass — set when a user accepts a waitlist invite link
+  const invited = req.cookies.get('amped_invited')
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (invited?.value && uuidPattern.test(invited.value)) {
     return NextResponse.next()
   }
 
