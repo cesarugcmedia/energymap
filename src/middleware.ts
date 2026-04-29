@@ -7,12 +7,13 @@ export function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl
 
-  // Always pass through: waitlist page, its API, admin bypass, assets, SW
+  // Always pass through: waitlist page, its API, admin bypass, assets, SW, auth callbacks
   if (
     pathname.startsWith('/waitlist') ||
     pathname.startsWith('/api/waitlist') ||
     pathname.startsWith('/api/admin/bypass') ||
     pathname.startsWith('/api/invite') ||
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/_next') ||
     pathname === '/sw.js' ||
     pathname === '/offline' ||

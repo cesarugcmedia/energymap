@@ -254,6 +254,11 @@ function AccountPageInner() {
       setStep(1)
       setMode('signup')
     }
+    // After email confirmation (cross-device fallback), switch to sign-in with a message
+    if (searchParams.get('confirmed') === '1') {
+      setMode('signin')
+      setError(null)
+    }
   }, [searchParams])
 
   // Reset submitting state if page is restored from bfcache (browser back button)
@@ -273,8 +278,18 @@ function AccountPageInner() {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
     if (authError) { setError('Invalid email or password.'); setSubmitting(false); return }
+    // If profile missing (e.g. confirmed on different device), create it now
+    if (signInData.user) {
+      const { data: existingProfile } = await supabase.from('profiles').select('id').eq('id', signInData.user.id).maybeSingle()
+      if (!existingProfile) {
+        const pending = localStorage.getItem('pending_profile')
+        const { username: pendingUsername } = pending ? JSON.parse(pending) : { username: email.split('@')[0] }
+        await supabase.from('profiles').insert({ id: signInData.user.id, username: pendingUsername, tier: 'free' })
+        localStorage.removeItem('pending_profile')
+      }
+    }
     router.replace('/')
   }
 
@@ -287,8 +302,15 @@ function AccountPageInner() {
     setSubmitting(true)
     const { data: existing } = await supabase.from('profiles').select('id').eq('username', username.trim()).maybeSingle()
     if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
-    const { data, error: authError } = await supabase.auth.signUp({ email, password })
-    if (authError) { setError('Could not create account. Please try again.'); setSubmitting(false); return }
+    // Persist username so the auth callback can create the profile after email confirmation
+    localStorage.setItem('pending_profile', JSON.stringify({ username: username.trim(), tier: selectedTier }))
+
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (authError) { localStorage.removeItem('pending_profile'); setError('Could not create account. Please try again.'); setSubmitting(false); return }
     if (data.user) {
       const isPaidTier = selectedTier === 'tracker'
 
@@ -320,8 +342,12 @@ function AccountPageInner() {
         return
       }
 
-      // Free tier or beta tracker — create profile immediately
+      // Email confirmation required — profile will be created in /auth/callback
+      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
+
+      // Session available immediately (email confirmation disabled) — create profile now
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: 'free' })
+      localStorage.removeItem('pending_profile')
 
       // Send welcome email (fire and forget)
       supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -332,7 +358,6 @@ function AccountPageInner() {
         }).catch(() => {})
       })
 
-      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
       if (isFreeBetaTracker) {
         await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', data.user.id)
       }
@@ -1076,7 +1101,12 @@ function selectAndContinue(tierId: TierId) {
           <div style={{ maxWidth: 400, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
             <div style={{ backgroundColor: '#0f0f1a', borderRadius: 20, padding: 28, border: '1px solid rgba(255,255,255,0.08)' }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Welcome back</h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Sign in to your Amped Map account</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: searchParams.get('confirmed') === '1' ? 16 : 24 }}>Sign in to your Amped Map account</p>
+              {searchParams.get('confirmed') === '1' && (
+                <div style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 20 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>Email confirmed! Sign in to finish setting up your account.</p>
+                </div>
+              )}
               <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 1.2, display: 'block', marginBottom: 8 }}>EMAIL</label>
@@ -1261,8 +1291,15 @@ function selectAndContinue(tierId: TierId) {
                 </div>
                 {error && <p style={{ fontSize: 13, color: '#f87171' }}>{error}</p>}
                 {confirmEmail && (
-                  <div style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 12, padding: 14 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>Check your email to confirm your account, then sign in.</p>
+                  <div style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>Check your email and click the confirmation link to activate your account.</p>
+                    <button
+                      type="button"
+                      onClick={() => { setConfirmEmail(false); switchMode('signin') }}
+                      style={{ background: 'none', border: '1px solid rgba(34,197,94,0.4)', borderRadius: 8, color: '#22c55e', fontSize: 12, fontWeight: 700, padding: '7px 14px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", alignSelf: 'flex-start' }}
+                    >
+                      Already confirmed? Sign in →
+                    </button>
                   </div>
                 )}
                 <button type="submit" className="cta-btn" disabled={submitting || confirmEmail}
