@@ -312,55 +312,52 @@ function AccountPageInner() {
     })
     if (authError) { localStorage.removeItem('pending_profile'); setError('Could not create account. Please try again.'); setSubmitting(false); return }
     if (data.user) {
-      const isPaidTier = selectedTier === 'tracker'
+      // Email confirmation required — profile will be created in /auth/callback
+      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
 
-      // For tracker: check if beta spots still available
-      let isFreeBetaTracker = false
+      const accessToken = data.session.access_token
+
       if (selectedTier === 'tracker') {
-        const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
-        isFreeBetaTracker = (count ?? 0) < 60
-      }
-
-      // Paid tiers: sign out, go to Stripe — webhook creates profile after payment
-      if (isPaidTier && !isFreeBetaTracker) {
-        const { data: { session: newSession } } = await supabase.auth.getSession()
-        const accessToken = newSession?.access_token
-        await supabase.auth.signOut()
+        // Server-side beta check — authoritative count, can't be bypassed client-side
         try {
-          const res = await fetch('/api/stripe/checkout', {
+          const res = await fetch('/api/upgrade/tracker', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) },
-            body: JSON.stringify({ tier: selectedTier, userId: data.user.id, email, username: username.trim() }),
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            body: JSON.stringify({ username: username.trim() }),
           })
           const json = await res.json()
-          if (json.url) { window.location.href = json.url; return }
+          if (json.upgraded) {
+            // Free beta spot — profile already created by the route
+            localStorage.removeItem('pending_profile')
+            await refreshProfile()
+            router.replace('/')
+            return
+          }
+          if (json.url) {
+            // Beta full — go to Stripe; webhook creates profile after payment
+            await supabase.auth.signOut()
+            window.location.href = json.url
+            return
+          }
           setError(json.error ?? 'Could not start checkout. Please try again.')
         } catch (err: any) {
-          setError(err?.message ?? 'Could not connect to payment provider. Please try again.')
+          setError(err?.message ?? 'Could not connect. Please try again.')
         }
         setSubmitting(false)
         return
       }
 
-      // Email confirmation required — profile will be created in /auth/callback
-      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
-
-      // Session available immediately (email confirmation disabled) — create profile now
+      // Free tier — create profile immediately
       await supabase.from('profiles').insert({ id: data.user.id, username: username.trim(), tier: 'free' })
       localStorage.removeItem('pending_profile')
 
       // Send welcome email (fire and forget)
-      supabase.auth.getSession().then(({ data: { session: s } }) => {
-        fetch('/api/email/welcome', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s?.access_token ?? ''}` },
-          body: JSON.stringify({ email, username: username.trim(), tier: selectedTier }),
-        }).catch(() => {})
-      })
+      fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({ email, username: username.trim(), tier: selectedTier }),
+      }).catch(() => {})
 
-      if (isFreeBetaTracker) {
-        await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', data.user.id)
-      }
       await refreshProfile()
       router.replace('/')
     }
@@ -483,25 +480,18 @@ function AccountPageInner() {
     setCheckoutLoading(true)
     setCheckoutError(null)
     try {
-      // Check beta spots for tracker upgrades
-      if (tier === 'tracker') {
-        const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'tracker')
-        const isFreeBeta = (count ?? 0) < 60
-        if (isFreeBeta) {
-          await supabase.from('profiles').update({ tier: 'tracker' }).eq('id', user.id)
-          await refreshProfile()
-          setCheckoutLoading(false)
-          return
-        }
-      }
-
       const { data: { session: currentSession } } = await supabase.auth.getSession()
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/upgrade/tracker', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentSession?.access_token ?? ''}` },
-        body: JSON.stringify({ tier, userId: user.id, email: user.email }),
+        body: JSON.stringify({}),
       })
       const json = await res.json()
+      if (json.upgraded) {
+        await refreshProfile()
+        setCheckoutLoading(false)
+        return
+      }
       if (json.url) {
         window.location.href = json.url
       } else {
@@ -1306,7 +1296,7 @@ function selectAndContinue(tierId: TierId) {
                   style={{ width: '100%', padding: 15, background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`, border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: `0 8px 24px ${tier.glow}`, marginTop: 4 }}>
                   {submitting
                     ? <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-                    : selectedTier === 'free' ? 'Create Free Account →' : selectedTier === 'tracker' ? (betaCount < 60 ? 'Claim Beta Spot →' : 'Continue to Payment →') : 'Continue to Payment →'}
+                    : selectedTier === 'free' ? 'Create Free Account →' : 'Continue →'}
                 </button>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginTop: 4 }}>
                   <input
