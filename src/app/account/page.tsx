@@ -1192,7 +1192,7 @@ function selectAndContinue(tierId: TierId) {
                       ))}
                     </div>
                     <div style={{ marginTop: 18 }}>
-                      {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' ? (
+                      {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' && searchParams.get('invited') !== '1' ? (
                         <a href="/waitlist"
                           style={{ display: 'block', width: '100%', padding: 12, background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: 12, color: '#000', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'center', textDecoration: 'none', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}>
                           Join Waitlist →

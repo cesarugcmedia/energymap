@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/waitlist?expired=1', req.url))
   }
 
-  const res = NextResponse.redirect(new URL('/account', req.url))
+  const res = NextResponse.redirect(new URL('/account?invited=1', req.url))
   // Store the verified invite token as its own cookie — no dependency on ADMIN_BYPASS_SECRET
   res.cookies.set('amped_invited', token, {
     httpOnly: true,
