@@ -250,6 +250,21 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     if (filled.length === 0) return
     setDrinkSubmitting(true)
 
+    // Daily limit for free tier
+    if (!isTracker && user) {
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+      const { count } = await supabase
+        .from('drinks')
+        .select('id', { count: 'exact', head: true })
+        .eq('submitted_by', user.id)
+        .gte('created_at', todayStart.toISOString())
+      if ((count ?? 0) >= 25) {
+        showToast('Daily limit of 25 new drinks reached')
+        setDrinkSubmitting(false)
+        return
+      }
+    }
+
     const duplicateFlags = await Promise.all(
       filled.map((e) => isDuplicate(normalizeBrand(e.brand), e.flavor.trim()))
     )
@@ -480,10 +495,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               boxShadow: '0 0 18px rgba(59,130,246,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
-            onClick={() => {
-              if (!isTracker) { showToast('Upgrade to Tracker to add new drinks'); return }
-              setShowAddDrink(true)
-            }}
+            onClick={() => setShowAddDrink(true)}
           >
             <span style={{ fontSize: 15 }}>🥤</span> Add Drink
           </button>
