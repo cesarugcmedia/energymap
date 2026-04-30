@@ -97,11 +97,12 @@ const TIERS = [
     description: null as string | null,
     inherits: null as string | null,
     features: [
-      'Map with nearby stores',
+      '5 mile map radius',
       'View stock reports',
-      'Submit stock reports',
-      'Add missing stores',
-      '10 mile radius',
+      'Submit stock reports (25/day)',
+      'Add missing stores (10/day)',
+      'Add new drinks (25/day)',
+      'Community leaderboard',
     ],
   },
   {
@@ -118,15 +119,14 @@ const TIERS = [
     description: null as string | null,
     inherits: null as string | null,
     features: [
-      'Live stock map',
-      'View & submit reports',
-      'Add missing stores',
-      'Community leaderboard',
-      'Custom store lists',
+      'Unlimited map radius',
+      'Unlimited submissions',
+      'Last updated timestamps',
+      'Full drink report history',
+      'Stock notifications & alerts',
+      'Favorites & custom store lists',
       'Verified reporter badge',
       'Leaderboard placement + badge',
-      'Priority stock alerts',
-      'Report history',
     ],
   },
 ]
@@ -740,7 +740,7 @@ function selectAndContinue(tierId: TierId) {
 
                 {/* Upgrade plan */}
                 {profile.tier !== 'tracker' && (() => {
-                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard', 'Custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge', 'Priority stock alerts', 'Report history'] }
+                  const next = { id: 'tracker' as const, icon: '🔥', label: 'Tracker', color: '#f97316', price: '$10/mo', features: ['Unlimited map radius', 'Unlimited submissions', 'Last updated timestamps', 'Full drink report history', 'Stock notifications & alerts', 'Favorites & custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge'] }
                   return (
                     <div className="flex-1 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a24', border: `1px solid ${next.color}35` }}>
                       <div style={{ height: 3, background: `linear-gradient(90deg, ${next.color}, ${next.color}66)` }} />
