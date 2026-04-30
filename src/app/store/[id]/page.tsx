@@ -480,7 +480,10 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               boxShadow: '0 0 18px rgba(59,130,246,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
-            onClick={() => setShowAddDrink(true)}
+            onClick={() => {
+              if (!isTracker) { showToast('Upgrade to Tracker to add new drinks'); return }
+              setShowAddDrink(true)
+            }}
           >
             <span style={{ fontSize: 15 }}>🥤</span> Add Drink
           </button>

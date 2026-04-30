@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 
 const QUANTITY_OPTIONS: {
@@ -28,12 +29,31 @@ function StatusContent() {
   const drinkName = params.get('drinkName') ?? ''
   const drinkFlavor = params.get('drinkFlavor') ?? ''
 
+  const { profile } = useAuth()
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
+
   const [submitting, setSubmitting] = useState(false)
   const [rateLimited, setRateLimited] = useState(false)
+  const [limitError, setLimitError] = useState(false)
 
   async function submitReport(quantity: Quantity) {
     setSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
+
+    // Daily limit for free tier
+    if (user && !isTracker) {
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+      const { count } = await supabase
+        .from('stock_reports')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('reported_at', todayStart.toISOString())
+      if ((count ?? 0) >= 25) {
+        setLimitError(true)
+        setSubmitting(false)
+        return
+      }
+    }
 
     // Block duplicate reports on same drink+store within 30 minutes
     if (user) {
@@ -82,7 +102,25 @@ function StatusContent() {
         <p className="text-sm text-white/40 mt-1 mb-2.5">{drinkName}</p>
         <p className="text-base text-white/45 mb-8">How much is left?</p>
 
-        {rateLimited ? (
+        {limitError ? (
+          <div
+            className="w-full rounded-2xl p-5 flex flex-col items-center gap-3 text-center"
+            style={{ backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)' }}
+          >
+            <span style={{ fontSize: 36 }}>🔥</span>
+            <p className="text-base font-black text-white">Daily limit reached</p>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              You've hit the 25 report/day limit. Upgrade to Tracker for unlimited reports.
+            </p>
+            <button
+              onClick={() => router.push('/account')}
+              className="mt-1 text-sm font-bold px-4 py-2 rounded-full"
+              style={{ backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', border: '1px solid rgba(249,115,22,0.3)' }}
+            >
+              Upgrade to Tracker →
+            </button>
+          </div>
+        ) : rateLimited ? (
           <div
             className="w-full rounded-2xl p-5 flex flex-col items-center gap-3 text-center"
             style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
