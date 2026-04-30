@@ -26,7 +26,8 @@ function timeAgo(dateStr: string) {
 
 export default function NotificationsPage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -72,6 +73,27 @@ export default function NotificationsPage() {
     return (
       <div className="flex items-center justify-center h-screen ">
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!isTracker) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#070710', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+        <span style={{ fontSize: 48, marginBottom: 20 }}>🔔</span>
+        <p style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Tracker Feature</p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 28 }}>
+          Stock alerts and notifications are available on the Tracker plan.
+        </p>
+        <button
+          onClick={() => router.push('/account')}
+          style={{ padding: '13px 28px', borderRadius: 14, background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
+        >
+          Upgrade to Tracker 🔥
+        </button>
+        <button onClick={() => router.back()} style={{ marginTop: 14, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 13, cursor: 'pointer' }}>
+          Go back
+        </button>
       </div>
     )
   }

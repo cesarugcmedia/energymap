@@ -56,7 +56,8 @@ const TYPE_ICON: Record<string, string> = {
 
 export default function MapPage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -65,7 +66,8 @@ export default function MapPage() {
   const { location, loading: locLoading, error: locError, retry } = useLocation()
   const lat = location?.coords.latitude ?? 0
   const lng = location?.coords.longitude ?? 0
-  const { stores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
+  const { stores: allStores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
+  const stores = isTracker ? allStores : allStores.filter((s) => getDistance(lat, lng, s.lat, s.lng) <= 5)
   const [selected, setSelected] = useState<Store | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
@@ -314,7 +316,7 @@ export default function MapPage() {
                 {getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away
               </span>
             </div>
-            {lastUpdated && (
+            {lastUpdated && isTracker && (
               <div
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}

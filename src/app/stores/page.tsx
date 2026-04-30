@@ -72,7 +72,7 @@ function getLatestReport(stock: any[]) {
   }, null)
 }
 
-const FREE_RADIUS_OPTIONS = [5, 10]
+const FREE_RADIUS_OPTIONS = [5]
 const HUNTER_RADIUS_OPTIONS = [10, 15, 20, 25, null]
 
 const TYPE_FILTERS = [
@@ -110,7 +110,7 @@ export default function StoresPage() {
 
   useEffect(() => {
     if (!authLoading && !radiusInitialized) {
-      setRadius(isHunterPlus ? 25 : 10)
+      setRadius(isHunterPlus ? 25 : 5)
       setRadiusInitialized(true)
     }
   }, [authLoading, isHunterPlus, radiusInitialized])

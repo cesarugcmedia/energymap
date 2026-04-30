@@ -34,6 +34,7 @@ function DrinksContent() {
   const [expandedDrinks, setExpandedDrinks] = useState<Set<string>>(new Set())
   const [selections, setSelections] = useState<Record<string, Quantity>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [limitError, setLimitError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -78,6 +79,21 @@ function DrinksContent() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
+
+      // Daily limit for free tier
+      if (user && !isTracker) {
+        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+        const { count } = await supabase
+          .from('stock_reports')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('reported_at', todayStart.toISOString())
+        if ((count ?? 0) >= 25) {
+          setLimitError("You've reached the daily limit of 25 stock reports. Upgrade to Tracker for unlimited.")
+          setSubmitting(false)
+          return
+        }
+      }
 
       let toSubmit = entries
       if (user) {
@@ -403,17 +419,20 @@ function DrinksContent() {
               zIndex: 30,
             }}
           >
+            {limitError && (
+              <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>{limitError}</p>
+            )}
             <button
               style={{
                 width: '100%', borderRadius: 16, padding: '15px 0',
-                backgroundColor: submitting ? 'rgba(34,197,94,0.5)' : '#22c55e',
+                backgroundColor: submitting || limitError ? 'rgba(34,197,94,0.5)' : '#22c55e',
                 border: 'none', cursor: submitting ? 'default' : 'pointer',
                 fontSize: 15, fontWeight: 800, color: '#000',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 boxShadow: submitting ? 'none' : '0 0 24px rgba(34,197,94,0.35)',
               }}
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || !!limitError}
             >
               {submitting ? (
                 <>

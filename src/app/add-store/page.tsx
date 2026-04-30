@@ -14,7 +14,8 @@ const STORE_TYPES = [
 
 export default function AddStorePage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -77,6 +78,21 @@ export default function AddStorePage() {
     }
     setError(null)
     setSubmitting(true)
+
+    // Daily limit for free tier
+    if (!isTracker && user) {
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+      const { count } = await supabase
+        .from('stores')
+        .select('id', { count: 'exact', head: true })
+        .eq('submitted_by', user.id)
+        .gte('created_at', todayStart.toISOString())
+      if ((count ?? 0) >= 10) {
+        setError("You've reached the daily limit of 10 store submissions. Upgrade to Tracker for unlimited submissions.")
+        setSubmitting(false)
+        return
+      }
+    }
 
     // Check for duplicate address
     const { data: existing } = await supabase

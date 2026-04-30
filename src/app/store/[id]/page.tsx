@@ -386,7 +386,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               </p>
             )}
           </div>
-          {staleColor && latestReport && (
+          {staleColor && latestReport && isHunterPlus && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
               padding: '4px 10px', borderRadius: 999,
@@ -445,7 +445,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               {store && (
                 <p style={{ margin: '3px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{store.address}</p>
               )}
-              {staleColor && latestReport && !isHunterPlus && (
+              {staleColor && latestReport && isHunterPlus && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 7 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: staleColor }} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: staleColor }}>
@@ -630,10 +630,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     {item.drink?.flavor ?? item.drink?.name}
                                   </p>
                                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                    {isHunterPlus ? (
+                                    {isHunterPlus && (
                                       <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
-                                    ) : (
-                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${freshColor}18`, color: freshColor, border: `1px solid ${freshColor}44` }}>{stalenessLabel(item.reported_at)}</span>
                                     )}
                                     {item.drink?.caffeine_mg && (
                                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: 'rgba(34,197,94,0.85)', border: '1px solid rgba(34,197,94,0.25)' }}>
