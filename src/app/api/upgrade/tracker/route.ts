@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const BETA_LIMIT = 60
+const BETA_LIMIT = 0 // TODO: set back to 60 after Stripe test
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization')
