@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,8 +46,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await verifyAdmin(req)) {
+  const admin = await verifyAdmin(req)
+  if (!admin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  if (!checkRateLimit(`invite:${admin.id}`, 20, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many invites sent — wait before sending more' }, { status: 429 })
   }
 
   const { email } = await req.json()
