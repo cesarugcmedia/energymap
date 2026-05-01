@@ -17,7 +17,7 @@ export default function Toast({ message, visible }: { message: string; visible: 
         padding: '9px 18px',
         fontSize: 13,
         fontWeight: 600,
-        color: '#fff',
+        color: 'var(--text)',
         pointerEvents: 'none',
         whiteSpace: 'nowrap',
         boxShadow: '0 4px 24px rgba(0,0,0,0.5)',

@@ -58,7 +58,7 @@ export default function FavoritesPage() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 48, marginBottom: 20 }}>❤️</span>
-        <p style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Tracker Feature</p>
+        <p style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>Tracker Feature</p>
         <p style={{ fontSize: 14, color: 'var(--fg-40)', lineHeight: 1.6, marginBottom: 28 }}>
           Save and organize your favorite stores with the Tracker plan.
         </p>

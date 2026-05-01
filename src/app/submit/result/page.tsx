@@ -59,7 +59,7 @@ function ResultContent() {
   }, {})
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: 'var(--text)' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
@@ -77,11 +77,11 @@ function ResultContent() {
           }}>
             ⚡
           </div>
-          <p style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+          <p style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>
             {count !== null ? `${count} Report${count !== 1 ? 's' : ''} Submitted!` : 'Report Submitted!'}
           </p>
           <p style={{ margin: 0, fontSize: 13, color: '#7A8F80' }}>
-            Thanks for updating <span style={{ color: '#F0F4E8', fontWeight: 600 }}>{storeName}</span>
+            Thanks for updating <span style={{ color: 'var(--text)', fontWeight: 600 }}>{storeName}</span>
           </p>
         </div>
 
@@ -122,7 +122,7 @@ function ResultContent() {
                           }}
                         >
                           <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#F0F4E8' }}>
+                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                               {item.drink?.flavor ?? item.drink?.name}
                             </p>
                           </div>

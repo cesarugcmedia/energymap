@@ -64,7 +64,7 @@ export default function LeaderboardPage() {
   const myRank = myEntry ? entries.indexOf(myEntry) + 1 : null
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -78,7 +78,7 @@ export default function LeaderboardPage() {
         {/* Header */}
         <div style={{ padding: '12px 0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'fadeUp 0.5s ease' }}>
           <div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
               Leader<span style={{ color: 'var(--accent)' }}>board</span>
             </h1>
             <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em' }}>Top reporters keeping the community stocked</p>
@@ -109,7 +109,7 @@ export default function LeaderboardPage() {
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: '#0D1210', flexShrink: 0 }}>
                 {(myEntry.username as string)[0].toUpperCase()}
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>#{myRank} · {myEntry.points} pts</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>#{myRank} · {myEntry.points} pts</span>
             </div>
           </div>
         )}
@@ -216,7 +216,7 @@ export default function LeaderboardPage() {
                         <span style={{ fontSize: 15 }}>{item.icon}</span>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>{item.label}</p>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>{item.label}</p>
                         <p style={{ fontSize: 11, color: '#7A8F80', marginTop: 1 }}>{item.desc}</p>
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 800, color: item.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{item.pts}</span>
@@ -231,7 +231,7 @@ export default function LeaderboardPage() {
             {profile?.tier !== 'tracker' && !profile?.is_admin && (
               <div style={{ marginTop: 16, backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', animation: 'fadeUp 0.5s ease 0.25s both' }}>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: '#F0F4E8', marginBottom: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                     ⚡ Tracker members get early alerts + history
                   </p>
                   <p style={{ fontSize: 12, color: '#7A8F80' }}>

@@ -193,7 +193,7 @@ function DrinksContent() {
             </svg>
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>Report Stock</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>Report Stock</p>
             {storeName && (
               <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--fg-35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {storeName}
@@ -228,7 +228,7 @@ function DrinksContent() {
           <span style={{ fontSize: 14, opacity: 0.3 }}>🔍</span>
           <input
             type="text"
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: '#fff' }}
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text)' }}
             placeholder="Search drinks..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -283,7 +283,7 @@ function DrinksContent() {
                   >
                     <BrandLogo brand={brand} size={36} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#fff' }}>{brand}</p>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
                       <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
                         {hasBrandSelection
                           ? `${brandSelections.length} of ${brandDrinks.length} reported`
@@ -329,7 +329,7 @@ function DrinksContent() {
                                 borderRadius: pickerOpen ? '10px 0 0 0' : '10px 0 0 10px',
                               }} />
                               <div style={{ flex: 1, padding: 12 }}>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                                   {drink.flavor ?? drink.name}
                                 </p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>

@@ -518,7 +518,7 @@ export default function AdminPage() {
               </svg>
             </button>
           )}
-          <p style={{ flex: 1, margin: 0, fontSize: tab === null ? 20 : 16, fontWeight: 900, color: '#fff' }}>
+          <p style={{ flex: 1, margin: 0, fontSize: tab === null ? 20 : 16, fontWeight: 900, color: 'var(--text)' }}>
             {tab === null ? '🔧 Admin' : SECTION_LABELS[tab]}
           </p>
           {tab !== null && (
@@ -564,11 +564,11 @@ export default function AdminPage() {
                     minWidth: 22, height: 22, borderRadius: 11, padding: '0 6px',
                     backgroundColor: badgeColor,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 900, color: '#fff',
+                    fontSize: 11, fontWeight: 900, color: 'var(--text)',
                   }}>{count}</div>
                 )}
                 <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
-                <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</p>
+                <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{label}</p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
               </button>
             ))}
@@ -592,7 +592,7 @@ export default function AdminPage() {
                 }}
               >
                 <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
-                <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</p>
+                <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{label}</p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
               </button>
             ))}

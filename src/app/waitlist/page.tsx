@@ -33,7 +33,7 @@ export default async function WaitlistPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#F0F4E8',
+        color: 'var(--text)',
       }}
     >
       {/* Ambient glow */}
@@ -53,7 +53,7 @@ export default async function WaitlistPage() {
         </div>
 
         {/* Headline */}
-        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 44, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: 16, color: '#F0F4E8' }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 44, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: 16, color: 'var(--text)' }}>
           Find energy drinks<br />
           <span style={{ color: 'var(--accent)' }}>near you.</span>
         </h1>

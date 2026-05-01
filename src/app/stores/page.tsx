@@ -222,7 +222,7 @@ export default function StoresPage() {
       <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: 'var(--bg)' }}>
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
-          <p style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Location Access Needed</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Location Access Needed</p>
           <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6 }}>
             Amped Map uses your location to show nearby stores. Please allow location access to continue.
           </p>
@@ -230,9 +230,9 @@ export default function StoresPage() {
         <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', marginBottom: 12, letterSpacing: '1.4px', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How to enable in your browser</p>
           <div className="flex flex-col gap-2.5">
-            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Chrome / Edge:</span> Click the lock icon → Site settings → Location → Allow</p>
-            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Safari:</span> Settings → Safari → Location → Allow</p>
-            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Firefox:</span> Click the shield icon → Permissions → Location → Allow</p>
+            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: 'var(--text)', fontWeight: 600 }}>Chrome / Edge:</span> Click the lock icon → Site settings → Location → Allow</p>
+            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: 'var(--text)', fontWeight: 600 }}>Safari:</span> Settings → Safari → Location → Allow</p>
+            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: 'var(--text)', fontWeight: 600 }}>Firefox:</span> Click the shield icon → Permissions → Location → Allow</p>
           </div>
         </div>
       </div>
@@ -258,7 +258,7 @@ export default function StoresPage() {
   const isAtStore = nearestDist !== null && nearestDist < 0.15
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .store-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
@@ -276,7 +276,7 @@ export default function StoresPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
           <div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
               Nearby <span style={{ color: 'var(--accent)' }}>Stores</span>
             </h1>
             <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
@@ -303,7 +303,7 @@ export default function StoresPage() {
             placeholder="Search stores..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: '#F0F4E8', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+            style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
           />
           {search && (
             <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
@@ -381,7 +381,7 @@ export default function StoresPage() {
                   {TYPE_ICON[nearest.type]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
+                  <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
                   <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
                 </div>
                 <p style={{ fontSize: 16, fontWeight: 800, color: isAtStore ? '#C9F400' : '#C9F400', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
@@ -393,12 +393,12 @@ export default function StoresPage() {
                   onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
                   ⚡ REPORT
                 </button>
-                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: 'var(--text)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
                   VIEW
                 </button>
                 {!isAtStore && (
-                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: 'var(--text)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                     onClick={() => openDirections(nearest.lat, nearest.lng)}>
                     DIR →
                   </button>
@@ -448,7 +448,7 @@ export default function StoresPage() {
                       {TYPE_ICON[store.type]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
+                      <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
                       <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
                     </div>
                     <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
@@ -492,7 +492,7 @@ export default function StoresPage() {
                       <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}>
                         <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
                         <p style={{ fontSize: 12, color: '#7A8F80', flex: 1 }}>
-                          <span style={{ fontWeight: 700, color: '#F0F4E8' }}>@{update.username}</span> reported{' '}
+                          <span style={{ fontWeight: 700, color: 'var(--text)' }}>@{update.username}</span> reported{' '}
                           <span style={{ fontWeight: 600 }}>{update.drinkName}</span> as{' '}
                           <span style={{ fontWeight: 700, color: qColor }}>{qLabel}</span>
                         </p>
@@ -506,11 +506,11 @@ export default function StoresPage() {
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
                       ⚡ REPORT
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: 'var(--text)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
                       VIEW
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: 'var(--text)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       onClick={() => openDirections(store.lat, store.lng)}>
                       DIR →
                     </button>

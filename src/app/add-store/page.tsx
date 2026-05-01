@@ -129,14 +129,14 @@ export default function AddStorePage() {
     setSubmitting(false)
   }
 
-  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: '#F0F4E8', fontSize: 15, outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
+  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: 'var(--text)', fontSize: 15, outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
   const labelStyle = { fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, display: 'block', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const }
 
   if (submitted) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
-        <p style={{ fontSize: 28, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Store Submitted!</p>
+        <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Store Submitted!</p>
         <p style={{ fontSize: 14, color: '#7A8F80', marginBottom: 40, lineHeight: 1.6 }}>
           Thanks! Your store will appear on the map once it&apos;s been reviewed.
         </p>
@@ -163,19 +163,19 @@ export default function AddStorePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', position: 'relative', overflowX: 'hidden' }}>
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{ position: 'relative', zIndex: 1, overflowY: 'auto', paddingBottom: 80 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 'calc(56px + env(safe-area-inset-top)) 20px 16px' }}>
         <button
           onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18, flexShrink: 0 }}
+          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: 'var(--text)', fontSize: 18, flexShrink: 0 }}
         >
           ←
         </button>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
             Add a <span style={{ color: 'var(--accent)' }}>Store</span>
           </h1>
           <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2 }}>Help grow the map ⚡</p>
@@ -218,7 +218,7 @@ export default function AddStorePage() {
         </p>
 
         <button
-          style={{ marginTop: 10, width: '100%', borderRadius: 12, padding: '14px', fontWeight: 800, color: '#F0F4E8', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: geocoding ? 'not-allowed' : 'pointer', backgroundColor: geocoding ? 'rgba(59,130,246,0.4)' : '#3b82f6', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          style={{ marginTop: 10, width: '100%', borderRadius: 12, padding: '14px', fontWeight: 800, color: 'var(--text)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: geocoding ? 'not-allowed' : 'pointer', backgroundColor: geocoding ? 'rgba(59,130,246,0.4)' : '#3b82f6', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
           onClick={geocodeAddress}
           disabled={geocoding}
         >
@@ -270,7 +270,7 @@ export default function AddStorePage() {
               />
             </div>
             <button
-              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: '#F0F4E8', fontSize: 13, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: '#222B33', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase" }}
+              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: 'var(--text)', fontSize: 13, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: '#222B33', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase" }}
               onClick={applyManualCoords}
             >
               Use These Coordinates
@@ -352,7 +352,7 @@ export default function AddStorePage() {
             <div style={{ width: 36, height: 4, borderRadius: 2, margin: '0 auto 20px', backgroundColor: 'rgba(201,244,0,0.2)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 32 }}>{duplicate === 'approved' ? '🗺️' : '⏳'}</span>
-              <p style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 {duplicate === 'approved' ? 'Already on the Map' : 'Already Submitted'}
               </p>
             </div>

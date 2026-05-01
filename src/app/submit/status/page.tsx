@@ -80,11 +80,11 @@ function StatusContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', position: 'relative', padding: 'calc(56px + env(safe-area-inset-top)) 24px 40px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', position: 'relative', padding: 'calc(56px + env(safe-area-inset-top)) 24px 40px' }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <button
         onClick={() => router.back()}
-        style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 40, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18 }}
+        style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 40, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: 'var(--text)', fontSize: 18 }}
       >
         ←
       </button>
@@ -95,7 +95,7 @@ function StatusContent() {
         >
           At {storeName}
         </p>
-        <p style={{ fontSize: 26, fontWeight: 800, color: '#F0F4E8', textAlign: 'center', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{drinkFlavor}</p>
+        <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', textAlign: 'center', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{drinkFlavor}</p>
         <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, marginBottom: 10 }}>{drinkName}</p>
         <p style={{ fontSize: 16, color: '#7A8F80', marginBottom: 32 }}>How much is left?</p>
 
@@ -104,7 +104,7 @@ function StatusContent() {
             style={{ width: '100%', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.15)' }}
           >
             <span style={{ fontSize: 36 }}>⚡</span>
-            <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Daily limit reached</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Daily limit reached</p>
             <p style={{ fontSize: 13, color: '#7A8F80' }}>
               You've hit the 25 report/day limit. Upgrade to Tracker for unlimited reports.
             </p>
@@ -120,7 +120,7 @@ function StatusContent() {
             style={{ width: '100%', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', backgroundColor: 'rgba(255,179,0,0.08)', border: '1px solid rgba(255,179,0,0.25)' }}
           >
             <span style={{ fontSize: 36 }}>⏱️</span>
-            <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Already reported</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Already reported</p>
             <p style={{ fontSize: 13, color: '#7A8F80' }}>
               You already reported this drink here in the last 30 minutes. Come back later!
             </p>

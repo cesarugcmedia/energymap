@@ -51,7 +51,7 @@ export default function NotificationBell() {
       {unread > 0 && (
         <div
           className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full flex items-center justify-center px-1"
-          style={{ backgroundColor: '#ef4444', fontSize: 9, fontWeight: 700, color: '#fff' }}
+          style={{ backgroundColor: '#ef4444', fontSize: 9, fontWeight: 700, color: 'var(--text)' }}
         >
           {unread > 9 ? '9+' : unread}
         </div>

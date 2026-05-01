@@ -106,7 +106,7 @@ export default async function Image() {
                 style={{
                   fontSize: 88,
                   fontWeight: 900,
-                  color: '#ffffff',
+                  color: 'var(--text)',
                   lineHeight: 1,
                   letterSpacing: -2,
                   fontFamily: 'sans-serif',
@@ -121,7 +121,7 @@ export default async function Image() {
                   lineHeight: 1,
                   letterSpacing: -2,
                   fontFamily: 'sans-serif',
-                  color: '#ffffff',
+                  color: 'var(--text)',
                   textShadow: '0 0 40px rgba(34,197,94,0.8)',
                   borderBottom: '5px solid #22c55e',
                   paddingBottom: 4,

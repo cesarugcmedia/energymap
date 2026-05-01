@@ -81,7 +81,7 @@ export default function NotificationsPage() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 48, marginBottom: 20 }}>🔔</span>
-        <p style={{ fontSize: 22, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Tracker Feature</p>
+        <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Tracker Feature</p>
         <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6, marginBottom: 28 }}>
           Stock alerts and notifications are available on the Tracker plan.
         </p>
@@ -99,13 +99,13 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: 'var(--text)' }}>
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div style={{ position: 'relative', zIndex: 1, paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px 16px' }}>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
             🔔 Notifi<span style={{ color: 'var(--accent)' }}>cations</span>
           </h1>
           <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 4 }}>Updates on your stores and reports</p>
@@ -168,7 +168,7 @@ export default function NotificationsPage() {
                 <span style={{ fontSize: 18 }}>{TYPE_ICON[n.type] ?? '🔔'}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#F0F4E8', lineHeight: 1.4 }}>{n.message}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', lineHeight: 1.4 }}>{n.message}</p>
                 {n.store && (
                   <a
                     href={`/store/${n.store.id}?name=${encodeURIComponent(n.store.name)}`}

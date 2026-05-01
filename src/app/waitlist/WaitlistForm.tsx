@@ -29,7 +29,7 @@ export default function WaitlistForm() {
         style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}
       >
         <p style={{ fontSize: 24, marginBottom: 8 }}>🎉</p>
-        <p style={{ fontSize: 16, fontWeight: 800, color: '#F0F4E8', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>You're on the list!</p>
+        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>You're on the list!</p>
         <p style={{ fontSize: 13, color: '#7A8F80' }}>
           We'll email you the moment we launch.
         </p>
@@ -43,7 +43,7 @@ export default function WaitlistForm() {
         style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.06)', border: '1px solid rgba(201,244,0,0.2)' }}
       >
         <p style={{ fontSize: 24, marginBottom: 8 }}>⚡</p>
-        <p style={{ fontSize: 16, fontWeight: 800, color: '#F0F4E8', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Already on the list!</p>
+        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Already on the list!</p>
         <p style={{ fontSize: 13, color: '#7A8F80' }}>
           We've already got your email — you'll be first to know.
         </p>
@@ -63,7 +63,7 @@ export default function WaitlistForm() {
           width: '100%',
           borderRadius: 14,
           padding: '16px',
-          color: '#F0F4E8',
+          color: 'var(--text)',
           fontSize: 15,
           outline: 'none',
           backgroundColor: 'var(--surface)',

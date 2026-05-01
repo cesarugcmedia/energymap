@@ -206,7 +206,7 @@ export default function MapPage() {
                 border: '1px solid var(--fg-15)',
                 backdropFilter: 'blur(12px)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                color: '#fff',
+                color: 'var(--text)',
                 fontSize: 22,
               }}
             >

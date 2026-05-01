@@ -392,7 +392,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             </svg>
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {store ? TYPE_ICON[store.type] : '📍'} {name}
             </p>
             {store && (
@@ -456,7 +456,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               {store ? TYPE_ICON[store.type] : '📍'}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>{name}</p>
+              <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.3px' }}>{name}</p>
               {store && (
                 <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--fg-40)' }}>{store.address}</p>
               )}
