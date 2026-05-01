@@ -202,10 +202,10 @@ export default function MapPage() {
               onClick={fn}
               className="w-10 h-10 rounded-full flex items-center justify-center font-light"
               style={{
-                backgroundColor: 'rgba(10,10,15,0.92)',
+                backgroundColor: 'var(--surface)',
                 border: '1px solid var(--fg-15)',
                 backdropFilter: 'blur(12px)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                 color: 'var(--text)',
                 fontSize: 22,
               }}
@@ -217,10 +217,10 @@ export default function MapPage() {
             onClick={() => leafletMap.flyTo({ center: [lng, lat], zoom: 15 })}
             className="w-10 h-10 rounded-full flex items-center justify-center"
             style={{
-              backgroundColor: 'rgba(10,10,15,0.92)',
+              backgroundColor: 'var(--surface)',
               border: '1px solid rgba(59,130,246,0.5)',
               backdropFilter: 'blur(12px)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
               fontSize: 18,
             }}
             title="Re-center on my location"
@@ -239,17 +239,18 @@ export default function MapPage() {
           <div
             className="mb-2 rounded-2xl p-3 flex flex-col gap-2"
             style={{
-              backgroundColor: 'rgba(10,10,15,0.92)',
+              backgroundColor: 'var(--surface)',
               border: '1px solid var(--fg-10)',
               backdropFilter: 'blur(12px)',
               minWidth: 150,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             }}
           >
-            <p className="text-[10px] font-bold text-white/40" style={{ letterSpacing: '1.5px' }}>MAP KEY</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-40)', letterSpacing: '1.5px' }}>MAP KEY</p>
             {LEGEND_ITEMS.map((item) => (
               <div key={item.label} className="flex items-center gap-2.5">
                 <span style={{ fontSize: 14 }}>{item.icon}</span>
-                <span className="text-xs font-semibold text-white/70">{item.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-75)' }}>{item.label}</span>
               </div>
             ))}
           </div>
@@ -258,10 +259,10 @@ export default function MapPage() {
           onClick={() => setLegendOpen((o) => !o)}
           className="w-10 h-10 rounded-full flex items-center justify-center ml-auto"
           style={{
-            backgroundColor: legendOpen ? '#C9F400' : 'rgba(10,10,15,0.92)',
+            backgroundColor: legendOpen ? '#C9F400' : 'var(--surface)',
             border: '1px solid var(--fg-15)',
             backdropFilter: 'blur(12px)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           }}
         >
           <span style={{ fontSize: 16 }}>{legendOpen ? '✕' : '🗺️'}</span>
