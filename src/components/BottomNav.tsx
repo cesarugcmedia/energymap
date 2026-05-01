@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
 
 const ALL_TABS = [
   { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
@@ -18,8 +17,6 @@ const TAB_PATHS = ['/', '/stores', '/leaderboard', '/notifications', '/account',
 export default function BottomNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
-  const { theme, toggle } = useTheme()
-
   if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
 
@@ -54,18 +51,6 @@ export default function BottomNav() {
             </Link>
           )
         })}
-        {/* Theme toggle */}
-        <button
-          onClick={toggle}
-          className="flex flex-col items-center justify-center gap-1"
-          style={{ width: 56, flexShrink: 0, color: 'var(--text-dim)', background: 'none', border: 'none', cursor: 'pointer' }}
-          aria-label="Toggle theme"
-        >
-          <span style={{ fontSize: 18 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </span>
-        </button>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import Toast from '@/components/Toast'
 
 type Mode = 'signin' | 'signup'
@@ -50,14 +51,14 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
 
   return (
     <div style={{ height: '100%', backgroundColor: 'var(--bg)', paddingLeft: 20, paddingRight: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
-      <p style={{ fontSize: 24, fontWeight: 900, color: '#F0F4E8', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>One more step</p>
+      <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>One more step</p>
       <p style={{ fontSize: 12, color: '#7A8F80', marginBottom: 24 }}>Pick a username for your account ({email})</p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', marginBottom: 8, letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</p>
           <input
             type="text"
-            style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: '#F0F4E8', outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+            style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: 'var(--text)', outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
             placeholder="yourname"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
@@ -158,6 +159,7 @@ const STATS = [
 
 function AccountPageInner() {
   const { user, profile, loading, refreshProfile } = useAuth()
+  const { theme, toggle } = useTheme()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [mode, setMode] = useState<Mode>('signup')
@@ -650,7 +652,7 @@ function selectAndContinue(tierId: TierId) {
                 <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.02em'" }}>@{profile.username}</p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.02em'" }}>@{profile.username}</p>
                 <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                   {profile.is_admin && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>ADMIN</span>}
@@ -809,7 +811,7 @@ function selectAndContinue(tierId: TierId) {
                           <span style={{ fontSize: 10, fontWeight: 800, color: q.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}>{q.label}</span>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 700, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{drinkLabel || 'Unknown drink'}</p>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{drinkLabel || 'Unknown drink'}</p>
                           <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name ?? 'Unknown store'}</p>
                         </div>
                         <p style={{ fontSize: 10, color: '#4A5F50', flexShrink: 0 }}>{timeAgo(r.reported_at)}</p>
@@ -835,7 +837,7 @@ function selectAndContinue(tierId: TierId) {
             ) : favorites.length === 0 ? (
               <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
                 <span style={{ fontSize: 32 }}>🤍</span>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#F0F4E8' }}>No favorites yet</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No favorites yet</p>
                 <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the heart on any store page to save it here.</p>
               </div>
             ) : (
@@ -846,7 +848,7 @@ function selectAndContinue(tierId: TierId) {
                     <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
                       <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
                         <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -874,7 +876,7 @@ function selectAndContinue(tierId: TierId) {
               {editingUsername ? (
                 <div style={{ marginBottom: 16 }}>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>New Username</p>
-                  <input type="text" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+                  <input type="text" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder={profile.username} value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
                   {usernameError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{usernameError}</p>}
@@ -895,9 +897,9 @@ function selectAndContinue(tierId: TierId) {
               {changingPassword ? (
                 <div>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>New Password</p>
-                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoFocus />
-                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   {passwordError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{passwordError}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -924,7 +926,7 @@ function selectAndContinue(tierId: TierId) {
               ].map((item, i) => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingBottom: 12, borderBottom: i < 2 ? '1px solid rgba(201,244,0,0.06)' : 'none' }}>
                   <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: '#F0F4E8' }}>{item.label}</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{item.label}</p>
                     <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{item.desc}</p>
                   </div>
                   <button
@@ -935,6 +937,23 @@ function selectAndContinue(tierId: TierId) {
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* Appearance */}
+            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #C9F400' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Appearance</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+                  <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}</p>
+                </div>
+                <button
+                  onClick={toggle}
+                  style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: theme === 'light' ? '#C9F400' : 'var(--fg-10)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}
+                >
+                  <div style={{ position: 'absolute', top: 2, left: theme === 'light' ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: theme === 'light' ? '#0D1210' : '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                </button>
+              </div>
             </div>
 
             {/* Sign out */}
@@ -961,7 +980,7 @@ function selectAndContinue(tierId: TierId) {
   const tier = TIERS.find((t) => t.id === selectedTier) ?? TIERS[0]
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', overflowX: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         * { box-sizing: border-box; }
         .em-input { outline: none; transition: border-color 0.2s ease; font-family: 'Barlow', system-ui, sans-serif; }
@@ -1008,7 +1027,7 @@ function selectAndContinue(tierId: TierId) {
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10, maxWidth: 560, margin: '0 auto' }}>
             {STATS.map((s, i) => (
               <div key={i} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 20px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.value}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.value}</div>
                 <div style={{ fontSize: 10, color: '#4A5F50', marginTop: 2, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.label}</div>
               </div>
             ))}
@@ -1030,14 +1049,14 @@ function selectAndContinue(tierId: TierId) {
             {HOW_IT_WORKS.map((item, i) => (
               <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 16, padding: '18px 16px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
                 <div style={{ fontSize: 26, marginBottom: 10 }}>{item.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F4E8', marginBottom: 6, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 6, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
                 <div style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}>{item.desc}</div>
               </div>
             ))}
           </div>
           <div style={{ backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 20, padding: '28px 32px', textAlign: 'center' }}>
             <span style={{ fontSize: 28, marginBottom: 12, display: 'block' }}>🎯</span>
-            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Our Mission</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Our Mission</h3>
             <p style={{ fontSize: 14, color: '#7A8F80', maxWidth: 520, margin: '0 auto', lineHeight: 1.8 }}>
               Energy drink culture is exploding — new flavors drop constantly, stores sell out fast, and fans are left empty-handed. Amped Map gives the community a single place to share, discover, and track stock so no one misses out.
             </p>
@@ -1084,7 +1103,7 @@ function selectAndContinue(tierId: TierId) {
         {mode === 'signin' && (
           <div style={{ maxWidth: 400, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
             <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
-              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Welcome back</h2>
+              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Welcome back</h2>
               <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: searchParams.get('confirmed') === '1' ? 16 : 24 }}>Sign in to your Amped Map account</p>
               {searchParams.get('confirmed') === '1' && (
                 <div style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 20 }}>
@@ -1095,13 +1114,13 @@ function selectAndContinue(tierId: TierId) {
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
                   <input className="em-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Password</label>
                   <div style={{ position: 'relative' }}>
                     <input className="em-input" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required
-                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 16 }}>
                       {showPassword ? '🙈' : '👁️'}
                     </button>
@@ -1131,7 +1150,7 @@ function selectAndContinue(tierId: TierId) {
         {mode === 'signup' && step === 1 && (
           <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, color: '#F0F4E8' }}>Choose Your Plan</h2>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, color: 'var(--text)' }}>Choose Your Plan</h2>
               <p style={{ fontSize: 13, color: '#7A8F80' }}>Start free, upgrade anytime</p>
               {waitlistCount !== null && waitlistCount > 0 && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 24, padding: '8px 16px' }}>
@@ -1162,7 +1181,7 @@ function selectAndContinue(tierId: TierId) {
                     <span style={{ fontSize: 24, marginBottom: 6, display: 'block' }}>{t.icon}</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: t.color, display: 'block', marginBottom: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t.name}</span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 14 }}>
-                      <span style={{ fontSize: 28, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.price}</span>
+                      <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.price}</span>
                       <span style={{ fontSize: 12, color: '#4A5F50' }}>{t.period}</span>
                     </div>
                     {t.id === 'tracker' && (() => {
@@ -1194,7 +1213,7 @@ function selectAndContinue(tierId: TierId) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'var(--fg-04)', border: '1px solid var(--fg-08)', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>
                           <span style={{ fontSize: 10 }}>⬆️</span>
                           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)', letterSpacing: 0.3 }}>
-                            Includes everything in <span style={{ color: '#fff' }}>{t.inherits}</span>, plus:
+                            Includes everything in <span style={{ color: 'var(--text)' }}>{t.inherits}</span>, plus:
                           </span>
                         </div>
                       )}
@@ -1249,25 +1268,25 @@ function selectAndContinue(tierId: TierId) {
               </div>
             </div>
             <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
-              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Create your account</h2>
+              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Create your account</h2>
               <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: 24 }}>Join the Amped Map community</p>
               <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</label>
                   <input className="em-input" type="text" placeholder="yourname" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(null) }} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
                   <p style={{ fontSize: 10, color: '#4A5F50', marginTop: 6 }}>Letters, numbers, underscores only</p>
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
                   <input className="em-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Password</label>
                   <div style={{ position: 'relative' }}>
                     <input className="em-input" type={showPassword ? 'text' : 'password'} placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required
-                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 16 }}>
                       {showPassword ? '🙈' : '👁️'}
                     </button>

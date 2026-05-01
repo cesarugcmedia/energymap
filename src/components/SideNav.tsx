@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
 
 const ALL_TABS = [
   { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
@@ -18,8 +17,6 @@ const TAB_PATHS = ['/', '/stores', '/leaderboard', '/notifications', '/account',
 export default function SideNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
-  const { theme, toggle } = useTheme()
-
   if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
 
@@ -76,31 +73,9 @@ export default function SideNav() {
         })}
       </nav>
 
-      {/* Theme toggle */}
-      <button
-        onClick={toggle}
-        style={{
-          margin: '0 12px 8px',
-          padding: '10px 14px',
-          borderRadius: 12,
-          backgroundColor: 'var(--fg-06)',
-          border: '1px solid var(--fg-07)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          color: 'var(--text-muted)',
-        }}
-      >
-        <span style={{ fontSize: 16 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-        </span>
-      </button>
-
       {/* User footer */}
       <div style={{ padding: '16px 20px', borderTop: '1px solid var(--fg-07)' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
           {profile?.username ?? user.email?.split('@')[0] ?? 'User'}
         </p>
         <p style={{ fontSize: 11, color: tierColor, fontWeight: 700, marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tierLabel}</p>
