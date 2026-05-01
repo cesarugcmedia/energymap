@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
           <input
             type="email"
             className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
           <input
             type="password"
             className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
           type="submit"
           disabled={loading}
           className="w-full rounded-2xl p-4 font-bold text-white text-base flex items-center justify-center mt-2"
-          style={{ backgroundColor: loading ? 'rgba(34,197,94,0.5)' : '#22c55e' }}
+          style={{ backgroundColor: loading ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

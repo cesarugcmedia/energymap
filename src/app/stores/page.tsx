@@ -18,10 +18,10 @@ const TYPE_ICON: Record<string, string> = {
 }
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
-  out:    { label: 'OUT',  color: '#ef4444' },
-  low:    { label: 'LOW',  color: '#f59e0b' },
+  out:    { label: 'OUT',  color: '#FF4545' },
+  low:    { label: 'LOW',  color: '#FFB300' },
   medium: { label: 'MED',  color: '#f97316' },
-  full:   { label: 'FULL', color: '#22c55e' },
+  full:   { label: 'FULL', color: '#C9F400' },
 }
 
 function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
@@ -48,9 +48,9 @@ function timeAgo(dateStr: string) {
 
 function stalenessColor(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
-  if (hrs < 2) return '#22c55e'
-  if (hrs < 12) return '#f59e0b'
-  return '#ef4444'
+  if (hrs < 2) return '#C9F400'
+  if (hrs < 12) return '#FFB300'
+  return '#FF4545'
 }
 
 function openDirections(destLat: number, destLng: number) {
@@ -219,20 +219,20 @@ export default function StoresPage() {
 
   if (locError) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: '#070710' }}>
+      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: '#141A1F' }}>
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
-          <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
-          <p className="text-sm text-white/45 leading-relaxed">
+          <p style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Location Access Needed</p>
+          <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6 }}>
             Amped Map uses your location to show nearby stores. Please allow location access to continue.
           </p>
         </div>
-        <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>HOW TO ENABLE IN YOUR BROWSER</p>
+        <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', marginBottom: 12, letterSpacing: '1.4px', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How to enable in your browser</p>
           <div className="flex flex-col gap-2.5">
-            <p className="text-xs text-white/50 leading-relaxed"><span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon → Site settings → Location → Allow</p>
-            <p className="text-xs text-white/50 leading-relaxed"><span className="text-white/70 font-semibold">Safari:</span> Settings → Safari → Location → Allow</p>
-            <p className="text-xs text-white/50 leading-relaxed"><span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Location → Allow</p>
+            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Chrome / Edge:</span> Click the lock icon → Site settings → Location → Allow</p>
+            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Safari:</span> Settings → Safari → Location → Allow</p>
+            <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Firefox:</span> Click the shield icon → Permissions → Location → Allow</p>
           </div>
         </div>
       </div>
@@ -258,32 +258,29 @@ export default function StoresPage() {
   const isAtStore = nearestDist !== null && nearestDist < 0.15
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#070710', color: '#fff', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .store-card { transition: border-color 0.2s ease; }
-        .store-card:hover { border-color: rgba(34,197,94,0.25) !important; }
+        .store-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .store-card:hover { border-color: rgba(201,244,0,0.3) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 20px rgba(201,244,0,0.06) !important; }
         .action-btn { transition: opacity 0.15s ease, transform 0.15s ease; cursor: pointer; }
-        .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-        .action-btn:active { transform: translateY(0); }
+        .action-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .action-btn:active { transform: scale(0.97); }
         .pill-btn { transition: all 0.15s ease; cursor: pointer; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(34,197,94,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 1, padding: '0 16px' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
           <div>
-            <h1 className="text-2xl font-black text-white" style={{ letterSpacing: '-0.5px' }}>Nearby Stores</h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-              {loading ? 'Loading…' : `${sorted.length} store${sorted.length !== 1 ? 's' : ''} found`}
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+              Nearby <span style={{ color: '#C9F400' }}>Stores</span>
+            </h1>
+            <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+              {loading ? 'Loading…' : <><strong style={{ color: '#C9F400', fontWeight: 700 }}>{sorted.length}</strong> stores found</>}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -291,25 +288,25 @@ export default function StoresPage() {
             <button
               className="action-btn"
               onClick={() => router.push('/add-store')}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 20, padding: '9px 15px', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 12, padding: '10px 16px', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35), 0 4px 12px rgba(0,0,0,0.4)' }}
             >
-              + Add Store
+              + ADD STORE
             </button>
           </div>
         </div>
 
         {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '11px 14px', marginBottom: 12, animation: 'fadeUp 0.5s ease 0.03s both' }}>
-          <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.3)' }}>🔍</span>
+        <div style={{ position: 'relative', marginBottom: 14, animation: 'fadeUp 0.5s ease 0.03s both' }}>
+          <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
           <input
             type="text"
             placeholder="Search stores..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: 'none' }}
+            style={{ width: '100%', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: '#F0F4E8', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
           />
           {search && (
-            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 13 }}>✕</button>
+            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
           )}
         </div>
 
@@ -320,8 +317,8 @@ export default function StoresPage() {
             return (
               <button key={r ?? 'all'} className="pill-btn"
                 onClick={() => setRadius(r)}
-                style={{ flexShrink: 0, padding: '7px 15px', borderRadius: 20, border: '1px solid', borderColor: active ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: active ? '#22c55e' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
-                {r === null ? 'All' : `${r} mi`}
+                style={{ flexShrink: 0, padding: '7px 16px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : '#1C2329', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                {r === null ? 'ALL' : `${r} MI`}
               </button>
             )
           })}
@@ -334,7 +331,7 @@ export default function StoresPage() {
             return (
               <button key={f.value ?? 'all'} className="pill-btn"
                 onClick={() => setTypeFilter(f.value)}
-                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: active ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)', color: active ? '#22c55e' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? 'transparent' : '#1C2329', color: active ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
                 {f.label}
               </button>
             )
@@ -346,16 +343,16 @@ export default function StoresPage() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
             <button className="pill-btn"
               onClick={() => setBrandFilter(null)}
-              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: brandFilter === null ? '#22c55e' : 'rgba(255,255,255,0.1)', backgroundColor: brandFilter === null ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)', color: brandFilter === null ? '#22c55e' : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
-              All Brands
+              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? 'transparent' : '#1C2329', color: brandFilter === null ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
+              ALL BRANDS
             </button>
             {availableBrands.map((brand) => {
-              const color = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.6)'
+              const color = BRAND_COLORS[brand] ?? '#7A8F80'
               const active = brandFilter === brand
               return (
                 <button key={brand} className="pill-btn"
                   onClick={() => setBrandFilter(active ? null : brand)}
-                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 20, border: '1px solid', borderColor: active ? color : 'rgba(255,255,255,0.1)', backgroundColor: active ? `${color}22` : 'rgba(255,255,255,0.04)', color: active ? color : 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? color : 'rgba(201,244,0,0.12)', backgroundColor: active ? `${color}22` : '#1C2329', color: active ? color : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
                   {brand}
                 </button>
               )
@@ -366,44 +363,44 @@ export default function StoresPage() {
         {/* Nearest / You're At card */}
         {loading ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ height: 10, width: 80, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.07)', marginBottom: 8 }} />
-            <div style={{ borderRadius: 18, height: 96, backgroundColor: '#1a1a24' }} className="animate-pulse" />
+            <div style={{ height: 10, width: 80, borderRadius: 6, backgroundColor: 'rgba(201,244,0,0.07)', marginBottom: 8 }} />
+            <div style={{ borderRadius: 16, height: 96, backgroundColor: '#1C2329' }} className="animate-pulse" />
           </div>
         ) : nearest && (
           <div style={{ marginBottom: 20, animation: 'fadeUp 0.5s ease 0.08s both' }}>
-            <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 8 }}>
-              {isAtStore ? "YOU'RE AT" : 'NEAREST TO YOU'}
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ⚡ {isAtStore ? "You're At" : 'Nearest to You'}
+              <span style={{ flex: 1, height: 1, background: 'rgba(201,244,0,0.12)', display: 'block' }} />
             </p>
-            <div className="store-card" style={{ backgroundColor: '#1a1a24', borderRadius: 18, padding: 16, border: `1px solid ${isAtStore ? 'rgba(34,197,94,0.4)' : 'rgba(34,197,94,0.25)'}`, boxShadow: isAtStore ? '0 0 0 1px rgba(34,197,94,0.15), 0 4px 24px rgba(34,197,94,0.1)' : '0 4px 20px rgba(34,197,94,0.06)' }}>
+            <div className="store-card" style={{ background: 'linear-gradient(135deg, #222B33 0%, #1C2329 100%)', borderRadius: 16, padding: 14, border: `1px solid ${isAtStore ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.25)'}`, boxShadow: '0 0 24px rgba(201,244,0,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}
                 onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}
                 className="cursor-pointer"
               >
-                <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
                   {TYPE_ICON[nearest.type]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.name}</p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
+                  <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
+                  <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: isAtStore ? '#22c55e' : 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
-                  {isAtStore ? '● Here' : `${nearestDist!.toFixed(1)} mi`}
+                <p style={{ fontSize: 16, fontWeight: 800, color: isAtStore ? '#C9F400' : '#C9F400', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+                  {isAtStore ? '● HERE' : `${nearestDist!.toFixed(1)} mi`}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 12, padding: '11px 0', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}
+                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
                   onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
-                  ⚡ Report Stock
+                  ⚡ REPORT
                 </button>
-                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
-                  View Stock
+                  VIEW
                 </button>
                 {!isAtStore && (
-                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 0', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                     onClick={() => openDirections(nearest.lat, nearest.lng)}>
-                    Directions
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    DIR →
                   </button>
                 )}
               </div>
@@ -412,24 +409,25 @@ export default function StoresPage() {
         )}
 
         {/* All stores */}
-        <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 12 }}>
-          {search ? `RESULTS (${sorted.length})` : 'ALL STORES'}
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {search ? `Results (${sorted.length})` : 'All Stores'}
+          <span style={{ flex: 1, height: 1, background: 'rgba(201,244,0,0.12)', display: 'block' }} />
         </p>
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
         ) : sorted.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
             <span style={{ fontSize: 40 }}>🏪</span>
-            <p style={{ fontSize: 16, fontWeight: 700 }}>No stores found</p>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', paddingInline: 24 }}>
+            <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No stores found</p>
+            <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>
               {brandFilter ? `No stores with ${brandFilter} in stock nearby` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area` : search ? `No stores matching "${search}"` : 'No stores in range — try a wider radius'}
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100, animation: 'fadeUp 0.5s ease 0.12s both' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 100, animation: 'fadeUp 0.5s ease 0.12s both' }}>
             {sorted.map((store) => {
               const stock = storeStock[store.id] ?? []
               const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
@@ -437,40 +435,40 @@ export default function StoresPage() {
               const inStockCount = stock.filter((s) => s.quantity !== 'out').length
               const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
               const hasReports = stock.length > 0
-              const barColor = !hasReports ? '#333' : pct === 0 ? '#ef4444' : pct >= 75 ? '#22c55e' : '#f59e0b'
+              const barColor = !hasReports ? 'rgba(201,244,0,0.12)' : pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
 
               return (
                 <div key={store.id} className="store-card"
-                  style={{ backgroundColor: '#1a1a24', borderRadius: 18, padding: 16, border: `1px solid ${barColor === '#333' ? 'rgba(255,255,255,0.07)' : `${barColor}33`}`, boxShadow: `inset 3px 0 0 ${barColor === '#333' ? 'rgba(255,255,255,0.08)' : barColor}` }}>
+                  style={{ backgroundColor: '#1C2329', borderRadius: 16, padding: 14, border: `1px solid rgba(201,244,0,0.12)` }}>
 
                   {/* Top row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
                     onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
                       {TYPE_ICON[store.type]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.name}</p>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
+                      <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
+                      <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
                     </div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>{dist} mi</p>
+                    <p style={{ fontSize: 16, fontWeight: 800, color: '#C9F400', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
                   </div>
 
                   {/* Stock bar or Be First CTA */}
                   {hasReports ? (
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                        <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(201,244,0,0.08)', borderRadius: 3, overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
                         </div>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0 }}>
-                          {inStockCount}/{stock.length} in stock
+                        <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                          {inStockCount}/{stock.length} IN STOCK
                         </span>
                       </div>
                       {latestReport && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                           <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
-                          <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at) }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at), fontFamily: "'Barlow Condensed', sans-serif" }}>
                             {timeAgo(latestReport.reported_at)}
                           </span>
                         </div>
@@ -479,23 +477,22 @@ export default function StoresPage() {
                   ) : (
                     <button
                       className="action-btn"
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, padding: '10px 0', borderRadius: 12, backgroundColor: 'rgba(34,197,94,0.06)', border: '1px dashed rgba(34,197,94,0.3)', cursor: 'pointer' }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.03)', border: '1.5px dashed rgba(201,244,0,0.35)', cursor: 'pointer' }}
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
                     >
-                      <span style={{ fontSize: 13 }}>⚡</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(34,197,94,0.8)', fontFamily: "'DM Sans', sans-serif" }}>Be the first to report here →</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: '#C9F400' }}>⚡ Be the first to report here →</span>
                     </button>
                   )}
 
                   {/* Live update notifications */}
                   {(liveUpdates[store.id] ?? []).map((update) => {
-                    const qColor = update.quantity === 'full' ? '#22c55e' : update.quantity === 'out' ? '#ef4444' : update.quantity === 'low' ? '#f59e0b' : '#f97316'
+                    const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : update.quantity === 'low' ? '#FFB300' : '#f97316'
                     const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
                     return (
                       <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}>
                         <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
-                        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', flex: 1 }}>
-                          <span style={{ fontWeight: 700, color: '#fff' }}>@{update.username}</span> reported{' '}
+                        <p style={{ fontSize: 12, color: '#7A8F80', flex: 1 }}>
+                          <span style={{ fontWeight: 700, color: '#F0F4E8' }}>@{update.username}</span> reported{' '}
                           <span style={{ fontWeight: 600 }}>{update.drinkName}</span> as{' '}
                           <span style={{ fontWeight: 700, color: qColor }}>{qLabel}</span>
                         </p>
@@ -505,18 +502,17 @@ export default function StoresPage() {
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#22c55e', border: 'none', borderRadius: 12, padding: '10px 0', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '10px 0', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
-                      ⚡ Report Stock
+                      ⚡ REPORT
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                      View Stock
+                      VIEW
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 0', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: '#F0F4E8', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       onClick={() => openDirections(store.lat, store.lng)}>
-                      Directions
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      DIR →
                     </button>
                   </div>
                 </div>

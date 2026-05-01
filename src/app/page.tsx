@@ -127,15 +127,15 @@ export default function MapPage() {
 
         <button
           onClick={retry}
-          className="w-full rounded-2xl p-4 font-bold text-white"
-          style={{ backgroundColor: '#22c55e' }}
+          className="w-full rounded-2xl p-4 font-bold"
+          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
         >
           Enable Location →
         </button>
 
         <div
           className="w-full rounded-2xl p-4 text-left"
-          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
         >
           <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
             HOW TO ENABLE IN YOUR BROWSER
@@ -258,7 +258,7 @@ export default function MapPage() {
           onClick={() => setLegendOpen((o) => !o)}
           className="w-10 h-10 rounded-full flex items-center justify-center ml-auto"
           style={{
-            backgroundColor: legendOpen ? '#22c55e' : 'rgba(10,10,15,0.92)',
+            backgroundColor: legendOpen ? '#C9F400' : 'rgba(10,10,15,0.92)',
             border: '1px solid rgba(255,255,255,0.15)',
             backdropFilter: 'blur(12px)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
@@ -273,7 +273,7 @@ export default function MapPage() {
         <div
           className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-5"
           style={{
-            backgroundColor: '#1a1a24',
+            backgroundColor: '#1C2329',
             border: '1px solid rgba(255,255,255,0.08)',
             paddingBottom: 'calc(70px + env(safe-area-inset-bottom) + 12px)',
           }}
@@ -346,11 +346,15 @@ export default function MapPage() {
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button
-              className="flex-1 rounded-xl py-3 font-bold text-white text-sm"
+              className="flex-1 rounded-xl py-3 font-bold text-sm"
               style={{
-                backgroundColor: '#22c55e',
-                border: '1.5px solid rgba(34,197,94,0.8)',
-                boxShadow: '0 0 12px rgba(34,197,94,0.4), 0 0 24px rgba(34,197,94,0.15)',
+                backgroundColor: '#C9F400',
+                border: '1.5px solid rgba(201,244,0,0.8)',
+                color: '#0D1210',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                boxShadow: '0 0 12px rgba(201,244,0,0.4), 0 0 24px rgba(201,244,0,0.15)',
               }}
               onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}
             >

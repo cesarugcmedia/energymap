@@ -129,27 +129,25 @@ export default function AddStorePage() {
     setSubmitting(false)
   }
 
+  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: '#F0F4E8', fontSize: 15, outline: 'none', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, display: 'block', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const }
+
   if (submitted) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
-        <p className="text-2xl font-black text-white mb-2.5">Store Submitted!</p>
-        <p className="text-sm text-white/45 mb-10 leading-relaxed">
+        <p style={{ fontSize: 28, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Store Submitted!</p>
+        <p style={{ fontSize: 14, color: '#7A8F80', marginBottom: 40, lineHeight: 1.6 }}>
           Thanks! Your store will appear on the map once it&apos;s been reviewed.
         </p>
         <button
-          className="w-full rounded-2xl p-4 font-bold text-white mb-2.5"
-          style={{ backgroundColor: '#22c55e' }}
+          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, color: '#0D1210', fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 10, backgroundColor: '#C9F400', boxShadow: '0 0 20px rgba(201,244,0,0.35)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
           onClick={() => router.replace('/')}
         >
           Back to Map
         </button>
         <button
-          className="w-full rounded-2xl p-4 font-semibold"
-          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}
+          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 700, fontSize: 14, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: '#1C2329', color: '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
           onClick={() => {
             setName('')
             setAddress('')
@@ -160,47 +158,42 @@ export default function AddStorePage() {
         >
           Add Another Store
         </button>
-        </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
-      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', position: 'relative', overflowX: 'hidden' }}>
+      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{ position: 'relative', zIndex: 1, overflowY: 'auto', paddingBottom: 80 }}>
       {/* Header */}
-      <div className="flex items-center gap-3.5 px-5 pb-4" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))" }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 'calc(56px + env(safe-area-inset-top)) 20px 16px' }}>
         <button
           onClick={() => router.back()}
-          className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
+          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18, flexShrink: 0 }}
         >
-          <span className="text-white text-lg">←</span>
+          ←
         </button>
         <div>
-          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 2, color: '#fff', lineHeight: 1 }}>Add a Store</h1>
-          <p className="text-xs text-white/40 mt-0.5">Help grow the map ⚡</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+            Add a <span style={{ color: '#C9F400' }}>Store</span>
+          </h1>
+          <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2 }}>Help grow the map ⚡</p>
         </div>
       </div>
 
       {error && (
-        <div className="mx-5 mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/25">
-          <p className="text-sm text-red-400">{error}</p>
+        <div style={{ margin: '0 20px 16px', padding: 12, borderRadius: 10, backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.25)' }}>
+          <p style={{ fontSize: 13, color: '#FF4545' }}>{error}</p>
         </div>
       )}
 
       {/* Store name */}
-      <div className="mx-5 mb-6">
-        <p className="text-xs font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>
-          STORE NAME *
-        </p>
+      <div style={{ margin: '0 20px 24px' }}>
+        <span style={labelStyle}>Store Name *</span>
         <input
           type="text"
-          className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+          style={inputStyle}
           placeholder="e.g. Circle K, Shell Station"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -208,13 +201,10 @@ export default function AddStorePage() {
       </div>
 
       {/* Address */}
-      <div className="mx-5 mb-6">
-        <p className="text-xs font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>
-          STORE ADDRESS *
-        </p>
+      <div style={{ margin: '0 20px 24px' }}>
+        <span style={labelStyle}>Store Address *</span>
         <textarea
-          className="w-full rounded-xl p-3.5 text-sm text-white outline-none resize-none"
-          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)', minHeight: 60 }}
+          style={{ ...inputStyle, minHeight: 60, resize: 'none' as const }}
           placeholder="e.g. 703 Tuckaseege Rd, Mount Holly, NC 28120"
           value={address}
           rows={2}
@@ -223,32 +213,28 @@ export default function AddStorePage() {
             setCoords(null)
           }}
         />
-        <p className="text-xs text-white/30 mt-1.5">
+        <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 6 }}>
           Include street number, city and state for best results
         </p>
 
         <button
-          className="mt-2.5 w-full rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
-          style={{ backgroundColor: geocoding ? 'rgba(59,130,246,0.4)' : '#3b82f6' }}
+          style={{ marginTop: 10, width: '100%', borderRadius: 12, padding: '14px', fontWeight: 800, color: '#F0F4E8', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: geocoding ? 'not-allowed' : 'pointer', backgroundColor: geocoding ? 'rgba(59,130,246,0.4)' : '#3b82f6', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
           onClick={geocodeAddress}
           disabled={geocoding}
         >
           {geocoding ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div style={{ width: 16, height: 16, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           ) : (
-            coords ? '✓ Address Verified — Re-verify' : '🔍 Verify Address'
+            coords ? '✓ Verified — Re-verify' : '🔍 Verify Address'
           )}
         </button>
 
         {coords && (
-          <div
-            className="flex items-center gap-2.5 mt-2.5 rounded-xl p-3"
-            style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, borderRadius: 12, padding: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
             <span style={{ fontSize: 20 }}>📍</span>
             <div>
-              <p className="text-sm font-bold text-[#22c55e]">Location found!</p>
-              <p className="text-xs text-white/40 mt-0.5">
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>Location found!</p>
+              <p style={{ fontSize: 11, color: '#7A8F80', marginTop: 2 }}>
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
             </div>
@@ -257,20 +243,19 @@ export default function AddStorePage() {
 
         {/* Manual coordinates fallback */}
         <button
-          className="mt-3 text-xs font-semibold text-white/35 underline underline-offset-2"
+          style={{ marginTop: 12, background: 'none', border: 'none', fontSize: 12, fontWeight: 600, color: '#4A5F50', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
           onClick={() => setManualCoords((v) => !v)}
         >
           {manualCoords ? 'Hide manual entry' : "Can't find address? Enter coordinates manually"}
         </button>
 
         {manualCoords && (
-          <div className="mt-2.5 flex flex-col gap-2">
-            <div className="flex gap-2">
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="text"
                 inputMode="decimal"
-                className="flex-1 rounded-xl p-3 text-sm text-white outline-none"
-                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ ...inputStyle, flex: 1 }}
                 placeholder="Latitude (e.g. 35.301)"
                 value={manualLat}
                 onChange={(e) => setManualLat(e.target.value)}
@@ -278,16 +263,14 @@ export default function AddStorePage() {
               <input
                 type="text"
                 inputMode="decimal"
-                className="flex-1 rounded-xl p-3 text-sm text-white outline-none"
-                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ ...inputStyle, flex: 1 }}
                 placeholder="Longitude (e.g. -81.069)"
                 value={manualLng}
                 onChange={(e) => setManualLng(e.target.value)}
               />
             </div>
             <button
-              className="w-full rounded-xl p-3 font-bold text-white text-sm"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: '#F0F4E8', fontSize: 13, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: '#222B33', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase" }}
               onClick={applyManualCoords}
             >
               Use These Coordinates
@@ -297,26 +280,23 @@ export default function AddStorePage() {
       </div>
 
       {/* Store type */}
-      <div className="mx-5 mb-6">
-        <p className="text-xs font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>
-          STORE TYPE *
-        </p>
-        <div className="flex flex-wrap gap-2.5">
+      <div style={{ margin: '0 20px 24px' }}>
+        <span style={labelStyle}>Store Type *</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {STORE_TYPES.map((t) => (
             <button
               key={t.value}
-              className="flex items-center gap-2 rounded-xl px-3.5 py-3"
               style={{
-                backgroundColor: type === t.value ? 'rgba(34,197,94,0.08)' : '#1a1a24',
-                border: `1.5px solid ${type === t.value ? '#22c55e' : 'transparent'}`,
+                display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, padding: '12px 14px', cursor: 'pointer',
+                backgroundColor: type === t.value ? 'rgba(201,244,0,0.08)' : '#1C2329',
+                border: `1.5px solid ${type === t.value ? '#C9F400' : 'rgba(201,244,0,0.12)'}`,
                 minWidth: '47%',
               }}
               onClick={() => setType(t.value)}
             >
               <span style={{ fontSize: 18 }}>{t.icon}</span>
               <span
-                className="text-sm font-semibold"
-                style={{ color: type === t.value ? '#fff' : 'rgba(255,255,255,0.5)' }}
+                style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}
               >
                 {t.label}
               </span>
@@ -327,62 +307,62 @@ export default function AddStorePage() {
 
       {/* Review notice */}
       <div
-        className="flex items-start gap-2.5 mx-5 mb-6 rounded-xl p-3.5"
-        style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 20px 24px', borderRadius: 12, padding: 14, backgroundColor: 'rgba(201,244,0,0.03)', border: '1px solid rgba(201,244,0,0.12)' }}
       >
         <span style={{ fontSize: 16 }}>🔍</span>
-        <p className="text-sm text-white/40 leading-relaxed flex-1">
+        <p style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.5, flex: 1 }}>
           Stores are reviewed before appearing on the map to keep data accurate.
         </p>
       </div>
 
       {/* Submit */}
-      <button
-        className="mx-5 w-[calc(100%-40px)] rounded-2xl p-4 font-bold text-white text-base flex items-center justify-center"
-        style={{
-          backgroundColor:
-            !name.trim() || !address.trim() || !type || !coords || submitting
-              ? 'rgba(255,255,255,0.08)'
-              : '#22c55e',
-        }}
-        onClick={handleSubmit}
-        disabled={!name.trim() || !address.trim() || !type || !coords || submitting}
-      >
-        {submitting ? (
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : (
-          'Submit Store →'
-        )}
-      </button>
+      <div style={{ padding: '0 20px' }}>
+        <button
+          style={{
+            width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none',
+            cursor: !name.trim() || !address.trim() || !type || !coords || submitting ? 'not-allowed' : 'pointer',
+            backgroundColor: !name.trim() || !address.trim() || !type || !coords || submitting ? 'rgba(201,244,0,0.2)' : '#C9F400',
+            color: '#0D1210',
+            boxShadow: !name.trim() || !address.trim() || !type || !coords || submitting ? 'none' : '0 0 20px rgba(201,244,0,0.35)',
+            fontFamily: "'Barlow Condensed', sans-serif",
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+          }}
+          onClick={handleSubmit}
+          disabled={!name.trim() || !address.trim() || !type || !coords || submitting}
+        >
+          {submitting ? (
+            <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          ) : (
+            'Submit Store →'
+          )}
+        </button>
+      </div>
       </div>
 
       {/* Duplicate store modal */}
       {duplicate && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={() => setDuplicate(null)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl p-6 pb-10"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ width: '100%', maxWidth: 480, borderRadius: '24px 24px 0 0', padding: '24px 24px 40px', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-            <div className="flex items-center gap-3 mb-3">
+            <div style={{ width: 36, height: 4, borderRadius: 2, margin: '0 auto 20px', backgroundColor: 'rgba(201,244,0,0.2)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 32 }}>{duplicate === 'approved' ? '🗺️' : '⏳'}</span>
-              <p className="text-lg font-black text-white">
+              <p style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 {duplicate === 'approved' ? 'Already on the Map' : 'Already Submitted'}
               </p>
             </div>
-            <p className="text-sm text-white/50 leading-relaxed mb-6">
+            <p style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.6, marginBottom: 24 }}>
               {duplicate === 'approved'
                 ? 'This store already exists on the map. You can find it by searching nearby stores.'
                 : 'This store has already been submitted and is currently pending approval. Check back soon!'}
             </p>
             <button
-              className="w-full rounded-2xl p-4 font-bold text-white"
-              style={{ backgroundColor: '#22c55e' }}
+              style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, color: '#0D1210', fontSize: 15, border: 'none', cursor: 'pointer', backgroundColor: '#C9F400', boxShadow: '0 0 14px rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
               onClick={() => setDuplicate(null)}
             >
               Got it

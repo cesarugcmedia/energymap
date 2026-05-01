@@ -71,27 +71,27 @@ export default function NotificationsPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen ">
-        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: '#141A1F' }}>
+        <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     )
   }
 
   if (!isTracker) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#070710', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 48, marginBottom: 20 }}>🔔</span>
-        <p style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Tracker Feature</p>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 28 }}>
+        <p style={{ fontSize: 22, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Tracker Feature</p>
+        <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6, marginBottom: 28 }}>
           Stock alerts and notifications are available on the Tracker plan.
         </p>
         <button
           onClick={() => router.push('/account')}
-          style={{ padding: '13px 28px', borderRadius: 14, background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
+          style={{ padding: '13px 28px', borderRadius: 12, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)' }}
         >
-          Upgrade to Tracker 🔥
+          ⚡ Upgrade to Tracker
         </button>
-        <button onClick={() => router.back()} style={{ marginTop: 14, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 13, cursor: 'pointer' }}>
+        <button onClick={() => router.back()} style={{ marginTop: 14, background: 'none', border: 'none', color: '#4A5F50', fontSize: 13, cursor: 'pointer' }}>
           Go back
         </button>
       </div>
@@ -99,31 +99,29 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 60% 40% at 20% 20%, rgba(34,197,94,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
       <div style={{ position: 'relative', zIndex: 1, paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-4">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px 16px' }}>
         <div>
-          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, letterSpacing: 2, color: '#fff', lineHeight: 1 }}>🔔 Notifications</h1>
-          <p className="text-xs text-white/40 mt-0.5">Updates on your stores and reports</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
+            🔔 Notifi<span style={{ color: '#C9F400' }}>cations</span>
+          </h1>
+          <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 4 }}>Updates on your stores and reports</p>
         </div>
         {notifications.length > 0 && (
           confirmClear ? (
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 onClick={() => setConfirmClear(false)}
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+                style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
               >
                 Cancel
               </button>
               <button
                 onClick={clearAll}
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+                style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#FF4545', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
               >
                 Clear All
               </button>
@@ -131,8 +129,7 @@ export default function NotificationsPage() {
           ) : (
             <button
               onClick={() => setConfirmClear(true)}
-              className="text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{ color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
             >
               Clear All
             </button>
@@ -141,47 +138,49 @@ export default function NotificationsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center mt-16">
-          <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 64 }}>
+          <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 mt-20 px-5">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
           <span style={{ fontSize: 48 }}>🔔</span>
-          <p className="text-lg font-bold text-white">No notifications yet</p>
-          <p className="text-sm text-white/40 text-center">You'll be notified about stock updates, new stores, and new drinks.</p>
+          <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No notifications yet</p>
+          <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>You'll be notified about stock updates, new stores, and new drinks.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5 px-4 pb-8">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 32px' }}>
           {notifications.map((n) => (
             <div
               key={n.id}
-              className="rounded-2xl p-4 flex items-start gap-3"
               style={{
-                backgroundColor: n.read ? '#1a1a24' : 'rgba(34,197,94,0.06)',
-                border: `1px solid ${n.read ? 'rgba(255,255,255,0.07)' : 'rgba(34,197,94,0.2)'}`,
+                borderRadius: 16,
+                padding: 16,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+                backgroundColor: n.read ? '#1C2329' : 'rgba(201,244,0,0.06)',
+                border: `1px solid ${n.read ? 'rgba(201,244,0,0.12)' : 'rgba(201,244,0,0.25)'}`,
               }}
             >
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+                style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)' }}
               >
                 <span style={{ fontSize: 18 }}>{TYPE_ICON[n.type] ?? '🔔'}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white leading-snug">{n.message}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#F0F4E8', lineHeight: 1.4 }}>{n.message}</p>
                 {n.store && (
                   <a
                     href={`/store/${n.store.id}?name=${encodeURIComponent(n.store.name)}`}
-                    className="text-xs font-bold mt-1 inline-block"
-                    style={{ color: '#22c55e' }}
+                    style={{ fontSize: 12, fontWeight: 700, marginTop: 4, display: 'inline-block', color: '#C9F400', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}
                   >
                     {n.store.name} → View Stock
                   </a>
                 )}
-                <p className="text-xs text-white/30 mt-1">{timeAgo(n.created_at)}</p>
+                <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 4 }}>{timeAgo(n.created_at)}</p>
               </div>
               {!n.read && (
-                <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: '#22c55e' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 6, backgroundColor: '#C9F400' }} />
               )}
             </div>
           ))}

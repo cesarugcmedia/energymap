@@ -44,10 +44,10 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
-  out:    { label: 'OUT',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)'  },
-  low:    { label: 'LOW',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
-  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' },
-  full:   { label: 'FULL', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',  border: 'rgba(34,197,94,0.25)'  },
+  out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
+  low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
+  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.25)' },
+  full:   { label: 'FULL', color: '#C9F400', bg: 'rgba(201,244,0,0.08)',  border: 'rgba(201,244,0,0.25)'  },
 }
 
 const STOCK_ORDER: Record<string, number> = { full: 0, medium: 1, low: 2, out: 3 }
@@ -64,9 +64,9 @@ function timeAgo(dateStr: string) {
 
 function stalenessColor(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
-  if (hrs < 2) return '#22c55e'
-  if (hrs < 12) return '#f59e0b'
-  return '#ef4444'
+  if (hrs < 2) return '#C9F400'
+  if (hrs < 12) return '#FFB300'
+  return '#FF4545'
 }
 
 function stalenessLabel(dateStr: string) {
@@ -358,9 +358,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const staleColor = latestReport ? stalenessColor(latestReport.reported_at) : null
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', position: 'relative', overflowX: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       {/* ── Sticky header ─────────────────────────────────────────── */}
@@ -369,7 +369,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           position: 'sticky',
           top: 0,
           zIndex: 20,
-          backgroundColor: 'rgba(7,7,16,0.88)',
+          backgroundColor: 'rgba(20,26,31,0.92)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -447,9 +447,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
               width: 62, height: 62, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(34,197,94,0.1)',
-              border: '1.5px solid rgba(34,197,94,0.3)',
-              boxShadow: '0 0 20px rgba(34,197,94,0.2), 0 0 40px rgba(34,197,94,0.08)',
+              background: 'rgba(201,244,0,0.1)',
+              border: '1.5px solid rgba(201,244,0,0.3)',
+              boxShadow: '0 0 20px rgba(201,244,0,0.2), 0 0 40px rgba(201,244,0,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 26,
             }}>
@@ -477,10 +477,10 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           <button
             style={{
               flex: 1, borderRadius: 14, padding: '13px 0', cursor: 'pointer',
-              backgroundColor: '#22c55e', border: 'none',
+              backgroundColor: '#C9F400', border: 'none',
               fontSize: 14, fontWeight: 800, color: '#000',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              boxShadow: '0 0 20px rgba(34,197,94,0.3)',
+              boxShadow: '0 0 20px rgba(201,244,0,0.3)',
             }}
             onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
           >
@@ -506,8 +506,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           margin: '0 16px 20px',
           padding: '10px 14px',
           borderRadius: 12,
-          backgroundColor: 'rgba(34,197,94,0.05)',
-          border: '1px solid rgba(34,197,94,0.15)',
+          backgroundColor: 'rgba(201,244,0,0.05)',
+          border: '1px solid rgba(201,244,0,0.15)',
           display: 'flex', alignItems: 'flex-start', gap: 8,
         }}>
           <span style={{ fontSize: 13, marginTop: 1, flexShrink: 0 }}>💡</span>
@@ -529,7 +529,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             <span style={{ fontSize: 48 }}>⚠️</span>
             <p className="text-lg font-black text-white">Couldn't load stock</p>
             <p className="text-sm text-white/40">Check your connection and try again.</p>
-<button onClick={() => { setStockError(false); setLoading(true); fetchStock() }} className="mt-2 text-sm font-bold px-5 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>Retry</button>
+<button onClick={() => { setStockError(false); setLoading(true); fetchStock() }} className="mt-2 text-sm font-bold px-5 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.25)' }}>Retry</button>
           </div>
         ) : loading ? (
           <div className="flex justify-center mt-8">
@@ -546,7 +546,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             {/* Search */}
             <div
               className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 mb-4"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               <span className="text-white/30 text-sm">🔍</span>
               <input
@@ -579,7 +579,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 const inStock = items.filter((i) => i.quantity !== 'out').length
                 const total = items.length
                 const pct = total > 0 ? inStock / total : 0
-                const barColor = pct === 0 ? '#ef4444' : pct >= 0.75 ? '#22c55e' : '#f59e0b'
+                const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
                 const isExpanded = isSearching || expandedBrands.has(brand)
                 const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
 
@@ -588,7 +588,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     key={brand}
                     className="rounded-2xl overflow-hidden"
                     style={{
-                      backgroundColor: '#1a1a24',
+                      backgroundColor: '#1C2329',
                       border: `1px solid ${brandColor}33`,
                       boxShadow: `inset 3px 0 0 ${brandColor}, 0 0 14px ${brandColor}1a`,
                     }}
@@ -619,7 +619,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
                     {isExpanded && (
                       <div className="px-4 pb-3 flex flex-col gap-2">
-                        <div className="h-px mb-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                        <div className="h-px mb-1" style={{ backgroundColor: 'rgba(201,244,0,0.06)' }} />
                         {[...items].sort((a, b) => (STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)).map((item) => {
                           const q = QUANTITY_CONFIG[item.quantity as Quantity]
                           const freshColor = stalenessColor(item.reported_at)
@@ -649,7 +649,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
                                     )}
                                     {item.drink?.caffeine_mg && (
-                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: 'rgba(34,197,94,0.85)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
                                         ⚡ {item.drink.caffeine_mg}mg
                                       </span>
                                     )}
@@ -725,7 +725,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           >
             <div
               className="rounded-t-3xl p-5"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
@@ -740,7 +740,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     <div className="w-full flex flex-col gap-1.5">
                       {drinkResults.names.map((name) => (
                         <div key={name} className="rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/80 text-left"
-                          style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.18)' }}>
+                          style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.18)' }}>
                           ✓ {name}
                         </div>
                       ))}
@@ -751,7 +751,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   )}
                   <button
                     className="mt-1 w-full rounded-2xl p-3.5 font-bold text-white"
-                    style={{ backgroundColor: '#22c55e' }}
+                    style={{ backgroundColor: '#C9F400' }}
                     onClick={closeAddDrink}
                   >
                     Done
@@ -767,7 +767,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       <div
                         key={entry.id}
                         className="rounded-2xl p-3.5"
-                        style={{ backgroundColor: '#070710', border: `1px solid ${entry.duplicate ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}` }}
+                        style={{ backgroundColor: '#141A1F', border: `1px solid ${entry.duplicate ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}` }}
                       >
                         <div className="flex items-center justify-between mb-2.5">
                           <p className="text-[10px] font-bold text-white/35" style={{ letterSpacing: '1.5px' }}>DRINK {idx + 1}</p>
@@ -782,7 +782,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           onChange={(e) => updateEntry(entry.id, 'brand', e.target.value)}
                           onBlur={() => normalizeEntryBrand(entry.id)}
                           className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none mb-2"
-                          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                          style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
                         />
                         <input
                           type="text"
@@ -790,7 +790,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           value={entry.flavor}
                           onChange={(e) => updateEntry(entry.id, 'flavor', e.target.value)}
                           className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none mb-2"
-                          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                          style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
                         />
                         <input
                           type="number"
@@ -798,12 +798,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           value={entry.caffeine_mg}
                           onChange={(e) => updateEntry(entry.id, 'caffeine_mg', e.target.value)}
                           className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none"
-                          style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                          style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
                         />
                         {entry.duplicate && (
                           <div className="flex items-center gap-2 mt-2.5">
                             <span style={{ fontSize: 13 }}>⚠️</span>
-                            <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>
+                            <p className="text-xs font-semibold" style={{ color: '#FFB300' }}>
                               Already in the system — skipped.
                             </p>
                           </div>
@@ -823,7 +823,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   <div className="flex gap-2.5">
                     <button
                       className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                      style={{ backgroundColor: 'rgba(201,244,0,0.06)', color: 'rgba(255,255,255,0.5)' }}
                       onClick={closeAddDrink}
                     >
                       Cancel
@@ -832,7 +832,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
                       style={{
                         backgroundColor: drinkSubmitting || drinkEntries.every((e) => !e.brand.trim() || !e.flavor.trim())
-                          ? 'rgba(34,197,94,0.4)' : '#22c55e'
+                          ? 'rgba(201,244,0,0.4)' : '#C9F400'
                       }}
                       disabled={drinkSubmitting || drinkEntries.every((e) => !e.brand.trim() || !e.flavor.trim())}
                       onClick={submitAddDrink}
@@ -858,7 +858,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           >
             <div
               className="w-full max-w-md rounded-t-3xl p-6 pb-10"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
@@ -885,7 +885,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               )}
               <button
                 className="w-full rounded-2xl p-4 font-bold text-white"
-                style={{ backgroundColor: '#22c55e' }}
+                style={{ backgroundColor: '#C9F400' }}
                 onClick={() => setDrinkDuplicatePopup(null)}
               >
                 Got it
@@ -904,7 +904,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           >
             <div
               className="rounded-t-3xl p-5"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
@@ -916,7 +916,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>We'll review this location and correct any issues.</p>
                   <button
                     className="mt-2 w-full rounded-2xl p-3.5 font-bold text-white"
-                    style={{ backgroundColor: '#22c55e' }}
+                    style={{ backgroundColor: '#C9F400' }}
                     onClick={closeFlag}
                   >
                     Done
@@ -944,9 +944,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       >
                         <div
                           className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                          style={{ borderColor: flagReason === reason ? '#ef4444' : 'rgba(255,255,255,0.2)' }}
+                          style={{ borderColor: flagReason === reason ? '#FF4545' : 'rgba(255,255,255,0.2)' }}
                         >
-                          {flagReason === reason && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ef4444' }} />}
+                          {flagReason === reason && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FF4545' }} />}
                         </div>
                         <span className="text-sm font-semibold" style={{ color: flagReason === reason ? '#fff' : 'rgba(255,255,255,0.6)' }}>{reason}</span>
                       </button>
@@ -960,20 +960,20 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     onChange={(e) => setFlagNotes(e.target.value)}
                     rows={3}
                     className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none resize-none mb-4"
-                    style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                    style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
                   />
 
                   <div className="flex gap-2.5">
                     <button
                       className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                      style={{ backgroundColor: 'rgba(201,244,0,0.06)', color: 'rgba(255,255,255,0.5)' }}
                       onClick={closeFlag}
                     >
                       Cancel
                     </button>
                     <button
                       className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
-                      style={{ backgroundColor: !flagReason || flagSubmitting ? 'rgba(239,68,68,0.35)' : '#ef4444' }}
+                      style={{ backgroundColor: !flagReason || flagSubmitting ? 'rgba(239,68,68,0.35)' : '#FF4545' }}
                       disabled={!flagReason || flagSubmitting}
                       onClick={submitFlag}
                     >

@@ -8,10 +8,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
 
 const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
-  { value: 'out',    label: 'Out',  color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
-  { value: 'low',    label: 'Low',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+  { value: 'out',    label: 'Out',  color: '#FF4545', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
+  { value: 'low',    label: 'Low',  color: '#FFB300', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
   { value: 'medium', label: 'Med',  color: '#f97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.35)' },
-  { value: 'full',   label: 'Full', color: '#22c55e', bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.35)'  },
+  { value: 'full',   label: 'Full', color: '#C9F400', bg: 'rgba(201,244,0,0.12)',  border: 'rgba(201,244,0,0.35)'  },
 ]
 
 function DrinksContent() {
@@ -160,9 +160,9 @@ function DrinksContent() {
   const selectionCount = Object.keys(selections).length
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#070710', position: 'relative', overflowX: 'hidden' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', position: 'relative', overflowX: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div
@@ -170,10 +170,10 @@ function DrinksContent() {
           position: 'sticky',
           top: 0,
           zIndex: 20,
-          backgroundColor: 'rgba(7,7,16,0.88)',
+          backgroundColor: 'rgba(20,26,31,0.92)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid rgba(201,244,0,0.1)',
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
@@ -203,10 +203,10 @@ function DrinksContent() {
           {selectionCount > 0 && (
             <div style={{
               padding: '4px 10px', borderRadius: 999,
-              backgroundColor: 'rgba(34,197,94,0.15)',
-              border: '1px solid rgba(34,197,94,0.4)',
+              backgroundColor: 'rgba(201,244,0,0.15)',
+              border: '1px solid rgba(201,244,0,0.4)',
             }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#22c55e' }}>{selectionCount} selected</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#C9F400' }}>{selectionCount} selected</span>
             </div>
           )}
         </div>
@@ -221,7 +221,7 @@ function DrinksContent() {
             margin: '16px 16px 12px',
             padding: '10px 14px',
             borderRadius: 12,
-            backgroundColor: '#1a1a24',
+            backgroundColor: '#1C2329',
             border: '1px solid rgba(255,255,255,0.07)',
           }}
         >
@@ -243,8 +243,8 @@ function DrinksContent() {
           margin: '0 16px 16px',
           padding: '10px 14px',
           borderRadius: 12,
-          backgroundColor: 'rgba(34,197,94,0.05)',
-          border: '1px solid rgba(34,197,94,0.15)',
+          backgroundColor: 'rgba(201,244,0,0.05)',
+          border: '1px solid rgba(201,244,0,0.15)',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
@@ -270,10 +270,10 @@ function DrinksContent() {
                   key={brand}
                   style={{
                     borderRadius: 16, overflow: 'hidden',
-                    backgroundColor: '#1a1a24',
-                    border: `1px solid ${hasBrandSelection ? 'rgba(34,197,94,0.4)' : `${color}33`}`,
+                    backgroundColor: '#1C2329',
+                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : `${color}33`}`,
                     boxShadow: hasBrandSelection
-                      ? 'inset 3px 0 0 #22c55e, 0 0 14px rgba(34,197,94,0.15)'
+                      ? 'inset 3px 0 0 #22c55e, 0 0 14px rgba(201,244,0,0.15)'
                       : `inset 3px 0 0 ${color}, 0 0 14px ${color}1a`,
                   }}
                 >
@@ -293,7 +293,7 @@ function DrinksContent() {
                     {hasBrandSelection && (
                       <div style={{
                         width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                        backgroundColor: '#22c55e',
+                        backgroundColor: '#C9F400',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
@@ -339,9 +339,9 @@ function DrinksContent() {
                                   {drink.caffeine_mg && (
                                     <span style={{
                                       fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
-                                      backgroundColor: 'rgba(34,197,94,0.1)',
-                                      color: 'rgba(34,197,94,0.85)',
-                                      border: '1px solid rgba(34,197,94,0.25)',
+                                      backgroundColor: 'rgba(201,244,0,0.1)',
+                                      color: 'rgba(201,244,0,0.85)',
+                                      border: '1px solid rgba(201,244,0,0.25)',
                                     }}>
                                       ⚡ {drink.caffeine_mg}mg
                                     </span>
@@ -412,10 +412,10 @@ function DrinksContent() {
               width: '100%', maxWidth: 448,
               padding: '16px 16px',
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
-              backgroundColor: 'rgba(7,7,16,0.95)',
+              backgroundColor: 'rgba(20,26,31,0.95)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              borderTop: '1px solid rgba(255,255,255,0.07)',
+              borderTop: '1px solid rgba(201,244,0,0.1)',
               zIndex: 30,
             }}
           >
@@ -425,11 +425,12 @@ function DrinksContent() {
             <button
               style={{
                 width: '100%', borderRadius: 16, padding: '15px 0',
-                backgroundColor: submitting || limitError ? 'rgba(34,197,94,0.5)' : '#22c55e',
+                backgroundColor: submitting || limitError ? 'rgba(201,244,0,0.4)' : '#C9F400',
                 border: 'none', cursor: submitting ? 'default' : 'pointer',
-                fontSize: 15, fontWeight: 800, color: '#000',
+                fontSize: 15, fontWeight: 800, color: '#0D1210',
+                fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: submitting ? 'none' : '0 0 24px rgba(34,197,94,0.35)',
+                boxShadow: submitting ? 'none' : '0 0 24px rgba(201,244,0,0.35)',
               }}
               onClick={handleSubmit}
               disabled={submitting || !!limitError}

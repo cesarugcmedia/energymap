@@ -27,51 +27,51 @@ export default async function WaitlistPage() {
         position: 'fixed',
         inset: 0,
         zIndex: 50,
-        backgroundColor: '#070710',
+        backgroundColor: '#141A1F',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        color: '#F0F4E8',
       }}
     >
       {/* Ambient glow */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.1) 0%, transparent 65%)' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 70% 50% at 85% 10%, rgba(201,244,0,0.1) 0%, transparent 65%)' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 420, padding: '40px 28px 60px' }}>
 
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-10">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
           <div
-            className="flex items-center justify-center w-11 h-11 rounded-xl text-xl"
-            style={{ backgroundColor: '#0f0f1a', border: '1.5px solid rgba(34,197,94,0.4)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 10, fontSize: 20, backgroundColor: '#1C2329', border: '1.5px solid rgba(201,244,0,0.4)' }}
           >
             ⚡
           </div>
-          <span className="text-lg font-black text-white tracking-tight">Amped Map</span>
+          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#C9F400' }}>Amped Map</span>
         </div>
 
         {/* Headline */}
-        <h1 className="text-4xl font-black text-white leading-tight mb-4" style={{ letterSpacing: '-0.5px' }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 44, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: 16, color: '#F0F4E8' }}>
           Find energy drinks<br />
-          <span style={{ color: '#22c55e' }}>near you.</span>
+          <span style={{ color: '#C9F400' }}>near you.</span>
         </h1>
 
-        <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 32, color: '#7A8F80' }}>
           Community-powered stock tracking for your favorite energy drinks. See what's in stock at nearby stores — in real time.
         </p>
 
         {/* Features */}
-        <div className="flex flex-col gap-2.5 mb-8">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
           {[
             { icon: '🗺️', text: 'Live map of nearby stores' },
             { icon: '⚡', text: 'Real-time stock reports from the community' },
             { icon: '🔍', text: 'Search by brand, flavor, and location' },
           ].map(({ icon, text }) => (
-            <div key={text} className="flex items-center gap-3">
+            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 15 }}>{icon}</span>
-              <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>{text}</p>
+              <p style={{ fontSize: 14, fontWeight: 500, color: '#7A8F80' }}>{text}</p>
             </div>
           ))}
         </div>
@@ -79,15 +79,14 @@ export default async function WaitlistPage() {
         {/* Social proof */}
         {count > 0 && (
           <div
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full mb-5 w-fit"
-            style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 99, marginBottom: 20, width: 'fit-content', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}
           >
-            <div className="relative w-2 h-2 shrink-0">
-              <div className="animate-ping absolute inset-0 rounded-full opacity-50" style={{ backgroundColor: '#22c55e' }} />
-              <div className="relative w-2 h-2 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+            <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
+              <div className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', opacity: 0.5, backgroundColor: '#C9F400' }} />
+              <div style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#C9F400' }} />
             </div>
-            <p className="text-xs font-bold" style={{ color: 'rgba(34,197,94,0.9)' }}>
-              <span style={{ color: '#22c55e', fontSize: 13 }}>{count.toLocaleString()}</span> people waiting to join
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(201,244,0,0.9)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+              <span style={{ color: '#C9F400', fontSize: 14 }}>{count.toLocaleString()}</span> people waiting to join
             </p>
           </div>
         )}
@@ -95,7 +94,7 @@ export default async function WaitlistPage() {
         {/* Form */}
         <WaitlistForm />
 
-        <p className="text-xs text-center mt-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
+        <p style={{ fontSize: 12, textAlign: 'center', marginTop: 16, color: '#4A5F50' }}>
           No spam. We'll only email you when we launch.
         </p>
       </div>

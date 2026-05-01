@@ -26,12 +26,11 @@ export default function WaitlistForm() {
   if (state === 'success') {
     return (
       <div
-        className="w-full rounded-2xl p-5 text-center"
-        style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}
+        style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}
       >
-        <p className="text-2xl mb-2">🎉</p>
-        <p className="text-base font-bold text-white mb-1">You're on the list!</p>
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p style={{ fontSize: 24, marginBottom: 8 }}>🎉</p>
+        <p style={{ fontSize: 16, fontWeight: 800, color: '#F0F4E8', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>You're on the list!</p>
+        <p style={{ fontSize: 13, color: '#7A8F80' }}>
           We'll email you the moment we launch.
         </p>
       </div>
@@ -41,12 +40,11 @@ export default function WaitlistForm() {
   if (state === 'duplicate') {
     return (
       <div
-        className="w-full rounded-2xl p-5 text-center"
-        style={{ backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)' }}
+        style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.06)', border: '1px solid rgba(201,244,0,0.2)' }}
       >
-        <p className="text-2xl mb-2">⚡</p>
-        <p className="text-base font-bold text-white mb-1">Already on the list!</p>
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p style={{ fontSize: 24, marginBottom: 8 }}>⚡</p>
+        <p style={{ fontSize: 16, fontWeight: 800, color: '#F0F4E8', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Already on the list!</p>
+        <p style={{ fontSize: 13, color: '#7A8F80' }}>
           We've already got your email — you'll be first to know.
         </p>
       </div>
@@ -54,35 +52,55 @@ export default function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
+    <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <input
         type="email"
         placeholder="your@email.com"
         value={email}
         onChange={(e) => { setEmail(e.target.value); if (state === 'error') setState('idle') }}
         required
-        className="w-full rounded-2xl px-4 py-4 text-white text-sm outline-none"
         style={{
-          backgroundColor: '#1a1a24',
-          border: `1.5px solid ${state === 'error' ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`,
+          width: '100%',
+          borderRadius: 14,
+          padding: '16px',
+          color: '#F0F4E8',
+          fontSize: 15,
+          outline: 'none',
+          backgroundColor: '#1C2329',
+          border: `1.5px solid ${state === 'error' ? 'rgba(255,69,69,0.5)' : 'rgba(201,244,0,0.12)'}`,
+          fontFamily: "'Barlow', sans-serif",
         }}
       />
       {state === 'error' && (
-        <p className="text-xs text-center" style={{ color: '#ef4444' }}>
+        <p style={{ fontSize: 12, textAlign: 'center', color: '#FF4545' }}>
           Something went wrong — try again.
         </p>
       )}
       <button
         type="submit"
         disabled={state === 'loading' || !email.trim()}
-        className="w-full rounded-2xl py-4 font-bold text-black text-sm flex items-center justify-center"
         style={{
-          backgroundColor: state === 'loading' || !email.trim() ? 'rgba(34,197,94,0.4)' : '#22c55e',
+          width: '100%',
+          borderRadius: 14,
+          padding: '16px',
+          fontWeight: 800,
+          color: '#0D1210',
+          fontSize: 15,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: 'none',
+          cursor: state === 'loading' || !email.trim() ? 'not-allowed' : 'pointer',
+          fontFamily: "'Barlow Condensed', sans-serif",
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          backgroundColor: state === 'loading' || !email.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400',
+          boxShadow: state === 'loading' || !email.trim() ? 'none' : '0 0 20px rgba(201,244,0,0.35)',
           transition: 'background-color 0.15s',
         }}
       >
         {state === 'loading'
-          ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+          ? <div style={{ width: 16, height: 16, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           : 'Join the Waitlist →'}
       </button>
     </form>

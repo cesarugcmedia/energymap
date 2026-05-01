@@ -48,7 +48,7 @@ export default function FavoritesPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ backgroundColor: '#070710' }}>
+      <div className="flex items-center justify-center h-screen" style={{ backgroundColor: '#141A1F' }}>
         <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -56,7 +56,7 @@ export default function FavoritesPage() {
 
   if (!isTracker) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#070710', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 48, marginBottom: 20 }}>❤️</span>
         <p style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Tracker Feature</p>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 28 }}>
@@ -64,7 +64,7 @@ export default function FavoritesPage() {
         </p>
         <button
           onClick={() => router.push('/account')}
-          style={{ padding: '13px 28px', borderRadius: 14, background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
+          style={{ padding: '13px 28px', borderRadius: 14, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)' }}
         >
           Upgrade to Tracker 🔥
         </button>
@@ -76,9 +76,9 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#070710', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+    <div className="min-h-screen" style={{ backgroundColor: '#141A1F', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div className="px-5 pb-4">
@@ -102,7 +102,7 @@ export default function FavoritesPage() {
             <button
               onClick={() => router.push('/stores')}
               className="mt-2 px-6 py-3 rounded-2xl text-sm font-bold"
-              style={{ backgroundColor: '#22c55e', color: '#000' }}
+              style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
             >
               Browse Stores
             </button>
@@ -115,7 +115,7 @@ export default function FavoritesPage() {
                 <div
                   key={fav.id}
                   className="rounded-2xl p-4"
-                  style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
                 >
                   <div className="flex items-center gap-3">
                     <span style={{ fontSize: 24 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
@@ -130,7 +130,7 @@ export default function FavoritesPage() {
                       <button
                         onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
                         className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}
+                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: '#C9F400' }}
                       >
                         View
                       </button>

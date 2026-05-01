@@ -2,14 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --volt: #C9F400;
+  --volt-dim: #8FB800;
+  --volt-glow: rgba(201,244,0,0.18);
+  --volt-glow-lg: rgba(201,244,0,0.08);
+  --bg: #141A1F;
+  --surface: #1C2329;
+  --surface2: #222B33;
+  --surface3: #283038;
+  --border: rgba(201,244,0,0.12);
+  --border-dash: rgba(201,244,0,0.35);
+  --text: #F0F4E8;
+  --text-muted: #7A8F80;
+  --text-dim: #4A5F50;
+  --red: #FF4545;
+  --amber: #FFB300;
+}
+
 html,
 body {
-  background-color: #070710;
-  color: white;
+  background-color: var(--bg);
+  color: var(--text);
   overflow: hidden;
   height: 100%;
   -webkit-tap-highlight-color: transparent;
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-family: 'Barlow', var(--font-barlow), system-ui, sans-serif;
 }
 
 @media (min-width: 768px) {
@@ -37,12 +55,13 @@ select {
   font-size: 16px !important;
 }
 
-/* Green focus ring on all inputs */
+/* Volt focus ring on all inputs */
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #22c55e !important;
+  border-color: rgba(201,244,0,0.4) !important;
+  box-shadow: 0 0 0 3px rgba(201,244,0,0.08) !important;
 }
 
 /* Smooth scrolling */
@@ -63,7 +82,7 @@ select:focus {
 
 /* Leaflet overrides */
 .leaflet-container {
-  background: #1a1a24;
+  background: #141A1F;
 }
 
 .leaflet-tile-pane {

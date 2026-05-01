@@ -2,7 +2,7 @@
 
 export default function PrivacyPage() {
   return (
-    <div className="bg-[#070710] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+    <div className="bg-[#141A1F] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 8 }}>Privacy Policy</h1>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 40 }}>Last updated: April 7, 2025</p>

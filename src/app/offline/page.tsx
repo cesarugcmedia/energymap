@@ -3,7 +3,7 @@ export default function OfflinePage() {
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#070710',
+        backgroundColor: '#141A1F',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
