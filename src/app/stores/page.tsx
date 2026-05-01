@@ -73,7 +73,7 @@ function getLatestReport(stock: any[]) {
 }
 
 const FREE_RADIUS_OPTIONS = [5]
-const HUNTER_RADIUS_OPTIONS = [10, 15, 20, 25, null]
+const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, null]
 
 const TYPE_FILTERS = [
   { value: null,          label: 'All'       },
