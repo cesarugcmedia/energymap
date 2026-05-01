@@ -178,7 +178,7 @@ export default function LeaderboardPage() {
                       </div>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: isMe ? '#C9F400' : '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: isMe ? '#C9F400' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>
                             @{entry.username}
                           </span>
                           {isMe && <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>YOU</span>}
@@ -191,7 +191,7 @@ export default function LeaderboardPage() {
 
                     {/* Points */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: isTop3 ? rankStyle.text || '#F0F4E8' : '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: isTop3 ? rankStyle.text || 'var(--text)' : 'var(--fg-50)', fontFamily: "'Barlow Condensed', sans-serif" }}>
                         {entry.points}
                       </span>
                       <span style={{ fontSize: 11, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>pts</span>
