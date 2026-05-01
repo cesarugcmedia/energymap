@@ -16,7 +16,7 @@ const QUANTITY_OPTIONS: {
 }[] = [
   { value: 'out', label: 'Out of Stock', emoji: '❌', color: '#FF4545', bg: 'rgba(255,69,69,0.08)', border: 'rgba(255,69,69,0.25)' },
   { value: 'low', label: 'Low', emoji: '🟡', color: '#FFB300', bg: 'rgba(255,179,0,0.08)', border: 'rgba(255,179,0,0.25)' },
-  { value: 'medium', label: 'Medium', emoji: '🟠', color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.25)' },
+  { value: 'medium', label: 'Medium', emoji: '🟠', color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
   { value: 'full', label: 'Full', emoji: '✅', color: '#C9F400', bg: 'rgba(201,244,0,0.08)', border: 'rgba(201,244,0,0.25)' },
 ]
 

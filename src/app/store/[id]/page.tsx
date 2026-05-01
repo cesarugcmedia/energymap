@@ -46,7 +46,7 @@ const TYPE_LABEL: Record<string, string> = {
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
-  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.25)' },
+  medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
   full:   { label: 'FULL', color: '#C9F400', bg: 'rgba(201,244,0,0.08)',  border: 'rgba(201,244,0,0.25)'  },
 }
 
@@ -533,7 +533,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           </div>
         ) : loading ? (
           <div className="flex justify-center mt-8">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : stock.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-16">

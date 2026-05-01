@@ -8,7 +8,7 @@ import type { Quantity } from '@/lib/types'
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
-  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.25)' },
+  medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
   full:   { label: 'FULL', color: '#C9F400', bg: 'rgba(201,244,0,0.08)',  border: 'rgba(201,244,0,0.25)'  },
 }
 

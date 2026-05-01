@@ -20,7 +20,7 @@ const TYPE_ICON: Record<string, string> = {
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
   out:    { label: 'OUT',  color: '#FF4545' },
   low:    { label: 'LOW',  color: '#FFB300' },
-  medium: { label: 'MED',  color: '#f97316' },
+  medium: { label: 'MED',  color: '#FFB300' },
   full:   { label: 'FULL', color: '#C9F400' },
 }
 
@@ -486,7 +486,7 @@ export default function StoresPage() {
 
                   {/* Live update notifications */}
                   {(liveUpdates[store.id] ?? []).map((update) => {
-                    const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : update.quantity === 'low' ? '#FFB300' : '#f97316'
+                    const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : update.quantity === 'low' ? '#FFB300' : '#FFB300'
                     const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
                     return (
                       <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}>

@@ -10,7 +10,7 @@ import type { Drink, Quantity } from '@/lib/types'
 const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
   { value: 'out',    label: 'Out',  color: '#FF4545', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
   { value: 'low',    label: 'Low',  color: '#FFB300', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
-  { value: 'medium', label: 'Med',  color: '#f97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.35)' },
+  { value: 'medium', label: 'Med',  color: '#FFB300', bg: 'rgba(255,179,0,0.12)',  border: 'rgba(255,179,0,0.35)'  },
   { value: 'full',   label: 'Full', color: '#C9F400', bg: 'rgba(201,244,0,0.12)',  border: 'rgba(201,244,0,0.35)'  },
 ]
 
@@ -255,7 +255,7 @@ function DrinksContent() {
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 160px' }}>
@@ -273,7 +273,7 @@ function DrinksContent() {
                     backgroundColor: '#1C2329',
                     border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : `${color}33`}`,
                     boxShadow: hasBrandSelection
-                      ? 'inset 3px 0 0 #22c55e, 0 0 14px rgba(201,244,0,0.15)'
+                      ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
                       : `inset 3px 0 0 ${color}, 0 0 14px ${color}1a`,
                   }}
                 >

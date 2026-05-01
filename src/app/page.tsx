@@ -100,7 +100,7 @@ export default function MapPage() {
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen ">
-        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -108,7 +108,7 @@ export default function MapPage() {
   if (locLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3 ">
-        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
         <p className="text-white/40 text-sm">Finding your location…</p>
       </div>
     )

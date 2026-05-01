@@ -10,7 +10,7 @@ export default function GlobalError({
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#070710',
+        backgroundColor: '#141A1F',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -29,8 +29,8 @@ export default function GlobalError({
         onClick={reset}
         style={{
           marginTop: 8,
-          backgroundColor: '#22c55e',
-          color: '#000',
+          backgroundColor: '#C9F400',
+          color: '#0D1210',
           fontWeight: 700,
           fontSize: 14,
           padding: '13px 32px',

@@ -132,7 +132,7 @@ const TIERS = [
 const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',   border: 'rgba(255,69,69,0.25)'   },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
-  medium: { label: 'MED',  color: '#f97316', bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)'  },
+  medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
   full:   { label: 'FULL', color: '#C9F400', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
@@ -663,7 +663,7 @@ function selectAndContinue(tierId: TierId) {
             <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.1)' }}>
               {[
                 { value: reportCount, label: 'Reports', color: '#C9F400' },
-                { value: storeCount,  label: 'Stores Added', color: '#f97316' },
+                { value: storeCount,  label: 'Stores Added', color: '#FFB300' },
                 { value: `${memberDays}d`, label: 'Member For', color: '#a78bfa' },
               ].map((s, i) => (
                 <div key={s.label} style={{ flex: 1, textAlign: 'center', paddingTop: 12, paddingBottom: 12, borderLeft: i > 0 ? '1px solid rgba(201,244,0,0.08)' : 'none' }}>
@@ -1177,7 +1177,7 @@ function selectAndContinue(tierId: TierId) {
                               : '🔒 Beta is full. Tracker is $10/mo.'}
                           </p>
                           <div style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)', borderRadius: 4, transition: 'width 0.5s ease' }} />
+                            <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #C9F400, #a8d400)', borderRadius: 4, transition: 'width 0.5s ease' }} />
                           </div>
                           <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>{betaCount} / {BETA_LIMIT} beta spots claimed</p>
                         </div>

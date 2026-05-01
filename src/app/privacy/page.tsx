@@ -79,7 +79,7 @@ To exercise any of these rights, contact us at the email below.`,
           },
         ].map(({ title, body }) => (
           <div key={title} style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#22c55e', marginBottom: 10 }}>{title}</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#C9F400', marginBottom: 10 }}>{title}</h2>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, whiteSpace: 'pre-line' }}>{body}</p>
           </div>
         ))}

@@ -118,7 +118,7 @@ export default function AdminPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen ">
-        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -487,15 +487,15 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#070710', position: 'relative' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34,197,94,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+    <div className="min-h-screen" style={{ backgroundColor: '#141A1F', position: 'relative' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
       <Toast message={toastMessage} visible={toastVisible} />
       {/* Sticky header */}
       <div
         style={{
           position: 'sticky', top: 0, zIndex: 20,
-          backgroundColor: 'rgba(7,7,16,0.92)',
+          backgroundColor: 'rgba(20,26,31,0.92)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -531,7 +531,7 @@ export default function AdminPage() {
           )}
           <button
             onClick={handleLogout}
-            style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+            style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: '#FF4545', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)' }}
           >
             Sign Out
           </button>
@@ -544,15 +544,15 @@ export default function AdminPage() {
           <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>NEEDS ATTENTION</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
             {[
-              { key: 'stores', icon: '🕐', label: 'Pending Stores', count: pendingCount, badgeColor: '#f97316', desc: 'Review submissions' },
-              { key: 'flags',  icon: '🚩', label: 'Location Flags',  count: flagsCount,   badgeColor: '#ef4444', desc: 'Fix reported issues' },
+              { key: 'stores', icon: '🕐', label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
+              { key: 'flags',  icon: '🚩', label: 'Location Flags',  count: flagsCount,   badgeColor: '#FF4545', desc: 'Fix reported issues' },
             ].map(({ key, icon, label, count, badgeColor, desc }) => (
               <button
                 key={key}
                 onClick={() => navigate(key as any)}
                 style={{
                   borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
-                  backgroundColor: '#1a1a24',
+                  backgroundColor: '#1C2329',
                   border: `1.5px solid ${count > 0 ? `${badgeColor}44` : 'rgba(255,255,255,0.07)'}`,
                   boxShadow: count > 0 ? `0 0 20px ${badgeColor}18` : 'none',
                   position: 'relative',
@@ -587,7 +587,7 @@ export default function AdminPage() {
                 onClick={() => navigate(key as any)}
                 style={{
                   borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
-                  backgroundColor: '#1a1a24',
+                  backgroundColor: '#1C2329',
                   border: '1.5px solid rgba(255,255,255,0.07)',
                 }}
               >
@@ -603,7 +603,7 @@ export default function AdminPage() {
       {tab !== null && (tab === 'flags' ? (
         flagsLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : flags.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -624,7 +624,7 @@ export default function AdminPage() {
                   <div
                     key={flag.id}
                     className="rounded-2xl p-4"
-                    style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(239,68,68,0.2)' }}
+                    style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,69,69,0.2)' }}
                   >
                     <div className="flex items-start gap-3 mb-3">
                       <span style={{ fontSize: 22 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
@@ -654,7 +654,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         className="flex-1 rounded-xl p-2.5 text-xs font-bold flex items-center justify-center"
-                        style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
+                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: '#C9F400', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
                         disabled={resolvingFlag.has(flag.id)}
                         onClick={() => resolveFlag(flag.id)}
                       >
@@ -670,7 +670,7 @@ export default function AdminPage() {
       ) : tab === 'locations' ? (
         locationsLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="px-4 pb-6">
@@ -680,7 +680,7 @@ export default function AdminPage() {
               value={locationSearch}
               onChange={(e) => setLocationSearch(e.target.value)}
               className="w-full rounded-xl p-3 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
             />
             <div className="flex flex-col gap-2.5">
               {locations
@@ -689,7 +689,7 @@ export default function AdminPage() {
                   <div
                     key={store.id}
                     className="rounded-2xl p-4 flex items-center gap-3"
-                    style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                    style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
                   >
                     <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
                     <div className="flex-1 min-w-0">
@@ -710,7 +710,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => deleteLocation(store.id)}
                         className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                        style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
                       >
                         🗑️ Delete
                       </button>
@@ -729,7 +729,7 @@ export default function AdminPage() {
       ) : tab === 'drinks' ? (
         drinksLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="px-4 pb-6">
@@ -737,7 +737,7 @@ export default function AdminPage() {
             <div className="flex gap-2 mb-4">
               <div
                 className="flex-1 flex items-center gap-2 rounded-xl px-3.5 py-2.5"
-                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
               >
                 <span className="text-white/30 text-sm">🔍</span>
                 <input
@@ -752,7 +752,7 @@ export default function AdminPage() {
               <button
                 onClick={() => setShowAddForm((v) => !v)}
                 className="px-3.5 rounded-xl text-sm font-bold"
-                style={{ backgroundColor: showAddForm ? 'rgba(255,255,255,0.06)' : '#22c55e', color: showAddForm ? 'rgba(255,255,255,0.5)' : '#000' }}
+                style={{ backgroundColor: showAddForm ? 'rgba(255,255,255,0.06)' : '#C9F400', color: showAddForm ? 'rgba(255,255,255,0.5)' : '#0D1210' }}
               >
                 {showAddForm ? '✕' : '+ Add'}
               </button>
@@ -762,7 +762,7 @@ export default function AdminPage() {
             {showAddForm && (
               <div
                 className="rounded-2xl p-4 mb-4 flex flex-col gap-3"
-                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(34,197,94,0.25)' }}
+                style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.25)' }}
               >
                 <p className="text-xs font-bold text-white/40" style={{ letterSpacing: '1.5px' }}>NEW DRINK</p>
                 <input
@@ -771,7 +771,7 @@ export default function AdminPage() {
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
                 <input
                   type="text"
@@ -779,7 +779,7 @@ export default function AdminPage() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
                 <input
                   type="text"
@@ -787,13 +787,13 @@ export default function AdminPage() {
                   value={newFlavor}
                   onChange={(e) => setNewFlavor(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
                 />
                 <button
                   onClick={addDrink}
                   disabled={addingDrink}
                   className="w-full rounded-xl p-3 font-bold text-white text-sm flex items-center justify-center"
-                  style={{ backgroundColor: addingDrink ? 'rgba(34,197,94,0.4)' : '#22c55e' }}
+                  style={{ backgroundColor: addingDrink ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
                 >
                   {addingDrink ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Add Drink'}
                 </button>
@@ -832,7 +832,7 @@ export default function AdminPage() {
                         key={drink.id}
                         className="flex items-center gap-3 rounded-xl px-3.5 py-3"
                         style={{
-                          backgroundColor: '#1a1a24',
+                          backgroundColor: '#1C2329',
                           border: `1.5px solid ${brandColor}55`,
                           boxShadow: `0 0 10px ${brandColor}22, 0 0 20px ${brandColor}0d`,
                         }}
@@ -844,7 +844,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => deleteDrink(drink.id)}
                           className="text-xs font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                          style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
                         >
                           🗑️
                         </button>
@@ -859,11 +859,11 @@ export default function AdminPage() {
       ) : tab === 'users' ? (
         usersLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="flex flex-col gap-2.5 px-4 pb-6">
-            <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-1" style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-1" style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}>
               <span className="text-white/30 text-sm">🔍</span>
               <input
                 type="text"
@@ -878,13 +878,13 @@ export default function AdminPage() {
               <div
                 key={u.id}
                 className="rounded-2xl px-4 py-3.5 flex items-center gap-3"
-                style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.2)' }}
+                  style={{ backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid rgba(201,244,0,0.2)' }}
                 >
-                  <span className="text-sm font-black" style={{ color: '#22c55e' }}>
+                  <span className="text-sm font-black" style={{ color: '#C9F400' }}>
                     {u.username?.[0]?.toUpperCase()}
                   </span>
                 </div>
@@ -892,13 +892,13 @@ export default function AdminPage() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-sm font-bold text-white">@{u.username}</p>
                     {u.is_admin && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>ADMIN</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
                     )}
                     {u.is_verified_reporter && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                     )}
                     {u.tier === 'tracker' && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', border: '1px solid rgba(249,115,22,0.35)' }}>🔥 TRACKER</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>⚡ TRACKER</span>
                     )}
                   </div>
                   <p className="text-xs text-white/30 mt-0.5">Joined {timeAgo(u.created_at)}</p>
@@ -907,7 +907,7 @@ export default function AdminPage() {
                   onClick={() => deleteUser(u.id, u.username)}
                   disabled={deletingUserId === u.id}
                   className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', opacity: deletingUserId === u.id ? 0.5 : 1 }}
+                  style={{ backgroundColor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', color: '#FF4545', opacity: deletingUserId === u.id ? 0.5 : 1 }}
                 >
                   {deletingUserId === u.id ? '...' : '🗑 Delete'}
                 </button>
@@ -915,7 +915,7 @@ export default function AdminPage() {
                   onClick={() => toggleVerified(u.id, u.is_verified_reporter)}
                   className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
                   style={u.is_verified_reporter
-                    ? { backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }
+                    ? { backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.25)', color: '#FF4545' }
                     : { backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#60a5fa' }
                   }
                 >
@@ -934,7 +934,7 @@ export default function AdminPage() {
       ) : tab === 'waitlist' ? (
         waitlistLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : waitlist.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
@@ -952,14 +952,14 @@ export default function AdminPage() {
                 <div
                   key={w.email}
                   className="rounded-2xl p-4 flex items-center justify-between gap-3"
-                  style={{ backgroundColor: '#1a1a24', border: `1px solid ${i < 60 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)'}` }}
+                  style={{ backgroundColor: '#1C2329', border: `1px solid ${i < 60 ? 'rgba(201,244,0,0.15)' : 'rgba(255,255,255,0.07)'}` }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black"
                       style={{
-                        backgroundColor: i < 60 ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
-                        color: i < 60 ? '#22c55e' : 'rgba(255,255,255,0.3)',
+                        backgroundColor: i < 60 ? 'rgba(201,244,0,0.12)' : 'rgba(255,255,255,0.06)',
+                        color: i < 60 ? '#C9F400' : 'rgba(255,255,255,0.3)',
                       }}
                     >
                       {i + 1}
@@ -969,7 +969,7 @@ export default function AdminPage() {
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
                       Joined {new Date(w.created_at).toLocaleDateString()}
                       {w.invited_at && (
-                        <span style={{ color: '#22c55e' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
+                        <span style={{ color: '#C9F400' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
                       )}
                     </p>
                   </div>
@@ -980,9 +980,9 @@ export default function AdminPage() {
                       disabled={inviting.has(w.email)}
                       className="rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5"
                       style={{
-                        backgroundColor: w.invited_at ? 'rgba(34,197,94,0.1)' : '#22c55e',
-                        color: w.invited_at ? '#22c55e' : '#000',
-                        border: w.invited_at ? '1px solid rgba(34,197,94,0.3)' : 'none',
+                        backgroundColor: w.invited_at ? 'rgba(201,244,0,0.1)' : '#C9F400',
+                        color: w.invited_at ? '#C9F400' : '#0D1210',
+                        border: w.invited_at ? '1px solid rgba(201,244,0,0.3)' : 'none',
                         opacity: inviting.has(w.email) ? 0.5 : 1,
                       }}
                     >
@@ -994,7 +994,7 @@ export default function AdminPage() {
                       onClick={() => deleteWaitlistEntry(w.email)}
                       disabled={deletingWaitlist.has(w.email)}
                       className="rounded-xl px-2.5 py-2 text-xs font-bold"
-                      style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', opacity: deletingWaitlist.has(w.email) ? 0.5 : 1 }}
+                      style={{ backgroundColor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', color: '#FF4545', opacity: deletingWaitlist.has(w.email) ? 0.5 : 1 }}
                     >
                       {deletingWaitlist.has(w.email) ? '...' : '🗑'}
                     </button>
@@ -1006,7 +1006,7 @@ export default function AdminPage() {
         )
       ) : loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : stores.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -1020,7 +1020,7 @@ export default function AdminPage() {
             <div
               key={store.id}
               className="rounded-2xl overflow-hidden"
-              style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,200,0,0.2)' }}
+              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,200,0,0.2)' }}
             >
               {/* Store info */}
               <div className="flex gap-3 p-3.5">
@@ -1058,9 +1058,9 @@ export default function AdminPage() {
                 <button
                   className="flex-1 rounded-xl p-2.5 text-sm font-bold"
                   style={{
-                    backgroundColor: 'rgba(239,68,68,0.1)',
-                    border: '1px solid rgba(239,68,68,0.25)',
-                    color: '#ef4444',
+                    backgroundColor: 'rgba(255,69,69,0.1)',
+                    border: '1px solid rgba(255,69,69,0.25)',
+                    color: '#FF4545',
                   }}
                   onClick={() => rejectStore(store.id)}
                 >
@@ -1069,9 +1069,9 @@ export default function AdminPage() {
                 <button
                   className="flex-1 rounded-xl p-2.5 text-sm font-bold"
                   style={{
-                    backgroundColor: 'rgba(34,197,94,0.12)',
-                    border: '1px solid rgba(34,197,94,0.3)',
-                    color: '#22c55e',
+                    backgroundColor: 'rgba(201,244,0,0.12)',
+                    border: '1px solid rgba(201,244,0,0.3)',
+                    color: '#C9F400',
                   }}
                   onClick={() => approveStore(store.id)}
                 >
@@ -1093,7 +1093,7 @@ export default function AdminPage() {
         >
           <div
             className="w-full max-w-md rounded-t-3xl p-6 pb-10"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
@@ -1103,8 +1103,8 @@ export default function AdminPage() {
             </div>
             <p className="text-sm text-white/50 leading-relaxed mb-6">{drinkDuplicateMsg}</p>
             <button
-              className="w-full rounded-2xl p-4 font-bold text-white"
-              style={{ backgroundColor: '#22c55e' }}
+              className="w-full rounded-2xl p-4 font-bold"
+              style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
               onClick={() => setDrinkDuplicateMsg(null)}
             >
               Got it
@@ -1122,7 +1122,7 @@ export default function AdminPage() {
         >
           <div
             className="rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto"
-            style={{ backgroundColor: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 40 }}
+            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 40 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
@@ -1132,7 +1132,7 @@ export default function AdminPage() {
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
             />
@@ -1141,7 +1141,7 @@ export default function AdminPage() {
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
               value={editAddress}
               onChange={(e) => setEditAddress(e.target.value)}
             />
@@ -1154,7 +1154,7 @@ export default function AdminPage() {
                   type="number"
                   step="any"
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
                   value={editLat}
                   onChange={(e) => setEditLat(e.target.value)}
                 />
@@ -1165,7 +1165,7 @@ export default function AdminPage() {
                   type="number"
                   step="any"
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#070710', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
                   value={editLng}
                   onChange={(e) => setEditLng(e.target.value)}
                 />
@@ -1179,8 +1179,8 @@ export default function AdminPage() {
                   key={t.value}
                   className="flex items-center gap-1.5 rounded-xl px-3 py-2.5"
                   style={{
-                    backgroundColor: editType === t.value ? 'rgba(34,197,94,0.08)' : '#070710',
-                    border: `1.5px solid ${editType === t.value ? '#22c55e' : 'transparent'}`,
+                    backgroundColor: editType === t.value ? 'rgba(201,244,0,0.08)' : '#141A1F',
+                    border: `1.5px solid ${editType === t.value ? '#C9F400' : 'transparent'}`,
                     minWidth: '47%',
                   }}
                   onClick={() => setEditType(t.value)}
@@ -1205,8 +1205,8 @@ export default function AdminPage() {
                 Cancel
               </button>
               <button
-                className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
-                style={{ backgroundColor: '#22c55e' }}
+                className="flex-1 rounded-xl p-3.5 font-bold text-sm flex items-center justify-center"
+                style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
                 onClick={saveEdit}
                 disabled={saving}
               >
@@ -1222,7 +1222,7 @@ export default function AdminPage() {
               <div className="flex gap-2.5">
                 <button
                   className="flex-1 rounded-xl p-3.5 font-bold text-sm"
-                  style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
+                  style={{ backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.25)', color: '#FF4545' }}
                   onClick={() => {
                     setEditStore(null)
                     rejectStore(editStore?.id)
@@ -1232,7 +1232,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   className="flex-1 rounded-xl p-3.5 font-bold text-sm"
-                  style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}
+                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: '#C9F400' }}
                   onClick={() => {
                     approveStore(editStore?.id)
                     setEditStore(null)
@@ -1246,7 +1246,7 @@ export default function AdminPage() {
             {editStore?.status === 'approved' && (
               <button
                 className="w-full rounded-xl p-3.5 font-bold text-sm mt-0"
-                style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
+                style={{ backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.25)', color: '#FF4545' }}
                 onClick={() => deleteLocation(editStore.id)}
               >
                 🗑️ Delete Location

@@ -49,7 +49,7 @@ export default function FavoritesPage() {
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ backgroundColor: '#141A1F' }}>
-        <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -90,7 +90,7 @@ export default function FavoritesPage() {
 
         {loading ? (
           <div className="flex justify-center mt-16">
-            <div className="w-8 h-8 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : favorites.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-5 text-center">
