@@ -388,21 +388,23 @@ export default function StoresPage() {
                   {isAtStore ? '● HERE' : `${nearestDist!.toFixed(1)} mi`}
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button className="action-btn" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
                   onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
                   ⚡ REPORT
                 </button>
-                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                  onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
-                  VIEW
-                </button>
-                {!isAtStore && (
-                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                    onClick={() => openDirections(nearest.lat, nearest.lng)}>
-                    DIR →
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
+                    View
                   </button>
-                )}
+                  {!isAtStore && (
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                      onClick={() => openDirections(nearest.lat, nearest.lng)}>
+                      Directions
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -501,19 +503,21 @@ export default function StoresPage() {
                   })}
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '10px 0', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <button className="action-btn" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '10px 0', color: '#0D1210', fontSize: 14, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
                       ⚡ REPORT
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                      onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                      VIEW
-                    </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                      onClick={() => openDirections(store.lat, store.lng)}>
-                      DIR →
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                        onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
+                        View
+                      </button>
+                      <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                        onClick={() => openDirections(store.lat, store.lng)}>
+                        Directions
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
