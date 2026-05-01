@@ -377,14 +377,14 @@ export default function StoresPage() {
                 onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}
                 className="cursor-pointer"
               >
-                <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
                   {TYPE_ICON[nearest.type]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
-                  <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
+                  <p style={{ fontSize: 12, color: 'var(--fg-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
                 </div>
-                <p style={{ fontSize: 16, fontWeight: 800, color: isAtStore ? '#C9F400' : '#C9F400', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+                <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
                   {isAtStore ? '● HERE' : `${nearestDist!.toFixed(1)} mi`}
                 </p>
               </div>
@@ -393,12 +393,12 @@ export default function StoresPage() {
                   onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
                   ⚡ REPORT
                 </button>
-                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
                   VIEW
                 </button>
                 {!isAtStore && (
-                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '11px 0', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                  <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                     onClick={() => openDirections(nearest.lat, nearest.lng)}>
                     DIR →
                   </button>
@@ -444,12 +444,12 @@ export default function StoresPage() {
                   {/* Top row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
                     onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                    <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
                       {TYPE_ICON[store.type]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
-                      <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
+                      <p style={{ fontSize: 12, color: 'var(--fg-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
                     </div>
                     <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
                   </div>
@@ -506,11 +506,11 @@ export default function StoresPage() {
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
                       ⚡ REPORT
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
                       VIEW
                     </button>
-                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#283038', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 10, padding: '10px 0', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       onClick={() => openDirections(store.lat, store.lng)}>
                       DIR →
                     </button>
