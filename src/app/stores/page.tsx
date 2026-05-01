@@ -331,7 +331,7 @@ export default function StoresPage() {
             return (
               <button key={f.value ?? 'all'} className="pill-btn"
                 onClick={() => setTypeFilter(f.value)}
-                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? 'transparent' : 'var(--surface)', color: active ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
                 {f.label}
               </button>
             )
@@ -343,7 +343,7 @@ export default function StoresPage() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
             <button className="pill-btn"
               onClick={() => setBrandFilter(null)}
-              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? 'transparent' : 'var(--surface)', color: brandFilter === null ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
+              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? '#C9F400' : 'var(--surface)', color: brandFilter === null ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
               ALL BRANDS
             </button>
             {availableBrands.map((brand) => {
@@ -352,7 +352,7 @@ export default function StoresPage() {
               return (
                 <button key={brand} className="pill-btn"
                   onClick={() => setBrandFilter(active ? null : brand)}
-                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? color : 'rgba(201,244,0,0.12)', backgroundColor: active ? `${color}22` : 'var(--surface)', color: active ? color : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
                   {brand}
                 </button>
               )
