@@ -9,7 +9,7 @@ const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: stri
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
   medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
-  full:   { label: 'FULL', color: '#C9F400', bg: 'rgba(201,244,0,0.08)',  border: 'rgba(201,244,0,0.25)'  },
+  full:   { label: 'FULL', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)',  border: 'rgba(201,244,0,0.25)'  },
 }
 
 function ResultContent() {
@@ -59,7 +59,7 @@ function ResultContent() {
   }, {})
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
@@ -117,7 +117,7 @@ function ResultContent() {
                             display: 'flex', alignItems: 'center',
                             padding: '12px 14px',
                             borderRadius: 12,
-                            backgroundColor: '#1C2329',
+                            backgroundColor: 'var(--surface)',
                             border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
                           }}
                         >
@@ -159,7 +159,7 @@ function ResultContent() {
           <button
             style={{
               width: '100%', borderRadius: 14, padding: '14px 0', cursor: 'pointer',
-              backgroundColor: '#1C2329',
+              backgroundColor: 'var(--surface)',
               border: '1px solid rgba(201,244,0,0.12)',
               fontSize: 14, fontWeight: 700, color: '#7A8F80',
               fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase',

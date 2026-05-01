@@ -21,7 +21,7 @@ const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
   out:    { label: 'OUT',  color: '#FF4545' },
   low:    { label: 'LOW',  color: '#FFB300' },
   medium: { label: 'MED',  color: '#FFB300' },
-  full:   { label: 'FULL', color: '#C9F400' },
+  full:   { label: 'FULL', color: 'var(--accent)' },
 }
 
 function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
@@ -219,7 +219,7 @@ export default function StoresPage() {
 
   if (locError) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: '#141A1F' }}>
+      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: 'var(--bg)' }}>
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
           <p style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Location Access Needed</p>
@@ -227,7 +227,7 @@ export default function StoresPage() {
             Amped Map uses your location to show nearby stores. Please allow location access to continue.
           </p>
         </div>
-        <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)' }}>
+        <div className="w-full rounded-2xl p-4 text-left" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', marginBottom: 12, letterSpacing: '1.4px', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How to enable in your browser</p>
           <div className="flex flex-col gap-2.5">
             <p style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}><span style={{ color: '#F0F4E8', fontWeight: 600 }}>Chrome / Edge:</span> Click the lock icon → Site settings → Location → Allow</p>
@@ -258,7 +258,7 @@ export default function StoresPage() {
   const isAtStore = nearestDist !== null && nearestDist < 0.15
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .store-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
@@ -277,10 +277,10 @@ export default function StoresPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
           <div>
             <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
-              Nearby <span style={{ color: '#C9F400' }}>Stores</span>
+              Nearby <span style={{ color: 'var(--accent)' }}>Stores</span>
             </h1>
             <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-              {loading ? 'Loading…' : <><strong style={{ color: '#C9F400', fontWeight: 700 }}>{sorted.length}</strong> stores found</>}
+              {loading ? 'Loading…' : <><strong style={{ color: 'var(--accent)', fontWeight: 700 }}>{sorted.length}</strong> stores found</>}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -303,7 +303,7 @@ export default function StoresPage() {
             placeholder="Search stores..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: '#F0F4E8', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+            style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: '#F0F4E8', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
           />
           {search && (
             <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
@@ -317,7 +317,7 @@ export default function StoresPage() {
             return (
               <button key={r ?? 'all'} className="pill-btn"
                 onClick={() => setRadius(r)}
-                style={{ flexShrink: 0, padding: '7px 16px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : '#1C2329', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                style={{ flexShrink: 0, padding: '7px 16px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
                 {r === null ? 'ALL' : `${r} MI`}
               </button>
             )
@@ -331,7 +331,7 @@ export default function StoresPage() {
             return (
               <button key={f.value ?? 'all'} className="pill-btn"
                 onClick={() => setTypeFilter(f.value)}
-                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? 'transparent' : '#1C2329', color: active ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? 'transparent' : 'var(--surface)', color: active ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
                 {f.label}
               </button>
             )
@@ -343,7 +343,7 @@ export default function StoresPage() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
             <button className="pill-btn"
               onClick={() => setBrandFilter(null)}
-              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? 'transparent' : '#1C2329', color: brandFilter === null ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
+              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? 'transparent' : 'var(--surface)', color: brandFilter === null ? '#C9F400' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 10px rgba(201,244,0,0.2)' : 'none' }}>
               ALL BRANDS
             </button>
             {availableBrands.map((brand) => {
@@ -352,7 +352,7 @@ export default function StoresPage() {
               return (
                 <button key={brand} className="pill-btn"
                   onClick={() => setBrandFilter(active ? null : brand)}
-                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? color : 'rgba(201,244,0,0.12)', backgroundColor: active ? `${color}22` : '#1C2329', color: active ? color : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? color : 'rgba(201,244,0,0.12)', backgroundColor: active ? `${color}22` : 'var(--surface)', color: active ? color : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
                   {brand}
                 </button>
               )
@@ -364,7 +364,7 @@ export default function StoresPage() {
         {loading ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ height: 10, width: 80, borderRadius: 6, backgroundColor: 'rgba(201,244,0,0.07)', marginBottom: 8 }} />
-            <div style={{ borderRadius: 16, height: 96, backgroundColor: '#1C2329' }} className="animate-pulse" />
+            <div style={{ borderRadius: 16, height: 96, backgroundColor: 'var(--surface)' }} className="animate-pulse" />
           </div>
         ) : nearest && (
           <div style={{ marginBottom: 20, animation: 'fadeUp 0.5s ease 0.08s both' }}>
@@ -439,7 +439,7 @@ export default function StoresPage() {
 
               return (
                 <div key={store.id} className="store-card"
-                  style={{ backgroundColor: '#1C2329', borderRadius: 16, padding: 14, border: `1px solid rgba(201,244,0,0.12)` }}>
+                  style={{ backgroundColor: 'var(--surface)', borderRadius: 16, padding: 14, border: `1px solid rgba(201,244,0,0.12)` }}>
 
                   {/* Top row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
@@ -451,7 +451,7 @@ export default function StoresPage() {
                       <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
                       <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
                     </div>
-                    <p style={{ fontSize: 16, fontWeight: 800, color: '#C9F400', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
+                    <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
                   </div>
 
                   {/* Stock bar or Be First CTA */}
@@ -480,7 +480,7 @@ export default function StoresPage() {
                       style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.03)', border: '1.5px dashed rgba(201,244,0,0.35)', cursor: 'pointer' }}
                       onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
                     >
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: '#C9F400' }}>⚡ Be the first to report here →</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--accent)' }}>⚡ Be the first to report here →</span>
                     </button>
                   )}
 

@@ -129,12 +129,12 @@ export default function AddStorePage() {
     setSubmitting(false)
   }
 
-  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: '#F0F4E8', fontSize: 15, outline: 'none', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
+  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: '#F0F4E8', fontSize: 15, outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
   const labelStyle = { fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, display: 'block', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const }
 
   if (submitted) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
         <p style={{ fontSize: 28, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Store Submitted!</p>
         <p style={{ fontSize: 14, color: '#7A8F80', marginBottom: 40, lineHeight: 1.6 }}>
@@ -147,7 +147,7 @@ export default function AddStorePage() {
           Back to Map
         </button>
         <button
-          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 700, fontSize: 14, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: '#1C2329', color: '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 700, fontSize: 14, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: 'var(--surface)', color: '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
           onClick={() => {
             setName('')
             setAddress('')
@@ -163,20 +163,20 @@ export default function AddStorePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', position: 'relative', overflowX: 'hidden' }}>
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{ position: 'relative', zIndex: 1, overflowY: 'auto', paddingBottom: 80 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 'calc(56px + env(safe-area-inset-top)) 20px 16px' }}>
         <button
           onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18, flexShrink: 0 }}
+          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18, flexShrink: 0 }}
         >
           ←
         </button>
         <div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
-            Add a <span style={{ color: '#C9F400' }}>Store</span>
+            Add a <span style={{ color: 'var(--accent)' }}>Store</span>
           </h1>
           <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2 }}>Help grow the map ⚡</p>
         </div>
@@ -233,7 +233,7 @@ export default function AddStorePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, borderRadius: 12, padding: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
             <span style={{ fontSize: 20 }}>📍</span>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>Location found!</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>Location found!</p>
               <p style={{ fontSize: 11, color: '#7A8F80', marginTop: 2 }}>
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
@@ -288,7 +288,7 @@ export default function AddStorePage() {
               key={t.value}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, padding: '12px 14px', cursor: 'pointer',
-                backgroundColor: type === t.value ? 'rgba(201,244,0,0.08)' : '#1C2329',
+                backgroundColor: type === t.value ? 'rgba(201,244,0,0.08)' : 'var(--surface)',
                 border: `1.5px solid ${type === t.value ? '#C9F400' : 'rgba(201,244,0,0.12)'}`,
                 minWidth: '47%',
               }}
@@ -346,7 +346,7 @@ export default function AddStorePage() {
           onClick={() => setDuplicate(null)}
         >
           <div
-            style={{ width: '100%', maxWidth: 480, borderRadius: '24px 24px 0 0', padding: '24px 24px 40px', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)' }}
+            style={{ width: '100%', maxWidth: 480, borderRadius: '24px 24px 0 0', padding: '24px 24px 40px', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ width: 36, height: 4, borderRadius: 2, margin: '0 auto 20px', backgroundColor: 'rgba(201,244,0,0.2)' }} />

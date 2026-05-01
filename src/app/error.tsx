@@ -10,7 +10,7 @@ export default function GlobalError({
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#141A1F',
+        backgroundColor: 'var(--bg)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -22,7 +22,7 @@ export default function GlobalError({
     >
       <span style={{ fontSize: 52 }}>⚠️</span>
       <p style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Something went wrong</p>
-      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, margin: 0 }}>
+      <p style={{ fontSize: 14, color: 'var(--fg-40)', lineHeight: 1.6, margin: 0 }}>
         An unexpected error occurred.
       </p>
       <button

@@ -11,7 +11,7 @@ export const BRAND_COLORS: Record<string, string> = {
 }
 
 export default function BrandLogo({ brand, size = 32 }: { brand: string; size?: number }) {
-  const color = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
+  const color = BRAND_COLORS[brand] ?? 'var(--fg-40)'
   const letter = brand.charAt(0).toUpperCase()
 
   return (

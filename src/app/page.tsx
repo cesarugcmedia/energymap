@@ -135,7 +135,7 @@ export default function MapPage() {
 
         <div
           className="w-full rounded-2xl p-4 text-left"
-          style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
         >
           <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
             HOW TO ENABLE IN YOUR BROWSER
@@ -203,7 +203,7 @@ export default function MapPage() {
               className="w-10 h-10 rounded-full flex items-center justify-center font-light"
               style={{
                 backgroundColor: 'rgba(10,10,15,0.92)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                border: '1px solid var(--fg-15)',
                 backdropFilter: 'blur(12px)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
                 color: '#fff',
@@ -240,7 +240,7 @@ export default function MapPage() {
             className="mb-2 rounded-2xl p-3 flex flex-col gap-2"
             style={{
               backgroundColor: 'rgba(10,10,15,0.92)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid var(--fg-10)',
               backdropFilter: 'blur(12px)',
               minWidth: 150,
             }}
@@ -259,7 +259,7 @@ export default function MapPage() {
           className="w-10 h-10 rounded-full flex items-center justify-center ml-auto"
           style={{
             backgroundColor: legendOpen ? '#C9F400' : 'rgba(10,10,15,0.92)',
-            border: '1px solid rgba(255,255,255,0.15)',
+            border: '1px solid var(--fg-15)',
             backdropFilter: 'blur(12px)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
           }}
@@ -273,8 +273,8 @@ export default function MapPage() {
         <div
           className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-5"
           style={{
-            backgroundColor: '#1C2329',
-            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--fg-08)',
             paddingBottom: 'calc(70px + env(safe-area-inset-bottom) + 12px)',
           }}
           onTouchStart={(e) => { swipeStartY.current = e.touches[0].clientY }}
@@ -285,7 +285,7 @@ export default function MapPage() {
             swipeStartY.current = null
           }}
         >
-          <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
 
           {/* Store name + close */}
           <div className="flex items-center justify-between mb-3">
@@ -299,7 +299,7 @@ export default function MapPage() {
             <button
               onClick={() => setSelected(null)}
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-2"
-              style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: 'var(--fg-07)' }}
             >
               <span className="text-white/50 text-xs">✕</span>
             </button>
@@ -309,7 +309,7 @@ export default function MapPage() {
           <div className="flex items-center gap-3 mb-4">
             <div
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
             >
               <span style={{ fontSize: 11 }}>📍</span>
               <span className="text-xs font-semibold text-white/60">
@@ -319,7 +319,7 @@ export default function MapPage() {
             {lastUpdated && isTracker && (
               <div
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
               >
                 <span style={{ fontSize: 11 }}>🕐</span>
                 <span className="text-xs font-semibold text-white/60">
@@ -334,10 +334,10 @@ export default function MapPage() {
             <button
               className="flex-1 rounded-xl py-3 font-semibold text-sm"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.06)',
-                border: '1.5px solid rgba(255,255,255,0.5)',
-                color: 'rgba(255,255,255,0.9)',
-                boxShadow: '0 0 12px rgba(255,255,255,0.15), 0 0 24px rgba(255,255,255,0.07)',
+                backgroundColor: 'var(--fg-06)',
+                border: '1.5px solid var(--fg-50)',
+                color: 'var(--fg-90)',
+                boxShadow: '0 0 12px var(--fg-15), 0 0 24px var(--fg-07)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
               onClick={() => openDirections(selected.lat, selected.lng)}

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 
 const ALL_TABS = [
   { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
@@ -17,6 +18,7 @@ const TAB_PATHS = ['/', '/stores', '/leaderboard', '/notifications', '/account',
 export default function SideNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
+  const { theme, toggle } = useTheme()
 
   if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
@@ -37,7 +39,7 @@ export default function SideNav() {
       style={{
         width: 220,
         height: '100dvh',
-        backgroundColor: '#1C2329',
+        backgroundColor: 'var(--surface)',
         borderRight: '1px solid rgba(201,244,0,0.12)',
         position: 'fixed',
         top: 0,
@@ -47,7 +49,7 @@ export default function SideNav() {
     >
       {/* Logo */}
       <div style={{ padding: '28px 20px 24px' }}>
-        <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: 2, color: '#C9F400', lineHeight: 1, textTransform: 'uppercase' }}>
+        <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: 2, color: 'var(--accent)', lineHeight: 1, textTransform: 'uppercase' }}>
           Amped Map
         </p>
         <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>Find drinks near you</p>
@@ -74,8 +76,30 @@ export default function SideNav() {
         })}
       </nav>
 
+      {/* Theme toggle */}
+      <button
+        onClick={toggle}
+        style={{
+          margin: '0 12px 8px',
+          padding: '10px 14px',
+          borderRadius: 12,
+          backgroundColor: 'var(--fg-06)',
+          border: '1px solid var(--fg-07)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          color: 'var(--text-muted)',
+        }}
+      >
+        <span style={{ fontSize: 16 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+        </span>
+      </button>
+
       {/* User footer */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(201,244,0,0.12)' }}>
+      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--fg-07)' }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
           {profile?.username ?? user.email?.split('@')[0] ?? 'User'}
         </p>

@@ -71,7 +71,7 @@ export default function NotificationsPage() {
 
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: '#141A1F' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: 'var(--bg)' }}>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     )
@@ -79,7 +79,7 @@ export default function NotificationsPage() {
 
   if (!isTracker) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 48, marginBottom: 20 }}>🔔</span>
         <p style={{ fontSize: 22, fontWeight: 800, color: '#F0F4E8', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Tracker Feature</p>
         <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6, marginBottom: 28 }}>
@@ -99,14 +99,14 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: '#F0F4E8' }}>
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div style={{ position: 'relative', zIndex: 1, paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px 16px' }}>
         <div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
-            🔔 Notifi<span style={{ color: '#C9F400' }}>cations</span>
+            🔔 Notifi<span style={{ color: 'var(--accent)' }}>cations</span>
           </h1>
           <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 4 }}>Updates on your stores and reports</p>
         </div>
@@ -115,7 +115,7 @@ export default function NotificationsPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 onClick={() => setConfirmClear(false)}
-                style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
+                style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
               >
                 Cancel
               </button>
@@ -129,7 +129,7 @@ export default function NotificationsPage() {
           ) : (
             <button
               onClick={() => setConfirmClear(true)}
-              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
+              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
             >
               Clear All
             </button>
@@ -158,7 +158,7 @@ export default function NotificationsPage() {
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 12,
-                backgroundColor: n.read ? '#1C2329' : 'rgba(201,244,0,0.06)',
+                backgroundColor: n.read ? 'var(--surface)' : 'rgba(201,244,0,0.06)',
                 border: `1px solid ${n.read ? 'rgba(201,244,0,0.12)' : 'rgba(201,244,0,0.25)'}`,
               }}
             >
@@ -172,7 +172,7 @@ export default function NotificationsPage() {
                 {n.store && (
                   <a
                     href={`/store/${n.store.id}?name=${encodeURIComponent(n.store.name)}`}
-                    style={{ fontSize: 12, fontWeight: 700, marginTop: 4, display: 'inline-block', color: '#C9F400', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}
+                    style={{ fontSize: 12, fontWeight: 700, marginTop: 4, display: 'inline-block', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}
                   >
                     {n.store.name} → View Stock
                   </a>

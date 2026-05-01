@@ -11,7 +11,7 @@ const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: str
   { value: 'out',    label: 'Out',  color: '#FF4545', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
   { value: 'low',    label: 'Low',  color: '#FFB300', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
   { value: 'medium', label: 'Med',  color: '#FFB300', bg: 'rgba(255,179,0,0.12)',  border: 'rgba(255,179,0,0.35)'  },
-  { value: 'full',   label: 'Full', color: '#C9F400', bg: 'rgba(201,244,0,0.12)',  border: 'rgba(201,244,0,0.35)'  },
+  { value: 'full',   label: 'Full', color: 'var(--accent)', bg: 'rgba(201,244,0,0.12)',  border: 'rgba(201,244,0,0.35)'  },
 ]
 
 function DrinksContent() {
@@ -160,7 +160,7 @@ function DrinksContent() {
   const selectionCount = Object.keys(selections).length
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
@@ -170,7 +170,7 @@ function DrinksContent() {
           position: 'sticky',
           top: 0,
           zIndex: 20,
-          backgroundColor: 'rgba(20,26,31,0.92)',
+          backgroundColor: 'var(--header-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(201,244,0,0.1)',
@@ -182,20 +182,20 @@ function DrinksContent() {
             onClick={() => router.back()}
             style={{
               width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-              backgroundColor: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'var(--fg-07)',
+              border: '1px solid var(--fg-10)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 12L6 8l4-4" stroke="rgba(255,255,255,0.75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M10 12L6 8l4-4" stroke="var(--fg-75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>Report Stock</p>
             {storeName && (
-              <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--fg-35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {storeName}
               </p>
             )}
@@ -206,7 +206,7 @@ function DrinksContent() {
               backgroundColor: 'rgba(201,244,0,0.15)',
               border: '1px solid rgba(201,244,0,0.4)',
             }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#C9F400' }}>{selectionCount} selected</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>{selectionCount} selected</span>
             </div>
           )}
         </div>
@@ -221,8 +221,8 @@ function DrinksContent() {
             margin: '16px 16px 12px',
             padding: '10px 14px',
             borderRadius: 12,
-            backgroundColor: '#1C2329',
-            border: '1px solid rgba(255,255,255,0.07)',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--fg-07)',
           }}
         >
           <span style={{ fontSize: 14, opacity: 0.3 }}>🔍</span>
@@ -234,7 +234,7 @@ function DrinksContent() {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch('')} style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
+            <button onClick={() => setSearch('')} style={{ color: 'var(--fg-30)', fontSize: 12, cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
           )}
         </div>
 
@@ -248,7 +248,7 @@ function DrinksContent() {
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
-          <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-45)', lineHeight: 1.5 }}>
             Tap a brand to expand, then tap a drink to set its stock level.
           </p>
         </div>
@@ -260,7 +260,7 @@ function DrinksContent() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 160px' }}>
             {Object.entries(grouped).map(([brand, brandDrinks]) => {
-              const color = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
+              const color = BRAND_COLORS[brand] ?? 'var(--fg-40)'
               const expanded = isSearching || expandedBrands.has(brand)
               const brandSelections = brandDrinks.filter((d) => selections[d.id])
               const hasBrandSelection = brandSelections.length > 0
@@ -270,7 +270,7 @@ function DrinksContent() {
                   key={brand}
                   style={{
                     borderRadius: 16, overflow: 'hidden',
-                    backgroundColor: '#1C2329',
+                    backgroundColor: 'var(--surface)',
                     border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : `${color}33`}`,
                     boxShadow: hasBrandSelection
                       ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
@@ -284,7 +284,7 @@ function DrinksContent() {
                     <BrandLogo brand={brand} size={36} />
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#fff' }}>{brand}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
                         {hasBrandSelection
                           ? `${brandSelections.length} of ${brandDrinks.length} reported`
                           : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
@@ -299,12 +299,12 @@ function DrinksContent() {
                         <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
                       </div>
                     )}
-                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
+                    <span style={{ color: 'var(--fg-30)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
                   </button>
 
                   {expanded && (
                     <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ height: 1, marginBottom: 4, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <div style={{ height: 1, marginBottom: 4, backgroundColor: 'var(--fg-06)' }} />
                       {brandDrinks.map((drink) => {
                         const selected = selections[drink.id]
                         const pickerOpen = expandedDrinks.has(drink.id)
@@ -315,8 +315,8 @@ function DrinksContent() {
                             <button
                               style={{
                                 width: '100%', display: 'flex', alignItems: 'center', textAlign: 'left',
-                                background: selected ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
-                                border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'rgba(255,255,255,0.06)') : `${color}44`}`,
+                                background: selected ? 'var(--fg-05)' : 'var(--fg-03)',
+                                border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'var(--fg-06)') : `${color}44`}`,
                                 borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
                                 boxShadow: selected ? `0 0 10px ${selectedOpt?.color ?? color}33` : `0 0 8px ${color}1a`,
                                 cursor: 'pointer',
@@ -334,7 +334,7 @@ function DrinksContent() {
                                 </p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
                                   {drink.flavor && (
-                                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{drink.name}</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-35)' }}>{drink.name}</p>
                                   )}
                                   {drink.caffeine_mg && (
                                     <span style={{
@@ -356,7 +356,7 @@ function DrinksContent() {
                                   <span style={{ fontSize: 11, fontWeight: 700, color: selectedOpt?.color }}>{selectedOpt?.label}</span>
                                 </div>
                               ) : (
-                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginRight: 12, flexShrink: 0 }}>Tap to report</span>
+                                <span style={{ fontSize: 11, color: 'var(--fg-25)', marginRight: 12, flexShrink: 0 }}>Tap to report</span>
                               )}
                             </button>
 
@@ -365,7 +365,7 @@ function DrinksContent() {
                                 display: 'flex',
                                 borderRadius: '0 0 12px 12px',
                                 overflow: 'hidden',
-                                border: '1.5px solid rgba(255,255,255,0.06)',
+                                border: '1.5px solid var(--fg-06)',
                                 borderTop: 'none',
                               }}>
                                 {QUANTITY_OPTIONS.map((opt) => (
@@ -374,8 +374,8 @@ function DrinksContent() {
                                     style={{
                                       flex: 1, padding: '14px 0',
                                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                      backgroundColor: selected === opt.value ? opt.bg : 'rgba(255,255,255,0.02)',
-                                      borderRight: opt.value !== 'full' ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                                      backgroundColor: selected === opt.value ? opt.bg : 'var(--fg-02)',
+                                      borderRight: opt.value !== 'full' ? '1px solid var(--fg-06)' : 'none',
                                       border: 'none', cursor: 'pointer',
                                     }}
                                     onClick={() => selectQuantity(drink.id, opt.value)}
@@ -386,7 +386,7 @@ function DrinksContent() {
                                       opacity: selected === opt.value ? 1 : 0.3,
                                       boxShadow: selected === opt.value ? `0 0 8px ${opt.color}` : 'none',
                                     }} />
-                                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: selected === opt.value ? opt.color : 'rgba(255,255,255,0.3)' }}>
+                                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: selected === opt.value ? opt.color : 'var(--fg-30)' }}>
                                       {opt.label.toUpperCase()}
                                     </span>
                                   </button>

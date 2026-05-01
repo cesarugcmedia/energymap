@@ -5,7 +5,7 @@ export default function TermsPage() {
     <div className="bg-[#141A1F] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 8 }}>Terms of Service</h1>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 40 }}>Last updated: April 7, 2025</p>
+        <p style={{ fontSize: 13, color: 'var(--fg-30)', marginBottom: 40 }}>Last updated: April 7, 2025</p>
 
         {[
           {
@@ -88,8 +88,8 @@ We reserve the right to remove any content that violates these terms.`,
           },
         ].map(({ title, body }) => (
           <div key={title} style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#C9F400', marginBottom: 10 }}>{title}</h2>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, whiteSpace: 'pre-line' }}>{body}</p>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)', marginBottom: 10 }}>{title}</h2>
+            <p style={{ fontSize: 14, color: 'var(--fg-55)', lineHeight: 1.8, whiteSpace: 'pre-line' }}>{body}</p>
           </div>
         ))}
       </div>

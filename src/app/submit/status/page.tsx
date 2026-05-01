@@ -17,7 +17,7 @@ const QUANTITY_OPTIONS: {
   { value: 'out', label: 'Out of Stock', emoji: '❌', color: '#FF4545', bg: 'rgba(255,69,69,0.08)', border: 'rgba(255,69,69,0.25)' },
   { value: 'low', label: 'Low', emoji: '🟡', color: '#FFB300', bg: 'rgba(255,179,0,0.08)', border: 'rgba(255,179,0,0.25)' },
   { value: 'medium', label: 'Medium', emoji: '🟠', color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
-  { value: 'full', label: 'Full', emoji: '✅', color: '#C9F400', bg: 'rgba(201,244,0,0.08)', border: 'rgba(201,244,0,0.25)' },
+  { value: 'full', label: 'Full', emoji: '✅', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)', border: 'rgba(201,244,0,0.25)' },
 ]
 
 function StatusContent() {
@@ -80,11 +80,11 @@ function StatusContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', position: 'relative', padding: 'calc(56px + env(safe-area-inset-top)) 24px 40px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', position: 'relative', padding: 'calc(56px + env(safe-area-inset-top)) 24px 40px' }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <button
         onClick={() => router.back()}
-        style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 40, backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18 }}
+        style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 40, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: '#F0F4E8', fontSize: 18 }}
       >
         ←
       </button>
@@ -126,7 +126,7 @@ function StatusContent() {
             </p>
             <button
               onClick={() => router.back()}
-              style={{ marginTop: 4, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 99, backgroundColor: '#1C2329', color: '#7A8F80', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
+              style={{ marginTop: 4, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 99, backgroundColor: 'var(--surface)', color: '#7A8F80', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}
             >
               ← Go Back
             </button>

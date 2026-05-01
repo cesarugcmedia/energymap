@@ -66,7 +66,7 @@ export default function WaitlistForm() {
           color: '#F0F4E8',
           fontSize: 15,
           outline: 'none',
-          backgroundColor: '#1C2329',
+          backgroundColor: 'var(--surface)',
           border: `1.5px solid ${state === 'error' ? 'rgba(255,69,69,0.5)' : 'rgba(201,244,0,0.12)'}`,
           fontFamily: "'Barlow', sans-serif",
         }}

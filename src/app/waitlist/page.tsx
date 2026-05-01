@@ -27,7 +27,7 @@ export default async function WaitlistPage() {
         position: 'fixed',
         inset: 0,
         zIndex: 50,
-        backgroundColor: '#141A1F',
+        backgroundColor: 'var(--bg)',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
@@ -45,17 +45,17 @@ export default async function WaitlistPage() {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 10, fontSize: 20, backgroundColor: '#1C2329', border: '1.5px solid rgba(201,244,0,0.4)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 10, fontSize: 20, backgroundColor: 'var(--surface)', border: '1.5px solid rgba(201,244,0,0.4)' }}
           >
             ⚡
           </div>
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#C9F400' }}>Amped Map</span>
+          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent)' }}>Amped Map</span>
         </div>
 
         {/* Headline */}
         <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 44, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', lineHeight: 1.05, marginBottom: 16, color: '#F0F4E8' }}>
           Find energy drinks<br />
-          <span style={{ color: '#C9F400' }}>near you.</span>
+          <span style={{ color: 'var(--accent)' }}>near you.</span>
         </h1>
 
         <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 32, color: '#7A8F80' }}>
@@ -86,7 +86,7 @@ export default async function WaitlistPage() {
               <div style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#C9F400' }} />
             </div>
             <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(201,244,0,0.9)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
-              <span style={{ color: '#C9F400', fontSize: 14 }}>{count.toLocaleString()}</span> people waiting to join
+              <span style={{ color: 'var(--accent)', fontSize: 14 }}>{count.toLocaleString()}</span> people waiting to join
             </p>
           </div>
         )}

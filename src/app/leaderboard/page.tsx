@@ -54,7 +54,7 @@ export default function LeaderboardPage() {
 
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: '#141A1F' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: 'var(--bg)' }}>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     )
@@ -64,7 +64,7 @@ export default function LeaderboardPage() {
   const myRank = myEntry ? entries.indexOf(myEntry) + 1 : null
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -79,7 +79,7 @@ export default function LeaderboardPage() {
         <div style={{ padding: '12px 0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'fadeUp 0.5s ease' }}>
           <div>
             <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#F0F4E8', lineHeight: 1 }}>
-              Leader<span style={{ color: '#C9F400' }}>board</span>
+              Leader<span style={{ color: 'var(--accent)' }}>board</span>
             </h1>
             <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em' }}>Top reporters keeping the community stocked</p>
           </div>
@@ -87,7 +87,7 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Timeframe tabs */}
-        <div style={{ display: 'flex', backgroundColor: '#1C2329', borderRadius: 12, padding: 3, border: '1px solid rgba(201,244,0,0.12)', marginBottom: 16, animation: 'fadeUp 0.5s ease 0.05s both' }}>
+        <div style={{ display: 'flex', backgroundColor: 'var(--surface)', borderRadius: 12, padding: 3, border: '1px solid rgba(201,244,0,0.12)', marginBottom: 16, animation: 'fadeUp 0.5s ease 0.05s both' }}>
           {TIMEFRAMES.map((tf) => (
             <button key={tf} className="tab-btn"
               onClick={() => setTimeframe(tf)}
@@ -102,7 +102,7 @@ export default function LeaderboardPage() {
           <div style={{ backgroundColor: 'rgba(201,244,0,0.06)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, animation: 'fadeUp 0.5s ease 0.1s both' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#C9F400', animation: 'pulse 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#C9F400', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Your Rank</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Your Rank</span>
             </div>
             <div style={{ width: 1, height: 16, backgroundColor: 'rgba(201,244,0,0.12)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
@@ -133,7 +133,7 @@ export default function LeaderboardPage() {
         ) : (
           <>
             {/* Leaderboard table */}
-            <div style={{ backgroundColor: '#1C2329', borderRadius: 16, border: '1px solid rgba(201,244,0,0.12)', overflow: 'hidden', animation: 'fadeUp 0.5s ease 0.15s both' }}>
+            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 16, border: '1px solid rgba(201,244,0,0.12)', overflow: 'hidden', animation: 'fadeUp 0.5s ease 0.15s both' }}>
 
               {/* Column headers */}
               <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 72px', padding: '10px 16px', backgroundColor: 'rgba(201,244,0,0.03)', borderBottom: '1px solid rgba(201,244,0,0.08)' }}>
@@ -181,9 +181,9 @@ export default function LeaderboardPage() {
                           <span style={{ fontSize: 13, fontWeight: 700, color: isMe ? '#C9F400' : '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>
                             @{entry.username}
                           </span>
-                          {isMe && <span style={{ fontSize: 9, fontWeight: 800, color: '#C9F400', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>YOU</span>}
+                          {isMe && <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>YOU</span>}
                           {entry.is_verified_reporter && <span style={{ fontSize: 9, fontWeight: 800, color: '#60a5fa', backgroundColor: 'rgba(59,130,246,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>✓</span>}
-                          {entry.tier === 'tracker' && <span style={{ fontSize: 9, fontWeight: 800, color: '#C9F400', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>⚡</span>}
+                          {entry.tier === 'tracker' && <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>⚡</span>}
                           {Array.isArray(entry.badges) && entry.badges.includes('weekly_champion') && <span style={{ fontSize: 9, fontWeight: 800, color: '#ffd700', backgroundColor: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>👑 Champ</span>}
                         </div>
                       </div>
@@ -202,11 +202,11 @@ export default function LeaderboardPage() {
             </div>
 
             {/* How points work */}
-            <div style={{ marginTop: 16, backgroundColor: '#1C2329', borderRadius: 16, border: '1px solid rgba(201,244,0,0.12)', padding: '16px', animation: 'fadeUp 0.5s ease 0.2s both' }}>
+            <div style={{ marginTop: 16, backgroundColor: 'var(--surface)', borderRadius: 16, border: '1px solid rgba(201,244,0,0.12)', padding: '16px', animation: 'fadeUp 0.5s ease 0.2s both' }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How Points Work</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { icon: '⚡', label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2 pts', color: '#C9F400' },
+                  { icon: '⚡', label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2 pts', color: 'var(--accent)' },
                   { icon: '🏪', label: 'Add a store',    desc: 'Awarded after admin approval',    pts: '+5 pts', color: '#FFB300' },
                   { icon: '🥤', label: 'Add a drink',    desc: 'Each new drink you submit',        pts: '+3 pts', color: '#06b6d4' },
                 ].map((item, i, arr) => (

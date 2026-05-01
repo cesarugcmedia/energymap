@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
           <input
             type="email"
             className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
           <input
             type="password"
             className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

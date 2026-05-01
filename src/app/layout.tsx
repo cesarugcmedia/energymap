@@ -7,6 +7,7 @@ import MainWrapper from '@/components/MainWrapper'
 import AppStartGuard from '@/components/AppStartGuard'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 const barlow = Barlow({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-barlow' })
 const barlowCondensed = Barlow_Condensed({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-barlow-condensed' })
@@ -40,8 +41,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
-      <body className="bg-[#141A1F] text-[#F0F4E8]">
+      <head>
+        {/* Prevent flash of wrong theme on load */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('em-theme');if(t==='light')document.documentElement.dataset.theme='light';})();` }} />
+      </head>
+      <body>
         <AuthProvider>
+          <ThemeProvider>
           {/* Ambient background — fixed so it covers the full viewport */}
           <div
             aria-hidden
@@ -67,6 +73,7 @@ export default function RootLayout({
             <MainWrapper>{children}</MainWrapper>
             <BottomNav />
           </div>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

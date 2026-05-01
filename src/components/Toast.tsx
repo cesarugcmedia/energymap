@@ -12,7 +12,7 @@ export default function Toast({ message, visible }: { message: string; visible: 
         transition: 'opacity 0.22s ease, transform 0.22s ease',
         zIndex: 9999,
         backgroundColor: '#1e1e2e',
-        border: '1px solid rgba(255,255,255,0.13)',
+        border: '1px solid var(--fg-13)',
         borderRadius: 999,
         padding: '9px 18px',
         fontSize: 13,

@@ -11,8 +11,8 @@ type TierId = 'free' | 'tracker'
 
 const BADGE_DEFS = [
   { id: 'early_adopter', icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)' },
-  { id: 'first_report',  icon: '⚡', name: 'First Report',    desc: 'Submitted your first stock report',   color: '#C9F400', glow: 'rgba(201,244,0,0.25)'  },
-  { id: 'reporter_10',   icon: '📊', name: 'Reporter',        desc: '10 stock reports submitted',          color: '#C9F400', glow: 'rgba(201,244,0,0.25)'  },
+  { id: 'first_report',  icon: '⚡', name: 'First Report',    desc: 'Submitted your first stock report',   color: 'var(--accent)', glow: 'rgba(201,244,0,0.25)'  },
+  { id: 'reporter_10',   icon: '📊', name: 'Reporter',        desc: '10 stock reports submitted',          color: 'var(--accent)', glow: 'rgba(201,244,0,0.25)'  },
   { id: 'reporter_50',   icon: '🏆', name: 'Veteran',         desc: '50 stock reports submitted',          color: '#f97316', glow: 'rgba(249,115,22,0.25)' },
   { id: 'reporter_100',  icon: '💎', name: 'Elite',           desc: '100 stock reports submitted',         color: '#a855f7', glow: 'rgba(168,85,247,0.25)' },
   { id: 'scout',         icon: '📍', name: 'Scout',           desc: 'Added your first approved store',     color: '#3b82f6', glow: 'rgba(59,130,246,0.25)' },
@@ -49,7 +49,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
   }
 
   return (
-    <div style={{ height: '100%', backgroundColor: '#141A1F', paddingLeft: 20, paddingRight: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+    <div style={{ height: '100%', backgroundColor: 'var(--bg)', paddingLeft: 20, paddingRight: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <p style={{ fontSize: 24, fontWeight: 900, color: '#F0F4E8', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>One more step</p>
       <p style={{ fontSize: 12, color: '#7A8F80', marginBottom: 24 }}>Pick a username for your account ({email})</p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -57,7 +57,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
           <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', marginBottom: 8, letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</p>
           <input
             type="text"
-            style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: '#F0F4E8', outline: 'none', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+            style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: '#F0F4E8', outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
             placeholder="yourname"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
@@ -108,7 +108,7 @@ const TIERS = [
     name: 'Tracker',
     price: '$10',
     period: '/month',
-    color: '#C9F400',
+    color: 'var(--accent)',
     glow: 'rgba(201,244,0,0.25)',
     border: 'rgba(201,244,0,0.4)',
     icon: '⚡',
@@ -133,7 +133,7 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',   border: 'rgba(255,69,69,0.25)'   },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
   medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
-  full:   { label: 'FULL', color: '#C9F400', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
+  full:   { label: 'FULL', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
 const ACCOUNT_TABS = [
@@ -576,7 +576,7 @@ function selectAndContinue(tierId: TierId) {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#141A1F' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)' }}>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     )
@@ -586,7 +586,7 @@ function selectAndContinue(tierId: TierId) {
   const isPaidSignup = submitting && selectedTier === 'tracker'
   if (isPaidSignup) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#141A1F', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)', gap: 16 }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <p style={{ fontSize: 15, fontWeight: 700, color: '#7A8F80' }}>Redirecting to payment...</p>
@@ -597,7 +597,7 @@ function selectAndContinue(tierId: TierId) {
   if (user && !profile && !loading) return <SetupProfile userId={user.id} email={user.email ?? ''} />
   if (user && !profile) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#141A1F' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)' }}>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     )
@@ -631,29 +631,29 @@ function selectAndContinue(tierId: TierId) {
 
     const TIER_LABEL: Record<string, { label: string; color: string; icon: string }> = {
       free:    { label: 'Free',    color: '#6b7280', icon: '🗺️' },
-      tracker: { label: 'Tracker', color: '#C9F400', icon: '⚡' },
+      tracker: { label: 'Tracker', color: 'var(--accent)', icon: '⚡' },
     }
     const tierInfo = TIER_LABEL[profile.tier ?? 'free']
     return (
-      <div style={{ backgroundColor: '#141A1F', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
+      <div style={{ backgroundColor: 'var(--bg)', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
         <Toast message={toastMessage} visible={toastVisible} />
 
         {/* ── Profile card (always visible) ── */}
         <div style={{ padding: '16px 20px 12px' }}>
-          <div style={{ borderRadius: 16, padding: 20, backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.2)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ borderRadius: 16, padding: 20, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#C9F400' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: 'radial-gradient(circle at top right, rgba(201,244,0,0.08), transparent 70%)', pointerEvents: 'none' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
               <div style={{ width: 60, height: 60, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.2), rgba(201,244,0,0.08))', border: '2px solid rgba(201,244,0,0.4)', boxShadow: '0 4px 20px rgba(201,244,0,0.2)' }}>
-                <span style={{ fontSize: 26, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
+                <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 18, fontWeight: 800, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.02em'" }}>@{profile.username}</p>
                 <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                  {profile.is_admin && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>ADMIN</span>}
+                  {profile.is_admin && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>ADMIN</span>}
                   {profile.is_verified_reporter && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>✓ VERIFIED</span>}
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40`, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
                 </div>
@@ -662,7 +662,7 @@ function selectAndContinue(tierId: TierId) {
             {/* Stat row */}
             <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.1)' }}>
               {[
-                { value: reportCount, label: 'Reports', color: '#C9F400' },
+                { value: reportCount, label: 'Reports', color: 'var(--accent)' },
                 { value: storeCount,  label: 'Stores Added', color: '#FFB300' },
                 { value: `${memberDays}d`, label: 'Member For', color: '#a78bfa' },
               ].map((s, i) => (
@@ -706,7 +706,7 @@ function selectAndContinue(tierId: TierId) {
               <div style={{ display: 'flex', gap: 12 }}>
 
                 {/* Current plan */}
-                <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: '#1C2329', border: `1px solid ${tierInfo.color}35` }}>
+                <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${tierInfo.color}35` }}>
                   <div style={{ height: 3, background: tierInfo.color }} />
                   <div style={{ padding: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -740,9 +740,9 @@ function selectAndContinue(tierId: TierId) {
 
                 {/* Upgrade plan */}
                 {profile.tier !== 'tracker' && (() => {
-                  const next = { id: 'tracker' as const, icon: '⚡', label: 'Tracker', color: '#C9F400', price: '$10/mo', features: ['Unlimited map radius', 'Unlimited submissions', 'Last updated timestamps', 'Full drink report history', 'Stock notifications & alerts', 'Favorites & custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge'] }
+                  const next = { id: 'tracker' as const, icon: '⚡', label: 'Tracker', color: 'var(--accent)', price: '$10/mo', features: ['Unlimited map radius', 'Unlimited submissions', 'Last updated timestamps', 'Full drink report history', 'Stock notifications & alerts', 'Favorites & custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge'] }
                   return (
-                    <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: '#1C2329', border: `1px solid ${next.color}35` }}>
+                    <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${next.color}35` }}>
                       <div style={{ height: 3, background: next.color }} />
                       <div style={{ padding: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -781,7 +781,7 @@ function selectAndContinue(tierId: TierId) {
                   const isEarned = earned.has(b.id)
                   const hint = progressHint(b.id)
                   return (
-                    <div key={b.id} style={{ borderRadius: 16, padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'rgba(255,255,255,0.04)' : '#1C2329', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
+                    <div key={b.id} style={{ borderRadius: 16, padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
                       <span style={{ fontSize: 22, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
                       <p style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
                       <p style={{ fontSize: 9, lineHeight: 1.3, color: '#4A5F50' }}>{hint ?? b.desc}</p>
@@ -793,7 +793,7 @@ function selectAndContinue(tierId: TierId) {
 
             {/* Recent reports preview */}
             {recentReports.length > 0 && (
-              <div style={{ borderRadius: 16, padding: 16, backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)' }}>
+              <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Recent Reports</p>
                 </div>
@@ -833,7 +833,7 @@ function selectAndContinue(tierId: TierId) {
                 <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </div>
             ) : favorites.length === 0 ? (
-              <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)' }}>
+              <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
                 <span style={{ fontSize: 32 }}>🤍</span>
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#F0F4E8' }}>No favorites yet</p>
                 <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the heart on any store page to save it here.</p>
@@ -843,14 +843,14 @@ function selectAndContinue(tierId: TierId) {
                 {favorites.map((fav) => {
                   const store = fav.store
                   return (
-                    <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
+                    <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
                       <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 14, fontWeight: 700, color: '#F0F4E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
                         <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: '#C9F400', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>View</a>
+                        <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>View</a>
                         <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
                           {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
                         </button>
@@ -868,25 +868,25 @@ function selectAndContinue(tierId: TierId) {
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Profile */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #C9F400' }}>
+            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #C9F400' }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Profile</p>
 
               {editingUsername ? (
                 <div style={{ marginBottom: 16 }}>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>New Username</p>
-                  <input type="text" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+                  <input type="text" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder={profile.username} value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
                   {usernameError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{usernameError}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.06)', color: '#7A8F80', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>Cancel</button>
+                    <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>Cancel</button>
                     <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: savingUsername || !newUsername.trim() ? 'not-allowed' : 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
                       {savingUsername ? '...' : 'Save Username'}
                     </button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => { setEditingUsername(true); setNewUsername('') }} style={{ width: '100%', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700, textAlign: 'left', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,244,0,0.1)', color: '#7A8F80', cursor: 'pointer', marginBottom: 12, fontFamily: "'Barlow', sans-serif" }}>
+                <button onClick={() => { setEditingUsername(true); setNewUsername('') }} style={{ width: '100%', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700, textAlign: 'left', backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.1)', color: '#7A8F80', cursor: 'pointer', marginBottom: 12, fontFamily: "'Barlow', sans-serif" }}>
                   ✏️ Change Username
                   <span style={{ float: 'right', color: '#4A5F50' }}>@{profile.username}</span>
                 </button>
@@ -895,27 +895,27 @@ function selectAndContinue(tierId: TierId) {
               {changingPassword ? (
                 <div>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>New Password</p>
-                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoFocus />
-                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#F0F4E8', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   {passwordError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{passwordError}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.06)', color: '#7A8F80', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>Cancel</button>
+                    <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>Cancel</button>
                     <button onClick={savePassword} disabled={savingPassword} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: savingPassword ? 'not-allowed' : 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', backgroundColor: savingPassword ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
                       {savingPassword ? '...' : 'Save Password'}
                     </button>
                   </div>
                 </div>
               ) : !editingUsername && (
-                <button onClick={() => setChangingPassword(true)} style={{ width: '100%', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700, textAlign: 'left', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,244,0,0.1)', color: '#7A8F80', cursor: 'pointer', fontFamily: "'Barlow', sans-serif" }}>
+                <button onClick={() => setChangingPassword(true)} style={{ width: '100%', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700, textAlign: 'left', backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.1)', color: '#7A8F80', cursor: 'pointer', fontFamily: "'Barlow', sans-serif" }}>
                   🔑 Change Password
                 </button>
               )}
             </div>
 
             {/* Notifications */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #a78bfa' }}>
+            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #a78bfa' }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Notifications</p>
               {[
                 { label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
@@ -929,7 +929,7 @@ function selectAndContinue(tierId: TierId) {
                   </div>
                   <button
                     onClick={() => item.set(!item.value)}
-                    style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: item.value ? '#C9F400' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}
+                    style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: item.value ? '#C9F400' : 'var(--fg-10)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}
                   >
                     <div style={{ position: 'absolute', top: 2, left: item.value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: item.value ? '#0D1210' : '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </button>
@@ -944,7 +944,7 @@ function selectAndContinue(tierId: TierId) {
             </button>
 
             {/* Danger zone */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: '#1C2329', border: '1px solid rgba(255,69,69,0.15)', boxShadow: 'inset 3px 0 0 #FF4545' }}>
+            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.15)', boxShadow: 'inset 3px 0 0 #FF4545' }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,69,69,0.6)', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Danger Zone</p>
               <p style={{ fontSize: 12, color: '#4A5F50', marginBottom: 12 }}>Permanently deletes your account and all data. This cannot be undone.</p>
               <button onClick={deleteAccount} style={{ width: '100%', borderRadius: 10, padding: '12px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'rgba(255,69,69,0.07)', border: '1px solid rgba(255,69,69,0.18)', color: '#FF4545', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -961,7 +961,7 @@ function selectAndContinue(tierId: TierId) {
   const tier = TIERS.find((t) => t.id === selectedTier) ?? TIERS[0]
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141A1F', color: '#F0F4E8', overflowX: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: '#F0F4E8', overflowX: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <style>{`
         * { box-sizing: border-box; }
         .em-input { outline: none; transition: border-color 0.2s ease; font-family: 'Barlow', system-ui, sans-serif; }
@@ -992,22 +992,22 @@ function selectAndContinue(tierId: TierId) {
         <div style={{ textAlign: 'center', padding: '48px 24px 40px', animation: 'fadeUp 0.6s ease' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
             <span style={{ fontSize: 40, display: 'inline-block', animation: 'float 3s ease-in-out infinite' }}>⚡</span>
-            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 48, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#C9F400' }}>Amped Map</span>
+            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 48, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent)' }}>Amped Map</span>
           </div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(26px, 5vw, 44px)', fontWeight: 800, lineHeight: 1.1, marginBottom: 16, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
             Never Hunt for Your<br />
-            <span style={{ color: '#C9F400' }}>Favorite Energy Drink</span> Again
+            <span style={{ color: 'var(--accent)' }}>Favorite Energy Drink</span> Again
           </h1>
           <p style={{ fontSize: 15, color: '#7A8F80', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.7 }}>
             The crowdsourced platform that tracks real-time energy drink stock at stores near you. Find Celsius, Ghost, Alani Nu, Red Bull and more — before you leave the house.
           </p>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '6px 16px', marginBottom: 36 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#C9F400', animation: 'pulse 2s ease-in-out infinite' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#C9F400', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif" }}>LIVE STOCK UPDATES</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif" }}>LIVE STOCK UPDATES</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10, maxWidth: 560, margin: '0 auto' }}>
             {STATS.map((s, i) => (
-              <div key={i} style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 20px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
+              <div key={i} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 20px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.value}</div>
                 <div style={{ fontSize: 10, color: '#4A5F50', marginTop: 2, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.label}</div>
               </div>
@@ -1019,7 +1019,7 @@ function selectAndContinue(tierId: TierId) {
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 56px', animation: 'fadeUp 0.6s ease 0.2s both' }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <div style={{ display: 'inline-block', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '4px 14px', marginBottom: 12 }}>
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#C9F400', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif" }}>HOW IT WORKS</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif" }}>HOW IT WORKS</span>
             </div>
             <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Built by Energy Drink Fans, for Energy Drink Fans</h2>
             <p style={{ fontSize: 13, color: '#7A8F80', maxWidth: 460, margin: '0 auto', lineHeight: 1.7 }}>
@@ -1028,7 +1028,7 @@ function selectAndContinue(tierId: TierId) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 40 }}>
             {HOW_IT_WORKS.map((item, i) => (
-              <div key={i} className="how-card" style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 16, padding: '18px 16px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
+              <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 16, padding: '18px 16px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
                 <div style={{ fontSize: 26, marginBottom: 10 }}>{item.icon}</div>
                 <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F4E8', marginBottom: 6, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
                 <div style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}>{item.desc}</div>
@@ -1056,7 +1056,7 @@ function selectAndContinue(tierId: TierId) {
               { name: 'Monster', color: '#00cc44' },
               { name: 'Rockstar', color: '#facc15' },
             ].map((brand, i) => (
-              <div key={i} style={{ backgroundColor: '#1C2329', border: `1px solid ${brand.color}33`, borderRadius: 20, padding: '7px 18px', fontSize: 12, fontWeight: 700, color: brand.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+              <div key={i} style={{ backgroundColor: 'var(--surface)', border: `1px solid ${brand.color}33`, borderRadius: 20, padding: '7px 18px', fontSize: 12, fontWeight: 700, color: brand.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
                 {brand.name}
               </div>
             ))}
@@ -1083,25 +1083,25 @@ function selectAndContinue(tierId: TierId) {
         {/* ── SIGN IN ── */}
         {mode === 'signin' && (
           <div style={{ maxWidth: 400, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
-            <div style={{ backgroundColor: '#1C2329', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
+            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
               <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Welcome back</h2>
               <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: searchParams.get('confirmed') === '1' ? 16 : 24 }}>Sign in to your Amped Map account</p>
               {searchParams.get('confirmed') === '1' && (
                 <div style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 20 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#C9F400' }}>Email confirmed! Sign in to finish setting up your account.</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>Email confirmed! Sign in to finish setting up your account.</p>
                 </div>
               )}
               <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
                   <input className="em-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Password</label>
                   <div style={{ position: 'relative' }}>
                     <input className="em-input" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required
-                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 16 }}>
                       {showPassword ? '🙈' : '👁️'}
                     </button>
@@ -1112,7 +1112,7 @@ function selectAndContinue(tierId: TierId) {
                     Forgot password?
                   </button>
                 </div>
-                {resetSent && <p style={{ fontSize: 13, color: '#C9F400', textAlign: 'center' }}>Reset link sent — check your email.</p>}
+                {resetSent && <p style={{ fontSize: 13, color: 'var(--accent)', textAlign: 'center' }}>Reset link sent — check your email.</p>}
                 {error && <p style={{ fontSize: 13, color: '#FF4545' }}>{error}</p>}
                 <button type="submit" className="cta-btn" disabled={submitting}
                   style={{ width: '100%', padding: 15, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, color: '#0D1210', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)' }}>
@@ -1121,7 +1121,7 @@ function selectAndContinue(tierId: TierId) {
               </form>
               <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#4A5F50' }}>
                 Don't have an account?{' '}
-                <button onClick={() => switchMode('signup')} style={{ background: 'none', border: 'none', color: '#C9F400', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.04em' }}>Sign up free</button>
+                <button onClick={() => switchMode('signup')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.04em' }}>Sign up free</button>
               </p>
             </div>
           </div>
@@ -1139,7 +1139,7 @@ function selectAndContinue(tierId: TierId) {
                     <div className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: '#C9F400', opacity: 0.5 }} />
                     <div style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#C9F400' }} />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>
                     {waitlistCount.toLocaleString()}
                   </span>
                   <span style={{ fontSize: 12, fontWeight: 500, color: '#7A8F80' }}>
@@ -1152,7 +1152,7 @@ function selectAndContinue(tierId: TierId) {
               {TIERS.map((t, i) => (
                 <div key={t.id}
                   className={t.comingSoon ? 'tier-card tier-coming' : 'tier-card'}
-                  style={{ backgroundColor: '#1C2329', borderRadius: 20, border: `1.5px solid ${t.comingSoon ? 'rgba(249,115,22,0.2)' : 'rgba(201,244,0,0.1)'}`, position: 'relative', animation: `fadeUp 0.5s ease ${i * 0.08}s both`, opacity: t.comingSoon ? 0.82 : 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+                  style={{ backgroundColor: 'var(--surface)', borderRadius: 20, border: `1.5px solid ${t.comingSoon ? 'rgba(249,115,22,0.2)' : 'rgba(201,244,0,0.1)'}`, position: 'relative', animation: `fadeUp 0.5s ease ${i * 0.08}s both`, opacity: t.comingSoon ? 0.82 : 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
                 >
                   <div style={{ height: 4, background: `linear-gradient(90deg, ${t.color}, ${t.color}88)` }} />
                   {t.tag && (
@@ -1171,29 +1171,29 @@ function selectAndContinue(tierId: TierId) {
                       const spotsLeft = remaining > 0
                       return (
                         <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
-                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: 8 }}>
+                          <p style={{ fontSize: 11, color: 'var(--fg-60)', lineHeight: 1.6, marginBottom: 8 }}>
                             {spotsLeft
                               ? `🔥 First 60 beta users get Tracker free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
                               : '🔒 Beta is full. Tracker is $10/mo.'}
                           </p>
-                          <div style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: 4, backgroundColor: 'var(--fg-08)', borderRadius: 4, overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #C9F400, #a8d400)', borderRadius: 4, transition: 'width 0.5s ease' }} />
                           </div>
-                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5 }}>{betaCount} / {BETA_LIMIT} beta spots claimed</p>
+                          <p style={{ fontSize: 10, color: 'var(--fg-30)', marginTop: 5 }}>{betaCount} / {BETA_LIMIT} beta spots claimed</p>
                         </div>
                       )
                     })()}
                     {t.comingSoon && t.description && (
                       <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
-                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{t.description}</p>
+                        <p style={{ fontSize: 11, color: 'var(--fg-50)', lineHeight: 1.6 }}>{t.description}</p>
                       </div>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 7, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
                       {/* Inheritance banner */}
                       {t.inherits && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'var(--fg-04)', border: '1px solid var(--fg-08)', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>
                           <span style={{ fontSize: 10 }}>⬆️</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.3 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)', letterSpacing: 0.3 }}>
                             Includes everything in <span style={{ color: '#fff' }}>{t.inherits}</span>, plus:
                           </span>
                         </div>
@@ -1201,7 +1201,7 @@ function selectAndContinue(tierId: TierId) {
                       {t.features.map((f, fi) => (
                         <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                           <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>{f}</span>
+                          <span style={{ fontSize: 11, color: 'var(--fg-60)', lineHeight: 1.4 }}>{f}</span>
                         </div>
                       ))}
                     </div>
@@ -1231,7 +1231,7 @@ function selectAndContinue(tierId: TierId) {
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>
+            <p style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: 'var(--fg-20)' }}>
               All paid plans can be cancelled anytime · No hidden fees
             </p>
           </div>
@@ -1241,33 +1241,33 @@ function selectAndContinue(tierId: TierId) {
         {mode === 'signup' && step === 2 && (
           <div style={{ maxWidth: 420, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
-              <button onClick={() => setStep(1)} style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 8, padding: '4px 10px', color: '#7A8F80', cursor: 'pointer', fontSize: 12, fontFamily: "'Barlow Condensed', sans-serif" }}>← Back</button>
+              <button onClick={() => setStep(1)} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 8, padding: '4px 10px', color: '#7A8F80', cursor: 'pointer', fontSize: 12, fontFamily: "'Barlow Condensed', sans-serif" }}>← Back</button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(201,244,0,0.06)', border: `1px solid ${tier.border}`, borderRadius: 20, padding: '6px 16px' }}>
                 <span style={{ fontSize: 14 }}>{tier.icon}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: tier.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{tier.name}</span>
                 <span style={{ fontSize: 13, color: '#4A5F50' }}>{tier.price}{tier.period}</span>
               </div>
             </div>
-            <div style={{ backgroundColor: '#1C2329', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
+            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
               <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: '#F0F4E8', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Create your account</h2>
               <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: 24 }}>Join the Amped Map community</p>
               <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</label>
                   <input className="em-input" type="text" placeholder="yourname" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(null) }} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
                   <p style={{ fontSize: 10, color: '#4A5F50', marginTop: 6 }}>Letters, numbers, underscores only</p>
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
                   <input className="em-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Password</label>
                   <div style={{ position: 'relative' }}>
                     <input className="em-input" type={showPassword ? 'text' : 'password'} placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required
-                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: '#141A1F', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
+                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: '#F0F4E8', fontSize: 15 }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 16 }}>
                       {showPassword ? '🙈' : '👁️'}
                     </button>
@@ -1276,11 +1276,11 @@ function selectAndContinue(tierId: TierId) {
                 {error && <p style={{ fontSize: 13, color: '#FF4545' }}>{error}</p>}
                 {confirmEmail && (
                   <div style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#C9F400' }}>Check your email and click the confirmation link to activate your account.</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>Check your email and click the confirmation link to activate your account.</p>
                     <button
                       type="button"
                       onClick={() => { setConfirmEmail(false); switchMode('signin') }}
-                      style={{ background: 'none', border: '1px solid rgba(201,244,0,0.3)', borderRadius: 8, color: '#C9F400', fontSize: 12, fontWeight: 700, padding: '7px 14px', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', alignSelf: 'flex-start' }}
+                      style={{ background: 'none', border: '1px solid rgba(201,244,0,0.3)', borderRadius: 8, color: 'var(--accent)', fontSize: 12, fontWeight: 700, padding: '7px 14px', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', alignSelf: 'flex-start' }}
                     >
                       Already confirmed? Sign in →
                     </button>
@@ -1306,7 +1306,7 @@ function selectAndContinue(tierId: TierId) {
               </form>
               <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#4A5F50' }}>
                 Already have an account?{' '}
-                <button onClick={() => switchMode('signin')} style={{ background: 'none', border: 'none', color: '#C9F400', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.04em' }}>Sign in</button>
+                <button onClick={() => switchMode('signin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.04em' }}>Sign in</button>
               </p>
             </div>
           </div>

@@ -27,7 +27,7 @@ export default async function Image() {
             position: 'absolute',
             inset: 0,
             backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+              'linear-gradient(var(--fg-03) 1px, transparent 1px), linear-gradient(90deg, var(--fg-03) 1px, transparent 1px)',
             backgroundSize: '48px 48px',
             display: 'flex',
           }}
@@ -136,7 +136,7 @@ export default async function Image() {
           <div
             style={{
               fontSize: 26,
-              color: 'rgba(255,255,255,0.45)',
+              color: 'var(--fg-45)',
               letterSpacing: 0.5,
               fontFamily: 'sans-serif',
               display: 'flex',
@@ -161,10 +161,10 @@ export default async function Image() {
                   alignItems: 'center',
                   padding: '8px 20px',
                   borderRadius: 99,
-                  backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'var(--fg-06)',
+                  border: '1px solid var(--fg-10)',
                   fontSize: 18,
-                  color: 'rgba(255,255,255,0.55)',
+                  color: 'var(--fg-55)',
                   fontFamily: 'sans-serif',
                 }}
               >

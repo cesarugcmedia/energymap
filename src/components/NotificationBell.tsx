@@ -45,7 +45,7 @@ export default function NotificationBell() {
     <button
       onClick={() => router.push('/notifications')}
       className="relative w-9 h-9 rounded-xl flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
+      style={{ backgroundColor: 'var(--fg-07)' }}
     >
       <span style={{ fontSize: 18 }}>🔔</span>
       {unread > 0 && (

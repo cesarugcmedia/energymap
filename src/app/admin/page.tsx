@@ -487,7 +487,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#141A1F', position: 'relative' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)', position: 'relative' }}>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
       <Toast message={toastMessage} visible={toastVisible} />
@@ -495,10 +495,10 @@ export default function AdminPage() {
       <div
         style={{
           position: 'sticky', top: 0, zIndex: 20,
-          backgroundColor: 'rgba(20,26,31,0.92)',
+          backgroundColor: 'var(--header-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid var(--fg-06)',
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
@@ -508,13 +508,13 @@ export default function AdminPage() {
               onClick={() => setTab(null)}
               style={{
                 width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                backgroundColor: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                backgroundColor: 'var(--fg-07)',
+                border: '1px solid var(--fg-10)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M10 12L6 8l4-4" stroke="rgba(255,255,255,0.75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 12L6 8l4-4" stroke="var(--fg-75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           )}
@@ -524,7 +524,7 @@ export default function AdminPage() {
           {tab !== null && (
             <button
               onClick={refreshCurrentTab}
-              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)', border: 'none' }}
+              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: 'var(--fg-50)', backgroundColor: 'var(--fg-06)', border: 'none' }}
             >
               ↻ Refresh
             </button>
@@ -541,7 +541,7 @@ export default function AdminPage() {
       {/* Dashboard home */}
       {tab === null && (
         <div style={{ padding: '24px 16px 32px' }}>
-          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>NEEDS ATTENTION</p>
+          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'var(--fg-35)', letterSpacing: '1.5px' }}>NEEDS ATTENTION</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
             {[
               { key: 'stores', icon: '🕐', label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
@@ -552,8 +552,8 @@ export default function AdminPage() {
                 onClick={() => navigate(key as any)}
                 style={{
                   borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
-                  backgroundColor: '#1C2329',
-                  border: `1.5px solid ${count > 0 ? `${badgeColor}44` : 'rgba(255,255,255,0.07)'}`,
+                  backgroundColor: 'var(--surface)',
+                  border: `1.5px solid ${count > 0 ? `${badgeColor}44` : 'var(--fg-07)'}`,
                   boxShadow: count > 0 ? `0 0 20px ${badgeColor}18` : 'none',
                   position: 'relative',
                 }}
@@ -569,12 +569,12 @@ export default function AdminPage() {
                 )}
                 <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
                 <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{desc}</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
               </button>
             ))}
           </div>
 
-          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>MANAGE</p>
+          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MANAGE</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { key: 'locations', icon: '📍', label: 'Locations',  desc: 'Edit & delete stores' },
@@ -587,13 +587,13 @@ export default function AdminPage() {
                 onClick={() => navigate(key as any)}
                 style={{
                   borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
-                  backgroundColor: '#1C2329',
-                  border: '1.5px solid rgba(255,255,255,0.07)',
+                  backgroundColor: 'var(--surface)',
+                  border: '1.5px solid var(--fg-07)',
                 }}
               >
                 <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
                 <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{desc}</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
               </button>
             ))}
           </div>
@@ -613,7 +613,7 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="px-4 pb-6">
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
               {flags.length} OPEN FLAG{flags.length !== 1 ? 'S' : ''}
             </p>
             <div className="flex flex-col gap-3">
@@ -624,7 +624,7 @@ export default function AdminPage() {
                   <div
                     key={flag.id}
                     className="rounded-2xl p-4"
-                    style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,69,69,0.2)' }}
+                    style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.2)' }}
                   >
                     <div className="flex items-start gap-3 mb-3">
                       <span style={{ fontSize: 22 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
@@ -632,7 +632,7 @@ export default function AdminPage() {
                         <p className="text-sm font-bold text-white truncate">{store?.name ?? 'Unknown store'}</p>
                         {store?.address && <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>}
                       </div>
-                      <span className="text-[10px] font-semibold shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>{timeAgo(flag.created_at)}</span>
+                      <span className="text-[10px] font-semibold shrink-0" style={{ color: 'var(--fg-35)' }}>{timeAgo(flag.created_at)}</span>
                     </div>
                     <div
                       className="rounded-xl px-3.5 py-2.5 mb-3"
@@ -647,14 +647,14 @@ export default function AdminPage() {
                     <div className="flex gap-2">
                       <button
                         className="flex-1 rounded-xl p-2.5 text-xs font-bold"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
+                        style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-10)', color: 'var(--fg-60)' }}
                         onClick={() => store && openEdit(store)}
                       >
                         ✏️ Edit Location
                       </button>
                       <button
                         className="flex-1 rounded-xl p-2.5 text-xs font-bold flex items-center justify-center"
-                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: '#C9F400', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
+                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent)', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
                         disabled={resolvingFlag.has(flag.id)}
                         onClick={() => resolveFlag(flag.id)}
                       >
@@ -680,7 +680,7 @@ export default function AdminPage() {
               value={locationSearch}
               onChange={(e) => setLocationSearch(e.target.value)}
               className="w-full rounded-xl p-3 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
             />
             <div className="flex flex-col gap-2.5">
               {locations
@@ -689,13 +689,13 @@ export default function AdminPage() {
                   <div
                     key={store.id}
                     className="rounded-2xl p-4 flex items-center gap-3"
-                    style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+                    style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
                   >
                     <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-white truncate">{store.name}</p>
                       <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--fg-25)' }}>
                         {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
                       </p>
                     </div>
@@ -703,7 +703,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => openEdit(store)}
                         className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-60)', border: '1px solid var(--fg-10)' }}
                       >
                         ✏️ Edit
                       </button>
@@ -737,7 +737,7 @@ export default function AdminPage() {
             <div className="flex gap-2 mb-4">
               <div
                 className="flex-1 flex items-center gap-2 rounded-xl px-3.5 py-2.5"
-                style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
               >
                 <span className="text-white/30 text-sm">🔍</span>
                 <input
@@ -752,7 +752,7 @@ export default function AdminPage() {
               <button
                 onClick={() => setShowAddForm((v) => !v)}
                 className="px-3.5 rounded-xl text-sm font-bold"
-                style={{ backgroundColor: showAddForm ? 'rgba(255,255,255,0.06)' : '#C9F400', color: showAddForm ? 'rgba(255,255,255,0.5)' : '#0D1210' }}
+                style={{ backgroundColor: showAddForm ? 'var(--fg-06)' : '#C9F400', color: showAddForm ? 'var(--fg-50)' : '#0D1210' }}
               >
                 {showAddForm ? '✕' : '+ Add'}
               </button>
@@ -762,7 +762,7 @@ export default function AdminPage() {
             {showAddForm && (
               <div
                 className="rounded-2xl p-4 mb-4 flex flex-col gap-3"
-                style={{ backgroundColor: '#1C2329', border: '1px solid rgba(201,244,0,0.25)' }}
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.25)' }}
               >
                 <p className="text-xs font-bold text-white/40" style={{ letterSpacing: '1.5px' }}>NEW DRINK</p>
                 <input
@@ -771,7 +771,7 @@ export default function AdminPage() {
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                 />
                 <input
                   type="text"
@@ -779,7 +779,7 @@ export default function AdminPage() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                 />
                 <input
                   type="text"
@@ -787,7 +787,7 @@ export default function AdminPage() {
                   value={newFlavor}
                   onChange={(e) => setNewFlavor(e.target.value)}
                   className="w-full rounded-xl p-3 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                 />
                 <button
                   onClick={addDrink}
@@ -820,7 +820,7 @@ export default function AdminPage() {
               )
 
               return Object.entries(grouped).map(([brand, brandDrinks]) => {
-                const brandColor = BRAND_COLORS[brand] ?? 'rgba(255,255,255,0.4)'
+                const brandColor = BRAND_COLORS[brand] ?? 'var(--fg-40)'
                 return (
                 <div key={brand} className="mb-4">
                   <p className="text-[10px] font-bold mb-2" style={{ color: brandColor, letterSpacing: '1.5px' }}>
@@ -832,7 +832,7 @@ export default function AdminPage() {
                         key={drink.id}
                         className="flex items-center gap-3 rounded-xl px-3.5 py-3"
                         style={{
-                          backgroundColor: '#1C2329',
+                          backgroundColor: 'var(--surface)',
                           border: `1.5px solid ${brandColor}55`,
                           boxShadow: `0 0 10px ${brandColor}22, 0 0 20px ${brandColor}0d`,
                         }}
@@ -863,7 +863,7 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2.5 px-4 pb-6">
-            <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-1" style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-1" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}>
               <span className="text-white/30 text-sm">🔍</span>
               <input
                 type="text"
@@ -878,13 +878,13 @@ export default function AdminPage() {
               <div
                 key={u.id}
                 className="rounded-2xl px-4 py-3.5 flex items-center gap-3"
-                style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid rgba(201,244,0,0.2)' }}
                 >
-                  <span className="text-sm font-black" style={{ color: '#C9F400' }}>
+                  <span className="text-sm font-black" style={{ color: 'var(--accent)' }}>
                     {u.username?.[0]?.toUpperCase()}
                   </span>
                 </div>
@@ -892,13 +892,13 @@ export default function AdminPage() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-sm font-bold text-white">@{u.username}</p>
                     {u.is_admin && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
                     )}
                     {u.is_verified_reporter && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                     )}
                     {u.tier === 'tracker' && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>⚡ TRACKER</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>⚡ TRACKER</span>
                     )}
                   </div>
                   <p className="text-xs text-white/30 mt-0.5">Joined {timeAgo(u.created_at)}</p>
@@ -944,7 +944,7 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="px-4 pb-6">
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px' }}>
+            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
               {waitlist.length} {waitlist.length === 1 ? 'SIGNUP' : 'SIGNUPS'} · {waitlist.filter((w) => w.invited_at).length} INVITED
             </p>
             <div className="flex flex-col gap-2.5">
@@ -952,24 +952,24 @@ export default function AdminPage() {
                 <div
                   key={w.email}
                   className="rounded-2xl p-4 flex items-center justify-between gap-3"
-                  style={{ backgroundColor: '#1C2329', border: `1px solid ${i < 60 ? 'rgba(201,244,0,0.15)' : 'rgba(255,255,255,0.07)'}` }}
+                  style={{ backgroundColor: 'var(--surface)', border: `1px solid ${i < 60 ? 'rgba(201,244,0,0.15)' : 'var(--fg-07)'}` }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black"
                       style={{
-                        backgroundColor: i < 60 ? 'rgba(201,244,0,0.12)' : 'rgba(255,255,255,0.06)',
-                        color: i < 60 ? '#C9F400' : 'rgba(255,255,255,0.3)',
+                        backgroundColor: i < 60 ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)',
+                        color: i < 60 ? '#C9F400' : 'var(--fg-30)',
                       }}
                     >
                       {i + 1}
                     </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{w.email}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--fg-35)' }}>
                       Joined {new Date(w.created_at).toLocaleDateString()}
                       {w.invited_at && (
-                        <span style={{ color: '#C9F400' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
+                        <span style={{ color: 'var(--accent)' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
                       )}
                     </p>
                   </div>
@@ -1020,7 +1020,7 @@ export default function AdminPage() {
             <div
               key={store.id}
               className="rounded-2xl overflow-hidden"
-              style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,200,0,0.2)' }}
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(255,200,0,0.2)' }}
             >
               {/* Store info */}
               <div className="flex gap-3 p-3.5">
@@ -1047,9 +1047,9 @@ export default function AdminPage() {
                 <button
                   className="flex-1 rounded-xl p-2.5 text-sm font-semibold"
                   style={{
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.6)',
+                    backgroundColor: 'var(--fg-06)',
+                    border: '1px solid var(--fg-08)',
+                    color: 'var(--fg-60)',
                   }}
                   onClick={() => openEdit(store)}
                 >
@@ -1071,7 +1071,7 @@ export default function AdminPage() {
                   style={{
                     backgroundColor: 'rgba(201,244,0,0.12)',
                     border: '1px solid rgba(201,244,0,0.3)',
-                    color: '#C9F400',
+                    color: 'var(--accent)',
                   }}
                   onClick={() => approveStore(store.id)}
                 >
@@ -1093,10 +1093,10 @@ export default function AdminPage() {
         >
           <div
             className="w-full max-w-md rounded-t-3xl p-6 pb-10"
-            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'var(--fg-20)' }} />
             <div className="flex items-center gap-3 mb-3">
               <span style={{ fontSize: 32 }}>🥤</span>
               <p className="text-lg font-black text-white">Already in the System</p>
@@ -1122,17 +1122,17 @@ export default function AdminPage() {
         >
           <div
             className="rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto"
-            style={{ backgroundColor: '#1C2329', border: '1px solid rgba(255,255,255,0.08)', paddingBottom: 40 }}
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', paddingBottom: 40 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
             <p className="text-lg font-black text-white mb-5">Edit Store</p>
 
             <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>STORE NAME</p>
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
             />
@@ -1141,7 +1141,7 @@ export default function AdminPage() {
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
-              style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
               value={editAddress}
               onChange={(e) => setEditAddress(e.target.value)}
             />
@@ -1154,7 +1154,7 @@ export default function AdminPage() {
                   type="number"
                   step="any"
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                   value={editLat}
                   onChange={(e) => setEditLat(e.target.value)}
                 />
@@ -1165,7 +1165,7 @@ export default function AdminPage() {
                   type="number"
                   step="any"
                   className="w-full rounded-xl p-3.5 text-sm text-white outline-none"
-                  style={{ backgroundColor: '#141A1F', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                   value={editLng}
                   onChange={(e) => setEditLng(e.target.value)}
                 />
@@ -1179,7 +1179,7 @@ export default function AdminPage() {
                   key={t.value}
                   className="flex items-center gap-1.5 rounded-xl px-3 py-2.5"
                   style={{
-                    backgroundColor: editType === t.value ? 'rgba(201,244,0,0.08)' : '#141A1F',
+                    backgroundColor: editType === t.value ? 'rgba(201,244,0,0.08)' : 'var(--bg)',
                     border: `1.5px solid ${editType === t.value ? '#C9F400' : 'transparent'}`,
                     minWidth: '47%',
                   }}
@@ -1188,7 +1188,7 @@ export default function AdminPage() {
                   <span style={{ fontSize: 16 }}>{t.icon}</span>
                   <span
                     className="text-sm font-semibold"
-                    style={{ color: editType === t.value ? '#fff' : 'rgba(255,255,255,0.4)' }}
+                    style={{ color: editType === t.value ? '#fff' : 'var(--fg-40)' }}
                   >
                     {t.label}
                   </span>
@@ -1199,7 +1199,7 @@ export default function AdminPage() {
             <div className="flex gap-2.5 mb-2.5">
               <button
                 className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                style={{ backgroundColor: 'var(--fg-06)', color: 'var(--fg-50)' }}
                 onClick={() => setEditStore(null)}
               >
                 Cancel
@@ -1232,7 +1232,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   className="flex-1 rounded-xl p-3.5 font-bold text-sm"
-                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: '#C9F400' }}
+                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent)' }}
                   onClick={() => {
                     approveStore(editStore?.id)
                     setEditStore(null)
