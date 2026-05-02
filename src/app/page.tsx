@@ -176,15 +176,27 @@ export default function MapPage() {
 
   return (
     <div className="relative " style={{ height: '100dvh' }}>
-      {/* Header */}
+      {/* Header Banner */}
       <div
-        className="absolute top-0 left-0 right-0 z-10 px-5 pb-4 pointer-events-none"
-        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
+        className="absolute top-0 left-0 right-0 z-20 pointer-events-none"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          backgroundColor: 'var(--header-bg)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(201,244,0,0.12)',
+        }}
       >
-        <p className="text-xl font-black text-white">⚡ Amped Map</p>
-        <p className="text-xs text-white/45 mt-0.5">
-          {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px 12px' }}>
+          <div>
+            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
+              ⚡ Amped Map
+            </p>
+            <p style={{ fontSize: 11, color: 'var(--fg-40)', marginTop: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Map */}
