@@ -181,7 +181,6 @@ function AccountPageInner() {
   const [reportCount, setReportCount] = useState<number>(0)
   const [storeCount, setStoreCount] = useState<number>(0)
   const [uniqueFlavors, setUniqueFlavors] = useState<number>(0)
-  const [recentReports, setRecentReports] = useState<any[]>([])
   const [statsLoading, setStatsLoading] = useState(false)
 
   // Profile management
@@ -380,19 +379,13 @@ function AccountPageInner() {
 
   async function fetchStats(userId: string) {
     setStatsLoading(true)
-    const [{ count: rCount }, { count: sCount }, { data: recent }, { data: flavors }] = await Promise.all([
+    const [{ count: rCount }, { count: sCount }, { data: flavors }] = await Promise.all([
       supabase.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', userId).eq('status', 'approved'),
-      supabase.from('stock_reports')
-        .select('id, reported_at, quantity, drink:drinks(name, flavor, brand), store:stores(name)')
-        .eq('user_id', userId)
-        .order('reported_at', { ascending: false })
-        .limit(5),
       supabase.from('stock_reports').select('drink_id').eq('user_id', userId),
     ])
     setReportCount(rCount ?? 0)
     setStoreCount(sCount ?? 0)
-    if (recent) setRecentReports(recent)
     if (flavors) setUniqueFlavors(new Set(flavors.map((r: any) => r.drink_id)).size)
     setStatsLoading(false)
   }
@@ -805,34 +798,6 @@ function selectAndContinue(tierId: TierId) {
               </div>
             </div>
 
-            {/* Recent reports preview */}
-            {recentReports.length > 0 && (
-              <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Recent Reports</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {recentReports.slice(0, 3).map((r) => {
-                    const drink = r.drink as any
-                    const store = r.store as any
-                    const drinkLabel = [drink?.brand, drink?.flavor ?? drink?.name].filter(Boolean).join(' ')
-                    const q = QUANTITY_CONFIG[r.quantity as string] ?? QUANTITY_CONFIG.full
-                    return (
-                      <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: '10px 12px', backgroundColor: 'rgba(201,244,0,0.03)', border: '1px solid rgba(201,244,0,0.08)', boxShadow: `inset 3px 0 0 ${q.color}` }}>
-                        <div style={{ flexShrink: 0, padding: '2px 8px', borderRadius: 99, backgroundColor: q.bg, border: `1px solid ${q.border}` }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: q.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}>{q.label}</span>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{drinkLabel || 'Unknown drink'}</p>
-                          <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name ?? 'Unknown store'}</p>
-                        </div>
-                        <p style={{ fontSize: 10, color: '#4A5F50', flexShrink: 0 }}>{timeAgo(r.reported_at)}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
