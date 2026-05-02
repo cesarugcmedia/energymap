@@ -635,34 +635,28 @@ function selectAndContinue(tierId: TierId) {
       <div style={{ backgroundColor: 'var(--bg)', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-        {/* Header Banner */}
-        <div
-          style={{
-            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-            paddingTop: 'env(safe-area-inset-top)',
-            backgroundColor: 'var(--header-bg)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(201,244,0,0.12)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px 12px' }}>
-            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
-              ⚡ Account
-            </p>
-            <button
-              onClick={() => setActiveTab('settings')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, fontSize: 20, lineHeight: 1, color: activeTab === 'settings' ? '#C9F400' : 'var(--fg-50)' }}
-            >
-              ⚙️
-            </button>
-          </div>
-        </div>
-
         <Toast message={toastMessage} visible={toastVisible} />
 
+        {/* ── Header ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 16px', animation: 'fadeUp 0.5s ease' }}>
+          <div>
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
+              My <span style={{ color: 'var(--accent)' }}>Account</span>
+            </h1>
+            <p style={{ fontSize: 13, color: '#7A8F50', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+              @{profile.username}
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab('settings')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, fontSize: 22, lineHeight: 1, color: activeTab === 'settings' ? '#C9F400' : 'var(--fg-40)', transition: 'color 0.15s' }}
+          >
+            ⚙️
+          </button>
+        </div>
+
         {/* ── Profile card (always visible) ── */}
-        <div style={{ padding: '16px 20px 12px' }}>
+        <div style={{ padding: '0 20px 12px' }}>
           <div style={{ borderRadius: 16, padding: 20, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#C9F400' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: 'radial-gradient(circle at top right, rgba(201,244,0,0.08), transparent 70%)', pointerEvents: 'none' }} />
