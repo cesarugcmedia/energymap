@@ -659,14 +659,14 @@ function selectAndContinue(tierId: TierId) {
           <div style={{ borderRadius: 16, padding: 20, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#C9F400' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: 'radial-gradient(circle at top right, rgba(201,244,0,0.08), transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-              <div style={{ width: 60, height: 60, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.2), rgba(201,244,0,0.08))', border: '2px solid rgba(201,244,0,0.4)', boxShadow: '0 4px 20px rgba(201,244,0,0.2)' }}>
-                <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16, gap: 10 }}>
+              <div style={{ width: 68, height: 68, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.2), rgba(201,244,0,0.08))', border: '2px solid rgba(201,244,0,0.4)', boxShadow: '0 4px 20px rgba(201,244,0,0.2)' }}>
+                <span style={{ fontSize: 30, fontWeight: 900, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.02em'" }}>@{profile.username}</p>
-                <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>@{profile.username}</p>
+                <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{user.email}</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                   {profile.is_admin && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>ADMIN</span>}
                   {profile.is_verified_reporter && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>✓ VERIFIED</span>}
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40`, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
