@@ -7,7 +7,6 @@ import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import NotificationBell from '@/components/NotificationBell'
-import { BRAND_COLORS } from '@/components/BrandLogo'
 import type { Quantity, Store } from '@/lib/types'
 
 const TYPE_ICON: Record<string, string> = {
@@ -347,7 +346,6 @@ export default function StoresPage() {
               ALL BRANDS
             </button>
             {availableBrands.map((brand) => {
-              const color = BRAND_COLORS[brand] ?? '#7A8F80'
               const active = brandFilter === brand
               return (
                 <button key={brand} className="pill-btn"

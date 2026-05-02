@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
-import BrandLogo, { BRAND_COLORS } from '@/components/BrandLogo'
 import Toast from '@/components/Toast'
 
 const BRAND_ALIASES: Record<string, string> = {
@@ -580,8 +579,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 const pct = total > 0 ? inStock / total : 0
                 const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
                 const isExpanded = isSearching || expandedBrands.has(brand)
-                const brandColor = BRAND_COLORS[brand] ?? 'var(--fg-40)'
-
                 return (
                   <div
                     key={brand}
@@ -596,7 +593,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       className="w-full flex items-center gap-3 p-4 text-left"
                       onClick={() => toggleBrand(brand)}
                     >
-                      <BrandLogo brand={brand} size={36} />
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-black text-white">{brand}</p>
                         <div className="flex items-center gap-2 mt-1.5">

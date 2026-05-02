@@ -3,7 +3,6 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import BrandLogo, { BRAND_COLORS } from '@/components/BrandLogo'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
 
@@ -260,7 +259,6 @@ function DrinksContent() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 160px' }}>
             {Object.entries(grouped).map(([brand, brandDrinks]) => {
-              const color = BRAND_COLORS[brand] ?? 'var(--fg-40)'
               const expanded = isSearching || expandedBrands.has(brand)
               const brandSelections = brandDrinks.filter((d) => selections[d.id])
               const hasBrandSelection = brandSelections.length > 0
@@ -281,7 +279,6 @@ function DrinksContent() {
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 16, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                     onClick={() => toggleBrand(brand)}
                   >
-                    <BrandLogo brand={brand} size={36} />
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
                       <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
