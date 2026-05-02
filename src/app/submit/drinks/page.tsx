@@ -271,10 +271,10 @@ function DrinksContent() {
                   style={{
                     borderRadius: 16, overflow: 'hidden',
                     backgroundColor: 'var(--surface)',
-                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : `${color}33`}`,
+                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.1)'}`,
                     boxShadow: hasBrandSelection
                       ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
-                      : `inset 3px 0 0 ${color}, 0 0 14px ${color}1a`,
+                      : 'inset 3px 0 0 rgba(201,244,0,0.2), 0 0 8px rgba(201,244,0,0.06)',
                   }}
                 >
                   <button
@@ -316,16 +316,16 @@ function DrinksContent() {
                               style={{
                                 width: '100%', display: 'flex', alignItems: 'center', textAlign: 'left',
                                 background: selected ? 'var(--fg-05)' : 'var(--fg-03)',
-                                border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'var(--fg-06)') : `${color}44`}`,
+                                border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'var(--fg-06)') : 'var(--fg-10)'}`,
                                 borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
-                                boxShadow: selected ? `0 0 10px ${selectedOpt?.color ?? color}33` : `0 0 8px ${color}1a`,
+                                boxShadow: selected ? `0 0 10px ${selectedOpt?.color ?? 'rgba(201,244,0,0.5)'}33` : 'none',
                                 cursor: 'pointer',
                               }}
                               onClick={() => toggleDrink(drink.id)}
                             >
                               <div style={{
                                 alignSelf: 'stretch', width: 4, flexShrink: 0,
-                                backgroundColor: selected ? (selectedOpt?.color ?? color) : color,
+                                backgroundColor: selected ? (selectedOpt?.color ?? 'rgba(201,244,0,0.6)') : 'rgba(201,244,0,0.2)',
                                 borderRadius: pickerOpen ? '10px 0 0 0' : '10px 0 0 10px',
                               }} />
                               <div style={{ flex: 1, padding: 12 }}>
@@ -412,7 +412,7 @@ function DrinksContent() {
               width: '100%', maxWidth: 448,
               padding: '16px 16px',
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
-              backgroundColor: 'rgba(20,26,31,0.95)',
+              backgroundColor: 'var(--header-bg)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               borderTop: '1px solid rgba(201,244,0,0.1)',

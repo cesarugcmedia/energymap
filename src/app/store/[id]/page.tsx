@@ -588,8 +588,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     className="rounded-2xl overflow-hidden"
                     style={{
                       backgroundColor: 'var(--surface)',
-                      border: `1px solid ${brandColor}33`,
-                      boxShadow: `inset 3px 0 0 ${brandColor}, 0 0 14px ${brandColor}1a`,
+                      border: '1px solid rgba(201,244,0,0.1)',
+                      boxShadow: 'inset 3px 0 0 rgba(201,244,0,0.25), 0 0 10px rgba(201,244,0,0.06)',
                     }}
                   >
                     <button
@@ -631,8 +631,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                 className="flex items-center"
                                 style={{
                                   backgroundColor: 'var(--fg-04)',
-                                  border: `1px solid ${q?.border ?? `${brandColor}33`}`,
-                                  boxShadow: `inset 3px 0 0 ${q?.color ?? brandColor}, 0 0 8px ${q?.color ?? brandColor}18`,
+                                  border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
+                                  boxShadow: `inset 3px 0 0 ${q?.color ?? 'rgba(201,244,0,0.3)'}, 0 0 8px ${q?.color ? q.color + '30' : 'rgba(201,244,0,0.08)'}`,
                                   borderRadius: isTracker && historyOpen ? '12px 12px 0 0' : 12,
                                   cursor: isTracker ? 'pointer' : 'default',
                                   padding: 12,
@@ -669,7 +669,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   className="px-3 pb-3"
                                   style={{
                                     backgroundColor: 'var(--fg-02)',
-                                    border: `1.5px solid ${q?.border ?? `${brandColor}44`}`,
+                                    border: `1.5px solid ${q?.border ?? 'var(--fg-10)'}`,
                                     borderTop: 'none',
                                     borderRadius: '0 0 12px 12px',
                                   }}

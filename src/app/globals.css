@@ -100,6 +100,8 @@
 [data-theme="light"] .text-white\/25  { color: rgba(20,26,31,0.25); }
 [data-theme="light"] .text-white\/20  { color: rgba(20,26,31,0.2); }
 [data-theme="light"] .text-white\/10  { color: rgba(20,26,31,0.1); }
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder { color: rgba(20,26,31,0.35); }
 [data-theme="light"] .bg-\[\#141A1F\] { background-color: #F0F5E8; }
 [data-theme="light"] .bg-\[\#1C2329\] { background-color: #FFFFFF; }
 [data-theme="light"] .border-\[rgba\(201\2C244\2C0\2C0\.12\)\] { border-color: rgba(20,26,31,0.09); }
