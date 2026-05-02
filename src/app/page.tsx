@@ -68,6 +68,7 @@ export default function MapPage() {
   const lng = location?.coords.longitude ?? 0
   const { stores: allStores, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
   const stores = isTracker ? allStores : allStores.filter((s) => getDistance(lat, lng, s.lat, s.lng) <= 5)
+  const nearbyCount = allStores.filter((s) => getDistance(lat, lng, s.lat, s.lng) <= 10).length
   const [selected, setSelected] = useState<Store | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
@@ -188,14 +189,12 @@ export default function MapPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px 12px' }}>
-          <div>
-            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
-              ⚡ Amped Map
-            </p>
-            <p style={{ fontSize: 11, color: 'var(--fg-40)', marginTop: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              {storesLoading ? 'Finding stores…' : `${stores.length} stores nearby`}
-            </p>
-          </div>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
+            ⚡ Amped Map
+          </p>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#C9F400' }}>
+            {storesLoading ? '— stores' : `${nearbyCount} stores nearby`}
+          </p>
         </div>
       </div>
 
