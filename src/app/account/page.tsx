@@ -140,7 +140,6 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
 const ACCOUNT_TABS = [
   { id: 'overview',  label: 'Overview', icon: '📊' },
   { id: 'saved',     label: 'Saved',    icon: '❤️' },
-  { id: 'settings',  label: 'Settings', icon: '⚙️' },
 ]
 
 const HOW_IT_WORKS = [
