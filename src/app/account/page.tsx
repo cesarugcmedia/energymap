@@ -107,7 +107,7 @@ const TIERS = [
   {
     id: 'tracker' as TierId,
     name: 'Tracker',
-    price: '$10',
+    price: '$2.99',
     period: '/month',
     color: 'var(--accent)',
     glow: 'rgba(201,244,0,0.25)',
@@ -715,7 +715,7 @@ function selectAndContinue(tierId: TierId) {
                       <span style={{ fontSize: 18 }}>{tierInfo.icon}</span>
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 800, color: tierInfo.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{tierInfo.label}</p>
-                        <p style={{ fontSize: 10, color: '#4A5F50' }}>{profile.tier === 'free' ? 'Free' : '$10/mo'}</p>
+                        <p style={{ fontSize: 10, color: '#4A5F50' }}>{profile.tier === 'free' ? 'Free' : '$2.99/mo'}</p>
                       </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: profile.tier === 'tracker' ? '1fr 1fr' : '1fr', gap: profile.tier === 'tracker' ? '6px 10px' : '4px' }}>
@@ -742,7 +742,7 @@ function selectAndContinue(tierId: TierId) {
 
                 {/* Upgrade plan */}
                 {profile.tier !== 'tracker' && (() => {
-                  const next = { id: 'tracker' as const, icon: '⚡', label: 'Tracker', color: 'var(--accent)', price: '$10/mo', features: ['Unlimited map radius', 'Unlimited submissions', 'Last updated timestamps', 'Full drink report history', 'Stock notifications & alerts', 'Favorites & custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge'] }
+                  const next = { id: 'tracker' as const, icon: '⚡', label: 'Tracker', color: 'var(--accent)', price: '$2.99/mo', features: ['Unlimited map radius', 'Unlimited submissions', 'Last updated timestamps', 'Full drink report history', 'Stock notifications & alerts', 'Favorites & custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge'] }
                   return (
                     <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${next.color}35` }}>
                       <div style={{ height: 3, background: next.color }} />
@@ -1193,7 +1193,7 @@ function selectAndContinue(tierId: TierId) {
                           <p style={{ fontSize: 11, color: 'var(--fg-60)', lineHeight: 1.6, marginBottom: 8 }}>
                             {spotsLeft
                               ? `🔥 First 60 beta users get Tracker free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
-                              : '🔒 Beta is full. Tracker is $10/mo.'}
+                              : '🔒 Beta is full. Tracker is $2.99/mo.'}
                           </p>
                           <div style={{ height: 4, backgroundColor: 'var(--fg-08)', borderRadius: 4, overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #C9F400, #a8d400)', borderRadius: 4, transition: 'width 0.5s ease' }} />
@@ -1237,7 +1237,7 @@ function selectAndContinue(tierId: TierId) {
                       ) : t.id === 'tracker' && betaCount >= 60 ? (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
                           style={{ width: '100%', padding: 12, backgroundColor: '#C9F400', border: 'none', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
-                          Buy Tracker — $10/mo →
+                          Buy Tracker — $2.99/mo →
                         </button>
                       ) : (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}

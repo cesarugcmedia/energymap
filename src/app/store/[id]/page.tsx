@@ -615,7 +615,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           <p className="text-sm font-semibold text-white truncate">{item.drink?.flavor ?? item.drink?.name}</p>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <p className="text-xs" style={{ color: 'var(--fg-40)' }}>{item.drink?.brand}</p>
-                            <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
+                            {isHunterPlus && <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>}
                             {item.drink?.caffeine_mg && (
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
                                 ⚡ {item.drink.caffeine_mg}mg
