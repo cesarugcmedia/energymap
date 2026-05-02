@@ -224,10 +224,6 @@ function AccountPageInner() {
   const [notifLocation, setNotifLocation] = useState(() =>
     typeof window !== 'undefined' ? localStorage.getItem('notif_location') !== 'false' : true
   )
-  const [notifEmail, setNotifEmail] = useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('notif_email') === 'true' : false
-  )
-
   useEffect(() => {
     supabase
       .from('profiles')
@@ -560,7 +556,6 @@ function AccountPageInner() {
   // Persist notification prefs
   useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_flavors', String(notifFlavors)) }, [notifFlavors])
   useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_location', String(notifLocation)) }, [notifLocation])
-  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_email', String(notifEmail)) }, [notifEmail])
 
 
 function selectAndContinue(tierId: TierId) {
@@ -922,9 +917,8 @@ function selectAndContinue(tierId: TierId) {
               {[
                 { label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
                 { label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
-                { label: 'Weekly email digest', desc: 'Summary of stock reports in your area', value: notifEmail, set: setNotifEmail },
               ].map((item, i) => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingBottom: 12, borderBottom: i < 2 ? '1px solid rgba(201,244,0,0.06)' : 'none' }}>
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingBottom: 12, borderBottom: i < 1 ? '1px solid rgba(201,244,0,0.06)' : 'none' }}>
                   <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
                     <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{item.label}</p>
                     <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{item.desc}</p>

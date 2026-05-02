@@ -29,8 +29,8 @@ function createClusterEl(count: number): HTMLElement {
   const el = document.createElement('div')
   el.style.cssText = 'cursor:pointer;pointer-events:auto;display:flex;align-items:center;justify-content:center;'
   el.innerHTML = `
-    <div style="width:${size}px;height:${size}px;background:rgba(34,197,94,0.15);border:1.5px solid rgba(34,197,94,0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(34,197,94,0.07),0 0 20px rgba(34,197,94,0.4);pointer-events:none;">
-      <span style="font-size:${fontSize}px;font-weight:900;color:#22c55e;font-family:system-ui,sans-serif;pointer-events:none;">${count}</span>
+    <div style="width:${size}px;height:${size}px;background:rgba(201,244,0,0.15);border:1.5px solid rgba(201,244,0,0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(201,244,0,0.07),0 0 20px rgba(201,244,0,0.4);pointer-events:none;">
+      <span style="font-size:${fontSize}px;font-weight:900;color:#C9F400;font-family:system-ui,sans-serif;pointer-events:none;">${count}</span>
     </div>
   `
   return el
@@ -40,16 +40,16 @@ function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
   const emoji = TYPE_ICON[store.type] ?? '📍'
   const name = store.name.length > 18 ? store.name.slice(0, 18) + '…' : store.name
   const orbSize = isSelected ? 46 : 36
-  const orbBg = isSelected ? 'rgba(34,197,94,0.18)' : 'rgba(14,14,22,0.92)'
-  const orbBorder = isSelected ? '#22c55e' : 'rgba(34,197,94,0.55)'
+  const orbBg = isSelected ? 'rgba(201,244,0,0.18)' : 'rgba(14,14,22,0.92)'
+  const orbBorder = isSelected ? '#C9F400' : 'rgba(201,244,0,0.55)'
   const orbGlow = isSelected
-    ? '0 0 0 3px rgba(34,197,94,0.18), 0 0 22px rgba(34,197,94,0.75), 0 0 44px rgba(34,197,94,0.35)'
-    : '0 0 0 1px rgba(34,197,94,0.08), 0 0 14px rgba(34,197,94,0.45)'
-  const tipColor = isSelected ? '#22c55e' : 'rgba(34,197,94,0.55)'
+    ? '0 0 0 3px rgba(201,244,0,0.18), 0 0 22px rgba(201,244,0,0.75), 0 0 44px rgba(201,244,0,0.35)'
+    : '0 0 0 1px rgba(201,244,0,0.08), 0 0 14px rgba(201,244,0,0.45)'
+  const tipColor = isSelected ? '#C9F400' : 'rgba(201,244,0,0.55)'
 
   const pulseRings = isSelected
-    ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(34,197,94,0.55);animation:markerPulse 1.6s ease-out infinite;pointer-events:none;"></div>
-       <div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(34,197,94,0.3);animation:markerPulse 1.6s ease-out infinite 0.8s;pointer-events:none;"></div>`
+    ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(201,244,0,0.55);animation:markerPulse 1.6s ease-out infinite;pointer-events:none;"></div>
+       <div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(201,244,0,0.3);animation:markerPulse 1.6s ease-out infinite 0.8s;pointer-events:none;"></div>`
     : ''
 
   const el = document.createElement('div')
@@ -62,9 +62,9 @@ function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
       </div>
     </div>
     ${isSelected
-      ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(34,197,94,0.45);border-radius:7px;padding:3px 9px;white-space:nowrap;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(34,197,94,0.25);pointer-events:none;">${name}</div>`
+      ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(201,244,0,0.45);border-radius:7px;padding:3px 9px;white-space:nowrap;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(201,244,0,0.25);pointer-events:none;">${name}</div>`
       : ''}
-    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(34,197,94,0.5));pointer-events:none;"></div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(201,244,0,0.5));pointer-events:none;"></div>
   `
   return el
 }

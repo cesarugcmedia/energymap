@@ -87,6 +87,15 @@ export default function MapPage() {
   }, [selected])
 
   useEffect(() => {
+    if (!user || !lat || !lng) return
+    supabase
+      .from('profiles')
+      .update({ last_lat: lat, last_lng: lng })
+      .eq('id', user.id)
+      .then(() => {})
+  }, [user?.id, lat, lng])
+
+  useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && Date.now() - lastFetchRef.current > 5 * 60 * 1000) {
         lastFetchRef.current = Date.now()
