@@ -181,6 +181,8 @@ function AccountPageInner() {
   const [reportCount, setReportCount] = useState<number>(0)
   const [storeCount, setStoreCount] = useState<number>(0)
   const [uniqueFlavors, setUniqueFlavors] = useState<number>(0)
+  const [streak, setStreak] = useState<number>(0)
+  const [rank, setRank] = useState<number | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
   // Profile management
@@ -379,14 +381,41 @@ function AccountPageInner() {
 
   async function fetchStats(userId: string) {
     setStatsLoading(true)
-    const [{ count: rCount }, { count: sCount }, { data: flavors }] = await Promise.all([
+    const [{ count: rCount }, { count: sCount }, { data: flavors }, { data: dates }, { data: lb }] = await Promise.all([
       supabase.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', userId).eq('status', 'approved'),
       supabase.from('stock_reports').select('drink_id').eq('user_id', userId),
+      supabase.from('stock_reports').select('reported_at').eq('user_id', userId).order('reported_at', { ascending: false }),
+      supabase.rpc('get_leaderboard', { p_timeframe: 'All Time' }),
     ])
     setReportCount(rCount ?? 0)
     setStoreCount(sCount ?? 0)
     if (flavors) setUniqueFlavors(new Set(flavors.map((r: any) => r.drink_id)).size)
+
+    // Streak: count consecutive days ending today or yesterday
+    if (dates && dates.length > 0) {
+      const days = [...new Set(dates.map((r: any) => r.reported_at.slice(0, 10)))].sort().reverse()
+      const today = new Date().toISOString().slice(0, 10)
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+      let s = 0
+      if (days[0] === today || days[0] === yesterday) {
+        let cursor = new Date(days[0])
+        for (const d of days) {
+          if (d === cursor.toISOString().slice(0, 10)) {
+            s++
+            cursor = new Date(cursor.getTime() - 86400000)
+          } else break
+        }
+      }
+      setStreak(s)
+    }
+
+    // Rank
+    if (lb) {
+      const idx = lb.findIndex((e: any) => e.id === userId)
+      setRank(idx >= 0 ? idx + 1 : null)
+    }
+
     setStatsLoading(false)
   }
 
@@ -663,15 +692,16 @@ function selectAndContinue(tierId: TierId) {
                   {profile.is_admin && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>ADMIN</span>}
                   {profile.is_verified_reporter && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>✓ VERIFIED</span>}
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40`, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
+                  {!statsLoading && rank && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>#{rank} ALL TIME</span>}
                 </div>
               </div>
             </div>
             {/* Stat row */}
             <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.1)' }}>
               {[
-                { value: reportCount, label: 'Reports', color: 'var(--accent)' },
-                { value: storeCount,  label: 'Stores Added', color: '#FFB300' },
-                { value: `${memberDays}d`, label: 'Member For', color: '#a78bfa' },
+                { value: reportCount,         label: 'Reports',     color: 'var(--accent)' },
+                { value: storeCount,           label: 'Stores Added', color: '#FFB300' },
+                { value: streak > 0 ? `${streak}🔥` : '—', label: 'Day Streak', color: '#f97316' },
               ].map((s, i) => (
                 <div key={s.label} style={{ flex: 1, textAlign: 'center', paddingTop: 12, paddingBottom: 12, borderLeft: i > 0 ? '1px solid rgba(201,244,0,0.08)' : 'none' }}>
                   <p style={{ fontSize: 20, fontWeight: 800, color: s.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{statsLoading ? '–' : s.value}</p>
