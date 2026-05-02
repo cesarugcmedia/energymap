@@ -635,6 +635,30 @@ function selectAndContinue(tierId: TierId) {
       <div style={{ backgroundColor: 'var(--bg)', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
+        {/* Header Banner */}
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+            paddingTop: 'env(safe-area-inset-top)',
+            backgroundColor: 'var(--header-bg)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(201,244,0,0.12)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px 12px' }}>
+            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
+              ⚡ Account
+            </p>
+            <button
+              onClick={() => setActiveTab('settings')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, fontSize: 20, lineHeight: 1, color: activeTab === 'settings' ? '#C9F400' : 'var(--fg-50)' }}
+            >
+              ⚙️
+            </button>
+          </div>
+        </div>
+
         <Toast message={toastMessage} visible={toastVisible} />
 
         {/* ── Profile card (always visible) ── */}
