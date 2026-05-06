@@ -149,9 +149,7 @@ const HOW_IT_WORKS = [
   { icon: '🤝', title: 'Help the Community', desc: 'Report what you see on shelves. Every report helps thousands of fans find their favorite drinks faster.' },
 ]
 
-const STATS = [
-  { value: '500+', label: 'Stores Tracked' },
-  { value: '50+', label: 'Drink Flavors' },
+const STATIC_STATS = [
   { value: 'Real-time', label: 'Stock Updates' },
   { value: 'Free', label: 'To Get Started' },
 ]
@@ -184,6 +182,8 @@ function AccountPageInner() {
   const [streak, setStreak] = useState<number>(0)
   const [rank, setRank] = useState<number | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [platformStores, setPlatformStores] = useState<number>(0)
+  const [platformDrinks, setPlatformDrinks] = useState<number>(0)
 
   // Profile management
   const [editingUsername, setEditingUsername] = useState(false)
@@ -236,6 +236,13 @@ function AccountPageInner() {
     if (process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1') {
       fetch('/api/waitlist').then((r) => r.json()).then((d) => setWaitlistCount(d.count ?? 0))
     }
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then((r) => r.json())
+      .then((d) => { setPlatformStores(d.stores ?? 0); setPlatformDrinks(d.drinks ?? 0) })
+      .catch(() => {})
   }, [])
 
   // Refresh profile after successful Stripe payment
@@ -1031,7 +1038,11 @@ function selectAndContinue(tierId: TierId) {
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif" }}>LIVE STOCK UPDATES</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10, maxWidth: 560, margin: '0 auto' }}>
-            {STATS.map((s, i) => (
+            {[
+              { value: platformStores > 0 ? `${platformStores.toLocaleString()}+` : '1,000+', label: 'Stores Tracked' },
+              { value: platformDrinks > 0 ? `${platformDrinks.toLocaleString()}+` : '274+', label: 'Drink Flavors' },
+              ...STATIC_STATS,
+            ].map((s, i) => (
               <div key={i} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 20px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.value}</div>
                 <div style={{ fontSize: 10, color: '#4A5F50', marginTop: 2, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.label}</div>
