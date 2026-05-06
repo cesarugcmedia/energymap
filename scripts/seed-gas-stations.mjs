@@ -20,12 +20,13 @@ const supabase = createClient(
 
 // To re-seed a state, add it back to this array.
 // FL, CA, TX, NY were seeded 2026-05-06 (200 each).
+// IL was seeded 2026-05-06 (199).
 const AREAS = [
-  { name: 'Illinois', query: `area["name"="Illinois"]["admin_level"="4"]`, limit: 200 },
+  { name: 'New Jersey', query: `area["name"="New Jersey"]["admin_level"="4"]`, limit: 200 },
 ]
 
-// Illinois bounding box for dedup check
-const IL_BOUNDS = { minLat: 36.97, maxLat: 42.51, minLng: -91.51, maxLng: -87.02 }
+// New Jersey bounding box for dedup check
+const IL_BOUNDS = { minLat: 38.92, maxLat: 41.36, minLng: -75.56, maxLng: -73.89 }
 
 async function loadExistingCoords(bounds) {
   const { data, error } = await supabase
