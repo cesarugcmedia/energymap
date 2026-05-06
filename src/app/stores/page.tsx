@@ -386,6 +386,10 @@ export default function StoresPage() {
                   {isAtStore ? '● HERE' : `${nearestDist!.toFixed(1)} mi`}
                 </p>
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4 }}>Location may not be accurate. If something looks off, please report it.</p>
+              </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
                   onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
@@ -497,6 +501,12 @@ export default function StoresPage() {
                       </div>
                     )
                   })}
+
+                  {/* Location disclaimer */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                    <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                    <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4 }}>Location may not be accurate. If something looks off, please report it.</p>
+                  </div>
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 8 }}>

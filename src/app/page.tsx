@@ -350,6 +350,12 @@ export default function MapPage() {
             )}
           </div>
 
+          {/* Location disclaimer */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 12, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
+            <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+            <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4 }}>Location may not be accurate. If something looks off, please report it.</p>
+          </div>
+
           {/* Buttons */}
           <div className="flex gap-2.5">
             <button
