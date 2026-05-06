@@ -11,10 +11,20 @@ async function getCount(): Promise<number> {
   }
 }
 
+async function getStats(): Promise<{ stores: number; drinks: number }> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/stats`, { cache: 'no-store' })
+    if (!res.ok) return { stores: 0, drinks: 0 }
+    return res.json()
+  } catch {
+    return { stores: 0, drinks: 0 }
+  }
+}
+
 export const revalidate = 60
 
 export default async function WaitlistPage() {
-  const count = await getCount()
+  const [count, stats] = await Promise.all([getCount(), getStats()])
 
   return (
     <div
@@ -70,6 +80,28 @@ export default async function WaitlistPage() {
             </div>
           ))}
         </div>
+
+        {/* Stats */}
+        {(stats.stores > 0 || stats.drinks > 0) && (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+            {stats.stores > 0 && (
+              <div style={{ flex: 1, borderRadius: 12, padding: '12px 14px', backgroundColor: 'rgba(201,244,0,0.05)', border: '1px solid rgba(201,244,0,0.15)', textAlign: 'center' }}>
+                <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.02em', lineHeight: 1 }}>
+                  {stats.stores.toLocaleString()}+
+                </p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#4A5F50', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Stores Mapped</p>
+              </div>
+            )}
+            {stats.drinks > 0 && (
+              <div style={{ flex: 1, borderRadius: 12, padding: '12px 14px', backgroundColor: 'rgba(201,244,0,0.05)', border: '1px solid rgba(201,244,0,0.15)', textAlign: 'center' }}>
+                <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.02em', lineHeight: 1 }}>
+                  {stats.drinks.toLocaleString()}+
+                </p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#4A5F50', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Drink Flavors</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Social proof */}
         {count > 0 && (
