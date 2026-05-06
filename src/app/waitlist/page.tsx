@@ -1,11 +1,18 @@
+import { createClient } from '@supabase/supabase-js'
 import WaitlistForm from './WaitlistForm'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 async function getCount(): Promise<number> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/waitlist`, { cache: 'no-store' })
-    if (!res.ok) return 0
-    const { count } = await res.json()
-    return count ?? 0
+    const [{ count: waitlistCount }, { count: profileCount }] = await Promise.all([
+      supabase.from('waitlist').select('id', { count: 'exact', head: true }),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    ])
+    return (waitlistCount ?? 0) + (profileCount ?? 0)
   } catch {
     return 0
   }
@@ -13,9 +20,11 @@ async function getCount(): Promise<number> {
 
 async function getStats(): Promise<{ stores: number; drinks: number }> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/stats`, { cache: 'no-store' })
-    if (!res.ok) return { stores: 0, drinks: 0 }
-    return res.json()
+    const [{ count: stores }, { count: drinks }] = await Promise.all([
+      supabase.from('stores').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+      supabase.from('drinks').select('id', { count: 'exact', head: true }),
+    ])
+    return { stores: stores ?? 0, drinks: drinks ?? 0 }
   } catch {
     return { stores: 0, drinks: 0 }
   }
