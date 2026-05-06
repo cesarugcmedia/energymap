@@ -18,13 +18,25 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// To re-seed a state, add it back to this array.
+// FL, CA, TX, NY were seeded 2026-05-06 (200 each).
 const AREAS = [
-  { name: 'Florida',    query: `area["name"="Florida"]["admin_level"="4"]`,    limit: 200 },
-  { name: 'California', query: `area["name"="California"]["admin_level"="4"]`, limit: 200 },
-  { name: 'Texas',      query: `area["name"="Texas"]["admin_level"="4"]`,      limit: 200 },
-  { name: 'New York',   query: `area["name"="New York"]["admin_level"="4"]`,   limit: 200 },
-  { name: 'Chicago',    query: `area["name"="Chicago"]["admin_level"="8"]`,    limit: 150 },
+  { name: 'Illinois', query: `area["name"="Illinois"]["admin_level"="4"]`, limit: 200 },
 ]
+
+// Illinois bounding box for dedup check
+const IL_BOUNDS = { minLat: 36.97, maxLat: 42.51, minLng: -91.51, maxLng: -87.02 }
+
+async function loadExistingCoords(bounds) {
+  const { data, error } = await supabase
+    .from('stores')
+    .select('lat, lng')
+    .gte('lat', bounds.minLat).lte('lat', bounds.maxLat)
+    .gte('lng', bounds.minLng).lte('lng', bounds.maxLng)
+  if (error) throw error
+  // Round to 3 decimal places (~110m grid) for proximity dedup
+  return new Set((data ?? []).map(s => `${s.lat.toFixed(3)},${s.lng.toFixed(3)}`))
+}
 
 async function fetchStations(area) {
   const overpassQuery = `[out:json][timeout:90];${area.query}->.searchArea;node["amenity"="fuel"](area.searchArea);out ${area.limit};`
@@ -74,6 +86,7 @@ async function seed() {
 
   for (const area of AREAS) {
     console.log(`\nFetching ${area.name}...`)
+
     let nodes
     try {
       nodes = await fetchStations(area)
@@ -81,9 +94,18 @@ async function seed() {
       console.error(`  Failed to fetch: ${err.message}`)
       continue
     }
-    console.log(`  ${nodes.length} stations found`)
+    console.log(`  ${nodes.length} stations found from Overpass`)
 
-    const stores = nodes.map(n => toStore(n, area.name))
+    // Load existing stores in the bounding box to avoid duplicates
+    console.log('  Loading existing stores for dedup...')
+    const existing = await loadExistingCoords(IL_BOUNDS)
+    console.log(`  ${existing.size} existing stores in bounding box`)
+
+    const stores = nodes
+      .map(n => toStore(n, area.name))
+      .filter(s => !existing.has(`${s.lat.toFixed(3)},${s.lng.toFixed(3)}`))
+
+    console.log(`  ${stores.length} new (${nodes.length - stores.length} skipped as duplicates)`)
 
     const BATCH = 50
     let inserted = 0
@@ -100,7 +122,6 @@ async function seed() {
     console.log(`\n  Done — ${inserted} inserted`)
     grandTotal += inserted
 
-    // Be polite to the public Overpass instance
     if (area !== AREAS.at(-1)) {
       console.log('  Waiting 3s before next area...')
       await new Promise(r => setTimeout(r, 3000))
