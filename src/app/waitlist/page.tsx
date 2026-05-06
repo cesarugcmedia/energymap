@@ -1,15 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
 import WaitlistForm from './WaitlistForm'
 
 async function getCount(): Promise<number> {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    const { count } = await supabase
-      .from('waitlist')
-      .select('id', { count: 'exact', head: true })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/waitlist`, { cache: 'no-store' })
+    if (!res.ok) return 0
+    const { count } = await res.json()
     return count ?? 0
   } catch {
     return 0
