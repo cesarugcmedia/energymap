@@ -17,13 +17,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// Previously seeded: FL, CA, TX, NY, IL, NJ (2026-05-06)
 const AREAS = [
-  { name: 'Florida',    query: `area["name"="Florida"]["admin_level"="4"]`,       limit: 200, bounds: { minLat: 24.4,  maxLat: 31.0,  minLng: -87.6,  maxLng: -80.0 } },
-  { name: 'California', query: `area["name"="California"]["admin_level"="4"]`,    limit: 200, bounds: { minLat: 32.5,  maxLat: 42.0,  minLng: -124.4, maxLng: -114.1 } },
-  { name: 'Texas',      query: `area["name"="Texas"]["admin_level"="4"]`,         limit: 200, bounds: { minLat: 25.8,  maxLat: 36.5,  minLng: -106.6, maxLng: -93.5 } },
-  { name: 'New York',   query: `area["name"="New York"]["admin_level"="4"]`,      limit: 200, bounds: { minLat: 40.5,  maxLat: 45.0,  minLng: -79.8,  maxLng: -71.8 } },
-  { name: 'Illinois',   query: `area["name"="Illinois"]["admin_level"="4"]`,      limit: 200, bounds: { minLat: 36.97, maxLat: 42.51, minLng: -91.51, maxLng: -87.02 } },
-  { name: 'New Jersey', query: `area["name"="New Jersey"]["admin_level"="4"]`,    limit: 200, bounds: { minLat: 38.92, maxLat: 41.36, minLng: -75.56, maxLng: -73.89 } },
+  { name: 'Washington (Seattle/Edmonds)', query: `area["name"="Washington"]["admin_level"="4"]`, limit: 200, bounds: { minLat: 45.54, maxLat: 49.00, minLng: -124.80, maxLng: -116.92 } },
 ]
 
 async function loadExistingCoords(bounds) {
