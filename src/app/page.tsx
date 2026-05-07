@@ -141,11 +141,11 @@ export default function MapPage() {
         </div>
 
         <button
-          onClick={retry}
+          onClick={isPermissionDenied ? () => window.location.reload() : retry}
           className="w-full rounded-2xl p-4 font-bold"
           style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
         >
-          Try Again →
+          {isPermissionDenied ? 'I\'ve Enabled Location — Reload →' : 'Try Again →'}
         </button>
 
         {isPermissionDenied && (
