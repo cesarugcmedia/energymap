@@ -124,6 +124,27 @@ export default function MapPage() {
     )
   }
 
+  if (!location && !locError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5">
+        <span style={{ fontSize: 48 }}>📍</span>
+        <div>
+          <p className="text-xl font-black text-white mb-2">Enable Location</p>
+          <p className="text-sm text-white/45 leading-relaxed">
+            Amped Map uses your location to show nearby stores. Tap below to get started.
+          </p>
+        </div>
+        <button
+          onClick={retry}
+          className="w-full rounded-2xl p-4 font-bold"
+          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
+        >
+          Enable Location →
+        </button>
+      </div>
+    )
+  }
+
   if (locError) {
     const isPermissionDenied = locError === 'denied'
     return (
@@ -141,11 +162,11 @@ export default function MapPage() {
         </div>
 
         <button
-          onClick={isPermissionDenied ? () => window.location.reload() : retry}
+          onClick={retry}
           className="w-full rounded-2xl p-4 font-bold"
           style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
         >
-          {isPermissionDenied ? 'I\'ve Enabled Location — Reload →' : 'Try Again →'}
+          Try Again →
         </button>
 
         {isPermissionDenied && (
@@ -166,7 +187,7 @@ export default function MapPage() {
               <div className="flex items-start gap-2.5">
                 <span className="text-sm mt-0.5">🧭</span>
                 <p className="text-xs text-white/50 leading-relaxed">
-                  <span className="text-white/70 font-semibold">Safari:</span> Settings → Safari → Location → Allow
+                  <span className="text-white/70 font-semibold">iPhone Safari:</span> Tap the <span className="text-white/70 font-semibold">aA</span> icon in the address bar → Website Settings → Location → Allow. Also check Settings → Privacy &amp; Security → Location Services → Safari Websites → While Using
                 </p>
               </div>
               <div className="flex items-start gap-2.5">
