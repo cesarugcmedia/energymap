@@ -65,14 +65,16 @@ function stalenessColor(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
   if (hrs < 2) return '#C9F400'
   if (hrs < 12) return '#FFB300'
-  return '#FF4545'
+  if (hrs < 24) return '#FF4545'
+  return '#888888'
 }
 
 function stalenessLabel(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
   if (hrs < 2) return 'Fresh'
   if (hrs < 12) return 'Aging'
-  return 'Stale'
+  if (hrs < 24) return 'Stale'
+  return 'Unverified'
 }
 
 function StoreDetailContent({ id }: { id: string }) {
@@ -88,6 +90,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [storeError, setStoreError] = useState(false)
   const [stockError, setStockError] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [confirmations, setConfirmations] = useState<Record<string, { yes: number; no: number; userVote: boolean | null }>>({})
 const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
   const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
@@ -183,6 +186,23 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     } else {
       setStock([])
     }
+
+    // Fetch confirmations for this store
+    const { data: confirmData } = await supabase
+      .from('stock_confirmations')
+      .select('drink_id, confirmed, user_id')
+      .eq('store_id', id)
+    if (confirmData) {
+      const map: Record<string, { yes: number; no: number; userVote: boolean | null }> = {}
+      for (const c of confirmData) {
+        if (!map[c.drink_id]) map[c.drink_id] = { yes: 0, no: 0, userVote: null }
+        if (c.confirmed) map[c.drink_id].yes++
+        else map[c.drink_id].no++
+        if (c.user_id === user?.id) map[c.drink_id].userVote = c.confirmed
+      }
+      setConfirmations(map)
+    }
+
     setLoading(false)
   }
 
@@ -213,6 +233,21 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       setDrinkHistory((prev) => ({ ...prev, [drinkId]: data ?? [] }))
       setHistoryLoading((prev) => { const next = new Set(prev); next.delete(drinkId); return next })
     }
+  }
+
+  async function handleConfirm(drinkId: string, vote: boolean) {
+    if (!user) { showToast('Sign in to confirm stock'); return }
+    const current = confirmations[drinkId] ?? { yes: 0, no: 0, userVote: null }
+    const newVote = current.userVote === vote ? null : vote
+    let yes = current.yes - (current.userVote === true ? 1 : 0) + (newVote === true ? 1 : 0)
+    let no  = current.no  - (current.userVote === false ? 1 : 0) + (newVote === false ? 1 : 0)
+    setConfirmations(prev => ({ ...prev, [drinkId]: { yes, no, userVote: newVote } }))
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch('/api/stock/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ store_id: id, drink_id: drinkId, confirmed: newVote }),
+    })
   }
 
   function updateEntry(id: string, field: 'brand' | 'flavor' | 'caffeine_mg', value: string) {
@@ -600,7 +635,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   return (
                     <div key={item.drink_id}>
                       <div
-                        className="flex items-center"
                         style={{
                           backgroundColor: 'var(--surface)',
                           border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
@@ -611,25 +645,34 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                         }}
                         onClick={() => toggleHistory(item.drink_id)}
                       >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">{item.drink?.flavor ?? item.drink?.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <p className="text-xs" style={{ color: 'var(--fg-40)' }}>{item.drink?.brand}</p>
-                            {isHunterPlus && <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>}
-                            {item.drink?.caffeine_mg && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
-                                ⚡ {item.drink.caffeine_mg}mg
-                              </span>
+                        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">{item.drink?.flavor ?? item.drink?.name}</p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <p className="text-xs" style={{ color: 'var(--fg-40)' }}>{item.drink?.brand}</p>
+                              <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                              {item.drink?.caffeine_mg && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
+                                  ⚡ {item.drink.caffeine_mg}mg
+                                </span>
+                              )}
+                            </div>
+                            {/* Confirmation buttons */}
+                            {(() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
+                              <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+                                <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}>✓ {c?.yes ?? 0}</button>
+                                <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}>✗ {c?.no ?? 0}</button>
+                              </div>
+                            )})()}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 ml-2">
+                            <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
+                              <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                            </div>
+                            {isTracker && (
+                              <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                             )}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                            <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                          </div>
-                          {isTracker && (
-                            <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
-                          )}
                         </div>
                       </div>
                       {isTracker && historyOpen && (
@@ -714,7 +757,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           return (
                             <div key={item.drink_id}>
                               <div
-                                className="flex items-center"
                                 style={{
                                   backgroundColor: 'var(--fg-04)',
                                   border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
@@ -725,28 +767,35 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                 }}
                                 onClick={() => toggleHistory(item.drink_id)}
                               >
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-white truncate">
-                                    {item.drink?.flavor ?? item.drink?.name}
-                                  </p>
-                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                    {isHunterPlus && (
-                                      <p className="text-xs font-semibold" style={{ color: freshColor }}>{timeAgo(item.reported_at)}</p>
-                                    )}
-                                    {item.drink?.caffeine_mg && (
-                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
-                                        ⚡ {item.drink.caffeine_mg}mg
-                                      </span>
+                                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-white truncate">
+                                      {item.drink?.flavor ?? item.drink?.name}
+                                    </p>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                      <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                                      {item.drink?.caffeine_mg && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
+                                          ⚡ {item.drink.caffeine_mg}mg
+                                        </span>
+                                      )}
+                                    </div>
+                                    {/* Confirmation buttons */}
+                                    {(() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
+                                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}>✓ {c?.yes ?? 0}</button>
+                                        <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}>✗ {c?.no ?? 0}</button>
+                                      </div>
+                                    )})()}
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                                    <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
+                                      <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                                    </div>
+                                    {isTracker && (
+                                      <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                                     )}
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                                    <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                                  </div>
-                                  {isTracker && (
-                                    <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
-                                  )}
                                 </div>
                               </div>
 

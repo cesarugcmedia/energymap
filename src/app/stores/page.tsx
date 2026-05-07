@@ -49,7 +49,16 @@ function stalenessColor(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
   if (hrs < 2) return '#C9F400'
   if (hrs < 12) return '#FFB300'
-  return '#FF4545'
+  if (hrs < 24) return '#FF4545'
+  return '#888888'
+}
+
+function stalenessLabel(dateStr: string) {
+  const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
+  if (hrs < 2) return 'Fresh'
+  if (hrs < 12) return 'Aging'
+  if (hrs < 24) return 'Stale'
+  return 'Unverified'
 }
 
 function openDirections(destLat: number, destLng: number) {
