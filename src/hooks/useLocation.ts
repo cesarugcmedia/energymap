@@ -65,12 +65,7 @@ export function useLocation() {
       }
     }
 
-    if (navigator?.permissions?.query) {
-      tryAuto()
-    } else {
-      // No Permissions API (older browsers) — auto-request as before
-      request()
-    }
+    tryAuto()
   }, [request])
 
   return { location, error, loading, retry: request }
