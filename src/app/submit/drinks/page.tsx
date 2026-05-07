@@ -6,6 +6,17 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
 
+const MAX_DISTANCE_M = 500
+
+function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
   { value: 'out',    label: 'Out',  color: '#FF4545', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.35)'  },
   { value: 'low',    label: 'Low',  color: '#FFB300', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
@@ -34,6 +45,8 @@ function DrinksContent() {
   const [selections, setSelections] = useState<Record<string, Quantity>>({})
   const [submitting, setSubmitting] = useState(false)
   const [limitError, setLimitError] = useState<string | null>(null)
+  const [distanceM, setDistanceM] = useState<number | null>(null)
+  const [locationChecking, setLocationChecking] = useState(true)
 
   useEffect(() => {
     supabase
@@ -45,6 +58,33 @@ function DrinksContent() {
         setLoading(false)
       })
   }, [])
+
+  useEffect(() => {
+    if (!storeId) { setLocationChecking(false); return }
+
+    const storePromise = supabase
+      .from('stores')
+      .select('lat, lng')
+      .eq('id', storeId)
+      .single()
+      .then(({ data }) => data)
+
+    const gpsPromise = new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      if (!navigator.geolocation) { resolve(null); return }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
+        { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+      )
+    })
+
+    Promise.all([storePromise, gpsPromise]).then(([store, gps]) => {
+      if (store && gps) {
+        setDistanceM(getDistanceMeters(gps.lat, gps.lng, store.lat, store.lng))
+      }
+      setLocationChecking(false)
+    })
+  }, [storeId])
 
   function toggleBrand(brand: string) {
     setExpandedBrands((prev) => {
@@ -416,31 +456,50 @@ function DrinksContent() {
               zIndex: 30,
             }}
           >
+            {/* Location status */}
+            {locationChecking ? (
+              <p style={{ fontSize: 12, color: 'var(--fg-35)', textAlign: 'center', marginBottom: 10 }}>📍 Checking your location…</p>
+            ) : distanceM !== null && distanceM > MAX_DISTANCE_M ? (
+              <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>
+                📍 You're {distanceM >= 1000 ? `${(distanceM / 1000).toFixed(1)}km` : `${Math.round(distanceM)}m`} away — you must be at this store to report stock.
+              </p>
+            ) : distanceM !== null ? (
+              <p style={{ fontSize: 12, color: '#C9F400', textAlign: 'center', marginBottom: 10 }}>
+                📍 {Math.round(distanceM)}m away — good to go
+              </p>
+            ) : null}
+
             {limitError && (
               <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>{limitError}</p>
             )}
-            <button
-              style={{
-                width: '100%', borderRadius: 16, padding: '15px 0',
-                backgroundColor: submitting || limitError ? 'rgba(201,244,0,0.4)' : '#C9F400',
-                border: 'none', cursor: submitting ? 'default' : 'pointer',
-                fontSize: 15, fontWeight: 800, color: '#0D1210',
-                fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: submitting ? 'none' : '0 0 24px rgba(201,244,0,0.35)',
-              }}
-              onClick={handleSubmit}
-              disabled={submitting || !!limitError}
-            >
-              {submitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-black/40 border-t-black rounded-full animate-spin" />
-                  Submitting…
-                </>
-              ) : (
-                <>⚡ Submit {selectionCount} Report{selectionCount !== 1 ? 's' : ''}</>
-              )}
-            </button>
+            {(() => {
+              const tooFar = !locationChecking && distanceM !== null && distanceM > MAX_DISTANCE_M
+              const blocked = submitting || !!limitError || tooFar
+              return (
+                <button
+                  style={{
+                    width: '100%', borderRadius: 16, padding: '15px 0',
+                    backgroundColor: blocked ? 'rgba(201,244,0,0.4)' : '#C9F400',
+                    border: 'none', cursor: blocked ? 'default' : 'pointer',
+                    fontSize: 15, fontWeight: 800, color: '#0D1210',
+                    fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    boxShadow: blocked ? 'none' : '0 0 24px rgba(201,244,0,0.35)',
+                  }}
+                  onClick={handleSubmit}
+                  disabled={blocked}
+                >
+                  {submitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                      Submitting…
+                    </>
+                  ) : (
+                    <>⚡ Submit {selectionCount} Report{selectionCount !== 1 ? 's' : ''}</>
+                  )}
+                </button>
+              )
+            })()}
           </div>
         )}
       </div>
