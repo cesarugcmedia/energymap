@@ -125,13 +125,18 @@ export default function MapPage() {
   }
 
   if (locError) {
+    const isPermissionDenied = locError === 'denied'
     return (
       <div className="flex flex-col items-center justify-center h-screen  px-8 text-center gap-5">
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
-          <p className="text-xl font-black text-white mb-2">Location Access Needed</p>
+          <p className="text-xl font-black text-white mb-2">
+            {isPermissionDenied ? 'Location Access Needed' : 'Unable to Get Location'}
+          </p>
           <p className="text-sm text-white/45 leading-relaxed">
-            Amped Map uses your location to show nearby stores. Please allow location access to continue.
+            {isPermissionDenied
+              ? 'Amped Map uses your location to show nearby stores. Please allow location access to continue.'
+              : 'Your location permission is set to allow, but we couldn\'t get a fix. Make sure your device\'s location services are on, then try again.'}
           </p>
         </div>
 
@@ -140,37 +145,39 @@ export default function MapPage() {
           className="w-full rounded-2xl p-4 font-bold"
           style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
         >
-          Enable Location →
+          Try Again →
         </button>
 
-        <div
-          className="w-full rounded-2xl p-4 text-left"
-          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-        >
-          <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
-            HOW TO ENABLE IN YOUR BROWSER
-          </p>
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-start gap-2.5">
-              <span className="text-sm mt-0.5">🔒</span>
-              <p className="text-xs text-white/50 leading-relaxed">
-                <span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon in the address bar → Site settings → Location → Allow
-              </p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="text-sm mt-0.5">🧭</span>
-              <p className="text-xs text-white/50 leading-relaxed">
-                <span className="text-white/70 font-semibold">Safari:</span> Settings → Safari → Location → Allow
-              </p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="text-sm mt-0.5">🦊</span>
-              <p className="text-xs text-white/50 leading-relaxed">
-                <span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Access Your Location → Allow
-              </p>
+        {isPermissionDenied && (
+          <div
+            className="w-full rounded-2xl p-4 text-left"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+          >
+            <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
+              HOW TO ENABLE IN YOUR BROWSER
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm mt-0.5">🔒</span>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon in the address bar → Site settings → Location → Allow
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm mt-0.5">🧭</span>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-semibold">Safari:</span> Settings → Safari → Location → Allow
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm mt-0.5">🦊</span>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Access Your Location → Allow
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     )
   }

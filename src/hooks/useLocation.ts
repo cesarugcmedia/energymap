@@ -7,9 +7,11 @@ interface LocationObject {
   }
 }
 
+export type LocationError = 'denied' | 'unavailable' | 'timeout'
+
 export function useLocation() {
   const [location, setLocation] = useState<LocationObject | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<LocationError | null>(null)
   const [loading, setLoading] = useState(true)
 
   const request = useCallback(() => {
@@ -17,7 +19,7 @@ export function useLocation() {
     setError(null)
 
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser')
+      setError('unavailable')
       setLoading(false)
       return
     }
@@ -32,10 +34,17 @@ export function useLocation() {
         })
         setLoading(false)
       },
-      () => {
-        setError('denied')
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setError('denied')
+        } else if (err.code === err.TIMEOUT) {
+          setError('timeout')
+        } else {
+          setError('unavailable')
+        }
         setLoading(false)
-      }
+      },
+      { timeout: 15000, maximumAge: 60000, enableHighAccuracy: false }
     )
   }, [])
 
