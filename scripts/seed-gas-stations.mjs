@@ -17,9 +17,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// Previously seeded: FL, CA, TX, NY, IL, NJ (2026-05-06)
+// Previously seeded: FL, CA, TX, NY, IL, NJ (2026-05-06), WA state (2026-05-07)
 const AREAS = [
-  { name: 'Washington (Seattle/Edmonds)', query: `area["name"="Washington"]["admin_level"="4"]`, limit: 200, bounds: { minLat: 45.54, maxLat: 49.00, minLng: -124.80, maxLng: -116.92 } },
+  // Tight bbox covering Edmonds + greater Seattle metro
+  { name: 'Seattle / Edmonds', query: `node["amenity"="fuel"](47.45,-122.55,47.95,-121.90)`, limit: 300, bounds: { minLat: 47.45, maxLat: 47.95, minLng: -122.55, maxLng: -121.90 }, bboxOnly: true },
 ]
 
 async function loadExistingCoords(bounds) {
@@ -33,7 +34,9 @@ async function loadExistingCoords(bounds) {
 }
 
 async function fetchStations(area) {
-  const overpassQuery = `[out:json][timeout:90];${area.query}->.searchArea;node["amenity"="fuel"](area.searchArea);out ${area.limit};`
+  const overpassQuery = area.bboxOnly
+    ? `[out:json][timeout:90];${area.query};out ${area.limit};`
+    : `[out:json][timeout:90];${area.query}->.searchArea;node["amenity"="fuel"](area.searchArea);out ${area.limit};`
   const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`
   const res = await fetch(url, {
     headers: { 'User-Agent': 'AmpedMap/1.0 (seed script)', 'Accept': 'application/json' },
