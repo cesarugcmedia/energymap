@@ -23,6 +23,7 @@ export function useNearbyStores(lat: number, lng: number) {
       .from('stores')
       .select('id, name, type, address, lat, lng')
       .eq('status', 'approved')
+      .limit(10000)
     if (!error && data) {
       cachedStores = data
       cacheTime = Date.now()
