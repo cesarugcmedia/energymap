@@ -132,6 +132,64 @@ Stock report submission (`/submit/drinks`) enforces a 500m radius around the tar
 
 Manifest generated at `src/app/manifest.ts`. Service worker registered via `src/components/ServiceWorkerRegister.tsx`. Offline fallback page at `/offline`.
 
+## App Store Roadmap
+
+The goal is to ship AmpedMap on the iOS App Store using **Capacitor** (Ionic) to wrap the existing Next.js web app in a native iOS shell — no rewrite required.
+
+### Phase 1: Prerequisites
+- Enroll in the **Apple Developer Program** at developer.apple.com ($99/year — allow a few days for approval)
+- A **Mac with Xcode** is required to build and submit. Alternative: cloud Mac via MacStadium, Codemagic, or GitHub Actions macOS runners.
+- Publish a **Privacy Policy** page at a live URL (e.g. `ampedmap.com/privacy`) — required because the app collects location data.
+
+### Phase 2: Capacitor Setup
+1. Install `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`
+2. Configure `capacitor.config.ts` to point WebView at `https://ampedmap.com`
+3. Run `npx cap add ios` to generate the Xcode project
+4. Add native plugins:
+   - `@capacitor/push-notifications` — nearby stock alerts (also prevents "web wrapper" rejection)
+   - `@capacitor/geolocation` — more reliable GPS than browser on iOS
+   - `@capacitor/haptics` — tap feedback
+   - `@capacitor/splash-screen` — required splash screen
+   - `@capacitor/status-bar` — match dark theme
+
+### Phase 3: iOS Polish
+- Verify safe area insets on notch/Dynamic Island/home indicator devices
+- App icon: 1024×1024 PNG, no transparency, no rounded corners
+- Splash screen asset
+- `NSLocationWhenInUseUsageDescription` — clear description in `Info.plist`
+- Test keyboard behavior on search/form inputs
+- Verify iOS swipe-back doesn't conflict with map gestures
+
+### Phase 4: App Store Assets (App Store Connect)
+- App name: "AmpedMap" (verify availability)
+- Bundle ID: e.g. `com.ampedmap.app`
+- Screenshots: required for iPhone 6.9" (iPhone 16 Pro Max) and 6.5" sizes minimum
+- App description + keywords
+- Age rating questionnaire (likely 4+)
+- Category: Food & Drink or Navigation
+
+### Phase 5: Build & TestFlight
+1. Set Team, Bundle ID, and signing in Xcode
+2. `Product → Archive` → upload via Xcode Organizer
+3. Distribute to TestFlight for real-device testing before public release
+
+### Phase 6: Submit for Review
+- Fill all metadata in App Store Connect
+- Apple review typically takes 1–3 days
+- Key rejection risks: missing privacy policy, vague location permission string, no native features beyond WebView (push notifications mitigates this)
+
+### Priority Order
+| Step | Effort |
+|---|---|
+| Apple Developer enrollment | 30 min + approval wait |
+| Privacy policy page | 1–2 hours |
+| Capacitor setup | 2–4 hours |
+| App icon + splash screen | 1–2 hours |
+| Push notifications | 3–5 hours |
+| iOS polish + device testing | 2–4 hours |
+| Screenshots + metadata | 1–2 hours |
+| TestFlight + submission | 1 hour |
+
 ## Environment Variables
 
 ```
