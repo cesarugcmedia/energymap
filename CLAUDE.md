@@ -122,7 +122,7 @@ Each drink card shows ✓/✗ community confirmation buttons. Votes are stored i
 
 ### Geofencing
 
-Stock report submission (`/submit/drinks`) enforces a 500m radius around the target store. Distance is calculated client-side via Haversine using the user's GPS and the store's `lat`/`lng`. If location is unavailable, submission is still allowed. The submit CTA shows a live distance chip and is disabled when the user is too far.
+Stock report submission (`/submit/drinks`) enforces a 500m radius around the target store. Distance is calculated client-side via Haversine using the user's GPS and the store's `lat`/`lng`. If location is unavailable, submission is still allowed. The submit CTA shows a status message and is disabled when the user is too far. Admin users bypass the geofence entirely.
 
 ### Location (iOS Safari)
 
