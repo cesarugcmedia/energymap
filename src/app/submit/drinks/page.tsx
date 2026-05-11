@@ -459,11 +459,11 @@ function DrinksContent() {
             {/* Location status */}
             {locationChecking ? (
               <p style={{ fontSize: 12, color: 'var(--fg-35)', textAlign: 'center', marginBottom: 10 }}>📍 Checking your location…</p>
-            ) : distanceM !== null && distanceM > MAX_DISTANCE_M ? (
+            ) : !profile?.is_admin && distanceM !== null && distanceM > MAX_DISTANCE_M ? (
               <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>
                 📍 You need to be at the store to report stock.
               </p>
-            ) : distanceM !== null ? (
+            ) : distanceM !== null && !profile?.is_admin ? (
               <p style={{ fontSize: 12, color: '#C9F400', textAlign: 'center', marginBottom: 10 }}>
                 📍 You're at the store — good to go
               </p>
@@ -473,7 +473,7 @@ function DrinksContent() {
               <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>{limitError}</p>
             )}
             {(() => {
-              const tooFar = !locationChecking && distanceM !== null && distanceM > MAX_DISTANCE_M
+              const tooFar = !profile?.is_admin && !locationChecking && distanceM !== null && distanceM > MAX_DISTANCE_M
               const blocked = submitting || !!limitError || tooFar
               return (
                 <button
