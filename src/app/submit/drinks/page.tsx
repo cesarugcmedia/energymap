@@ -461,11 +461,11 @@ function DrinksContent() {
               <p style={{ fontSize: 12, color: 'var(--fg-35)', textAlign: 'center', marginBottom: 10 }}>📍 Checking your location…</p>
             ) : distanceM !== null && distanceM > MAX_DISTANCE_M ? (
               <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>
-                📍 You're {distanceM >= 1000 ? `${(distanceM / 1000).toFixed(1)}km` : `${Math.round(distanceM)}m`} away — you must be at this store to report stock.
+                📍 You need to be at the store to report stock.
               </p>
             ) : distanceM !== null ? (
               <p style={{ fontSize: 12, color: '#C9F400', textAlign: 'center', marginBottom: 10 }}>
-                📍 {Math.round(distanceM)}m away — good to go
+                📍 You're at the store — good to go
               </p>
             ) : null}
 
