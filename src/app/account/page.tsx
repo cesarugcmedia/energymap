@@ -145,8 +145,9 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
 }
 
 const ACCOUNT_TABS = [
-  { id: 'overview',  label: 'Overview', icon: '📊' },
-  { id: 'saved',     label: 'Saved',    icon: '❤️' },
+  { id: 'stats',   label: 'Stats',   icon: '📊' },
+  { id: 'saved',   label: 'Saved',   icon: '❤️' },
+  { id: 'badges',  label: 'Badges',  icon: '🏅' },
 ]
 
 const HOW_IT_WORKS = [
@@ -218,7 +219,8 @@ function AccountPageInner() {
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'overview' | 'saved' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'stats' | 'saved' | 'badges'>('stats')
+  const [showSettings, setShowSettings] = useState(false)
 
   // All reports (Reports tab, paginated)
   const [allReports, setAllReports] = useState<any[]>([])
@@ -689,329 +691,345 @@ function selectAndContinue(tierId: TierId) {
       tracker: { label: 'Tracker', color: 'var(--accent)', icon: '⚡' },
     }
     const tierInfo = TIER_LABEL[profile.tier ?? 'free']
+
+    const SettingsRow = ({ icon, label, sublabel, onPress, chevron = true, danger = false }: { icon: string; label: string; sublabel?: string; onPress?: () => void; chevron?: boolean; danger?: boolean }) => (
+      <button onClick={onPress} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ fontSize: 18, width: 24, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: danger ? '#FF4545' : 'var(--text)', margin: 0 }}>{label}</p>
+          {sublabel && <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0' }}>{sublabel}</p>}
+        </div>
+        {chevron && <span style={{ fontSize: 13, color: '#4A5F50', flexShrink: 0 }}>›</span>}
+      </button>
+    )
+
     return (
       <div style={{ backgroundColor: 'var(--bg)', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
         <Toast message={toastMessage} visible={toastVisible} />
 
-        {/* ── Header ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 16px', animation: 'fadeUp 0.5s ease' }}>
-          <div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
-              My <span style={{ color: 'var(--accent)' }}>Account</span>
-            </h1>
-            <p style={{ fontSize: 13, color: '#7A8F50', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-              @{profile.username}
-            </p>
-          </div>
-          <button
-            onClick={() => setActiveTab('settings')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, fontSize: 22, lineHeight: 1, color: activeTab === 'settings' ? '#C9F400' : 'var(--fg-40)', transition: 'color 0.15s' }}
-          >
-            ⚙️
-          </button>
-        </div>
+        {showSettings ? (
+          /* ── SETTINGS PANEL ── */
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
+            {/* Settings header */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 16px', gap: 8 }}>
+              <button onClick={() => { setShowSettings(false); setEditingUsername(false); setChangingPassword(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', color: 'var(--fg-55)', fontSize: 20, lineHeight: 1 }}>‹</button>
+              <p style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginRight: 40 }}>Settings</p>
+            </div>
 
-        {/* ── Profile card (always visible) ── */}
-        <div style={{ padding: '0 20px 12px' }}>
-          <div style={{ borderRadius: 16, padding: 20, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#C9F400' }} />
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: 'radial-gradient(circle at top right, rgba(201,244,0,0.08), transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16, gap: 10 }}>
-              <div style={{ width: 68, height: 68, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.2), rgba(201,244,0,0.08))', border: '2px solid rgba(201,244,0,0.4)', boxShadow: '0 4px 20px rgba(201,244,0,0.2)' }}>
-                <span style={{ fontSize: 30, fontWeight: 900, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>@{profile.username}</p>
-                <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{user.email}</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                  {profile.is_admin && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>ADMIN</span>}
-                  {profile.is_verified_reporter && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>✓ VERIFIED</span>}
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40`, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
-                  {!statsLoading && rank && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}>#{rank} ALL TIME</span>}
+            {/* Mini profile row */}
+            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.25), rgba(201,244,0,0.08))', border: '1.5px solid rgba(201,244,0,0.35)' }}>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
                 </div>
-              </div>
-            </div>
-            {/* Stat row */}
-            <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.1)' }}>
-              {[
-                { value: reportCount,         label: 'Reports',     color: 'var(--accent)' },
-                { value: storeCount,           label: 'Stores Added', color: '#FFB300' },
-                { value: streak > 0 ? `${streak}🔥` : '—', label: 'Day Streak', color: '#f97316' },
-              ].map((s, i) => (
-                <div key={s.label} style={{ flex: 1, textAlign: 'center', paddingTop: 12, paddingBottom: 12, borderLeft: i > 0 ? '1px solid rgba(201,244,0,0.08)' : 'none' }}>
-                  <p style={{ fontSize: 20, fontWeight: 800, color: s.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{statsLoading ? '–' : s.value}</p>
-                  <p style={{ fontSize: 10, fontWeight: 600, color: '#4A5F50', marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>@{profile.username}</p>
+                  <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Tab bar ── */}
-        <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ display: 'flex', gap: 4, borderRadius: 14, padding: 4, backgroundColor: 'rgba(201,244,0,0.06)', border: '1px solid rgba(201,244,0,0.1)' }}>
-            {ACCOUNT_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                style={{
-                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 8, borderRadius: 10, fontWeight: 700, fontSize: 11, border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'all 0.15s',
-                  backgroundColor: activeTab === tab.id ? '#C9F400' : 'transparent',
-                  color: activeTab === tab.id ? '#0D1210' : '#4A5F50',
-                }}
-              >
-                <span style={{ fontSize: 15 }}>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── OVERVIEW TAB ── */}
-        {activeTab === 'overview' && (
-          <div className="px-5 flex flex-col gap-4">
-
-            {/* Plan section */}
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Your Plan</p>
-              {checkoutError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{checkoutError}</p>}
-              <div style={{ display: 'flex', gap: 12 }}>
-
-                {/* Current plan */}
-                <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${tierInfo.color}35` }}>
-                  <div style={{ height: 3, background: tierInfo.color }} />
-                  <div style={{ padding: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <span style={{ fontSize: 18 }}>{tierInfo.icon}</span>
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 800, color: tierInfo.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{tierInfo.label}</p>
-                        <p style={{ fontSize: 10, color: '#4A5F50' }}>{profile.tier === 'free' ? 'Free' : '$5.00/mo'}</p>
-                      </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: profile.tier === 'tracker' ? '1fr 1fr' : '1fr', gap: profile.tier === 'tracker' ? '6px 10px' : '4px' }}>
-                      {(profile.tier === 'free'
-                        ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
-                        : ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard', 'Custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge', 'Priority stock alerts', 'Report history']
-                      ).map((f) => (
-                        <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                          <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 2, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 10, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {profile.tier === 'tracker' && (
-                      <div style={{ marginTop: 12 }}>
-                        {cancelError && <p style={{ fontSize: 10, color: '#FF4545', marginBottom: 4 }}>{cancelError}</p>}
-                        <button onClick={cancelSubscription} disabled={cancelLoading} style={{ width: '100%', borderRadius: 8, paddingTop: 8, paddingBottom: 8, fontSize: 11, fontWeight: 700, backgroundColor: 'rgba(255,69,69,0.05)', border: '1px solid rgba(255,69,69,0.15)', color: '#FF4545', opacity: cancelLoading ? 0.6 : 1, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                          {cancelLoading ? 'Cancelling...' : 'Cancel'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Upgrade plan */}
-                {profile.tier !== 'tracker' && (() => {
-                  const next = { id: 'tracker' as const, icon: '⚡', label: 'Tracker', color: 'var(--accent)', price: '$5.00/mo', features: ['Unlimited map radius', 'Unlimited submissions', 'Last updated timestamps', 'Full drink report history', 'Stock notifications & alerts', 'Favorites & custom store lists', 'Verified reporter badge', 'Leaderboard placement + badge'] }
-                  return (
-                    <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${next.color}35` }}>
-                      <div style={{ height: 3, background: next.color }} />
-                      <div style={{ padding: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 18 }}>{next.icon}</span>
-                          <div>
-                            <p style={{ fontSize: 14, fontWeight: 800, color: next.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{next.label}</p>
-                            <p style={{ fontSize: 10, color: '#4A5F50' }}>{next.price}</p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px', marginBottom: 12 }}>
-                          {next.features.map((f) => (
-                            <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                              <span style={{ fontSize: 9, color: next.color, marginTop: 2, flexShrink: 0 }}>✓</span>
-                              <span style={{ fontSize: 10, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <button onClick={() => startCheckout(next.id)} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 8, paddingTop: 8, paddingBottom: 8, fontSize: 11, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 12px rgba(201,244,0,0.3)' }}>
-                          {checkoutLoading ? '...' : `Upgrade ${next.icon}`}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })()}
+                <span style={{ fontSize: 13, color: '#4A5F50' }}>›</span>
               </div>
             </div>
 
-            {/* Badges */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Badges</p>
-                <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50' }}>{earned.size}/{BADGE_DEFS.length} earned</p>
-              </div>
-              {(() => {
-                const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
-                const visible = badgesExpanded ? sorted : sorted.slice(0, 4)
-                const hiddenCount = sorted.length - 4
-                return (
-                  <>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                      {visible.map((b) => {
-                        const isEarned = earned.has(b.id)
-                        const hint = progressHint(b.id)
-                        return (
-                          <div key={b.id} style={{ borderRadius: 16, padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
-                            <span style={{ fontSize: 22, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
-                            <p style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
-                            <p style={{ fontSize: 9, lineHeight: 1.3, color: '#4A5F50' }}>{hint ?? b.desc}</p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    <button
-                      onClick={() => setBadgesExpanded(!badgesExpanded)}
-                      style={{ marginTop: 8, width: '100%', padding: '10px 0', borderRadius: 12, backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.08)', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}
-                    >
-                      {badgesExpanded ? 'Show less ▴' : `Show ${hiddenCount} more badges ▾`}
-                    </button>
-                  </>
-                )
-              })()}
-            </div>
-
-          </div>
-        )}
-
-        {/* ── SAVED TAB ── */}
-        {activeTab === 'saved' && (
-          <div style={{ padding: '0 20px' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
-              Saved Stores · {favorites.length}
-            </p>
-            {favoritesLoading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24, paddingBottom: 24 }}>
-                <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              </div>
-            ) : favorites.length === 0 ? (
-              <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                <span style={{ fontSize: 32 }}>🤍</span>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No favorites yet</p>
-                <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the heart on any store page to save it here.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {favorites.map((fav) => {
-                  const store = fav.store
-                  return (
-                    <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
-                      <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
-                        <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>View</a>
-                        <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
-                          {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── SETTINGS TAB ── */}
-        {activeTab === 'settings' && (
-          <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            {/* Profile */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #C9F400' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Profile</p>
-
+            {/* Settings rows */}
+            <div style={{ margin: '8px 16px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
+              {/* Username */}
               {editingUsername ? (
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>New Username</p>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4A5F50', marginBottom: 10 }}>Change Username</p>
                   <input type="text" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder={profile.username} value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
                   {usernameError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{usernameError}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>Cancel</button>
-                    <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: savingUsername || !newUsername.trim() ? 'not-allowed' : 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
-                      {savingUsername ? '...' : 'Save Username'}
+                    <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                    <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: 'pointer', backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
+                      {savingUsername ? '…' : 'Save'}
                     </button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => { setEditingUsername(true); setNewUsername('') }} style={{ width: '100%', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700, textAlign: 'left', backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.1)', color: '#7A8F80', cursor: 'pointer', marginBottom: 12, fontFamily: "'Barlow', sans-serif" }}>
-                  ✏️ Change Username
-                  <span style={{ float: 'right', color: '#4A5F50' }}>@{profile.username}</span>
-                </button>
+                <SettingsRow icon="✏️" label="Change Username" sublabel={`@${profile.username}`} onPress={() => { setEditingUsername(true); setChangingPassword(false) }} />
               )}
-
+              <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />
+              {/* Password */}
               {changingPassword ? (
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>New Password</p>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4A5F50', marginBottom: 10 }}>Change Password</p>
                   <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoFocus />
                   <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
                     placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   {passwordError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{passwordError}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif" }}>Cancel</button>
-                    <button onClick={savePassword} disabled={savingPassword} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: savingPassword ? 'not-allowed' : 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', backgroundColor: savingPassword ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
-                      {savingPassword ? '...' : 'Save Password'}
+                    <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                    <button onClick={savePassword} disabled={savingPassword} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: 'pointer', backgroundColor: savingPassword ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
+                      {savingPassword ? '…' : 'Save'}
                     </button>
                   </div>
                 </div>
-              ) : !editingUsername && (
-                <button onClick={() => setChangingPassword(true)} style={{ width: '100%', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700, textAlign: 'left', backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.1)', color: '#7A8F80', cursor: 'pointer', fontFamily: "'Barlow', sans-serif" }}>
-                  🔑 Change Password
-                </button>
+              ) : (
+                <SettingsRow icon="🔑" label="Change Password" onPress={() => { setChangingPassword(true); setEditingUsername(false) }} />
               )}
             </div>
 
             {/* Notifications */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #a78bfa' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Notifications</p>
+            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
               {[
-                { label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
-                { label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
+                { icon: '🔔', label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
+                { icon: '📍', label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
               ].map((item, i) => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingBottom: 12, borderBottom: i < 1 ? '1px solid rgba(201,244,0,0.06)' : 'none' }}>
-                  <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{item.label}</p>
-                    <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{item.desc}</p>
+                <div key={item.label}>
+                  {i > 0 && <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px' }}>
+                    <span style={{ fontSize: 18, width: 24, textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{item.label}</p>
+                      <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0' }}>{item.desc}</p>
+                    </div>
+                    <button onClick={() => item.set(!item.value)} style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: item.value ? '#C9F400' : 'var(--fg-10)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}>
+                      <div style={{ position: 'absolute', top: 2, left: item.value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: item.value ? '#0D1210' : '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => item.set(!item.value)}
-                    style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: item.value ? '#C9F400' : 'var(--fg-10)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}
-                  >
-                    <div style={{ position: 'absolute', top: 2, left: item.value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: item.value ? '#0D1210' : '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-                  </button>
                 </div>
               ))}
             </div>
 
-            {/* Sign out */}
-            <button onClick={handleSignOut} style={{ width: '100%', borderRadius: 16, padding: '14px 0', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', color: '#FF4545', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              <span>Sign Out</span>
-              <span style={{ fontSize: 13, opacity: 0.7 }}>→</span>
-            </button>
+            {/* Links */}
+            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
+              <a href="/terms" style={{ textDecoration: 'none' }}>
+                <SettingsRow icon="📄" label="Terms of Service" />
+              </a>
+              <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />
+              <a href="/privacy" style={{ textDecoration: 'none' }}>
+                <SettingsRow icon="🔒" label="Privacy Policy" />
+              </a>
+            </div>
 
-            {/* Danger zone */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.15)', boxShadow: 'inset 3px 0 0 #FF4545' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,69,69,0.6)', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Danger Zone</p>
-              <p style={{ fontSize: 12, color: '#4A5F50', marginBottom: 12 }}>Permanently deletes your account and all data. This cannot be undone.</p>
-              <button onClick={deleteAccount} style={{ width: '100%', borderRadius: 10, padding: '12px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'rgba(255,69,69,0.07)', border: '1px solid rgba(255,69,69,0.18)', color: '#FF4545', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Delete Account
-              </button>
+            {/* Sign out */}
+            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.15)', overflow: 'hidden' }}>
+              <SettingsRow icon="→" label="Log Out" danger onPress={handleSignOut} />
+              <div style={{ height: 1, backgroundColor: 'rgba(255,69,69,0.08)', margin: '0 16px' }} />
+              <SettingsRow icon="🗑️" label="Delete Account" sublabel="Permanently deletes all your data" danger onPress={deleteAccount} />
             </div>
           </div>
+        ) : (
+          /* ── MAIN PROFILE VIEW ── */
+          <>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 20px 20px' }}>
+              <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>My Profile</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {streak > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 99, backgroundColor: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
+                    <span style={{ fontSize: 13 }}>🔥</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#f97316' }}>{streak}</span>
+                  </div>
+                )}
+                <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--fg-40)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Avatar + name */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '0 20px 24px' }}>
+              <div style={{ width: 90, height: 90, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.3), rgba(201,244,0,0.08))', border: '3px solid rgba(201,244,0,0.5)', boxShadow: '0 0 32px rgba(201,244,0,0.2)' }}>
+                <span style={{ fontSize: 38, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>@{profile.username}</p>
+                  {profile.is_verified_reporter && <span style={{ fontSize: 16 }}>✅</span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {profile.is_admin && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>}
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40` }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
+                  {!statsLoading && rank && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.25)' }}>#{rank} All-Time</span>}
+                </div>
+              </div>
+              {/* Inline stats */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4A5F50', fontSize: 13 }}>
+                <span style={{ fontWeight: 700, color: 'var(--fg-75)' }}>{statsLoading ? '–' : reportCount}</span>
+                <span>Reports</span>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ fontWeight: 700, color: 'var(--fg-75)' }}>{statsLoading ? '–' : storeCount}</span>
+                <span>Stores</span>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ fontWeight: 700, color: 'var(--fg-75)' }}>{statsLoading ? '–' : uniqueFlavors}</span>
+                <span>Drinks</span>
+              </div>
+            </div>
+
+            {/* Tab bar */}
+            <div style={{ padding: '0 20px 16px' }}>
+              <div style={{ display: 'flex', gap: 6, borderRadius: 14, padding: 4, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                {ACCOUNT_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                    style={{
+                      flex: 1, padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12, border: 'none', cursor: 'pointer',
+                      fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'all 0.15s',
+                      backgroundColor: activeTab === tab.id ? '#C9F400' : 'transparent',
+                      color: activeTab === tab.id ? '#0D1210' : '#4A5F50',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ── STATS TAB ── */}
+            {activeTab === 'stats' && (
+              <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {checkoutError && <p style={{ fontSize: 12, color: '#FF4545' }}>{checkoutError}</p>}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {/* Current plan */}
+                  <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${tierInfo.color}35` }}>
+                    <div style={{ height: 3, background: tierInfo.color }} />
+                    <div style={{ padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span style={{ fontSize: 20 }}>{tierInfo.icon}</span>
+                        <div>
+                          <p style={{ fontSize: 15, fontWeight: 800, color: tierInfo.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{tierInfo.label}</p>
+                          <p style={{ fontSize: 11, color: '#4A5F50' }}>{profile.tier === 'free' ? 'Free' : '$5.00/mo'}</p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {(profile.tier === 'free'
+                          ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
+                          : ['Live stock map', 'Unlimited radius', 'Unlimited submissions', 'Stock notifications', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge', 'Report history']
+                        ).map((f) => (
+                          <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                            <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
+                            <span style={{ fontSize: 11, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {profile.tier === 'tracker' && (
+                        <div style={{ marginTop: 12 }}>
+                          {cancelError && <p style={{ fontSize: 10, color: '#FF4545', marginBottom: 4 }}>{cancelError}</p>}
+                          <button onClick={cancelSubscription} disabled={cancelLoading} style={{ width: '100%', borderRadius: 8, padding: '8px 0', fontSize: 11, fontWeight: 700, backgroundColor: 'rgba(255,69,69,0.05)', border: '1px solid rgba(255,69,69,0.15)', color: '#FF4545', opacity: cancelLoading ? 0.6 : 1, cursor: 'pointer' }}>
+                            {cancelLoading ? 'Cancelling...' : 'Cancel Plan'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Upgrade */}
+                  {profile.tier !== 'tracker' && (
+                    <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.35)' }}>
+                      <div style={{ height: 3, background: '#C9F400' }} />
+                      <div style={{ padding: 14 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                          <span style={{ fontSize: 20 }}>⚡</span>
+                          <div>
+                            <p style={{ fontSize: 15, fontWeight: 800, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>Tracker</p>
+                            <p style={{ fontSize: 11, color: '#4A5F50' }}>$5.00/mo</p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                          {['Unlimited map radius', 'Unlimited submissions', 'Timestamps', 'Report history', 'Stock alerts', 'Store lists', 'Verified badge', 'Leaderboard badge'].map((f) => (
+                            <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                              <span style={{ fontSize: 9, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
+                              <span style={{ fontSize: 11, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 8, padding: '9px 0', fontSize: 12, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 12px rgba(201,244,0,0.3)' }}>
+                          {checkoutLoading ? '...' : 'Upgrade ⚡'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── SAVED TAB ── */}
+            {activeTab === 'saved' && (
+              <div style={{ padding: '0 20px' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+                  Saved Stores · {favorites.length}
+                </p>
+                {favoritesLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}>
+                    <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  </div>
+                ) : favorites.length === 0 ? (
+                  <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
+                    <span style={{ fontSize: 32 }}>🤍</span>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No favorites yet</p>
+                    <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the heart on any store page to save it here.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {favorites.map((fav) => {
+                      const store = fav.store
+                      return (
+                        <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
+                          <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
+                            <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif" }}>View</a>
+                            <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
+                              {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── BADGES TAB ── */}
+            {activeTab === 'badges' && (
+              <div style={{ padding: '0 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Badges</p>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50' }}>{earned.size}/{BADGE_DEFS.length} earned</p>
+                </div>
+                {(() => {
+                  const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
+                  const visible = badgesExpanded ? sorted : sorted.slice(0, 4)
+                  const hiddenCount = sorted.length - 4
+                  return (
+                    <>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                        {visible.map((b) => {
+                          const isEarned = earned.has(b.id)
+                          const hint = progressHint(b.id)
+                          return (
+                            <div key={b.id} style={{ borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
+                              <span style={{ fontSize: 26, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
+                              <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
+                              <p style={{ fontSize: 10, lineHeight: 1.3, color: '#4A5F50' }}>{hint ?? b.desc}</p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <button
+                        onClick={() => setBadgesExpanded(!badgesExpanded)}
+                        style={{ marginTop: 8, width: '100%', padding: '11px 0', borderRadius: 12, backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.08)', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}
+                      >
+                        {badgesExpanded ? 'Show less ▴' : `Show ${hiddenCount} more ▾`}
+                      </button>
+                    </>
+                  )
+                })()}
+              </div>
+            )}
+          </>
         )}
       </div>
     )
