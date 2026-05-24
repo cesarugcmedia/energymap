@@ -10,16 +10,24 @@ type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
 
 const BADGE_DEFS = [
-  { id: 'early_adopter', icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)' },
-  { id: 'first_report',  icon: '⚡', name: 'First Report',    desc: 'Submitted your first stock report',   color: 'var(--accent)', glow: 'rgba(201,244,0,0.25)'  },
-  { id: 'reporter_10',   icon: '📊', name: 'Reporter',        desc: '10 stock reports submitted',          color: 'var(--accent)', glow: 'rgba(201,244,0,0.25)'  },
-  { id: 'reporter_50',   icon: '🏆', name: 'Veteran',         desc: '50 stock reports submitted',          color: '#f97316', glow: 'rgba(249,115,22,0.25)' },
-  { id: 'reporter_100',  icon: '💎', name: 'Elite',           desc: '100 stock reports submitted',         color: '#a855f7', glow: 'rgba(168,85,247,0.25)' },
-  { id: 'scout',         icon: '📍', name: 'Scout',           desc: 'Added your first approved store',     color: '#3b82f6', glow: 'rgba(59,130,246,0.25)' },
-  { id: 'pathfinder',    icon: '🗺️', name: 'Pathfinder',      desc: 'Added 5 approved stores',             color: '#06b6d4', glow: 'rgba(6,182,212,0.25)'  },
-  { id: 'flavor_hunter', icon: '🎯', name: 'Flavor Hunter',   desc: 'Reported 5 different drinks',         color: '#ec4899', glow: 'rgba(236,72,153,0.25)' },
-  { id: 'verified',         icon: '✅', name: 'Verified',          desc: 'Trusted community reporter',      color: '#60a5fa', glow: 'rgba(96,165,250,0.25)'  },
-  { id: 'weekly_champion',  icon: '👑', name: 'Weekly Champion',   desc: 'Top reporter of the week',        color: '#ffd700', glow: 'rgba(255,215,0,0.25)'   },
+  { id: 'early_adopter',   icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)'  },
+  { id: 'first_report',    icon: '⚡', name: 'First Report',    desc: 'Submitted your first stock report',   color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
+  { id: 'reporter_10',     icon: '📊', name: 'Reporter',        desc: '10 stock reports submitted',          color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
+  { id: 'reporter_50',     icon: '🏆', name: 'Veteran',         desc: '50 stock reports submitted',          color: '#f97316', glow: 'rgba(249,115,22,0.25)'  },
+  { id: 'reporter_100',    icon: '💎', name: 'Elite',           desc: '100 stock reports submitted',         color: '#a855f7', glow: 'rgba(168,85,247,0.25)'  },
+  { id: 'reporter_200',    icon: '📈', name: 'Dedicated',       desc: '200 stock reports submitted',         color: '#f97316', glow: 'rgba(249,115,22,0.25)'  },
+  { id: 'reporter_500',    icon: '🚀', name: 'Legend',          desc: '500 stock reports submitted',         color: '#ec4899', glow: 'rgba(236,72,153,0.25)'  },
+  { id: 'scout',           icon: '📍', name: 'Scout',           desc: 'Added your first approved store',     color: '#3b82f6', glow: 'rgba(59,130,246,0.25)'  },
+  { id: 'pathfinder',      icon: '🗺️', name: 'Pathfinder',     desc: 'Added 5 approved stores',             color: '#06b6d4', glow: 'rgba(6,182,212,0.25)'   },
+  { id: 'store_builder',   icon: '🏗️', name: 'Builder',        desc: 'Added 10 approved stores',            color: '#f59e0b', glow: 'rgba(245,158,11,0.25)'  },
+  { id: 'flavor_hunter',   icon: '🎯', name: 'Flavor Hunter',  desc: 'Reported 5 different drinks',         color: '#ec4899', glow: 'rgba(236,72,153,0.25)'  },
+  { id: 'flavor_master',   icon: '🧪', name: 'Connoisseur',    desc: 'Reported 20 different drinks',        color: '#a855f7', glow: 'rgba(168,85,247,0.25)'  },
+  { id: 'on_fire',         icon: '🔥', name: 'On Fire',        desc: '3-day reporting streak',              color: '#f97316', glow: 'rgba(249,115,22,0.25)'  },
+  { id: 'unstoppable',     icon: '💥', name: 'Unstoppable',    desc: '7-day reporting streak',              color: '#ef4444', glow: 'rgba(239,68,68,0.25)'   },
+  { id: 'night_owl',       icon: '🦉', name: 'Night Owl',      desc: 'Submitted a report after midnight',   color: '#818cf8', glow: 'rgba(129,140,248,0.25)' },
+  { id: 'early_bird',      icon: '🐦', name: 'Early Bird',     desc: 'Submitted a report before 7am',      color: '#fbbf24', glow: 'rgba(251,191,36,0.25)'  },
+  { id: 'verified',        icon: '✅', name: 'Verified',        desc: 'Trusted community reporter',         color: '#60a5fa', glow: 'rgba(96,165,250,0.25)'  },
+  { id: 'weekly_champion', icon: '👑', name: 'Weekly Champion', desc: 'Top reporter of the week',           color: '#ffd700', glow: 'rgba(255,215,0,0.25)'   },
 ]
 
 function timeAgo(dateStr: string) {
@@ -178,6 +186,9 @@ function AccountPageInner() {
   const [storeCount, setStoreCount] = useState<number>(0)
   const [uniqueFlavors, setUniqueFlavors] = useState<number>(0)
   const [streak, setStreak] = useState<number>(0)
+  const [nightOwl, setNightOwl] = useState(false)
+  const [earlyBird, setEarlyBird] = useState(false)
+  const [badgesExpanded, setBadgesExpanded] = useState(false)
   const [rank, setRank] = useState<number | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [platformStores, setPlatformStores] = useState<number>(0)
@@ -415,6 +426,13 @@ function AccountPageInner() {
       setStreak(s)
     }
 
+    // Night owl / early bird
+    if (dates && dates.length > 0) {
+      const hours = dates.map((r: any) => new Date(r.reported_at).getHours())
+      setNightOwl(hours.some((h: number) => h >= 0 && h < 4))
+      setEarlyBird(hours.some((h: number) => h >= 5 && h < 7))
+    }
+
     // Rank
     if (lb) {
       const idx = lb.findIndex((e: any) => e.id === userId)
@@ -634,21 +652,35 @@ function selectAndContinue(tierId: TierId) {
     const earned = new Set<string>()
     const memberDays = Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
     if (memberDays >= 30)            earned.add('early_adopter')
-    if (reportCount >= 1)            earned.add('first_report')
-    if (reportCount >= 10)           earned.add('reporter_10')
-    if (reportCount >= 50)           earned.add('reporter_50')
-    if (reportCount >= 100)          earned.add('reporter_100')
-    if (storeCount >= 1)             earned.add('scout')
-    if (storeCount >= 5)             earned.add('pathfinder')
-    if (uniqueFlavors >= 5)          earned.add('flavor_hunter')
+    if (reportCount >= 1)             earned.add('first_report')
+    if (reportCount >= 10)            earned.add('reporter_10')
+    if (reportCount >= 50)            earned.add('reporter_50')
+    if (reportCount >= 100)           earned.add('reporter_100')
+    if (reportCount >= 200)           earned.add('reporter_200')
+    if (reportCount >= 500)           earned.add('reporter_500')
+    if (storeCount >= 1)              earned.add('scout')
+    if (storeCount >= 5)              earned.add('pathfinder')
+    if (storeCount >= 10)             earned.add('store_builder')
+    if (uniqueFlavors >= 5)           earned.add('flavor_hunter')
+    if (uniqueFlavors >= 20)          earned.add('flavor_master')
+    if (streak >= 3)                  earned.add('on_fire')
+    if (streak >= 7)                  earned.add('unstoppable')
+    if (nightOwl)                     earned.add('night_owl')
+    if (earlyBird)                    earned.add('early_bird')
     if (profile.is_verified_reporter) earned.add('verified')
 
     function progressHint(id: string): string | null {
-      if (id === 'reporter_10'   && reportCount < 10)   return `${reportCount}/10 reports`
-      if (id === 'reporter_50'   && reportCount < 50)   return `${reportCount}/50 reports`
-      if (id === 'reporter_100'  && reportCount < 100)  return `${reportCount}/100 reports`
-      if (id === 'pathfinder'    && storeCount < 5)     return `${storeCount}/5 stores`
-      if (id === 'flavor_hunter' && uniqueFlavors < 5)  return `${uniqueFlavors}/5 drinks`
+      if (id === 'reporter_10'    && reportCount < 10)    return `${reportCount}/10 reports`
+      if (id === 'reporter_50'    && reportCount < 50)    return `${reportCount}/50 reports`
+      if (id === 'reporter_100'   && reportCount < 100)   return `${reportCount}/100 reports`
+      if (id === 'reporter_200'   && reportCount < 200)   return `${reportCount}/200 reports`
+      if (id === 'reporter_500'   && reportCount < 500)   return `${reportCount}/500 reports`
+      if (id === 'pathfinder'     && storeCount < 5)      return `${storeCount}/5 stores`
+      if (id === 'store_builder'  && storeCount < 10)     return `${storeCount}/10 stores`
+      if (id === 'flavor_hunter'  && uniqueFlavors < 5)   return `${uniqueFlavors}/5 drinks`
+      if (id === 'flavor_master'  && uniqueFlavors < 20)  return `${uniqueFlavors}/20 drinks`
+      if (id === 'on_fire'        && streak < 3)          return `${streak}/3 days`
+      if (id === 'unstoppable'    && streak < 7)          return `${streak}/7 days`
       return null
     }
 
@@ -818,19 +850,34 @@ function selectAndContinue(tierId: TierId) {
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Badges</p>
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50' }}>{earned.size}/{BADGE_DEFS.length} earned</p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {BADGE_DEFS.map((b) => {
-                  const isEarned = earned.has(b.id)
-                  const hint = progressHint(b.id)
-                  return (
-                    <div key={b.id} style={{ borderRadius: 16, padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
-                      <span style={{ fontSize: 22, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
-                      <p style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
-                      <p style={{ fontSize: 9, lineHeight: 1.3, color: '#4A5F50' }}>{hint ?? b.desc}</p>
+              {(() => {
+                const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
+                const visible = badgesExpanded ? sorted : sorted.slice(0, 4)
+                const hiddenCount = sorted.length - 4
+                return (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                      {visible.map((b) => {
+                        const isEarned = earned.has(b.id)
+                        const hint = progressHint(b.id)
+                        return (
+                          <div key={b.id} style={{ borderRadius: 16, padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
+                            <span style={{ fontSize: 22, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
+                            <p style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
+                            <p style={{ fontSize: 9, lineHeight: 1.3, color: '#4A5F50' }}>{hint ?? b.desc}</p>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
-              </div>
+                    <button
+                      onClick={() => setBadgesExpanded(!badgesExpanded)}
+                      style={{ marginTop: 8, width: '100%', padding: '10px 0', borderRadius: 12, backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.08)', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}
+                    >
+                      {badgesExpanded ? 'Show less ▴' : `Show ${hiddenCount} more badges ▾`}
+                    </button>
+                  </>
+                )
+              })()}
             </div>
 
           </div>
