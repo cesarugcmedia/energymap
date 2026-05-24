@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <div className="bg-[#141A1F] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Privacy Policy</h1>
-        <p style={{ fontSize: 13, color: 'var(--fg-30)', marginBottom: 40 }}>Last updated: April 7, 2025</p>
+        <p style={{ fontSize: 13, color: 'var(--fg-30)', marginBottom: 40 }}>Last updated: May 23, 2026</p>
 
         {[
           {
@@ -18,7 +18,8 @@ export default function PrivacyPage() {
 
 • Account information: email address, username, and password when you register.
 • Profile data: your tier/plan, badges, and activity stats.
-• User-generated content: stock reports, store submissions, community messages, and store lists you create.
+• Location data: your device's GPS coordinates, used to show nearby stores on the map and verify your proximity when submitting stock reports. Location is only accessed while you are actively using the app and is never stored on our servers.
+• User-generated content: stock reports, store submissions, community confirmations, and store lists you create.
 • Payment information: processed securely by Stripe. We do not store your credit card details.
 • Usage data: pages visited, features used, and general interaction with the platform.`,
           },
@@ -27,6 +28,8 @@ export default function PrivacyPage() {
             body: `We use your information to:
 
 • Provide and improve the AmpedMap platform.
+• Show stores near your current location on the map.
+• Verify your proximity to a store when you submit a stock report.
 • Process payments and manage your subscription.
 • Send transactional emails such as account confirmation and password reset.
 • Display leaderboard rankings and community features.
@@ -38,6 +41,7 @@ export default function PrivacyPage() {
 
 • Supabase — database and authentication infrastructure.
 • Stripe — payment processing.
+• Mapbox — map rendering (your location is used to center the map; it is not transmitted to Mapbox in an identifiable form).
 • Resend — transactional email delivery.
 
 These providers are contractually obligated to protect your data and may not use it for their own purposes.`,
