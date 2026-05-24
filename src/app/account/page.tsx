@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
 import Toast from '@/components/Toast'
 
 type Mode = 'signin' | 'signup'
@@ -156,7 +155,6 @@ const STATIC_STATS = [
 
 function AccountPageInner() {
   const { user, profile, loading, refreshProfile } = useAuth()
-  const { theme, toggle } = useTheme()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [mode, setMode] = useState<Mode>('signup')
@@ -950,23 +948,6 @@ function selectAndContinue(tierId: TierId) {
                   </button>
                 </div>
               ))}
-            </div>
-
-            {/* Appearance */}
-            <div style={{ borderRadius: 16, padding: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 #C9F400' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Appearance</p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
-                  <p style={{ fontSize: 12, color: '#4A5F50', marginTop: 2 }}>{theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}</p>
-                </div>
-                <button
-                  onClick={toggle}
-                  style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: theme === 'light' ? '#C9F400' : 'var(--fg-10)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}
-                >
-                  <div style={{ position: 'absolute', top: 2, left: theme === 'light' ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: theme === 'light' ? '#0D1210' : '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-                </button>
-              </div>
             </div>
 
             {/* Sign out */}

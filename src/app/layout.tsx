@@ -41,10 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
-      <head>
-        {/* Prevent flash of wrong theme on load */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('em-theme');if(t==='light')document.documentElement.dataset.theme='light';})();` }} />
-      </head>
+
       <body>
         <AuthProvider>
           <ThemeProvider>
