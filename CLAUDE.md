@@ -106,7 +106,27 @@ Key routes:
 
 ### Theming
 
-Theme (light/dark) is stored in `localStorage` and applied via `data-theme="light"` on `<html>`. CSS custom properties (`--bg`, `--surface`, `--accent`, `--text`, etc.) drive all colors. A flash-prevention script in the root layout reads localStorage before first paint. The theme context lives in `src/contexts/ThemeContext.tsx`.
+The app is **dark mode only**. CSS custom properties (`--bg`, `--surface`, `--accent`, `--text`, `--fg-*` alpha series, etc.) drive all colors and are defined in `src/app/globals.css`. `ThemeContext.tsx` is a no-op stub kept for import compatibility.
+
+### Badge System
+
+18 badges defined in `BADGE_DEFS` in `src/app/account/page.tsx`. Most are computed client-side on page load from stats (report count, store count, unique drinks, streak, report timestamps). Two exceptions:
+- `verified` — read from `profiles.is_verified_reporter` (admin-toggled)
+- `weekly_champion` — read from `profiles.badges` (text[] column), assigned by the weekly cron function
+
+The account page profile tab shows badges in earned-first order, 4 visible by default with a "Show more" toggle.
+
+### Automations
+
+Three Supabase automations in `scripts/automation-*.sql` — run each once in the Supabase SQL Editor to activate:
+
+| Script | Trigger | Schedule |
+|---|---|---|
+| `automation-weekly-champion.sql` | Assigns 👑 badge + notification to top reporter | Every Monday 00:00 UTC (pg_cron) |
+| `automation-badge-notifications.sql` | Fires in-app notification on report/drink/store milestones | DB trigger on `stock_reports` INSERT + `stores` UPDATE |
+| `automation-stale-cleanup.sql` | Deletes non-latest reports older than 7 days | Every night 03:00 UTC (pg_cron) |
+
+Requires pg_cron (enabled by default on Supabase Pro).
 
 ### Stock Report Accuracy
 
