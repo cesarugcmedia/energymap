@@ -669,7 +669,8 @@ function selectAndContinue(tierId: TierId) {
     if (streak >= 7)                  earned.add('unstoppable')
     if (nightOwl)                     earned.add('night_owl')
     if (earlyBird)                    earned.add('early_bird')
-    if (profile.is_verified_reporter) earned.add('verified')
+    if (profile.is_verified_reporter)                    earned.add('verified')
+    if (profile.badges?.includes('weekly_champion'))     earned.add('weekly_champion')
 
     function progressHint(id: string): string | null {
       if (id === 'reporter_10'    && reportCount < 10)    return `${reportCount}/10 reports`
