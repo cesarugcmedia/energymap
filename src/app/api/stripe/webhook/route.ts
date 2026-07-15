@@ -56,7 +56,10 @@ export async function POST(req: NextRequest) {
           if (session.customer_details?.email) {
             await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/welcome`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'x-internal-secret': process.env.INTERNAL_API_SECRET!,
+              },
               body: JSON.stringify({ email: session.customer_details.email, username, tier }),
             }).catch(() => {})
           }

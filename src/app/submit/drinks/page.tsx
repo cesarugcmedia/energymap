@@ -31,7 +31,6 @@ function DrinksContent() {
   const storeName = params.get('storeName') ?? ''
 
   const { user, profile, loading: authLoading } = useAuth()
-  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -46,6 +45,7 @@ function DrinksContent() {
   const [submitting, setSubmitting] = useState(false)
   const [limitError, setLimitError] = useState<string | null>(null)
   const [distanceM, setDistanceM] = useState<number | null>(null)
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationChecking, setLocationChecking] = useState(true)
 
   useEffect(() => {
@@ -79,6 +79,7 @@ function DrinksContent() {
     })
 
     Promise.all([storePromise, gpsPromise]).then(([store, gps]) => {
+      if (gps) setGpsCoords(gps)
       if (store && gps) {
         setDistanceM(getDistanceMeters(gps.lat, gps.lng, store.lat, store.lng))
       }
@@ -115,67 +116,43 @@ function DrinksContent() {
     const entries = Object.entries(selections)
     if (entries.length === 0 || submitting) return
     setSubmitting(true)
+    setLimitError(null)
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-
-      // Daily limit for free tier
-      if (user && !isTracker) {
-        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
-        const { count } = await supabase
-          .from('stock_reports')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('reported_at', todayStart.toISOString())
-        if ((count ?? 0) >= 25) {
-          setLimitError("You've reached the daily limit of 25 stock reports. Upgrade to Tracker for unlimited.")
-          setSubmitting(false)
-          return
-        }
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setLimitError('Session expired. Please sign in again.')
+        setSubmitting(false)
+        return
       }
 
-      let toSubmit = entries
-      if (user) {
-        const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
-        const { data: recent } = await supabase
-          .from('stock_reports')
-          .select('drink_id')
-          .eq('user_id', user.id)
-          .eq('store_id', storeId)
-          .gte('reported_at', since)
-        const recentIds = new Set((recent ?? []).map((r: any) => r.drink_id))
-        toSubmit = entries.filter(([drinkId]) => !recentIds.has(drinkId))
-      }
+      const res = await fetch('/api/stock/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          store_id: storeId,
+          reports: entries.map(([drinkId, quantity]) => ({ drink_id: drinkId, quantity })),
+          lat: gpsCoords?.lat,
+          lng: gpsCoords?.lng,
+        }),
+      })
 
-      if (toSubmit.length > 0) {
-        await supabase.from('stock_reports').insert(
-          toSubmit.map(([drinkId, quantity]) => ({
-            store_id: storeId,
-            drink_id: drinkId,
-            quantity,
-            user_id: user?.id ?? null,
-          }))
-        )
+      const body = await res.json().catch(() => ({}))
 
-        const [firstDrinkId, firstQuantity] = toSubmit[0]
-        const firstDrink = drinks.find((d) => d.id === firstDrinkId)
-        if (firstDrink && profile?.username) {
-          const drinkLabel = toSubmit.length > 1
-            ? `${firstDrink.name} +${toSubmit.length - 1} more`
-            : firstDrink.name
-          await supabase.rpc('notify_stock_update', {
-            p_store_id: storeId,
-            p_drink_name: drinkLabel,
-            p_quantity: firstQuantity,
-            p_reporter_username: profile.username,
-          })
-        }
+      if (!res.ok) {
+        setLimitError(body.error ?? 'Could not submit reports. Please try again.')
+        setSubmitting(false)
+        return
       }
 
       router.replace(
-        `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${toSubmit.length}`
+        `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${body.submitted ?? 0}`
       )
     } catch {
+      setLimitError('Could not submit reports. Please try again.')
       setSubmitting(false)
     }
   }

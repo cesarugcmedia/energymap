@@ -9,6 +9,15 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, username, tier } = await req.json()
@@ -17,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    // Allow internal calls from the Stripe webhook (no auth header), or
+    // Allow internal calls from the Stripe webhook (verified via shared secret), or
     // calls from an authenticated user whose token matches the email being welcomed.
     const authHeader = req.headers.get('Authorization')
     if (authHeader?.startsWith('Bearer ')) {
@@ -27,10 +36,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
     } else {
-      // No auth header — only allow from same-origin server (Stripe webhook internal fetch)
-      const origin = req.headers.get('origin')
-      if (origin) {
-        // Browser requests always have an origin header; block them without a token
+      const internalSecret = req.headers.get('x-internal-secret')
+      if (!internalSecret || internalSecret !== process.env.INTERNAL_API_SECRET) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
     }
@@ -39,6 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
+    const safeUsername = escapeHtml(String(username))
     const tierLabel = tier === 'tracker' ? '🔥 Tracker' : 'Free'
 
     const html = `
@@ -69,7 +77,7 @@ export async function POST(req: NextRequest) {
           <!-- Body -->
           <tr>
             <td style="padding:32px 40px;">
-              <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#ffffff;">Welcome, ${username} 👋</p>
+              <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#ffffff;">Welcome, ${safeUsername} 👋</p>
               <p style="margin:0 0 24px;font-size:15px;color:rgba(255,255,255,0.5);line-height:1.6;">
                 You're now part of the AmpedMap community — the fastest way to find energy drinks near you.
               </p>

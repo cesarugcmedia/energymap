@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { signInviteToken } from '@/lib/inviteToken'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,8 +29,10 @@ export async function GET(req: NextRequest) {
   }
 
   const res = NextResponse.redirect(new URL('/account?invited=1', req.url))
-  // Store the verified invite token as its own cookie — no dependency on ADMIN_BYPASS_SECRET
-  res.cookies.set('amped_invited', token, {
+  // Store the verified invite token signed with an HMAC — no dependency on
+  // ADMIN_BYPASS_SECRET, and middleware can verify it without a DB call.
+  const signed = await signInviteToken(token)
+  res.cookies.set('amped_invited', signed, {
     httpOnly: true,
     secure: true,
     sameSite: 'lax',

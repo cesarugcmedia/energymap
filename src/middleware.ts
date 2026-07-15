@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyInviteToken } from '@/lib/inviteToken'
 
 const BYPASS_COOKIE = 'amped_bypass'
 
-export function middleware(req: NextRequest) {
-  if (process.env.MIDDLEWARE_WAITLIST_ACTIVE !== '1') return NextResponse.next()
+export async function middleware(req: NextRequest) {
+  const waitlistActive = process.env.MIDDLEWARE_WAITLIST_ACTIVE
+  if (waitlistActive !== 'true' && waitlistActive !== '1') return NextResponse.next()
 
   const { pathname } = req.nextUrl
 
@@ -30,10 +32,12 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Invite bypass — set when a user accepts a waitlist invite link
+  // Invite bypass — set when a user accepts a waitlist invite link.
+  // The cookie is HMAC-signed at issuance (see /api/invite/accept), so this
+  // verifies it was actually issued for a real, DB-validated invite token
+  // rather than just matching a UUID shape.
   const invited = req.cookies.get('amped_invited')
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  if (invited?.value && uuidPattern.test(invited.value)) {
+  if (invited?.value && await verifyInviteToken(invited.value)) {
     return NextResponse.next()
   }
 

@@ -3,55 +3,60 @@ import { supabase } from '@/lib/supabase'
 import type { Store } from '@/lib/types'
 
 const CACHE_TTL = 60_000 // 60 seconds
-const BATCH = 1000
 
-let cachedStores: Store[] | null = null
-let cacheTime = 0
+interface CacheEntry {
+  stores: Store[]
+  nearbyCount: number
+  time: number
+}
+
+const cache = new Map<string, CacheEntry>()
+
+function cacheKey(lat: number, lng: number, hasSession: boolean): string {
+  return `${lat.toFixed(2)},${lng.toFixed(2)}:${hasSession ? 'auth' : 'anon'}`
+}
 
 export function useNearbyStores(lat: number, lng: number) {
-  const [stores, setStores] = useState<Store[]>(cachedStores ?? [])
-  const [loading, setLoading] = useState(cachedStores === null)
+  const key = cacheKey(lat, lng, false)
+  const [stores, setStores] = useState<Store[]>(cache.get(key)?.stores ?? [])
+  const [nearbyCount, setNearbyCount] = useState<number>(cache.get(key)?.nearbyCount ?? 0)
+  const [loading, setLoading] = useState(!cache.has(key))
 
   const fetchStores = useCallback(async (force = false) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const key = cacheKey(lat, lng, !!session)
+
     const now = Date.now()
-    if (!force && cachedStores && now - cacheTime < CACHE_TTL) {
-      setStores(cachedStores)
+    const cached = cache.get(key)
+    if (!force && cached && now - cached.time < CACHE_TTL) {
+      setStores(cached.stores)
+      setNearbyCount(cached.nearbyCount)
       setLoading(false)
       return
     }
     setLoading(true)
 
-    const allData: Store[] = []
-    let from = 0
+    try {
+      const res = await fetch(`/api/stores/nearby?lat=${lat}&lng=${lng}`, {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+      })
+      if (!res.ok) throw new Error('Failed to load stores')
+      const body = await res.json()
+      const loadedStores: Store[] = body.stores ?? []
+      const loadedCount: number = body.nearbyCount ?? 0
 
-    while (true) {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('id, name, type, address, lat, lng')
-        .eq('status', 'approved')
-        .range(from, from + BATCH - 1)
-
-      if (error) {
-        console.error('Failed to load stores:', error.message)
-        break
-      }
-      if (!data || data.length === 0) break
-      allData.push(...data)
-      if (data.length < BATCH) break
-      from += BATCH
-    }
-
-    if (allData.length > 0) {
-      cachedStores = allData
-      cacheTime = Date.now()
-      setStores(allData)
+      cache.set(key, { stores: loadedStores, nearbyCount: loadedCount, time: Date.now() })
+      setStores(loadedStores)
+      setNearbyCount(loadedCount)
+    } catch (err) {
+      console.error('Failed to load stores:', err)
     }
     setLoading(false)
-  }, [])
+  }, [lat, lng])
 
   useEffect(() => {
     fetchStores()
   }, [fetchStores])
 
-  return { stores, loading, refetch: () => fetchStores(true) }
+  return { stores, nearbyCount, loading, refetch: () => fetchStores(true) }
 }

@@ -224,4 +224,6 @@ STRIPE_WEBHOOK_SECRET
 RESEND_API_KEY
 MIDDLEWARE_WAITLIST_ACTIVE     # Optional — set to "true" to enable waitlist gating
 ADMIN_BYPASS_SECRET            # Optional — cookie value for admin bypass
+INVITE_COOKIE_SECRET           # Required when waitlist gating is active — HMAC key signing the invite-accept bypass cookie
+INTERNAL_API_SECRET            # Required — shared secret for server-to-server calls (e.g. Stripe webhook → /api/email/welcome)
 ```
