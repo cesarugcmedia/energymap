@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 )
 
 const MAX_DISTANCE_M = 500
-const DAILY_LIMIT_FREE = 25
+const DAILY_LIMIT = 25
 const DEDUP_WINDOW_MS = 30 * 60 * 1000
 const VALID_QUANTITIES: Quantity[] = ['out', 'low', 'medium', 'full']
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   const isAdmin = profile?.is_admin ?? false
-  const isPrivileged = isAdmin || profile?.tier === 'tracker'
+  const isTracker = isAdmin || profile?.tier === 'tracker'
 
   const { data: store } = await supabaseAdmin
     .from('stores')
@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Daily submission limit — free tier only
-  if (!isPrivileged) {
+  // Daily submission limit — applies to everyone except admins
+  if (!isAdmin) {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const { count } = await supabaseAdmin
@@ -89,24 +89,28 @@ export async function POST(req: NextRequest) {
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .gte('reported_at', todayStart.toISOString())
-    if ((count ?? 0) >= DAILY_LIMIT_FREE) {
+    if ((count ?? 0) >= DAILY_LIMIT) {
       return NextResponse.json(
-        { error: "You've reached the daily limit of 25 stock reports. Upgrade to Tracker for unlimited." },
+        { error: "You've reached the daily limit of 25 stock reports." },
         { status: 429 }
       )
     }
   }
 
-  // Dedup — skip drinks this user already reported at this store in the last 30 minutes
-  const since = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString()
-  const { data: recent } = await supabaseAdmin
-    .from('stock_reports')
-    .select('drink_id')
-    .eq('user_id', user.id)
-    .eq('store_id', store_id)
-    .gte('reported_at', since)
-  const recentIds = new Set((recent ?? []).map((r) => r.drink_id))
-  const toSubmit = reports.filter((r) => !recentIds.has(r.drink_id))
+  // Dedup — skip drinks this user already reported at this store in the last 30
+  // minutes. Tracker/admin can re-report the same drink without waiting.
+  let toSubmit = reports
+  if (!isTracker) {
+    const since = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString()
+    const { data: recent } = await supabaseAdmin
+      .from('stock_reports')
+      .select('drink_id')
+      .eq('user_id', user.id)
+      .eq('store_id', store_id)
+      .gte('reported_at', since)
+    const recentIds = new Set((recent ?? []).map((r) => r.drink_id))
+    toSubmit = reports.filter((r) => !recentIds.has(r.drink_id))
+  }
 
   if (toSubmit.length === 0) {
     return NextResponse.json({ submitted: 0 })
