@@ -148,8 +148,14 @@ function DrinksContent() {
         return
       }
 
+      if (!body.submitted) {
+        setLimitError("You already reported these drinks here in the last 30 minutes. Come back later!")
+        setSubmitting(false)
+        return
+      }
+
       router.replace(
-        `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${body.submitted ?? 0}`
+        `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${body.submitted}`
       )
     } catch {
       setLimitError('Could not submit reports. Please try again.')

@@ -243,33 +243,30 @@ export default function AdminPage() {
   async function rejectStore(id: string) {
     if (!window.confirm('Reject this store submission?')) return
 
-    const { data: updated, error: updateError } = await supabase
+    // Only reject while it's still pending — guards against a race where
+    // someone else already approved/rejected it since this list loaded.
+    const { data: updated, error } = await supabase
       .from('stores')
       .update({ status: 'rejected' })
       .eq('id', id)
+      .eq('status', 'pending')
       .select('id')
 
-    if (!updateError && updated && updated.length > 0) {
-      setStores((prev) => prev.filter((s) => s.id !== id))
-      setPendingCount((c) => Math.max(0, c - 1))
-      showToast('Store rejected')
+    if (error) {
+      showToast('Could not reject store — check permissions')
       return
     }
 
-    const { data: deleted, error: deleteError } = await supabase
-      .from('stores')
-      .delete()
-      .eq('id', id)
-      .select('id')
-
-    if (!deleteError && deleted && deleted.length > 0) {
+    if (!updated || updated.length === 0) {
+      showToast('This store was already handled elsewhere')
       setStores((prev) => prev.filter((s) => s.id !== id))
-      setPendingCount((c) => Math.max(0, c - 1))
-      showToast('Store rejected')
+      fetchCounts()
       return
     }
 
-    showToast('Could not reject store — check permissions')
+    setStores((prev) => prev.filter((s) => s.id !== id))
+    setPendingCount((c) => Math.max(0, c - 1))
+    showToast('Store rejected')
   }
 
   function openEdit(store: any) {

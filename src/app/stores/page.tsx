@@ -101,10 +101,11 @@ export default function StoresPage() {
     if (!authLoading && !user) router.replace('/account')
   }, [user, authLoading])
 
-  const { location, loading: locLoading, error: locError } = useLocation()
+  const { location, loading: locLoading, error: locError, retry: retryLocation } = useLocation()
   const lat = location?.coords.latitude ?? 0
   const lng = location?.coords.longitude ?? 0
-  const { stores, loading: storesLoading, refetch: refetchStores } = useNearbyStores(lat, lng)
+  const tierKey = !user ? 'anon' : isHunterPlus ? 'tracker' : 'free'
+  const { stores, loading: storesLoading, refetch: refetchStores } = useNearbyStores(lat, lng, tierKey)
   const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
@@ -225,6 +226,45 @@ export default function StoresPage() {
 
   const loading = locLoading || storesLoading
 
+  // These must run before any early return below (Rules of Hooks) — the
+  // location-gate branches used to sit above them, which meant the hook
+  // count changed between the "waiting for location" and "have location"
+  // renders of the same mounted component.
+  const byDistance = useMemo(() =>
+    [...stores].sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)),
+    [stores, lat, lng]
+  )
+
+  const sorted = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return byDistance
+      .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
+      .filter((s) => typeFilter === null || s.type === typeFilter)
+      .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
+      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
+  }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng])
+
+  if (!location && !locError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: 'var(--bg)' }}>
+        <span style={{ fontSize: 48 }}>📍</span>
+        <div>
+          <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Enable Location</p>
+          <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6 }}>
+            Amped Map uses your location to show nearby stores. Tap below to get started.
+          </p>
+        </div>
+        <button
+          onClick={retryLocation}
+          className="w-full rounded-2xl p-4 font-bold"
+          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
+        >
+          Enable Location →
+        </button>
+      </div>
+    )
+  }
+
   if (locError) {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5" style={{ backgroundColor: 'var(--bg)' }}>
@@ -246,20 +286,6 @@ export default function StoresPage() {
       </div>
     )
   }
-
-  const byDistance = useMemo(() =>
-    [...stores].sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)),
-    [stores, lat, lng]
-  )
-
-  const sorted = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return byDistance
-      .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
-      .filter((s) => typeFilter === null || s.type === typeFilter)
-      .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
-      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
-  }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng])
 
   const nearest = byDistance[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null

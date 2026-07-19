@@ -273,6 +273,11 @@ function AccountPageInner() {
       setMode('signin')
       setError(null)
     }
+    // Tracker upgrade couldn't be started after email confirmation — account
+    // was created on the free tier, let them know to retry from settings
+    if (searchParams.get('upgradeError') === '1') {
+      showToast("Couldn't start your Tracker upgrade — you're on Free for now, retry anytime from Settings.")
+    }
   }, [searchParams])
 
   // Reset submitting state if page is restored from bfcache (browser back button)
@@ -299,7 +304,36 @@ function AccountPageInner() {
       const { data: existingProfile } = await supabase.from('profiles').select('id').eq('id', signInData.user.id).maybeSingle()
       if (!existingProfile) {
         const pending = localStorage.getItem('pending_profile')
-        const { username: pendingUsername } = pending ? JSON.parse(pending) : { username: email.split('@')[0] }
+        const { username: pendingUsername, tier: pendingTier } = pending
+          ? JSON.parse(pending)
+          : { username: email.split('@')[0], tier: 'free' }
+
+        if (pendingTier === 'tracker') {
+          try {
+            const res = await fetch('/api/upgrade/tracker', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${signInData.session.access_token}` },
+              body: JSON.stringify({ username: pendingUsername }),
+            })
+            const json = await res.json()
+            localStorage.removeItem('pending_profile')
+            if (json.upgraded) {
+              await refreshProfile()
+              router.replace('/')
+              return
+            }
+            if (json.url) {
+              window.location.href = json.url
+              return
+            }
+            router.replace('/account?upgradeError=1')
+            return
+          } catch {
+            router.replace('/account?upgradeError=1')
+            return
+          }
+        }
+
         await supabase.from('profiles').insert({ id: signInData.user.id, username: pendingUsername, tier: 'free' })
         localStorage.removeItem('pending_profile')
       }
@@ -348,8 +382,8 @@ function AccountPageInner() {
             return
           }
           if (json.url) {
-            // Beta full — go to Stripe; webhook creates profile after payment
-            await supabase.auth.signOut()
+            // Beta full — go to Stripe; webhook creates profile after payment.
+            // Keep the session active so the payment=success redirect lands signed in.
             window.location.href = json.url
             return
           }

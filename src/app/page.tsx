@@ -66,7 +66,8 @@ export default function MapPage() {
   const { location, loading: locLoading, error: locError, retry } = useLocation()
   const lat = location?.coords.latitude ?? 0
   const lng = location?.coords.longitude ?? 0
-  const { stores, nearbyCount, loading: storesLoading, refetch } = useNearbyStores(lat, lng)
+  const tierKey = !user ? 'anon' : isTracker ? 'tracker' : 'free'
+  const { stores, nearbyCount, loading: storesLoading, refetch } = useNearbyStores(lat, lng, tierKey)
   const [selected, setSelected] = useState<Store | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)

@@ -32,6 +32,41 @@ export default function AuthCallback() {
           ? JSON.parse(pending)
           : { username: session.user.email?.split('@')[0] ?? 'user', tier: 'free' }
 
+        if (tier === 'tracker') {
+          // Mirror the immediate-session signup path: authoritative server-side
+          // beta check, since this is the first time we can act on the user's
+          // chosen tier after email confirmation.
+          try {
+            const res = await fetch('/api/upgrade/tracker', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ username }),
+            })
+            const json = await res.json()
+            localStorage.removeItem('pending_profile')
+
+            if (json.upgraded) {
+              // Free beta spot — profile already created by the route
+              router.replace('/')
+              return
+            }
+            if (json.url) {
+              // Beta full — go to Stripe; webhook creates the profile after payment.
+              // Keep the session active so the post-payment redirect lands signed in.
+              window.location.href = json.url
+              return
+            }
+            // Upgrade call failed — don't silently create a free profile for
+            // someone who chose and expects Tracker; send them somewhere they
+            // can retry instead of masking it.
+            router.replace('/account?upgradeError=1')
+            return
+          } catch {
+            router.replace('/account?upgradeError=1')
+            return
+          }
+        }
+
         await supabase.from('profiles').insert({ id: session.user.id, username, tier: 'free' })
 
         // Welcome email
