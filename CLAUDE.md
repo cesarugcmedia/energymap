@@ -36,7 +36,7 @@ No test runner is configured.
 
 ### Routing & Middleware
 
-All routing uses Next.js App Router. `src/middleware.ts` optionally gates the entire app behind a waitlist when `MIDDLEWARE_WAITLIST_ACTIVE=true`.
+All routing uses Next.js App Router. `src/middleware.ts` optionally gates the entire app behind a waitlist when `MIDDLEWARE_WAITLIST_ACTIVE=true` (accepts `"true"` or `"1"`). The bypass cookie set after accepting an invite (`amped_invited`) is HMAC-signed via `src/lib/inviteToken.ts` using `INVITE_COOKIE_SECRET` — middleware verifies the signature rather than just checking the cookie's shape, so it can't be forged with an arbitrary UUID.
 
 Key pages:
 - `/` — Main map experience (the core feature)
@@ -81,9 +81,9 @@ Tier upgrades go through Stripe. The webhook at `/api/stripe/webhook` handles fu
 
 ### Maps
 
-`src/components/MapView.tsx` renders a Mapbox GL map. Supercluster aggregates store markers client-side (radius: 60px, max zoom: 16). The user's live location shows as a pulsing dot. Store markers use emoji icons. Radius is enforced via Haversine distance filtering in `src/hooks/useNearbyStores.ts`.
+`src/components/MapView.tsx` renders a Mapbox GL map. Supercluster aggregates store markers client-side (radius: 60px, max zoom: 16). The user's live location shows as a pulsing dot. Store markers use emoji icons. Radius is enforced **server-side** in `/api/stores/nearby` (free/anon capped to 5 miles, tracker/admin unlimited) — the server determines tier from the caller's bearer token, so a free-tier client never receives out-of-radius stores over the wire.
 
-`useNearbyStores` caches the store list in memory with a 60-second TTL. It paginates in 1,000-row batches to work around Supabase's server-side `max_rows` cap.
+`useNearbyStores` calls that route and caches the result in memory with a 60-second TTL, keyed by rounded lat/lng **and** a tier key (`'anon' | 'free' | 'tracker'`) passed in by the caller from `profile` — this is what makes it refetch correctly on login/logout/tier changes instead of showing stale data. The route itself paginates in 1,000-row batches server-side to work around Supabase's `max_rows` cap.
 
 ### API Routes
 
@@ -98,8 +98,10 @@ Key routes:
 - `POST /api/stripe/checkout` — Creates Stripe checkout session
 - `POST /api/stripe/webhook` — Handles Stripe events (subscription lifecycle)
 - `POST /api/stripe/cancel` — Cancels subscription
-- `POST /api/email/welcome` — Sends welcome email via Resend
+- `POST /api/email/welcome` — Sends welcome email via Resend (internal calls from the Stripe webhook authenticate via `INTERNAL_API_SECRET`, not a user token)
 - `POST /api/geocode` — Geocodes an address string to lat/lng
+- `POST /api/stock/report` — Submits stock reports for a store; enforces the geofence, daily limit, and dedup window server-side (see Geofencing & Submission Limits below)
+- `GET /api/stores/nearby` — Returns approved stores near `lat`/`lng`, tier-filtered server-side (5mi cap for free/anon, unlimited for tracker/admin)
 - `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report
 - `POST /api/admin/delete-user` — Admin user deletion
 - `POST /api/invite` — Converts a waitlist entry to a full account
@@ -140,9 +142,14 @@ All users see the freshness label; `tracker` tier users additionally see the exa
 
 Each drink card shows ✓/✗ community confirmation buttons. Votes are stored in `stock_confirmations` and displayed as counts. Optimistic UI updates on tap; tapping the same button again removes the vote.
 
-### Geofencing
+### Geofencing & Submission Limits
 
-Stock report submission (`/submit/drinks`) enforces a 500m radius around the target store. Distance is calculated client-side via Haversine using the user's GPS and the store's `lat`/`lng`. If location is unavailable, submission is still allowed. The submit CTA shows a status message and is disabled when the user is too far. Admin users bypass the geofence entirely.
+Stock report submission (`/submit/drinks`) posts to `/api/stock/report`, which enforces everything **server-side** using the caller's bearer token (the client's own Haversine check is just a UX hint — a status message shown before submitting — not the actual enforcement):
+- **500m geofence** around the target store. If GPS is unavailable, the check is skipped and submission is still allowed. Admins bypass it entirely.
+- **25 reports/day limit** — applies to both `free` and `tracker` tiers; only admins are unlimited.
+- **30-minute same-drink dedup** — applies to `free` tier only; `tracker`/admin can re-report the same drink at the same store without waiting.
+
+A submission where every pick was deduped returns `{ submitted: 0 }`; the client shows an "already reported" message rather than the success screen in that case.
 
 ### Location (iOS Safari)
 
