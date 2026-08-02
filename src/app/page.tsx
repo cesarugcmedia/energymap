@@ -406,16 +406,18 @@ export default function MapPage() {
               {storesLoading ? '— stores' : `${nearbyCount} stores nearby`}
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <NotificationBell />
-            <button
-              className="action-btn"
-              onClick={() => router.push('/add-store')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '9px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
-            >
-              + Add
-            </button>
-          </div>
+          {view === 'list' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <NotificationBell />
+              <button
+                className="action-btn"
+                onClick={() => router.push('/add-store')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '9px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
+              >
+                + Add
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
