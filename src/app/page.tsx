@@ -406,27 +406,37 @@ export default function MapPage() {
               {storesLoading ? '— stores' : `${nearbyCount} stores nearby`}
             </p>
           </div>
-          {view === 'list' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <NotificationBell />
-              <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 11, padding: 2 }}>
-                <button
-                  onClick={() => setView('map')}
-                  className="pill-btn"
-                  style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: 'transparent', color: '#7A8F80', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
-                >
-                  Map
-                </button>
-                <button
-                  onClick={() => setView('list')}
-                  className="pill-btn"
-                  style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
-                >
-                  List
-                </button>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {view === 'list' && <NotificationBell />}
+            <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 14, padding: 3, boxShadow: '0 0 16px rgba(201,244,0,0.12)' }}>
+              <button
+                onClick={() => setView('map')}
+                className="pill-btn"
+                style={{
+                  padding: '11px 18px', borderRadius: 11, border: 'none',
+                  backgroundColor: view === 'map' ? '#C9F400' : 'transparent',
+                  color: view === 'map' ? '#0D1210' : '#7A8F80',
+                  fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+                  boxShadow: view === 'map' ? '0 0 14px rgba(201,244,0,0.4)' : 'none',
+                }}
+              >
+                Map
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className="pill-btn"
+                style={{
+                  padding: '11px 18px', borderRadius: 11, border: 'none',
+                  backgroundColor: view === 'list' ? '#C9F400' : 'transparent',
+                  color: view === 'list' ? '#0D1210' : '#7A8F80',
+                  fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+                  boxShadow: view === 'list' ? '0 0 14px rgba(201,244,0,0.4)' : 'none',
+                }}
+              >
+                List
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -434,49 +444,6 @@ export default function MapPage() {
           stay mounted so the map keeps its zoom/pan state and Mapbox instance
           alive when List View is showing. */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-
-        {/* Floating Map/List pill — map view only. In list view the toggle
-            docks into the search row instead so it can't overlap content. */}
-        {view === 'map' && (
-          <div
-            style={{
-              position: 'absolute', top: 14, right: 14, zIndex: 30,
-              display: 'flex',
-              backgroundColor: 'rgba(10,13,10,0.85)',
-              border: '1px solid rgba(201,244,0,0.12)',
-              borderRadius: 20,
-              padding: 3,
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-            }}
-          >
-            <button
-              onClick={() => setView('map')}
-              className="pill-btn"
-              style={{
-                padding: '7px 14px', borderRadius: 16, border: 'none',
-                backgroundColor: '#C9F400',
-                color: '#0D1210',
-                fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
-              }}
-            >
-              Map
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className="pill-btn"
-              style={{
-                padding: '7px 14px', borderRadius: 16, border: 'none',
-                backgroundColor: 'transparent',
-                color: '#7A8F80',
-                fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
-              }}
-            >
-              List
-            </button>
-          </div>
-        )}
 
         {/* Map layer */}
         <div
