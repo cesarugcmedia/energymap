@@ -41,6 +41,7 @@ All routing uses Next.js App Router. `src/middleware.ts` optionally gates the en
 Key pages:
 - `/` — Main map experience (the core feature). Has a Map View / List View toggle in the header — List View is the filterable/searchable store list (formerly the separate `/stores` route, which now just redirects here)
 - `/leaderboard` — Rankings via Supabase RPC
+- `/community` — Social feed: text posts optionally tagged to a store, likes, Trending/Recent sort, trending-stores widget. No follower system or photo uploads yet (deliberately deferred)
 - `/submit` — Stock report submission
 - `/add-store` — Store submission form
 - `/account` — Profile, badge, stats, subscription management
@@ -63,6 +64,7 @@ Core tables in `public` schema:
 - `stock_confirmations` — Community votes on stock accuracy (`confirmed` boolean, unique per store+drink+user)
 - `notifications` — User notifications (real-time via Supabase Realtime)
 - `waitlist` — Pre-launch waitlist emails
+- `community_posts` / `community_post_likes` — `/community` feed posts (optionally tagged to a store via `store_id`) and their likes (unique per post+user). Defined in `scripts/create-community-tables.sql` — not yet run against production as of this writing; run it once in the Supabase SQL Editor to activate the feature
 
 **Supabase row cap**: The server-side `max_rows` is 1,000. Any query fetching all stores must paginate using `.range(from, from + BATCH - 1)` in a loop — never rely on `.limit()` alone.
 
@@ -102,6 +104,8 @@ Key routes:
 - `POST /api/stock/report` — Submits stock reports for a store; enforces the geofence, daily limit, and dedup window server-side (see Geofencing & Submission Limits below)
 - `GET /api/stores/nearby` — Returns approved stores near `lat`/`lng`, tier-filtered server-side (5mi cap for free/anon, unlimited for tracker/admin)
 - `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report
+- `POST /api/community/post` — Creates a `/community` feed post (1–500 chars, optional `store_id` tag), rate-limited to 10/hour
+- `POST /api/community/like` — Upserts or deletes a like on a `/community` post
 - `POST /api/admin/delete-user` — Admin user deletion
 - `POST /api/invite` — Converts a waitlist entry to a full account
 
