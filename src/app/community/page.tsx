@@ -64,8 +64,8 @@ export default function CommunityPage() {
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
   const [storeQuery, setStoreQuery] = useState('')
-  const [storeResults, setStoreResults] = useState<{ id: string; name: string }[]>([])
-  const [selectedStore, setSelectedStore] = useState<{ id: string; name: string } | null>(null)
+  const [storeResults, setStoreResults] = useState<{ id: string; name: string; address: string | null }[]>([])
+  const [selectedStore, setSelectedStore] = useState<{ id: string; name: string; address: string | null } | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -163,7 +163,7 @@ export default function CommunityPage() {
     let cancelled = false
     supabase
       .from('stores')
-      .select('id, name')
+      .select('id, name, address')
       .eq('status', 'approved')
       .ilike('name', `%${q}%`)
       .limit(5)
@@ -392,7 +392,9 @@ export default function CommunityPage() {
 
           {selectedStore ? (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '5px 10px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>📍 {selectedStore.name}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>
+                📍 {selectedStore.name}{selectedStore.address ? ` · ${selectedStore.address}` : ''}
+              </span>
               <button onClick={() => setSelectedStore(null)} style={{ background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 11 }}>✕</button>
             </div>
           ) : (
@@ -410,9 +412,10 @@ export default function CommunityPage() {
                     <button
                       key={s.id}
                       onClick={() => { setSelectedStore(s); setStoreQuery(''); setStoreResults([]) }}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', color: 'var(--fg-80)', fontSize: 12, cursor: 'pointer' }}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
-                      {s.name}
+                      <div style={{ fontSize: 12, color: 'var(--fg-80)' }}>{s.name}</div>
+                      {s.address && <div style={{ fontSize: 10.5, color: '#4A5F50', marginTop: 1 }}>{s.address}</div>}
                     </button>
                   ))}
                 </div>
