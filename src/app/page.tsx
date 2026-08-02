@@ -409,13 +409,22 @@ export default function MapPage() {
           {view === 'list' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <NotificationBell />
-              <button
-                className="action-btn"
-                onClick={() => router.push('/add-store')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '9px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
-              >
-                + Add
-              </button>
+              <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 11, padding: 2 }}>
+                <button
+                  onClick={() => setView('map')}
+                  className="pill-btn"
+                  style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: 'transparent', color: '#7A8F80', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
+                >
+                  Map
+                </button>
+                <button
+                  onClick={() => setView('list')}
+                  className="pill-btn"
+                  style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
+                >
+                  List
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -684,7 +693,7 @@ export default function MapPage() {
         >
             <div style={{ padding: '16px 16px 100px' }}>
 
-              {/* Search + docked view toggle */}
+              {/* Search + Add Store */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, animation: 'fadeUp 0.5s ease' }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
                   <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
@@ -699,22 +708,13 @@ export default function MapPage() {
                     <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
                   )}
                 </div>
-                <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 11, padding: 2 }}>
-                  <button
-                    onClick={() => setView('map')}
-                    className="pill-btn"
-                    style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: 'transparent', color: '#7A8F80', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
-                  >
-                    Map
-                  </button>
-                  <button
-                    onClick={() => setView('list')}
-                    className="pill-btn"
-                    style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
-                  >
-                    List
-                  </button>
-                </div>
+                <button
+                  className="action-btn"
+                  onClick={() => router.push('/add-store')}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, padding: '13px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
+                >
+                  + Add
+                </button>
               </div>
 
               {/* Radius filter */}
