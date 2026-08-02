@@ -114,6 +114,8 @@ Key routes:
 - `POST /api/community/follow` — Upserts or deletes a `follows` row between the caller and another user
 - `POST /api/admin/delete-user` — Admin user deletion
 - `POST /api/admin/kroger-sync` — Admin-triggered (not scheduled yet); refreshes `kroger_stock` for every matched store×drink pair. See "Kroger Integration" below
+- `GET /api/admin/kroger-search-locations` / `POST /api/admin/kroger-match-store` — searches Kroger locations near a store's zip code, and sets/clears `stores.kroger_location_id`
+- `GET /api/admin/kroger-search-products` / `POST /api/admin/kroger-match-drink` — searches Kroger's product catalog by term (scoped to a matched store's location), and sets/clears `drinks.kroger_upc`
 - `POST /api/invite` — Converts a waitlist entry to a full account
 
 ### Kroger Integration
@@ -122,7 +124,7 @@ Supplements crowdsourced stock reports with official availability data from Krog
 
 - `src/lib/kroger.ts` — server-only client-credentials OAuth wrapper (`KROGER_CLIENT_ID`/`KROGER_CLIENT_SECRET`) plus thin Locations/Products API calls. Only the **Products** and **Locations** API products are needed — no customer-login scopes (Cart/Order/Profile), since this never acts on a real shopper's account.
 - **Not yet exercised against a live Kroger account** — written against their published API shape, but exact query-param names should be re-verified against `developer.kroger.com` on the first real sync; Kroger tends to return `200` with an empty result on a param mismatch rather than an error, so a silent no-op is the likely failure mode.
-- Matching is manual for now: a store is "Kroger-verified" once an admin sets `stores.kroger_location_id`, and a drink once `drinks.kroger_upc` is set. `POST /api/admin/kroger-sync` then walks every matched store × matched drink pair and upserts `kroger_stock`. No automatic matching or scheduled sync yet — both are deliberately deferred until the pairing has been validated against real data.
+- Matching happens in `/admin`'s **Kroger** tab: search suggests candidate Kroger locations (by the store's zip code) or products (by free-text term, scoped to an already-matched store's location) and an admin picks the right one — it's a suggest-and-confirm flow, not automatic matching, since only a human can confirm two listings are really the same place/product. `POST /api/admin/kroger-sync` then walks every matched store × matched drink pair and upserts `kroger_stock`. No scheduled/automatic sync yet — admin-triggered only until the whole flow has been validated against real data.
 
 ### Theming
 

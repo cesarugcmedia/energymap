@@ -110,11 +110,32 @@ export async function getKrogerProductAvailability(upc: string, locationId: stri
   }
 }
 
+export interface KrogerProductCandidate {
+  upc: string
+  description: string
+  brand: string | null
+  size: string | null
+  inStock: boolean | null
+}
+
 // Search Kroger's product catalog by free-text term, scoped to one location
 // (used to find a drink's UPC in the first place).
-export async function searchKrogerProducts(term: string, locationId: string, limit = 5): Promise<any[]> {
+export async function searchKrogerProducts(term: string, locationId: string, limit = 8): Promise<KrogerProductCandidate[]> {
   const json = await krogerFetch(
     `/products?filter.term=${encodeURIComponent(term)}&filter.locationId=${encodeURIComponent(locationId)}&filter.limit=${limit}`
   )
-  return json.data ?? []
+  return (json.data ?? []).map((p: any) => ({
+    upc: p.upc,
+    description: p.description,
+    brand: p.brand ?? null,
+    size: p.items?.[0]?.size ?? null,
+    inStock: typeof p.items?.[0]?.fulfillment?.instore === 'boolean' ? p.items[0].fulfillment.instore : null,
+  }))
+}
+
+// Best-effort 5-digit zip extraction from a free-text address string, since
+// stores.address has no structured zip column to read from directly.
+export function extractZipCode(address: string | null | undefined): string | null {
+  const match = address?.match(/\b\d{5}\b/)
+  return match ? match[0] : null
 }
