@@ -66,6 +66,7 @@ Core tables in `public` schema:
 - `waitlist` — Pre-launch waitlist emails
 - `community_posts` / `community_post_likes` / `community_post_comments` — `/community` feed posts (optionally tagged to a store via `store_id` and/or a photo via `photo_url`), their likes (unique per post+user), and flat (non-threaded) comments. Defined in `scripts/create-community-tables.sql` and `scripts/create-community-v2-tables.sql` — neither has been run against production as of this writing; run both once in the Supabase SQL Editor (in that order) to activate the feature
 - `follows` — `follower_id`/`followed_id` pairs powering the Community "Following" filter; no follower/following counts are surfaced anywhere yet, just the filter. Also defined in `scripts/create-community-v2-tables.sql`
+- `kroger_stock` — Kroger-verified availability per store+drink (`in_stock`, `price`, `checked_at`), kept separate from `stock_reports`/`latest_stock` rather than inserted as synthetic user reports. `stores.kroger_location_id` and `drinks.kroger_upc` (both nullable) hold the match to a real Kroger location/product. Defined in `scripts/create-kroger-integration-tables.sql` — not yet run against production. See "Kroger Integration" below.
 
 **Storage**: `community-photos` bucket (public read, created by `create-community-v2-tables.sql`) holds `/community` post photos, uploaded client-side to a `<user_id>/...` path enforced by storage RLS. `/api/community/post` only accepts a `photo_url` that matches the caller's own bucket path — never an arbitrary external URL.
 
@@ -112,7 +113,16 @@ Key routes:
 - `POST /api/community/comment` — Adds a flat (non-threaded) comment to a `/community` post (1–300 chars), rate-limited to 20/hour
 - `POST /api/community/follow` — Upserts or deletes a `follows` row between the caller and another user
 - `POST /api/admin/delete-user` — Admin user deletion
+- `POST /api/admin/kroger-sync` — Admin-triggered (not scheduled yet); refreshes `kroger_stock` for every matched store×drink pair. See "Kroger Integration" below
 - `POST /api/invite` — Converts a waitlist entry to a full account
+
+### Kroger Integration
+
+Supplements crowdsourced stock reports with official availability data from Kroger's Products API — kept as a visually distinct "✅ Kroger: In/Out of Stock" badge on the store page rather than merged into `stock_reports`, so it never gets conflated with a user's own report.
+
+- `src/lib/kroger.ts` — server-only client-credentials OAuth wrapper (`KROGER_CLIENT_ID`/`KROGER_CLIENT_SECRET`) plus thin Locations/Products API calls. Only the **Products** and **Locations** API products are needed — no customer-login scopes (Cart/Order/Profile), since this never acts on a real shopper's account.
+- **Not yet exercised against a live Kroger account** — written against their published API shape, but exact query-param names should be re-verified against `developer.kroger.com` on the first real sync; Kroger tends to return `200` with an empty result on a param mismatch rather than an error, so a silent no-op is the likely failure mode.
+- Matching is manual for now: a store is "Kroger-verified" once an admin sets `stores.kroger_location_id`, and a drink once `drinks.kroger_upc` is set. `POST /api/admin/kroger-sync` then walks every matched store × matched drink pair and upserts `kroger_stock`. No automatic matching or scheduled sync yet — both are deliberately deferred until the pairing has been validated against real data.
 
 ### Theming
 
@@ -241,4 +251,6 @@ MIDDLEWARE_WAITLIST_ACTIVE     # Optional — set to "true" to enable waitlist g
 ADMIN_BYPASS_SECRET            # Optional — cookie value for admin bypass
 INVITE_COOKIE_SECRET           # Required when waitlist gating is active — HMAC key signing the invite-accept bypass cookie
 INTERNAL_API_SECRET            # Required — shared secret for server-to-server calls (e.g. Stripe webhook → /api/email/welcome)
+KROGER_CLIENT_ID               # Optional — required only for the Kroger integration (src/lib/kroger.ts)
+KROGER_CLIENT_SECRET           # Optional — required only for the Kroger integration (src/lib/kroger.ts)
 ```

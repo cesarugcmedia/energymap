@@ -91,6 +91,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [stockError, setStockError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [confirmations, setConfirmations] = useState<Record<string, { yes: number; no: number; userVote: boolean | null }>>({})
+  const [krogerStock, setKrogerStock] = useState<Record<string, { inStock: boolean; checkedAt: string }>>({})
 const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
   const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
@@ -201,6 +202,17 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         if (c.user_id === user?.id) map[c.drink_id].userVote = c.confirmed
       }
       setConfirmations(map)
+    }
+
+    // Kroger-verified availability, if this store is matched to one
+    const { data: krogerData } = await supabase
+      .from('kroger_stock')
+      .select('drink_id, in_stock, checked_at')
+      .eq('store_id', id)
+    if (krogerData) {
+      const map: Record<string, { inStock: boolean; checkedAt: string }> = {}
+      krogerData.forEach((k: any) => { map[k.drink_id] = { inStock: k.in_stock, checkedAt: k.checked_at } })
+      setKrogerStock(map)
     }
 
     setLoading(false)
@@ -656,6 +668,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   ⚡ {item.drink.caffeine_mg}mg
                                 </span>
                               )}
+                              {krogerStock[item.drink_id] && (
+                                <span
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                  style={{
+                                    backgroundColor: krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.1)' : 'rgba(255,69,69,0.1)',
+                                    color: krogerStock[item.drink_id].inStock ? '#60a5fa' : '#FF4545',
+                                    border: `1px solid ${krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.3)' : 'rgba(255,69,69,0.25)'}`,
+                                  }}
+                                  title={`Kroger checked ${timeAgo(krogerStock[item.drink_id].checkedAt)}`}
+                                >
+                                  ✅ Kroger: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'}
+                                </span>
+                              )}
                             </div>
                             {/* Confirmation buttons */}
                             {(() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
@@ -777,6 +802,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       {item.drink?.caffeine_mg && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
                                           ⚡ {item.drink.caffeine_mg}mg
+                                        </span>
+                                      )}
+                                      {krogerStock[item.drink_id] && (
+                                        <span
+                                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                          style={{
+                                            backgroundColor: krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.1)' : 'rgba(255,69,69,0.1)',
+                                            color: krogerStock[item.drink_id].inStock ? '#60a5fa' : '#FF4545',
+                                            border: `1px solid ${krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.3)' : 'rgba(255,69,69,0.25)'}`,
+                                          }}
+                                          title={`Kroger checked ${timeAgo(krogerStock[item.drink_id].checkedAt)}`}
+                                        >
+                                          ✅ Kroger: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'}
                                         </span>
                                       )}
                                     </div>
