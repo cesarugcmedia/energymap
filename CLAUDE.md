@@ -41,7 +41,7 @@ All routing uses Next.js App Router. `src/middleware.ts` optionally gates the en
 Key pages:
 - `/` — Main map experience (the core feature). Has a Map View / List View toggle in the header — List View is the filterable/searchable store list (formerly the separate `/stores` route, which now just redirects here)
 - `/leaderboard` — Rankings via Supabase RPC
-- `/community` — Social feed: text posts optionally tagged to a store, likes, Trending/Recent sort, trending-stores widget. No follower system or photo uploads yet (deliberately deferred)
+- `/community` — Social feed: text posts optionally tagged to a store and/or a photo, likes, comments, follow system with a Following filter, Trending/Recent/Following sort, trending-stores widget
 - `/submit` — Stock report submission
 - `/add-store` — Store submission form
 - `/account` — Profile, badge, stats, subscription management
@@ -64,7 +64,10 @@ Core tables in `public` schema:
 - `stock_confirmations` — Community votes on stock accuracy (`confirmed` boolean, unique per store+drink+user)
 - `notifications` — User notifications (real-time via Supabase Realtime)
 - `waitlist` — Pre-launch waitlist emails
-- `community_posts` / `community_post_likes` — `/community` feed posts (optionally tagged to a store via `store_id`) and their likes (unique per post+user). Defined in `scripts/create-community-tables.sql` — not yet run against production as of this writing; run it once in the Supabase SQL Editor to activate the feature
+- `community_posts` / `community_post_likes` / `community_post_comments` — `/community` feed posts (optionally tagged to a store via `store_id` and/or a photo via `photo_url`), their likes (unique per post+user), and flat (non-threaded) comments. Defined in `scripts/create-community-tables.sql` and `scripts/create-community-v2-tables.sql` — neither has been run against production as of this writing; run both once in the Supabase SQL Editor (in that order) to activate the feature
+- `follows` — `follower_id`/`followed_id` pairs powering the Community "Following" filter; no follower/following counts are surfaced anywhere yet, just the filter. Also defined in `scripts/create-community-v2-tables.sql`
+
+**Storage**: `community-photos` bucket (public read, created by `create-community-v2-tables.sql`) holds `/community` post photos, uploaded client-side to a `<user_id>/...` path enforced by storage RLS. `/api/community/post` only accepts a `photo_url` that matches the caller's own bucket path — never an arbitrary external URL.
 
 **Supabase row cap**: The server-side `max_rows` is 1,000. Any query fetching all stores must paginate using `.range(from, from + BATCH - 1)` in a loop — never rely on `.limit()` alone.
 
@@ -104,8 +107,10 @@ Key routes:
 - `POST /api/stock/report` — Submits stock reports for a store; enforces the geofence, daily limit, and dedup window server-side (see Geofencing & Submission Limits below)
 - `GET /api/stores/nearby` — Returns approved stores near `lat`/`lng`, tier-filtered server-side (5mi cap for free/anon, unlimited for tracker/admin)
 - `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report
-- `POST /api/community/post` — Creates a `/community` feed post (1–500 chars, optional `store_id` tag), rate-limited to 10/hour
+- `POST /api/community/post` — Creates a `/community` feed post (1–500 chars, optional `store_id` tag and/or `photo_url`), rate-limited to 10/hour
 - `POST /api/community/like` — Upserts or deletes a like on a `/community` post
+- `POST /api/community/comment` — Adds a flat (non-threaded) comment to a `/community` post (1–300 chars), rate-limited to 20/hour
+- `POST /api/community/follow` — Upserts or deletes a `follows` row between the caller and another user
 - `POST /api/admin/delete-user` — Admin user deletion
 - `POST /api/invite` — Converts a waitlist entry to a full account
 
