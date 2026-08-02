@@ -12,6 +12,7 @@ const TYPE_ICON: Record<string, string> = {
   new_store: '🏪',
   new_drink: '🥤',
   mention: '💬',
+  comment: '💬',
 }
 
 function timeAgo(dateStr: string) {

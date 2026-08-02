@@ -40,5 +40,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to add comment' }, { status: 500 })
   }
 
+  // Notify the post's author — but not when someone comments on their own post
+  const { data: post } = await supabaseAdmin
+    .from('community_posts')
+    .select('user_id')
+    .eq('id', post_id)
+    .single()
+
+  if (post && post.user_id !== user.id) {
+    const { data: commenterProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .single()
+    const commenterName = commenterProfile?.username ?? 'Someone'
+    const preview = trimmed.length > 80 ? `${trimmed.slice(0, 80)}…` : trimmed
+
+    try {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: post.user_id,
+        message: `💬 @${commenterName} commented on your post: "${preview}"`,
+        type: 'comment',
+        read: false,
+        visible_after: new Date().toISOString(),
+      })
+    } catch {
+      // Notification failure shouldn't fail the comment itself
+    }
+  }
+
   return NextResponse.json({ comment })
 }

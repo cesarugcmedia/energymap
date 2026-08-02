@@ -27,6 +27,7 @@ interface Post {
   created_at: string
   username: string
   storeName: string | null
+  storeAddress: string | null
   likeCount: number
   likedByMe: boolean
 }
@@ -114,13 +115,14 @@ export default function CommunityPage() {
 
     const [{ data: profiles }, { data: stores }, { data: likes }, { data: commentRows }] = await Promise.all([
       supabase.from('profiles').select('id, username').in('id', userIds),
-      storeIds.length > 0 ? supabase.from('stores').select('id, name').in('id', storeIds) : Promise.resolve({ data: [] }),
+      storeIds.length > 0 ? supabase.from('stores').select('id, name, address').in('id', storeIds) : Promise.resolve({ data: [] }),
       supabase.from('community_post_likes').select('post_id, user_id').in('post_id', postIds),
       supabase.from('community_post_comments').select('id, post_id, user_id, body, created_at').in('post_id', postIds).order('created_at', { ascending: true }),
     ])
 
     const usernameMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.username]))
     const storeNameMap = Object.fromEntries((stores ?? []).map((s: any) => [s.id, s.name]))
+    const storeAddressMap = Object.fromEntries((stores ?? []).map((s: any) => [s.id, s.address]))
     const likesByPost: Record<string, { count: number; mine: boolean }> = {}
     ;(likes ?? []).forEach((l: any) => {
       if (!likesByPost[l.post_id]) likesByPost[l.post_id] = { count: 0, mine: false }
@@ -151,6 +153,7 @@ export default function CommunityPage() {
       ...p,
       username: usernameMap[p.user_id] ?? 'Someone',
       storeName: p.store_id ? (storeNameMap[p.store_id] ?? null) : null,
+      storeAddress: p.store_id ? (storeAddressMap[p.store_id] ?? null) : null,
       likeCount: likesByPost[p.id]?.count ?? 0,
       likedByMe: likesByPost[p.id]?.mine ?? false,
     })))
@@ -515,9 +518,12 @@ export default function CommunityPage() {
                   {post.storeName && (
                     <button
                       onClick={() => router.push(`/store/${post.store_id}?name=${encodeURIComponent(post.storeName!)}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, marginBottom: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     >
-                      📍 {post.storeName}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>📍 {post.storeName}</span>
+                      {post.storeAddress && (
+                        <span style={{ fontSize: 10, color: '#4A5F50', marginLeft: 15 }}>{post.storeAddress}</span>
+                      )}
                     </button>
                   )}
 
