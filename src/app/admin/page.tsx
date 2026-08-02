@@ -98,6 +98,8 @@ export default function AdminPage() {
   const [krogerSearchLocationId, setKrogerSearchLocationId] = useState('')
   const [krogerProductCandidates, setKrogerProductCandidates] = useState<Record<string, { upc: string; description: string; brand: string | null; size: string | null; inStock: boolean | null }[]>>({})
   const [krogerProductSearching, setKrogerProductSearching] = useState<Set<string>>(new Set())
+  const [krogerBulkStoreProgress, setKrogerBulkStoreProgress] = useState<{ done: number; total: number } | null>(null)
+  const [krogerBulkDrinkProgress, setKrogerBulkDrinkProgress] = useState<{ done: number; total: number } | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -433,6 +435,18 @@ export default function AdminPage() {
     showToast(krogerLocationId ? 'Matched to Kroger' : 'Unmatched')
   }
 
+  async function findAllKrogerLocationMatches() {
+    const unmatched = locations.filter((s) => !s.kroger_location_id)
+    if (unmatched.length === 0) { showToast('Every store is already matched'); return }
+    setKrogerBulkStoreProgress({ done: 0, total: unmatched.length })
+    for (let i = 0; i < unmatched.length; i++) {
+      await findKrogerLocationMatches(unmatched[i].id)
+      setKrogerBulkStoreProgress({ done: i + 1, total: unmatched.length })
+      await new Promise((r) => setTimeout(r, 150))
+    }
+    setKrogerBulkStoreProgress(null)
+  }
+
   async function findKrogerProductMatches(drinkId: string, term: string) {
     if (!krogerSearchLocationId) { showToast('Pick a matched store to search against first'); return }
     setKrogerProductSearching((prev) => new Set(prev).add(drinkId))
@@ -457,6 +471,20 @@ export default function AdminPage() {
     setDrinks((prev) => prev.map((d) => d.id === drinkId ? { ...d, kroger_upc: upc } : d))
     setKrogerProductCandidates((prev) => { const n = { ...prev }; delete n[drinkId]; return n })
     showToast(upc ? 'Matched to Kroger' : 'Unmatched')
+  }
+
+  async function findAllKrogerProductMatches() {
+    if (!krogerSearchLocationId) { showToast('Pick a matched store to search against first'); return }
+    const unmatched = drinks.filter((d) => !d.kroger_upc)
+    if (unmatched.length === 0) { showToast('Every drink is already matched'); return }
+    setKrogerBulkDrinkProgress({ done: 0, total: unmatched.length })
+    for (let i = 0; i < unmatched.length; i++) {
+      const d = unmatched[i]
+      await findKrogerProductMatches(d.id, `${d.brand} ${d.flavor ?? d.name}`)
+      setKrogerBulkDrinkProgress({ done: i + 1, total: unmatched.length })
+      await new Promise((r) => setTimeout(r, 150))
+    }
+    setKrogerBulkDrinkProgress(null)
   }
 
   async function fetchFlags() {
@@ -777,7 +805,17 @@ export default function AdminPage() {
 
           {/* Match stores */}
           <div>
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MATCH STORES</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MATCH STORES</p>
+              <button
+                onClick={findAllKrogerLocationMatches}
+                disabled={!!krogerBulkStoreProgress}
+                className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
+                style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
+              >
+                {krogerBulkStoreProgress ? `Searching ${krogerBulkStoreProgress.done}/${krogerBulkStoreProgress.total}…` : 'Find Matches for All'}
+              </button>
+            </div>
             <input
               type="text"
               placeholder="Search locations..."
@@ -845,7 +883,19 @@ export default function AdminPage() {
 
           {/* Match drinks */}
           <div>
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MATCH DRINKS</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MATCH DRINKS</p>
+              {locations.filter((s) => s.kroger_location_id).length > 0 && (
+                <button
+                  onClick={findAllKrogerProductMatches}
+                  disabled={!!krogerBulkDrinkProgress || !krogerSearchLocationId}
+                  className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
+                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
+                >
+                  {krogerBulkDrinkProgress ? `Searching ${krogerBulkDrinkProgress.done}/${krogerBulkDrinkProgress.total}…` : 'Find Matches for All'}
+                </button>
+              )}
+            </div>
             {locations.filter((s) => s.kroger_location_id).length === 0 ? (
               <p className="text-xs text-white/35 mb-3">Match at least one store above first — Kroger's product search needs a store location to search against.</p>
             ) : (
