@@ -424,45 +424,48 @@ export default function MapPage() {
           alive when List View is showing. */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
 
-        {/* Floating Map/List pill — sits above both layers */}
-        <div
-          style={{
-            position: 'absolute', top: 14, right: 14, zIndex: 30,
-            display: 'flex',
-            backgroundColor: 'rgba(10,13,10,0.85)',
-            border: '1px solid rgba(201,244,0,0.12)',
-            borderRadius: 20,
-            padding: 3,
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-          }}
-        >
-          <button
-            onClick={() => setView('map')}
-            className="pill-btn"
+        {/* Floating Map/List pill — map view only. In list view the toggle
+            docks into the search row instead so it can't overlap content. */}
+        {view === 'map' && (
+          <div
             style={{
-              padding: '7px 14px', borderRadius: 16, border: 'none',
-              backgroundColor: view === 'map' ? '#C9F400' : 'transparent',
-              color: view === 'map' ? '#0D1210' : '#7A8F80',
-              fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+              position: 'absolute', top: 14, right: 14, zIndex: 30,
+              display: 'flex',
+              backgroundColor: 'rgba(10,13,10,0.85)',
+              border: '1px solid rgba(201,244,0,0.12)',
+              borderRadius: 20,
+              padding: 3,
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
             }}
           >
-            Map
-          </button>
-          <button
-            onClick={() => setView('list')}
-            className="pill-btn"
-            style={{
-              padding: '7px 14px', borderRadius: 16, border: 'none',
-              backgroundColor: view === 'list' ? '#C9F400' : 'transparent',
-              color: view === 'list' ? '#0D1210' : '#7A8F80',
-              fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
-            }}
-          >
-            List
-          </button>
-        </div>
+            <button
+              onClick={() => setView('map')}
+              className="pill-btn"
+              style={{
+                padding: '7px 14px', borderRadius: 16, border: 'none',
+                backgroundColor: '#C9F400',
+                color: '#0D1210',
+                fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}
+            >
+              Map
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className="pill-btn"
+              style={{
+                padding: '7px 14px', borderRadius: 16, border: 'none',
+                backgroundColor: 'transparent',
+                color: '#7A8F80',
+                fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}
+            >
+              List
+            </button>
+          </div>
+        )}
 
         {/* Map layer */}
         <div
@@ -679,19 +682,37 @@ export default function MapPage() {
         >
             <div style={{ padding: '16px 16px 100px' }}>
 
-              {/* Search */}
-              <div style={{ position: 'relative', marginBottom: 14, animation: 'fadeUp 0.5s ease' }}>
-                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
-                <input
-                  type="text"
-                  placeholder="Search stores..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
-                />
-                {search && (
-                  <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
-                )}
+              {/* Search + docked view toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, animation: 'fadeUp 0.5s ease' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search stores..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+                  />
+                  {search && (
+                    <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
+                  )}
+                </div>
+                <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 11, padding: 2 }}>
+                  <button
+                    onClick={() => setView('map')}
+                    className="pill-btn"
+                    style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: 'transparent', color: '#7A8F80', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
+                  >
+                    Map
+                  </button>
+                  <button
+                    onClick={() => setView('list')}
+                    className="pill-btn"
+                    style={{ padding: '9px 10px', borderRadius: 9, border: 'none', backgroundColor: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em', textTransform: 'uppercase' }}
+                  >
+                    List
+                  </button>
+                </div>
               </div>
 
               {/* Radius filter */}
