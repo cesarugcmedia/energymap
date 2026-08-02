@@ -7,7 +7,6 @@ import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import NotificationBell from '@/components/NotificationBell'
 import type { Quantity, Store } from '@/lib/types'
 
 type View = 'map' | 'list'
@@ -407,7 +406,6 @@ export default function MapPage() {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {view === 'list' && <NotificationBell />}
             <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 14, padding: 3, boxShadow: '0 0 16px rgba(201,244,0,0.12)' }}>
               <button
                 onClick={() => setView('map')}

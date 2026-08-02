@@ -379,8 +379,19 @@ export default function CommunityPage() {
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, MAX_BODY))}
             placeholder="Share a find, tip, or update..."
-            rows={2}
-            style={{ width: '100%', resize: 'none', backgroundColor: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 14, fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}
+            rows={3}
+            style={{
+              width: '100%', resize: 'none',
+              backgroundColor: 'var(--bg)',
+              border: '1px solid var(--fg-08)',
+              borderRadius: 12,
+              padding: '10px 12px',
+              color: 'var(--text)',
+              fontSize: 14,
+              fontFamily: "'Barlow', sans-serif",
+              lineHeight: 1.5,
+              outline: 'none',
+            }}
           />
 
           {photoPreview && (

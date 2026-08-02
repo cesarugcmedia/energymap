@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import NotificationBell from '@/components/NotificationBell'
 
 const TIMEFRAMES = ['All Time', 'This Month', 'This Week']
 
@@ -83,7 +82,6 @@ export default function LeaderboardPage() {
             </h1>
             <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em' }}>Top reporters keeping the community stocked</p>
           </div>
-          <NotificationBell />
         </div>
 
         {/* Timeframe tabs */}
