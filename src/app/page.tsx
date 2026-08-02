@@ -417,40 +417,64 @@ export default function MapPage() {
             </button>
           </div>
         </div>
-
-        <div style={{ padding: '0 16px 12px' }}>
-          <div style={{ display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, padding: 3 }}>
-            <button
-              onClick={() => setView('map')}
-              className="pill-btn"
-              style={{
-                flex: 1, padding: '9px 0', borderRadius: 9, border: 'none',
-                backgroundColor: view === 'map' ? '#C9F400' : 'transparent',
-                color: view === 'map' ? '#0D1210' : '#7A8F80',
-                fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase',
-              }}
-            >
-              🗺️ Map View
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className="pill-btn"
-              style={{
-                flex: 1, padding: '9px 0', borderRadius: 9, border: 'none',
-                backgroundColor: view === 'list' ? '#C9F400' : 'transparent',
-                color: view === 'list' ? '#0D1210' : '#7A8F80',
-                fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase',
-              }}
-            >
-              📋 List View
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* Content area — swaps between map canvas and store list */}
+      {/* Content area — cross-fades between map canvas and store list; both
+          stay mounted so the map keeps its zoom/pan state and Mapbox instance
+          alive when List View is showing. */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        {view === 'map' ? (
+
+        {/* Floating Map/List pill — sits above both layers */}
+        <div
+          style={{
+            position: 'absolute', top: 14, right: 14, zIndex: 30,
+            display: 'flex',
+            backgroundColor: 'rgba(10,13,10,0.85)',
+            border: '1px solid rgba(201,244,0,0.12)',
+            borderRadius: 20,
+            padding: 3,
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+          }}
+        >
+          <button
+            onClick={() => setView('map')}
+            className="pill-btn"
+            style={{
+              padding: '7px 14px', borderRadius: 16, border: 'none',
+              backgroundColor: view === 'map' ? '#C9F400' : 'transparent',
+              color: view === 'map' ? '#0D1210' : '#7A8F80',
+              fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+            }}
+          >
+            Map
+          </button>
+          <button
+            onClick={() => setView('list')}
+            className="pill-btn"
+            style={{
+              padding: '7px 14px', borderRadius: 16, border: 'none',
+              backgroundColor: view === 'list' ? '#C9F400' : 'transparent',
+              color: view === 'list' ? '#0D1210' : '#7A8F80',
+              fontSize: 11, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+            }}
+          >
+            List
+          </button>
+        </div>
+
+        {/* Map layer */}
+        <div
+          className="absolute inset-0"
+          style={{
+            zIndex: view === 'map' ? 1 : 0,
+            opacity: view === 'map' ? 1 : 0,
+            transform: view === 'map' ? 'translateY(0)' : 'translateY(-8px)',
+            pointerEvents: view === 'map' ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease, transform 0.2s ease',
+          }}
+        >
           <>
             <div className="absolute inset-0" style={{ zIndex: 0 }}>
               <MapView
@@ -640,8 +664,19 @@ export default function MapPage() {
               </div>
             )}
           </>
-        ) : (
-          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+        </div>
+
+        {/* List layer */}
+        <div
+          style={{
+            position: 'absolute', inset: 0, overflowY: 'auto',
+            zIndex: view === 'list' ? 1 : 0,
+            opacity: view === 'list' ? 1 : 0,
+            transform: view === 'list' ? 'translateY(0)' : 'translateY(8px)',
+            pointerEvents: view === 'list' ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease, transform 0.2s ease',
+          }}
+        >
             <div style={{ padding: '16px 16px 100px' }}>
 
               {/* Search */}
@@ -875,7 +910,6 @@ export default function MapPage() {
               )}
             </div>
           </div>
-        )}
       </div>
     </div>
   )
