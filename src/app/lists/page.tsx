@@ -100,7 +100,7 @@ export default function FavoritesPage() {
               Tap the heart on any store to save it here.
             </p>
             <button
-              onClick={() => router.push('/stores')}
+              onClick={() => router.push('/')}
               className="mt-2 px-6 py-3 rounded-2xl text-sm font-bold"
               style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
             >

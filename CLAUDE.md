@@ -39,8 +39,7 @@ No test runner is configured.
 All routing uses Next.js App Router. `src/middleware.ts` optionally gates the entire app behind a waitlist when `MIDDLEWARE_WAITLIST_ACTIVE=true` (accepts `"true"` or `"1"`). The bypass cookie set after accepting an invite (`amped_invited`) is HMAC-signed via `src/lib/inviteToken.ts` using `INVITE_COOKIE_SECRET` — middleware verifies the signature rather than just checking the cookie's shape, so it can't be forged with an arbitrary UUID.
 
 Key pages:
-- `/` — Main map experience (the core feature)
-- `/stores` — Filterable store list
+- `/` — Main map experience (the core feature). Has a Map View / List View toggle in the header — List View is the filterable/searchable store list (formerly the separate `/stores` route, which now just redirects here)
 - `/leaderboard` — Rankings via Supabase RPC
 - `/submit` — Stock report submission
 - `/add-store` — Store submission form
