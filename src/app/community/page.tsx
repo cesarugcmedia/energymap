@@ -168,6 +168,7 @@ export default function CommunityPage() {
       .from('stores')
       .select('id, name, address')
       .eq('status', 'approved')
+      .or('state.is.null,state.in.(North Carolina,Florida)')
       .ilike('name', `%${q}%`)
       .limit(5)
       .then(({ data }) => { if (!cancelled) setStoreResults(data ?? []) })
