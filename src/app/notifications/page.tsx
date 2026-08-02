@@ -27,8 +27,7 @@ function timeAgo(dateStr: string) {
 
 export default function NotificationsPage() {
   const router = useRouter()
-  const { user, profile, loading: authLoading } = useAuth()
-  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
+  const { user, loading: authLoading } = useAuth()
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -74,27 +73,6 @@ export default function NotificationsPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: 'var(--bg)' }}>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      </div>
-    )
-  }
-
-  if (!isTracker) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
-        <span style={{ fontSize: 48, marginBottom: 20 }}>🔔</span>
-        <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Tracker Feature</p>
-        <p style={{ fontSize: 14, color: '#7A8F80', lineHeight: 1.6, marginBottom: 28 }}>
-          Stock alerts and notifications are available on the Tracker plan.
-        </p>
-        <button
-          onClick={() => router.push('/account')}
-          style={{ padding: '13px 28px', borderRadius: 12, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)' }}
-        >
-          ⚡ Upgrade to Tracker
-        </button>
-        <button onClick={() => router.back()} style={{ marginTop: 14, background: 'none', border: 'none', color: '#4A5F50', fontSize: 13, cursor: 'pointer' }}>
-          Go back
-        </button>
       </div>
     )
   }
