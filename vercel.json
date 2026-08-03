@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/kroger-sync",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
