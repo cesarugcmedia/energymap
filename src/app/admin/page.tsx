@@ -100,6 +100,10 @@ export default function AdminPage() {
   const [krogerProductSearching, setKrogerProductSearching] = useState<Set<string>>(new Set())
   const [krogerBulkStoreProgress, setKrogerBulkStoreProgress] = useState<{ done: number; total: number } | null>(null)
   const [krogerBulkDrinkProgress, setKrogerBulkDrinkProgress] = useState<{ done: number; total: number } | null>(null)
+  const [krogerImportZip, setKrogerImportZip] = useState('')
+  const [krogerImportRadius, setKrogerImportRadius] = useState('10')
+  const [krogerImporting, setKrogerImporting] = useState(false)
+  const [krogerImportResult, setKrogerImportResult] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -408,6 +412,27 @@ export default function AdminPage() {
       setKrogerSyncResult(`Synced ${json.synced} · Failed ${json.failed} (${json.storeCount} store × ${json.drinkCount} drink pairs checked)`)
     }
     setKrogerSyncing(false)
+  }
+
+  async function importKrogerLocations() {
+    if (krogerImporting || !krogerImportZip.trim()) return
+    setKrogerImporting(true)
+    setKrogerImportResult(null)
+    const headers = await krogerAuthHeader()
+    if (!headers) { setKrogerImporting(false); return }
+    const res = await fetch('/api/admin/kroger-import-locations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ zipCode: krogerImportZip.trim(), radiusMiles: parseFloat(krogerImportRadius) || 10 }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setKrogerImportResult(`Error: ${json.error ?? 'import failed'}`)
+    } else {
+      setKrogerImportResult(`Found ${json.candidatesFound} · Created ${json.created} · Matched to existing ${json.matched} · Already linked ${json.alreadyLinked} · Failed ${json.failed}`)
+      fetchLocations()
+    }
+    setKrogerImporting(false)
   }
 
   async function findKrogerLocationMatches(storeId: string) {
@@ -800,6 +825,43 @@ export default function AdminPage() {
             </button>
             {krogerSyncResult && (
               <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerSyncResult}</p>
+            )}
+          </div>
+
+          {/* Import locations */}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}>
+            <p className="text-sm font-bold text-white mb-1">Import Kroger Locations</p>
+            <p className="text-xs text-white/40 mb-3">
+              Pulls Kroger's own store locations near a zip code. A location within ~150m of an existing store links to it automatically; otherwise it's added as a new store. Repeat for each metro area — Kroger's API is zip+radius based, there's no single "whole state" query.
+            </p>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="Zip code"
+                value={krogerImportZip}
+                onChange={(e) => setKrogerImportZip(e.target.value)}
+                className="flex-1 rounded-xl p-2.5 text-sm text-white outline-none"
+                style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
+              />
+              <input
+                type="number"
+                placeholder="Radius (mi)"
+                value={krogerImportRadius}
+                onChange={(e) => setKrogerImportRadius(e.target.value)}
+                className="w-28 rounded-xl p-2.5 text-sm text-white outline-none"
+                style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
+              />
+            </div>
+            <button
+              onClick={importKrogerLocations}
+              disabled={krogerImporting || !krogerImportZip.trim()}
+              className="rounded-xl px-4 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
+              style={{ backgroundColor: krogerImporting || !krogerImportZip.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
+            >
+              {krogerImporting ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : '📍 Search & Import'}
+            </button>
+            {krogerImportResult && (
+              <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerImportResult}</p>
             )}
           </div>
 

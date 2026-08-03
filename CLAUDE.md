@@ -124,6 +124,7 @@ Key routes:
 - `POST /api/admin/kroger-sync` — Admin-triggered (not scheduled yet); refreshes `kroger_stock` for every matched store×drink pair. See "Kroger Integration" below
 - `GET /api/admin/kroger-search-locations` / `POST /api/admin/kroger-match-store` — searches Kroger locations near a store's zip code, and sets/clears `stores.kroger_location_id`
 - `GET /api/admin/kroger-search-products` / `POST /api/admin/kroger-match-drink` — searches Kroger's product catalog by term (scoped to a matched store's location), and sets/clears `drinks.kroger_upc`
+- `POST /api/admin/kroger-import-locations` — pulls Kroger's own locations near a zip code; auto-links to an existing store within ~150m or creates a new one otherwise
 - `POST /api/invite` — Converts a waitlist entry to a full account
 
 ### Kroger Integration
@@ -133,6 +134,7 @@ Supplements crowdsourced stock reports with official availability data from Krog
 - `src/lib/kroger.ts` — server-only client-credentials OAuth wrapper (`KROGER_CLIENT_ID`/`KROGER_CLIENT_SECRET`) plus thin Locations/Products API calls. Only the **Products** and **Locations** API products are needed — no customer-login scopes (Cart/Order/Profile), since this never acts on a real shopper's account.
 - **Not yet exercised against a live Kroger account** — written against their published API shape, but exact query-param names should be re-verified against `developer.kroger.com` on the first real sync; Kroger tends to return `200` with an empty result on a param mismatch rather than an error, so a silent no-op is the likely failure mode.
 - Matching happens in `/admin`'s **Kroger** tab: search suggests candidate Kroger locations (by the store's zip code) or products (by free-text term, scoped to an already-matched store's location) and an admin picks the right one — it's a suggest-and-confirm flow, not automatic matching, since only a human can confirm two listings are really the same place/product. `POST /api/admin/kroger-sync` then walks every matched store × matched drink pair and upserts `kroger_stock`. No scheduled/automatic sync yet — admin-triggered only until the whole flow has been validated against real data.
+- **Bulk import**: rather than manually matching one store at a time, "Import Kroger Locations" pulls every Kroger location near a zip code and, per location, either links it to an existing store within ~150m (avoids duplicate pins for a store that's already crowdsourced) or creates a new `stores` row for it (`type: 'grocery'`, `status: 'approved'`, `state` left `NULL` so it gets picked up by the normal `tag-store-states.mjs` pass same as any other store). This is additive only — it never removes or replaces non-Kroger stores, since Kroger doesn't meaningfully operate in Florida and the app covers more retailers than just Kroger.
 
 ### Theming
 
