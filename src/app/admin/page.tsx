@@ -52,6 +52,13 @@ function extractStateAbbr(address: string | null | undefined): string {
   return 'Unknown'
 }
 
+function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set)
+  if (next.has(value)) next.delete(value)
+  else next.add(value)
+  return next
+}
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -76,6 +83,7 @@ export default function AdminPage() {
   const [locations, setLocations] = useState<any[]>([])
   const [locationsLoading, setLocationsLoading] = useState(false)
   const [locationSearch, setLocationSearch] = useState('')
+  const [expandedLocationStates, setExpandedLocationStates] = useState<Set<string>>(new Set())
   const [editStore, setEditStore] = useState<any | null>(null)
   const [editName, setEditName] = useState('')
   const [editAddress, setEditAddress] = useState('')
@@ -123,6 +131,7 @@ export default function AdminPage() {
   const [krogerSyncing, setKrogerSyncing] = useState(false)
   const [krogerSyncResult, setKrogerSyncResult] = useState<string | null>(null)
   const [krogerStoreSearch, setKrogerStoreSearch] = useState('')
+  const [expandedKrogerStoreStates, setExpandedKrogerStoreStates] = useState<Set<string>>(new Set())
   const [krogerLocationCandidates, setKrogerLocationCandidates] = useState<Record<string, { locationId: string; name: string; address: string }[]>>({})
   const [krogerLocationSearching, setKrogerLocationSearching] = useState<Set<string>>(new Set())
   const [krogerDrinkSearch, setKrogerDrinkSearch] = useState('')
@@ -922,55 +931,91 @@ export default function AdminPage() {
                 <div className="w-6 h-6 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5">
-                {locations
-                  .filter((s) => s.name.toLowerCase().includes(krogerStoreSearch.toLowerCase()) || s.address?.toLowerCase().includes(krogerStoreSearch.toLowerCase()))
-                  .map((store) => (
-                    <div key={store.id} className="rounded-2xl p-3.5" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}>
-                      <div className="flex items-center justify-between gap-3 mb-1">
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                          <p className="text-xs text-white/40 truncate">{store.address}</p>
-                        </div>
-                        {store.kroger_location_id ? (
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✅ Matched</span>
-                            <button onClick={() => matchStoreToKroger(store.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => findKrogerLocationMatches(store.id)}
-                            disabled={krogerLocationSearching.has(store.id)}
-                            className="text-[10px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                            style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
-                          >
-                            {krogerLocationSearching.has(store.id) ? '...' : 'Find Kroger Match'}
-                          </button>
-                        )}
-                      </div>
-                      {krogerLocationCandidates[store.id] && (
-                        <div className="flex flex-col gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--fg-06)' }}>
-                          {krogerLocationCandidates[store.id].length === 0 ? (
-                            <p className="text-xs text-white/30">No candidates found near this store's zip code.</p>
-                          ) : krogerLocationCandidates[store.id].map((c) => (
-                            <button
-                              key={c.locationId}
-                              onClick={() => matchStoreToKroger(store.id, c.locationId)}
-                              className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
-                              style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
-                            >
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-white truncate">{c.name}</p>
-                                <p className="text-[10px] text-white/35 truncate">{c.address}</p>
+              (() => {
+                const filtered = locations.filter((s) =>
+                  s.name.toLowerCase().includes(krogerStoreSearch.toLowerCase()) || s.address?.toLowerCase().includes(krogerStoreSearch.toLowerCase())
+                )
+                const grouped = filtered.reduce<Record<string, any[]>>((acc, s) => {
+                  const abbr = extractStateAbbr(s.address)
+                  if (!acc[abbr]) acc[abbr] = []
+                  acc[abbr].push(s)
+                  return acc
+                }, {})
+                const sortedStates = Object.keys(grouped).sort((a, b) =>
+                  a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)
+                )
+
+                return sortedStates.map((abbr) => {
+                  const isOpen = expandedKrogerStoreStates.has(abbr)
+                  const matchedCount = grouped[abbr].filter((s) => s.kroger_location_id).length
+                  return (
+                    <div
+                      key={abbr}
+                      className="rounded-2xl mb-2.5 overflow-hidden"
+                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                    >
+                      <button
+                        onClick={() => setExpandedKrogerStoreStates((prev) => toggleInSet(prev, abbr))}
+                        className="w-full flex items-center justify-between px-4 py-3.5"
+                      >
+                        <span className="text-sm font-bold text-white" style={{ letterSpacing: '0.5px' }}>
+                          {abbr} <span style={{ color: 'var(--fg-35)', fontWeight: 600 }}>· {matchedCount}/{grouped[abbr].length} matched</span>
+                        </span>
+                        <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                      </button>
+                      {isOpen && (
+                        <div className="flex flex-col gap-2.5 px-4 pb-4">
+                          {grouped[abbr].map((store) => (
+                            <div key={store.id} className="rounded-2xl p-3.5" style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}>
+                              <div className="flex items-center justify-between gap-3 mb-1">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-white truncate">{store.name}</p>
+                                  <p className="text-xs text-white/40 truncate">{store.address}</p>
+                                </div>
+                                {store.kroger_location_id ? (
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✅ Matched</span>
+                                    <button onClick={() => matchStoreToKroger(store.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => findKrogerLocationMatches(store.id)}
+                                    disabled={krogerLocationSearching.has(store.id)}
+                                    className="text-[10px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
+                                  >
+                                    {krogerLocationSearching.has(store.id) ? '...' : 'Find Kroger Match'}
+                                  </button>
+                                )}
                               </div>
-                              <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>Use this →</span>
-                            </button>
+                              {krogerLocationCandidates[store.id] && (
+                                <div className="flex flex-col gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--fg-06)' }}>
+                                  {krogerLocationCandidates[store.id].length === 0 ? (
+                                    <p className="text-xs text-white/30">No candidates found near this store's zip code.</p>
+                                  ) : krogerLocationCandidates[store.id].map((c) => (
+                                    <button
+                                      key={c.locationId}
+                                      onClick={() => matchStoreToKroger(store.id, c.locationId)}
+                                      className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
+                                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-white truncate">{c.name}</p>
+                                        <p className="text-[10px] text-white/35 truncate">{c.address}</p>
+                                      </div>
+                                      <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>Use this →</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  ))}
-              </div>
+                  )
+                })
+              })()
             )}
           </div>
 
@@ -1107,47 +1152,62 @@ export default function AdminPage() {
                 a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)
               )
 
-              return sortedStates.map((abbr) => (
-                <div key={abbr} className="mb-5">
-                  <p className="text-[10px] font-bold mb-2" style={{ color: 'var(--accent)', letterSpacing: '1.5px' }}>
-                    {abbr} · {grouped[abbr].length}
-                  </p>
-                  <div className="flex flex-col gap-2.5">
-                    {grouped[abbr].map((store) => (
-                      <div
-                        key={store.id}
-                        className="rounded-2xl p-4 flex items-center gap-3"
-                        style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                      >
-                        <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                          <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
-                          <p className="text-xs mt-0.5" style={{ color: 'var(--fg-25)' }}>
-                            {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
-                          </p>
-                        </div>
-                        <div className="flex flex-col gap-1.5 shrink-0">
-                          <button
-                            onClick={() => openEdit(store)}
-                            className="text-xs font-bold px-3 py-1.5 rounded-full"
-                            style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-60)', border: '1px solid var(--fg-10)' }}
+              return sortedStates.map((abbr) => {
+                const isOpen = expandedLocationStates.has(abbr)
+                return (
+                  <div
+                    key={abbr}
+                    className="rounded-2xl mb-3 overflow-hidden"
+                    style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                  >
+                    <button
+                      onClick={() => setExpandedLocationStates((prev) => toggleInSet(prev, abbr))}
+                      className="w-full flex items-center justify-between px-4 py-3.5"
+                    >
+                      <span className="text-sm font-bold text-white" style={{ letterSpacing: '0.5px' }}>
+                        {abbr} <span style={{ color: 'var(--fg-35)', fontWeight: 600 }}>· {grouped[abbr].length}</span>
+                      </span>
+                      <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                    </button>
+                    {isOpen && (
+                      <div className="flex flex-col gap-2.5 px-4 pb-4">
+                        {grouped[abbr].map((store) => (
+                          <div
+                            key={store.id}
+                            className="rounded-2xl p-4 flex items-center gap-3"
+                            style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                           >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            onClick={() => deleteLocation(store.id)}
-                            className="text-xs font-bold px-3 py-1.5 rounded-full"
-                            style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
+                            <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-white truncate">{store.name}</p>
+                              <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--fg-25)' }}>
+                                {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                              <button
+                                onClick={() => openEdit(store)}
+                                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                                style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-60)', border: '1px solid var(--fg-10)' }}
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                onClick={() => deleteLocation(store.id)}
+                                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                                style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              ))
+                )
+              })
             })()}
           </div>
         )
