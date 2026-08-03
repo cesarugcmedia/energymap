@@ -168,22 +168,39 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
 
   async function fetchStock() {
-    const { data: stockData, error } = await supabase
-      .from('latest_stock')
-      .select('drink_id, quantity, reported_at')
-      .eq('store_id', id)
+    const [{ data: stockData, error }, { data: krogerData }] = await Promise.all([
+      supabase.from('latest_stock').select('drink_id, quantity, reported_at').eq('store_id', id),
+      supabase.from('kroger_stock').select('drink_id, in_stock, checked_at').eq('store_id', id),
+    ])
     if (error) { setStockError(true); setLoading(false); return }
 
-    if (stockData && stockData.length > 0) {
-      const drinkIds = [...new Set(stockData.map((d) => d.drink_id).filter(Boolean))]
+    const krogerMap: Record<string, { inStock: boolean; checkedAt: string }> = {}
+    krogerData?.forEach((k: any) => { krogerMap[k.drink_id] = { inStock: k.in_stock, checkedAt: k.checked_at } })
+    setKrogerStock(krogerMap)
+
+    // Kroger-matched drinks with no crowdsourced report yet still get a row —
+    // otherwise a freshly Kroger-synced store with zero user reports would
+    // show "No reports yet" despite having real availability data.
+    const reportedDrinkIds = new Set((stockData ?? []).map((d) => d.drink_id).filter(Boolean))
+    const krogerOnlyDrinkIds = Object.keys(krogerMap).filter((did) => !reportedDrinkIds.has(did))
+    const allDrinkIds = [...new Set([...reportedDrinkIds, ...krogerOnlyDrinkIds])]
+
+    if (allDrinkIds.length > 0) {
       const { data: drinksData } = await supabase
         .from('drinks')
         .select('id, name, brand, flavor, caffeine_mg')
-        .in('id', drinkIds)
+        .in('id', allDrinkIds)
       const drinksMap: Record<string, any> = {}
       drinksData?.forEach((d) => { drinksMap[d.id] = d })
-      const merged = stockData.map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null }))
-      setStock(merged)
+      const reported = (stockData ?? []).map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null, isKrogerOnly: false }))
+      const krogerOnly = krogerOnlyDrinkIds.map((drinkId) => ({
+        drink_id: drinkId,
+        quantity: null,
+        reported_at: null,
+        drink: drinksMap[drinkId] ?? null,
+        isKrogerOnly: true,
+      }))
+      setStock([...reported, ...krogerOnly])
     } else {
       setStock([])
     }
@@ -202,17 +219,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         if (c.user_id === user?.id) map[c.drink_id].userVote = c.confirmed
       }
       setConfirmations(map)
-    }
-
-    // Kroger-verified availability, if this store is matched to one
-    const { data: krogerData } = await supabase
-      .from('kroger_stock')
-      .select('drink_id, in_stock, checked_at')
-      .eq('store_id', id)
-    if (krogerData) {
-      const map: Record<string, { inStock: boolean; checkedAt: string }> = {}
-      krogerData.forEach((k: any) => { map[k.drink_id] = { inStock: k.in_stock, checkedAt: k.checked_at } })
-      setKrogerStock(map)
     }
 
     setLoading(false)
@@ -378,7 +384,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     setDrinkDuplicatePopup(null)
   }
 
-  const latestReport = stock.reduce<any>((latest, item) => {
+  const latestReport = stock.filter((item) => !item.isKrogerOnly).reduce<any>((latest, item) => {
     if (!latest) return item
     return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
   }, null)
@@ -640,7 +646,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               {sortMode === 'recent' && !isSearching ? (
                 [...filteredStock].sort((a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()).map((item) => {
                   const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                  const freshColor = stalenessColor(item.reported_at)
+                  const isKrogerOnly = !!item.isKrogerOnly
+                  const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--fg-30)'
                   const historyOpen = expandedHistory.has(item.drink_id)
                   const history = drinkHistory[item.drink_id] ?? []
                   const loadingHistory = historyLoading.has(item.drink_id)
@@ -651,18 +658,22 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           backgroundColor: 'var(--surface)',
                           border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
                           boxShadow: `inset 3px 0 0 ${q?.color ?? 'rgba(201,244,0,0.3)'}, 0 0 8px ${q?.color ? q.color + '30' : 'rgba(201,244,0,0.08)'}`,
-                          borderRadius: isTracker && historyOpen ? '12px 12px 0 0' : 12,
-                          cursor: isTracker ? 'pointer' : 'default',
+                          borderRadius: isTracker && historyOpen && !isKrogerOnly ? '12px 12px 0 0' : 12,
+                          cursor: isTracker && !isKrogerOnly ? 'pointer' : 'default',
                           padding: 12,
                         }}
-                        onClick={() => toggleHistory(item.drink_id)}
+                        onClick={() => { if (!isKrogerOnly) toggleHistory(item.drink_id) }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-white truncate">{item.drink?.flavor ?? item.drink?.name}</p>
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                               <p className="text-xs" style={{ color: 'var(--fg-40)' }}>{item.drink?.brand}</p>
-                              <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                              {isKrogerOnly ? (
+                                <p className="text-xs font-semibold" style={{ color: freshColor }}>No reports yet</p>
+                              ) : (
+                                <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                              )}
                               {item.drink?.caffeine_mg && (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
                                   ⚡ {item.drink.caffeine_mg}mg
@@ -683,7 +694,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                               )}
                             </div>
                             {/* Confirmation buttons */}
-                            {(() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
+                            {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
                               <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
                                 <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}>✓ {c?.yes ?? 0}</button>
                                 <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}>✗ {c?.no ?? 0}</button>
@@ -691,16 +702,18 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                             )})()}
                           </div>
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                              <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                            </div>
-                            {isTracker && (
+                            {!isKrogerOnly && (
+                              <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
+                                <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                              </div>
+                            )}
+                            {isTracker && !isKrogerOnly && (
                               <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                             )}
                           </div>
                         </div>
                       </div>
-                      {isTracker && historyOpen && (
+                      {isTracker && !isKrogerOnly && historyOpen && (
                         <div className="px-3 pb-3" style={{ backgroundColor: 'var(--fg-02)', border: `1.5px solid ${q?.border ?? 'var(--fg-10)'}`, borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
                           <p className="text-[9px] font-bold py-2" style={{ color: 'var(--fg-25)', letterSpacing: '1.5px' }}>REPORT HISTORY</p>
                           {loadingHistory ? (
@@ -732,8 +745,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 })
               ) : null}
               {(sortMode === 'brand' || isSearching) && Object.entries(byBrand).map(([brand, items]) => {
-                const inStock = items.filter((i) => i.quantity !== 'out').length
-                const total = items.length
+                const reportedItems = items.filter((i) => !i.isKrogerOnly)
+                const inStock = reportedItems.filter((i) => i.quantity !== 'out').length
+                const total = reportedItems.length
                 const pct = total > 0 ? inStock / total : 0
                 const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
                 const isExpanded = isSearching || expandedBrands.has(brand)
@@ -755,10 +769,10 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                         <p className="text-base font-black text-white">{brand}</p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--fg-08)' }}>
-                            <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, backgroundColor: barColor }} />
+                            <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, backgroundColor: total > 0 ? barColor : 'var(--fg-20)' }} />
                           </div>
-                          <p className="text-xs font-semibold shrink-0" style={{ color: barColor }}>
-                            {inStock}/{total} in stock
+                          <p className="text-xs font-semibold shrink-0" style={{ color: total > 0 ? barColor : 'var(--fg-30)' }}>
+                            {total > 0 ? `${inStock}/${total} in stock` : 'No reports'}
                           </p>
                         </div>
                       </div>
@@ -775,7 +789,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                         <div className="h-px mb-1" style={{ backgroundColor: 'rgba(201,244,0,0.06)' }} />
                         {[...items].sort((a, b) => (STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)).map((item) => {
                           const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                          const freshColor = stalenessColor(item.reported_at)
+                          const isKrogerOnly = !!item.isKrogerOnly
+                          const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--fg-30)'
                           const historyOpen = expandedHistory.has(item.drink_id)
                           const history = drinkHistory[item.drink_id] ?? []
                           const loadingHistory = historyLoading.has(item.drink_id)
@@ -786,11 +801,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   backgroundColor: 'var(--fg-04)',
                                   border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
                                   boxShadow: `inset 3px 0 0 ${q?.color ?? 'rgba(201,244,0,0.3)'}, 0 0 8px ${q?.color ? q.color + '30' : 'rgba(201,244,0,0.08)'}`,
-                                  borderRadius: isTracker && historyOpen ? '12px 12px 0 0' : 12,
-                                  cursor: isTracker ? 'pointer' : 'default',
+                                  borderRadius: isTracker && historyOpen && !isKrogerOnly ? '12px 12px 0 0' : 12,
+                                  cursor: isTracker && !isKrogerOnly ? 'pointer' : 'default',
                                   padding: 12,
                                 }}
-                                onClick={() => toggleHistory(item.drink_id)}
+                                onClick={() => { if (!isKrogerOnly) toggleHistory(item.drink_id) }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                                   <div className="flex-1 min-w-0">
@@ -798,7 +813,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       {item.drink?.flavor ?? item.drink?.name}
                                     </p>
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                      <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                                      {isKrogerOnly ? (
+                                        <p className="text-xs font-semibold" style={{ color: freshColor }}>No reports yet</p>
+                                      ) : (
+                                        <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                                      )}
                                       {item.drink?.caffeine_mg && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
                                           ⚡ {item.drink.caffeine_mg}mg
@@ -819,7 +838,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       )}
                                     </div>
                                     {/* Confirmation buttons */}
-                                    {(() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
+                                    {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
                                       <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
                                         <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}>✓ {c?.yes ?? 0}</button>
                                         <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}>✗ {c?.no ?? 0}</button>
@@ -827,17 +846,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     )})()}
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                                    <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                                      <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                                    </div>
-                                    {isTracker && (
+                                    {!isKrogerOnly && (
+                                      <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
+                                        <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                                      </div>
+                                    )}
+                                    {isTracker && !isKrogerOnly && (
                                       <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                                     )}
                                   </div>
                                 </div>
                               </div>
 
-                              {isTracker && historyOpen && (
+                              {isTracker && !isKrogerOnly && historyOpen && (
                                 <div
                                   className="px-3 pb-3"
                                   style={{
