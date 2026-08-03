@@ -57,7 +57,7 @@ All pages use `'use client'` — there are no React Server Components rendering 
 
 Core tables in `public` schema:
 - `profiles` — Extends `auth.users`; holds `username`, `tier`, `stripe_customer_id`, badges, stats, location
-- `stores` — Store records with `lat`, `lng`, `status` (pending/approved/rejected), `state` (nullable — see "NC/FL Focus" below)
+- `stores` — Store records with `lat`, `lng`, `status` (pending/approved/rejected)
 - `stock_reports` — Individual drink-at-store reports submitted by users
 - `latest_stock` — Materialized view of the most recent report per drink per store
 - `drinks` — Drink catalog (name, brand, flavor, caffeine)
@@ -89,14 +89,6 @@ Tier upgrades go through Stripe. The webhook at `/api/stripe/webhook` handles fu
 `src/components/MapView.tsx` renders a Mapbox GL map. Supercluster aggregates store markers client-side (radius: 60px, max zoom: 16). The user's live location shows as a pulsing dot. Store markers use emoji icons. Radius is enforced **server-side** in `/api/stores/nearby` (free/anon capped to 5 miles, tracker/admin unlimited) — the server determines tier from the caller's bearer token, so a free-tier client never receives out-of-radius stores over the wire.
 
 `useNearbyStores` calls that route and caches the result in memory with a 60-second TTL, keyed by rounded lat/lng **and** a tier key (`'anon' | 'free' | 'tracker'`) passed in by the caller from `profile` — this is what makes it refetch correctly on login/logout/tier changes instead of showing stale data. The route itself paginates in 1,000-row batches server-side to work around Supabase's `max_rows` cap.
-
-### NC/FL Focus
-
-The public map, store list, "Stores Tracked" stat, and the Community store-tag search are all scoped to North Carolina and Florida for now — data outside those states isn't deleted, just filtered out of what's shown. Filtering is **fail-open**: a store only gets hidden once `stores.state` is confirmed to be something other than `'North Carolina'`/`'Florida'`; a store with `state IS NULL` (not tagged yet) still shows everywhere. This is deliberate — it means rolling this out, or re-running the tagging script, never makes the live map go blank mid-way.
-
-- `scripts/add-store-state-column.sql` — adds the nullable `stores.state` column (run first)
-- `scripts/tag-store-states.mjs` — one-time (resumable) reverse-geocoding pass via Nominatim that fills in `state` for every approved store; only tags data, never hides anything itself
-- The actual filtering lives in three places: `/api/stores/nearby`, `/api/stats`, and the store-tag search in `src/app/community/page.tsx`. The admin dashboard is intentionally **not** filtered — admins still see/manage every store regardless of state.
 
 ### API Routes
 
@@ -134,7 +126,7 @@ Supplements crowdsourced stock reports with official availability data from Krog
 - `src/lib/kroger.ts` — server-only client-credentials OAuth wrapper (`KROGER_CLIENT_ID`/`KROGER_CLIENT_SECRET`) plus thin Locations/Products API calls. Only the **Products** and **Locations** API products are needed — no customer-login scopes (Cart/Order/Profile), since this never acts on a real shopper's account.
 - **Not yet exercised against a live Kroger account** — written against their published API shape, but exact query-param names should be re-verified against `developer.kroger.com` on the first real sync; Kroger tends to return `200` with an empty result on a param mismatch rather than an error, so a silent no-op is the likely failure mode.
 - Matching happens in `/admin`'s **Kroger** tab: search suggests candidate Kroger locations (by the store's zip code) or products (by free-text term, scoped to an already-matched store's location) and an admin picks the right one — it's a suggest-and-confirm flow, not automatic matching, since only a human can confirm two listings are really the same place/product. `POST /api/admin/kroger-sync` then walks every matched store × matched drink pair and upserts `kroger_stock`. No scheduled/automatic sync yet — admin-triggered only until the whole flow has been validated against real data.
-- **Bulk import**: rather than manually matching one store at a time, "Import Kroger Locations" pulls every Kroger location near a zip code and, per location, either links it to an existing store within ~150m (avoids duplicate pins for a store that's already crowdsourced) or creates a new `stores` row for it (`type: 'grocery'`, `status: 'approved'`, `state` left `NULL` so it gets picked up by the normal `tag-store-states.mjs` pass same as any other store). This is additive only — it never removes or replaces non-Kroger stores, since Kroger doesn't meaningfully operate in Florida and the app covers more retailers than just Kroger.
+- **Bulk import**: rather than manually matching one store at a time, "Import Kroger Locations" pulls every Kroger location near a zip code and, per location, either links it to an existing store within ~150m (avoids duplicate pins for a store that's already crowdsourced) or creates a new `stores` row for it (`type: 'grocery'`, `status: 'approved'`). This is additive only — it never removes or replaces non-Kroger stores, since Kroger doesn't meaningfully operate in Florida and the app covers more retailers than just Kroger.
 
 ### Theming
 

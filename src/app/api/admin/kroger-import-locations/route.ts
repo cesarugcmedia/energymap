@@ -37,8 +37,6 @@ const MATCH_RADIUS_METERS = 150
 //  - if an existing (crowdsourced) store sits within ~150m, links that store
 //    instead of creating a duplicate pin
 //  - otherwise creates a brand-new approved store row for it
-// New stores are left with state = NULL — tag-store-states.mjs picks them up
-// on its next run same as any other store, so NC/FL filtering stays uniform.
 export async function POST(req: NextRequest) {
   if (!await verifyAdmin(req)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
