@@ -130,6 +130,7 @@ export default function AdminPage() {
   // Kroger integration state
   const [krogerSyncing, setKrogerSyncing] = useState(false)
   const [krogerSyncResult, setKrogerSyncResult] = useState<string | null>(null)
+  const [krogerSyncProgress, setKrogerSyncProgress] = useState<{ done: number; total: number } | null>(null)
   const [krogerStoreSearch, setKrogerStoreSearch] = useState('')
   const [expandedKrogerStoreStates, setExpandedKrogerStoreStates] = useState<Set<string>>(new Set())
   const [expandedKrogerDrinkBrands, setExpandedKrogerDrinkBrands] = useState<Set<string>>(new Set())
@@ -229,12 +230,24 @@ export default function AdminPage() {
 
   async function fetchLocations() {
     setLocationsLoading(true)
-    const { data } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('status', 'approved')
-      .order('name', { ascending: true })
-    if (data) setLocations(data)
+    // Supabase caps a single query at 1,000 rows server-side — paginate so
+    // the admin lists don't silently truncate once store count crosses that.
+    const BATCH = 1000
+    const all: any[] = []
+    let from = 0
+    while (true) {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('status', 'approved')
+        .order('name', { ascending: true })
+        .range(from, from + BATCH - 1)
+      if (error || !data) break
+      all.push(...data)
+      if (data.length < BATCH) break
+      from += BATCH
+    }
+    setLocations(all)
     setLocationsLoading(false)
   }
 
@@ -441,17 +454,45 @@ export default function AdminPage() {
     if (krogerSyncing) return
     setKrogerSyncing(true)
     setKrogerSyncResult(null)
+    setKrogerSyncProgress(null)
     const headers = await krogerAuthHeader()
     if (!headers) { setKrogerSyncing(false); return }
-    const res = await fetch('/api/admin/kroger-sync', { method: 'POST', headers })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      setKrogerSyncResult(`Error: ${json.error ?? 'sync failed'}`)
-    } else if (json.message) {
-      setKrogerSyncResult(json.message)
-    } else {
-      setKrogerSyncResult(`Synced ${json.synced} · Failed ${json.failed} (${json.storeCount} store × ${json.drinkCount} drink pairs checked)`)
+
+    // The route processes a bounded chunk of store×drink pairs per request
+    // (so it can't get killed mid-sync by the serverless duration limit) —
+    // keep calling it with the returned offset until it reports done.
+    let offset = 0
+    let totalSynced = 0
+    let totalFailed = 0
+    let totalPairs = 0
+    let storeCount = 0
+    let drinkCount = 0
+    let safety = 0
+    while (safety < 1000) {
+      safety++
+      const res = await fetch('/api/admin/kroger-sync', { method: 'POST', headers, body: JSON.stringify({ offset }) })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setKrogerSyncResult(`Error: ${json.error ?? 'sync failed'}`)
+        break
+      }
+      if (json.message) {
+        setKrogerSyncResult(json.message)
+        break
+      }
+      totalSynced += json.synced ?? 0
+      totalFailed += json.failed ?? 0
+      totalPairs = json.totalPairs ?? totalPairs
+      storeCount = json.storeCount ?? storeCount
+      drinkCount = json.drinkCount ?? drinkCount
+      offset = json.nextOffset ?? totalPairs
+      setKrogerSyncProgress({ done: Math.min(offset, totalPairs), total: totalPairs })
+      if (json.done) {
+        setKrogerSyncResult(`Synced ${totalSynced} · Failed ${totalFailed} (${storeCount} store × ${drinkCount} drink pairs checked)`)
+        break
+      }
     }
+    setKrogerSyncProgress(null)
     setKrogerSyncing(false)
   }
 
@@ -862,7 +903,9 @@ export default function AdminPage() {
               className="rounded-xl px-4 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
               style={{ backgroundColor: krogerSyncing ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
             >
-              {krogerSyncing ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : '⚡ Sync Now'}
+              {krogerSyncing
+                ? (krogerSyncProgress ? `Syncing ${krogerSyncProgress.done}/${krogerSyncProgress.total}…` : <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />)
+                : '⚡ Sync Now'}
             </button>
             {krogerSyncResult && (
               <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerSyncResult}</p>
