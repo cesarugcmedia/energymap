@@ -21,6 +21,37 @@ const TYPE_OPTIONS = [
   { value: 'other', label: 'Other', icon: '📍' },
 ]
 
+// Full name → USPS abbreviation, for grouping the Locations tab by state.
+// Derived from the free-text address field (there's no structured state
+// column on stores) — best-effort, not authoritative.
+const STATE_NAME_TO_ABBR: Record<string, string> = {
+  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
+  colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
+  hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA',
+  kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD',
+  massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS', missouri: 'MO',
+  montana: 'MT', nebraska: 'NE', nevada: 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH',
+  oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT',
+  virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
+  'district of columbia': 'DC',
+}
+const KNOWN_ABBRS = new Set(Object.values(STATE_NAME_TO_ABBR))
+
+function extractStateAbbr(address: string | null | undefined): string {
+  if (!address) return 'Unknown'
+  // "..., NC 27601" or "..., NC, 27601" — abbreviation right before a zip
+  const abbrMatch = address.match(/\b([A-Z]{2})\b,?\s*\d{5}/)
+  if (abbrMatch && KNOWN_ABBRS.has(abbrMatch[1])) return abbrMatch[1]
+  // Full state name anywhere in the string (Nominatim-geocoded addresses)
+  const lower = address.toLowerCase()
+  for (const [name, abbr] of Object.entries(STATE_NAME_TO_ABBR)) {
+    if (lower.includes(name)) return abbr
+  }
+  return 'Unknown'
+}
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -1055,48 +1086,69 @@ export default function AdminPage() {
               className="w-full rounded-xl p-3 text-sm text-white outline-none mb-4"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
             />
-            <div className="flex flex-col gap-2.5">
-              {locations
-                .filter((s) => s.name.toLowerCase().includes(locationSearch.toLowerCase()) || s.address?.toLowerCase().includes(locationSearch.toLowerCase()))
-                .map((store) => (
-                  <div
-                    key={store.id}
-                    className="rounded-2xl p-4 flex items-center gap-3"
-                    style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                  >
-                    <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                      <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--fg-25)' }}>
-                        {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                      <button
-                        onClick={() => openEdit(store)}
-                        className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-60)', border: '1px solid var(--fg-10)' }}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={() => deleteLocation(store.id)}
-                        className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              {locations.filter((s) => s.name.toLowerCase().includes(locationSearch.toLowerCase()) || s.address?.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+            {(() => {
+              const filtered = locations.filter((s) =>
+                s.name.toLowerCase().includes(locationSearch.toLowerCase()) || s.address?.toLowerCase().includes(locationSearch.toLowerCase())
+              )
+              if (filtered.length === 0) return (
                 <div className="flex flex-col items-center gap-2 mt-10">
                   <span style={{ fontSize: 36 }}>🔍</span>
                   <p className="text-sm font-bold text-white">No locations found</p>
                 </div>
-              )}
-            </div>
+              )
+
+              const grouped = filtered.reduce<Record<string, any[]>>((acc, s) => {
+                const abbr = extractStateAbbr(s.address)
+                if (!acc[abbr]) acc[abbr] = []
+                acc[abbr].push(s)
+                return acc
+              }, {})
+              const sortedStates = Object.keys(grouped).sort((a, b) =>
+                a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)
+              )
+
+              return sortedStates.map((abbr) => (
+                <div key={abbr} className="mb-5">
+                  <p className="text-[10px] font-bold mb-2" style={{ color: 'var(--accent)', letterSpacing: '1.5px' }}>
+                    {abbr} · {grouped[abbr].length}
+                  </p>
+                  <div className="flex flex-col gap-2.5">
+                    {grouped[abbr].map((store) => (
+                      <div
+                        key={store.id}
+                        className="rounded-2xl p-4 flex items-center gap-3"
+                        style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                      >
+                        <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{store.name}</p>
+                          <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--fg-25)' }}>
+                            {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <button
+                            onClick={() => openEdit(store)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-full"
+                            style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-60)', border: '1px solid var(--fg-10)' }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => deleteLocation(store.id)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-full"
+                            style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            })()}
           </div>
         )
       ) : tab === 'drinks' ? (
