@@ -66,7 +66,7 @@ Core tables in `public` schema:
 - `waitlist` — Pre-launch waitlist emails
 - `community_posts` / `community_post_likes` / `community_post_comments` — `/community` feed posts (optionally tagged to a store via `store_id` and/or a photo via `photo_url`), their likes (unique per post+user), and flat (non-threaded) comments. Defined in `scripts/create-community-tables.sql` and `scripts/create-community-v2-tables.sql` — neither has been run against production as of this writing; run both once in the Supabase SQL Editor (in that order) to activate the feature
 - `follows` — `follower_id`/`followed_id` pairs powering the Community "Following" filter; no follower/following counts are surfaced anywhere yet, just the filter. Also defined in `scripts/create-community-v2-tables.sql`
-- `kroger_stock` — Kroger-verified availability per store+drink (`in_stock`, `price`, `checked_at`), kept separate from `stock_reports`/`latest_stock` rather than inserted as synthetic user reports. `stores.kroger_location_id` and `drinks.kroger_upc` (both nullable) hold the match to a real Kroger location/product. Defined in `scripts/create-kroger-integration-tables.sql` — not yet run against production. See "Kroger Integration" below.
+- `kroger_stock` — Kroger-verified availability per store+drink (`in_stock`, `price`, `checked_at`), kept separate from `stock_reports`/`latest_stock` rather than inserted as synthetic user reports. `stores.kroger_location_id` and `drinks.kroger_upc` (both nullable) hold the match to a real Kroger location/product. Defined in `scripts/create-kroger-integration-tables.sql` — **confirmed run against production** (verified via `information_schema` query, not just assumed — see the note in "Kroger Integration" below about why that distinction matters here). See "Kroger Integration" below.
 
 **Storage**: `community-photos` bucket (public read, created by `create-community-v2-tables.sql`) holds `/community` post photos, uploaded client-side to a `<user_id>/...` path enforced by storage RLS. `/api/community/post` only accepts a `photo_url` that matches the caller's own bucket path — never an arbitrary external URL.
 
@@ -113,23 +113,62 @@ Key routes:
 - `POST /api/community/comment` — Adds a flat (non-threaded) comment to a `/community` post (1–300 chars), rate-limited to 20/hour
 - `POST /api/community/follow` — Upserts or deletes a `follows` row between the caller and another user
 - `POST /api/admin/delete-user` — Admin user deletion
-- `POST /api/admin/kroger-sync` — Admin-triggered (not scheduled yet); refreshes `kroger_stock` for every matched store×drink pair. See "Kroger Integration" below
+- `POST /api/admin/kroger-sync` — Admin-triggered, one chunk of matched store×drink pairs per call (client loops until done). See "Kroger Integration" below
+- `GET /api/cron/kroger-sync` — Same sync, on a schedule via `vercel.json`, authenticated by `CRON_SECRET` instead of an admin session. See "Kroger Integration" below
 - `GET /api/admin/kroger-search-locations` / `POST /api/admin/kroger-match-store` — searches Kroger locations near a store's zip code, and sets/clears `stores.kroger_location_id`
 - `GET /api/admin/kroger-search-products` / `POST /api/admin/kroger-match-drink` — searches Kroger's product catalog by term (scoped to a matched store's location), and sets/clears `drinks.kroger_upc`
 - `POST /api/admin/kroger-import-locations` — pulls Kroger's own locations near a zip code; auto-links to an existing store within ~150m or creates a new one otherwise
 - `POST /api/invite` — Converts a waitlist entry to a full account
 
+### Admin Dashboard
+
+`/admin` (`src/app/admin/page.tsx`, one large client component) is tier-gated to `is_admin` profiles. Tabs, from the dashboard home grid:
+
+| Tab | Icon | Purpose |
+|---|---|---|
+| Pending Stores | 🕐 | Approve/reject store submissions; badge count = pending count |
+| Location Flags | 🚩 | Resolve user-reported issues on existing stores; badge count = open flags |
+| Locations | 📍 | Edit/delete any approved store; grouped into collapsible cards by state |
+| Drinks | 🥤 | Add/remove catalog drinks; grouped by brand |
+| Users | 👤 | Toggle `is_verified_reporter`, `is_admin`; delete users |
+| Waitlist | 📋 | Convert waitlist signups to invited accounts |
+| Kroger | 🛒 | Match stores/drinks to Kroger, bulk import, trigger sync — see "Kroger Integration" below |
+
+Two UI conventions introduced for the Locations and Kroger tabs, reusable for any future admin list that grows long:
+- **Collapsible grouping**: `toggleInSet<T>()` is a generic Set-toggle helper — each group (a state, a brand) is a card with a header button that flips membership in an `expanded*` `Set<string>` state var, content only rendered when open.
+- **State grouping via address parsing**: `extractStateAbbr(address)` — matches a 2-letter USPS abbreviation immediately before a 5-digit zip, or falls back to scanning for a full state name (covers Nominatim-geocoded addresses, which spell out the state). Deliberately reads from the existing `address` string rather than a dedicated `stores.state` column — see the callout in "Kroger Integration" below for why that's not an oversight.
+
 ### Kroger Integration
 
-Supplements crowdsourced stock reports with official availability data from Kroger's Products API — kept as a visually distinct "✅ Verified: In/Out of Stock" badge (plus an inline "· Xh ago" freshness label, since a stale Kroger check sitting next to a fresher crowd report needs to visibly read as the older signal) on the store page rather than merged into `stock_reports`, so it never gets conflated with a user's own report.
+Supplements crowdsourced stock reports with official availability data from Kroger's Products API — kept as a visually distinct "✅ Verified: In/Out of Stock" badge (plus an inline "· Xh ago" freshness label, since a stale Kroger check sitting next to a fresher crowd report needs to visibly read as the older signal, not a flat contradiction) on the store page rather than merged into `stock_reports`, so it never gets conflated with a user's own report.
 
+**Current status (as of this writing):**
+- ✅ DB migration (`scripts/create-kroger-integration-tables.sql`) confirmed run against production — `stores.kroger_location_id`, `drinks.kroger_upc`, and the `kroger_stock` table all exist.
+- ✅ Real `KROGER_CLIENT_ID`/`KROGER_CLIENT_SECRET` are set in **Vercel's** env vars (production only — not in local `.env.local`, which only has placeholders so `npm run build` works offline).
+- ✅ Kroger's Locations search (`searchKrogerLocations`) and Products search (`searchKrogerProducts`) have been exercised live and return real candidates — the query param names in `src/lib/kroger.ts` are confirmed correct.
+- ⚠️ The actual availability lookup (`getKrogerProductAvailability`, used only by the sync) has **not yet been confirmed end-to-end** — i.e., that "Sync Now" successfully writes real `in_stock`/`price` data to `kroger_stock`. Verify by running a sync with at least one matched store+drink pair, then checking `select * from kroger_stock` in the Supabase SQL editor.
+- ⚠️ `CRON_SECRET` must be set in Vercel for the scheduled sync to run at all — without it, `/api/cron/kroger-sync` just 401s forever, silently. Also double check the cron schedule (below) is actually allowed on your Vercel plan.
+
+**Data model:**
 - `src/lib/kroger.ts` — server-only client-credentials OAuth wrapper (`KROGER_CLIENT_ID`/`KROGER_CLIENT_SECRET`) plus thin Locations/Products API calls. Only the **Products** and **Locations** API products are needed — no customer-login scopes (Cart/Order/Profile), since this never acts on a real shopper's account.
-- **Not yet exercised against a live Kroger account** — written against their published API shape, but exact query-param names should be re-verified against `developer.kroger.com` on the first real sync; Kroger tends to return `200` with an empty result on a param mismatch rather than an error, so a silent no-op is the likely failure mode.
-- Matching happens in `/admin`'s **Kroger** tab (Match Stores grouped by state, Match Drinks grouped by brand, both collapsible): search suggests candidate Kroger locations (by the store's zip code) or products (by free-text term, scoped to an already-matched store's location) and an admin picks the right one — it's a suggest-and-confirm flow, not automatic matching, since only a human can confirm two listings are really the same place/product. Drink matching is store-independent — a drink's UPC is matched once, globally, not per store.
-- `src/lib/krogerSync.ts` — shared `runKrogerSyncChunk(offset)`, walking `KROGER_SYNC_CHUNK_SIZE` (40) matched-store × matched-drink pairs per call in deterministic id-order, so pair indexing stays stable across repeated chunked calls. A single request can't safely walk every pair once match counts grow — Vercel would kill the function mid-loop with no partial result. Both sync entry points below call this same function:
-  - `POST /api/admin/kroger-sync` — admin-triggered from the Kroger tab's "Sync Now" button; the client loops, calling with the previous response's `nextOffset` until `done: true`, showing live progress.
-  - `GET /api/cron/kroger-sync` — scheduled via `vercel.json` (`0 */6 * * *`, every 6 hours), authenticated by `CRON_SECRET` rather than an admin bearer token (Vercel auto-sends `Authorization: Bearer $CRON_SECRET` on cron-triggered requests once that env var is set). Loops chunks internally under a 50s time budget within `maxDuration = 60`. Vercel Cron's free-tier schedule limits vary by plan — verify `0 */6 * * *` is actually allowed on your plan (Hobby restricts cron to once/day as of this writing); drop to `0 0 * * *` if it isn't.
-- **Bulk import**: rather than manually matching one store at a time, "Import Kroger Locations" pulls every Kroger location near a zip code and, per location, either links it to an existing store within ~150m (avoids duplicate pins for a store that's already crowdsourced) or creates a new `stores` row for it (`type: 'grocery'`, `status: 'approved'`). This is additive only — it never removes or replaces non-Kroger stores, since Kroger doesn't meaningfully operate in Florida and the app covers more retailers than just Kroger.
+- Kroger's public API only exposes a **boolean** in-stock/out-of-stock signal (`fulfillment.instore`) plus `price` — there is no shelf-quantity field available at all. The "Verified" badge can never show "a few left" style detail; that's a hard limitation of the data source, not something left unbuilt.
+- Matching is a **suggest-and-confirm flow, not automatic** — a human always picks the right candidate, since only a person can confirm two listings are really the same place/product. Store matching and drink matching are independent axes:
+  - A **store** is matched once, to one Kroger `locationId`.
+  - A **drink** is matched once, **globally** (not per store) — a UPC is the same everywhere, so matching "Red Bull 8.4oz" once covers every store, not once per store. Product search still needs *some* matched store's location to scope the search against (Kroger's API requires a `locationId` param), but the resulting UPC applies universally.
+
+**Admin UI** (`/admin` → **Kroger** tab):
+- **Sync Availability** — the "Sync Now" button; see chunked sync below.
+- **Import Kroger Locations** — bulk-pulls every real Kroger location near a zip code (Kroger's API is zip+radius based, no "whole state" query — repeat per metro area). Per location: links to an existing store within ~150m (avoids duplicate pins for a store that's already crowdsourced) or creates a new `stores` row (`type: 'grocery'`, `status: 'approved'`). **Additive only** — never removes or replaces non-Kroger stores, since Kroger doesn't meaningfully operate in Florida and the app covers more retailers than just Kroger.
+- **Match Stores** — list of all approved stores, grouped into collapsible cards **by state** (parsed live from each store's free-text `address` field via `extractStateAbbr()` in `src/app/admin/page.tsx` — deliberately *not* a DB column; see the callout below on why). Each card header shows an `X/Y matched` count. A "Find Matches for All" button bulk-searches every unmatched store (150ms delay between calls).
+- **Match Drinks** — same collapsible-card treatment, grouped **by brand** instead of state. Requires picking one matched store from a dropdown first (to scope Kroger's product search), then bulk or individually searches/matches drinks. Remember: this only ever needs to be done once per drink, not once per store.
+- **Locations** tab (separate from the Kroger tab) — general store edit/delete list, also grouped into collapsible state cards using the same `extractStateAbbr()` helper.
+- Why address-parsing instead of a `stores.state` column: an earlier attempt at a real `state` column (for a now-abandoned NC/FL map-focus feature) was pushed to production **before its migration was ever run**, which broke `/api/stores/nearby` and `/api/stats` in production (`column "state" does not exist`) since those routes `.select()`ed a column that didn't exist yet. That feature was fully reverted. The state-grouping in the admin UI intentionally avoids repeating that mistake — it derives the state from data that's already guaranteed to exist (`address`), so there's no migration to forget.
+
+**Store page rendering** (`src/app/store/[id]/page.tsx`): a drink matched to a Kroger UPC gets its own row on the store page **even with zero crowdsourced reports** — otherwise a store synced with real Kroger data but no user reports would still show "No reports yet" with nowhere for the badge to attach to (rows there are normally sourced from `latest_stock`). These Kroger-only rows show the badge and a muted "No reports yet" label in place of the freshness/quantity/confirm/report-history UI that doesn't apply without an actual report. The brand-group "X/Y in stock" ratio and the page header's "last reported" timestamp both explicitly exclude these synthetic rows, so they can't get inflated or show nonsense ages.
+
+**Chunked sync** (`src/lib/krogerSync.ts`): shared `runKrogerSyncChunk(offset)`, walking `KROGER_SYNC_CHUNK_SIZE` (40) matched-store × matched-drink pairs per call, in deterministic id-order so pair indexing stays stable across repeated chunked calls (`stores`/`drinks` are explicitly `.order('id')`ed — without that, Postgres doesn't guarantee stable row order across separate queries, which would skip or double-sync pairs). A single request can't safely walk every pair once match counts grow past a few dozen — Vercel would kill the function mid-loop with no partial result returned. Both sync entry points call this same function:
+- `POST /api/admin/kroger-sync` — admin-triggered from the Kroger tab's "Sync Now" button; the client loops, calling with the previous response's `nextOffset` until `done: true`, showing live progress on the button itself (`Syncing 80/150…`).
+- `GET /api/cron/kroger-sync` — scheduled via `vercel.json` (`0 */6 * * *`, every 6 hours), authenticated by `CRON_SECRET` rather than an admin bearer token (Vercel auto-sends `Authorization: Bearer $CRON_SECRET` on cron-triggered requests once that env var is set in the Vercel project). Loops chunks internally under a 50s time budget within `maxDuration = 60`. Vercel Cron's schedule limits vary by plan — **verify `0 */6 * * *` is actually allowed on your plan** (Hobby restricts cron to once/day as of this writing); drop to `0 0 * * *` if it isn't. This has no persisted progress between separate cron runs (each one restarts at `offset: 0`) — fine at the current small scale, but revisit if the matched-pair count ever grows large enough that one run's time budget can't reach the end of the list.
 
 ### Theming
 
