@@ -689,7 +689,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   }}
                                   title={`Kroger checked ${timeAgo(krogerStock[item.drink_id].checkedAt)}`}
                                 >
-                                  ✅ Kroger: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'}
+                                  ✅ Verified: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'}
                                 </span>
                               )}
                             </div>
@@ -833,7 +833,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                           }}
                                           title={`Kroger checked ${timeAgo(krogerStock[item.drink_id].checkedAt)}`}
                                         >
-                                          ✅ Kroger: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'}
+                                          ✅ Verified: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'}
                                         </span>
                                       )}
                                     </div>
