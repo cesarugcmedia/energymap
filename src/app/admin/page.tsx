@@ -132,6 +132,7 @@ export default function AdminPage() {
   const [krogerSyncResult, setKrogerSyncResult] = useState<string | null>(null)
   const [krogerStoreSearch, setKrogerStoreSearch] = useState('')
   const [expandedKrogerStoreStates, setExpandedKrogerStoreStates] = useState<Set<string>>(new Set())
+  const [expandedKrogerDrinkBrands, setExpandedKrogerDrinkBrands] = useState<Set<string>>(new Set())
   const [krogerLocationCandidates, setKrogerLocationCandidates] = useState<Record<string, { locationId: string; name: string; address: string }[]>>({})
   const [krogerLocationSearching, setKrogerLocationSearching] = useState<Set<string>>(new Set())
   const [krogerDrinkSearch, setKrogerDrinkSearch] = useState('')
@@ -1062,57 +1063,96 @@ export default function AdminPage() {
                 <div className="w-6 h-6 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5">
-                {drinks
-                  .filter((d) => {
-                    const q = krogerDrinkSearch.toLowerCase()
-                    return !q || d.brand.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || (d.flavor ?? '').toLowerCase().includes(q)
-                  })
-                  .map((drink) => (
-                    <div key={drink.id} className="rounded-2xl p-3.5" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}>
-                      <div className="flex items-center justify-between gap-3 mb-1">
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{drink.brand} {drink.flavor ?? drink.name}</p>
-                        </div>
-                        {drink.kroger_upc ? (
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✅ {drink.kroger_upc}</span>
-                            <button onClick={() => matchDrinkToKroger(drink.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => findKrogerProductMatches(drink.id, `${drink.brand} ${drink.flavor ?? drink.name}`)}
-                            disabled={krogerProductSearching.has(drink.id)}
-                            className="text-[10px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                            style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
-                          >
-                            {krogerProductSearching.has(drink.id) ? '...' : 'Find Kroger Match'}
-                          </button>
-                        )}
-                      </div>
-                      {krogerProductCandidates[drink.id] && (
-                        <div className="flex flex-col gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--fg-06)' }}>
-                          {krogerProductCandidates[drink.id].length === 0 ? (
-                            <p className="text-xs text-white/30">No candidates found for that search term.</p>
-                          ) : krogerProductCandidates[drink.id].map((c) => (
-                            <button
-                              key={c.upc}
-                              onClick={() => matchDrinkToKroger(drink.id, c.upc)}
-                              className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
-                              style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
-                            >
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-white truncate">{c.description}</p>
-                                <p className="text-[10px] text-white/35 truncate">{c.brand ?? ''} {c.size ?? ''} · UPC {c.upc}</p>
+              (() => {
+                const filtered = drinks.filter((d) => {
+                  const q = krogerDrinkSearch.toLowerCase()
+                  return !q || d.brand.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || (d.flavor ?? '').toLowerCase().includes(q)
+                })
+                const grouped = filtered.reduce<Record<string, any[]>>((acc, d) => {
+                  if (!acc[d.brand]) acc[d.brand] = []
+                  acc[d.brand].push(d)
+                  return acc
+                }, {})
+                const sortedBrands = Object.keys(grouped).sort((a, b) => a.localeCompare(b))
+
+                if (filtered.length === 0) return (
+                  <div className="flex flex-col items-center gap-2 mt-8">
+                    <span style={{ fontSize: 36 }}>🥤</span>
+                    <p className="text-sm font-bold text-white">No drinks found</p>
+                  </div>
+                )
+
+                return sortedBrands.map((brand) => {
+                  const isOpen = expandedKrogerDrinkBrands.has(brand)
+                  const matchedCount = grouped[brand].filter((d) => d.kroger_upc).length
+                  const brandColor = BRAND_COLORS[brand] ?? 'var(--fg-40)'
+                  return (
+                    <div
+                      key={brand}
+                      className="rounded-2xl mb-2.5 overflow-hidden"
+                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                    >
+                      <button
+                        onClick={() => setExpandedKrogerDrinkBrands((prev) => toggleInSet(prev, brand))}
+                        className="w-full flex items-center justify-between px-4 py-3.5"
+                      >
+                        <span className="text-sm font-bold" style={{ color: brandColor, letterSpacing: '0.5px' }}>
+                          {brand.toUpperCase()} <span style={{ color: 'var(--fg-35)', fontWeight: 600 }}>· {matchedCount}/{grouped[brand].length} matched</span>
+                        </span>
+                        <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                      </button>
+                      {isOpen && (
+                        <div className="flex flex-col gap-2.5 px-4 pb-4">
+                          {grouped[brand].map((drink) => (
+                            <div key={drink.id} className="rounded-2xl p-3.5" style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}>
+                              <div className="flex items-center justify-between gap-3 mb-1">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-white truncate">{drink.brand} {drink.flavor ?? drink.name}</p>
+                                </div>
+                                {drink.kroger_upc ? (
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✅ {drink.kroger_upc}</span>
+                                    <button onClick={() => matchDrinkToKroger(drink.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => findKrogerProductMatches(drink.id, `${drink.brand} ${drink.flavor ?? drink.name}`)}
+                                    disabled={krogerProductSearching.has(drink.id)}
+                                    className="text-[10px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
+                                  >
+                                    {krogerProductSearching.has(drink.id) ? '...' : 'Find Kroger Match'}
+                                  </button>
+                                )}
                               </div>
-                              <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>Use this →</span>
-                            </button>
+                              {krogerProductCandidates[drink.id] && (
+                                <div className="flex flex-col gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--fg-06)' }}>
+                                  {krogerProductCandidates[drink.id].length === 0 ? (
+                                    <p className="text-xs text-white/30">No candidates found for that search term.</p>
+                                  ) : krogerProductCandidates[drink.id].map((c) => (
+                                    <button
+                                      key={c.upc}
+                                      onClick={() => matchDrinkToKroger(drink.id, c.upc)}
+                                      className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
+                                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-white truncate">{c.description}</p>
+                                        <p className="text-[10px] text-white/35 truncate">{c.brand ?? ''} {c.size ?? ''} · UPC {c.upc}</p>
+                                      </div>
+                                      <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>Use this →</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  ))}
-              </div>
+                  )
+                })
+              })()
             )}
           </div>
         </div>
