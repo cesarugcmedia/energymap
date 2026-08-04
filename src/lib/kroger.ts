@@ -122,7 +122,10 @@ export async function getKrogerProductAvailability(upc: string, locationId: stri
     upc,
     inStock: !!fulfillment?.instore,
     price: typeof price === 'number' ? price : null,
-    raw: JSON.stringify(json).slice(0, 1500),
+    // Just the part that actually matters for diagnosing this — the full
+    // product object is mostly images/aisle/allergen noise that was eating
+    // the truncation budget before reaching `items`.
+    raw: JSON.stringify({ topLevelKeys: Object.keys(item), items: item.items }).slice(0, 3000),
   }
 }
 
