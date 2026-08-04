@@ -94,38 +94,25 @@ export interface KrogerProductAvailability {
   upc: string
   inStock: boolean
   price: number | null
-  // Truncated raw API response — only populated for temporary debugging of
-  // the fulfillment-shape mismatch (see runKrogerSyncChunk's debugSample).
-  // Remove once that's confirmed fixed.
-  raw?: string
 }
 
 // Look up a single product's in-store availability + price at one location.
 export async function getKrogerProductAvailability(upc: string, locationId: string): Promise<KrogerProductAvailability | null> {
   const json = await krogerFetch(`/products/${encodeURIComponent(upc)}?filter.locationId=${encodeURIComponent(locationId)}`)
-  // The Locations/Products *search* endpoints wrap results in a `data`
-  // array (confirmed live) — this single-product-by-UPC endpoint may do
-  // the same rather than returning a bare object as originally assumed.
-  // Handle both shapes so a mismatch here can't silently read `undefined`
-  // and report every drink as out of stock.
+  // Confirmed live: this endpoint returns `data` as a bare object (unlike
+  // the Locations/Products *search* endpoints, which wrap results in an
+  // array) — still guarded here in case that ever changes.
   const item = Array.isArray(json.data) ? json.data[0] : json.data
-  if (!item) {
-    console.error(`[kroger] no product data for upc=${upc} location=${locationId}:`, JSON.stringify(json).slice(0, 500))
-    return null
-  }
+  if (!item) return null
+  // Confirmed live: Kroger's field is `fulfillment.inStore` (capital S) —
+  // reading `.instore` here silently read undefined and reported every
+  // drink as out of stock.
   const fulfillment = item.items?.[0]?.fulfillment
   const price = item.items?.[0]?.price?.regular
-  if (!fulfillment) {
-    console.error(`[kroger] no fulfillment data for upc=${upc} location=${locationId}:`, JSON.stringify(item).slice(0, 500))
-  }
   return {
     upc,
-    inStock: !!fulfillment?.instore,
+    inStock: !!fulfillment?.inStore,
     price: typeof price === 'number' ? price : null,
-    // Just the part that actually matters for diagnosing this — the full
-    // product object is mostly images/aisle/allergen noise that was eating
-    // the truncation budget before reaching `items`.
-    raw: JSON.stringify({ topLevelKeys: Object.keys(item), items: item.items }).slice(0, 3000),
   }
 }
 
@@ -148,7 +135,7 @@ export async function searchKrogerProducts(term: string, locationId: string, lim
     description: p.description,
     brand: p.brand ?? null,
     size: p.items?.[0]?.size ?? null,
-    inStock: typeof p.items?.[0]?.fulfillment?.instore === 'boolean' ? p.items[0].fulfillment.instore : null,
+    inStock: typeof p.items?.[0]?.fulfillment?.inStore === 'boolean' ? p.items[0].fulfillment.inStore : null,
   }))
 }
 

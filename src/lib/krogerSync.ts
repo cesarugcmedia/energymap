@@ -28,9 +28,6 @@ export interface KrogerSyncChunkResult {
   done: boolean
   errors: string[]
   message?: string
-  // Raw response from the first pair processed in this chunk — temporary,
-  // for diagnosing the fulfillment-shape mismatch. Remove once fixed.
-  debugSample?: string
 }
 
 // Pulls fresh availability for one chunk of matched-store × matched-drink
@@ -72,7 +69,6 @@ export async function runKrogerSyncChunk(offset: number): Promise<KrogerSyncChun
   let synced = 0
   let failed = 0
   const errors: string[] = []
-  let debugSample: string | undefined
 
   for (let idx = offset; idx < chunkEnd; idx++) {
     const store = stores[Math.floor(idx / drinks.length)]
@@ -80,9 +76,6 @@ export async function runKrogerSyncChunk(offset: number): Promise<KrogerSyncChun
     try {
       const availability = await getKrogerProductAvailability(drink.kroger_upc!, store.kroger_location_id!)
       if (availability) {
-        if (!debugSample && availability.raw) {
-          debugSample = `upc=${drink.kroger_upc} location=${store.kroger_location_id} inStock=${availability.inStock}\n${availability.raw}`
-        }
         const { error } = await supabaseAdmin
           .from('kroger_stock')
           .upsert(
@@ -116,6 +109,5 @@ export async function runKrogerSyncChunk(offset: number): Promise<KrogerSyncChun
     nextOffset: chunkEnd,
     done: chunkEnd >= totalPairs,
     errors: errors.slice(0, 10),
-    debugSample,
   }
 }
