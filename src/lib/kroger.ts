@@ -99,10 +99,21 @@ export interface KrogerProductAvailability {
 // Look up a single product's in-store availability + price at one location.
 export async function getKrogerProductAvailability(upc: string, locationId: string): Promise<KrogerProductAvailability | null> {
   const json = await krogerFetch(`/products/${encodeURIComponent(upc)}?filter.locationId=${encodeURIComponent(locationId)}`)
-  const item = json.data
-  if (!item) return null
+  // The Locations/Products *search* endpoints wrap results in a `data`
+  // array (confirmed live) — this single-product-by-UPC endpoint may do
+  // the same rather than returning a bare object as originally assumed.
+  // Handle both shapes so a mismatch here can't silently read `undefined`
+  // and report every drink as out of stock.
+  const item = Array.isArray(json.data) ? json.data[0] : json.data
+  if (!item) {
+    console.error(`[kroger] no product data for upc=${upc} location=${locationId}:`, JSON.stringify(json).slice(0, 500))
+    return null
+  }
   const fulfillment = item.items?.[0]?.fulfillment
   const price = item.items?.[0]?.price?.regular
+  if (!fulfillment) {
+    console.error(`[kroger] no fulfillment data for upc=${upc} location=${locationId}:`, JSON.stringify(item).slice(0, 500))
+  }
   return {
     upc,
     inStock: !!fulfillment?.instore,
