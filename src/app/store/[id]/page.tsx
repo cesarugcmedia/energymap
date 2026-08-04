@@ -100,6 +100,17 @@ function krogerStockColors(inStock: boolean, stockLevel: string | null) {
   }
 }
 
+// True when the most recent crowd report and Kroger's last check disagree
+// on plain in-stock/out-of-stock (ignores quantity level vs. stock level
+// nuance — this is just "do the two sources even agree it's there at all").
+// We don't try to pick a winner — just flag it so the user can compare the
+// two freshness timestamps themselves and judge which to trust.
+function krogerConflictsWithCrowd(quantity: string | null | undefined, krogerInStock: boolean): boolean {
+  if (!quantity) return false
+  const crowdSaysInStock = quantity !== 'out'
+  return crowdSaysInStock !== krogerInStock
+}
+
 function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()
   const params = useSearchParams()
@@ -731,14 +742,26 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       {krogerStock[item.drink_id] && (() => {
                                         const k = krogerStock[item.drink_id]
                                         const kc = krogerStockColors(k.inStock, k.stockLevel)
+                                        const conflict = !isKrogerOnly && krogerConflictsWithCrowd(item.quantity, k.inStock)
                                         return (
-                                          <span
-                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                            style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
-                                            title={`Kroger checked ${timeAgo(k.checkedAt)}`}
-                                          >
-                                            ✅ Verified: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
-                                          </span>
+                                          <>
+                                            <span
+                                              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                              style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
+                                              title={`Kroger checked ${timeAgo(k.checkedAt)}`}
+                                            >
+                                              ✅ Verified: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
+                                            </span>
+                                            {conflict && (
+                                              <span
+                                                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                                style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#FFB300', border: '1px solid rgba(255,179,0,0.3)' }}
+                                                title="Kroger's last check and the latest crowd report disagree — compare the timestamps above to judge which is more current."
+                                              >
+                                                ⚠️ Reports disagree
+                                              </span>
+                                            )}
+                                          </>
                                         )
                                       })()}
                                     </div>
