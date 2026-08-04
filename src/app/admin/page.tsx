@@ -131,6 +131,7 @@ export default function AdminPage() {
   const [krogerSyncing, setKrogerSyncing] = useState(false)
   const [krogerSyncResult, setKrogerSyncResult] = useState<string | null>(null)
   const [krogerSyncProgress, setKrogerSyncProgress] = useState<{ done: number; total: number } | null>(null)
+  const [krogerDebugSample, setKrogerDebugSample] = useState<string | null>(null)
   const [krogerStoreSearch, setKrogerStoreSearch] = useState('')
   const [expandedKrogerStoreStates, setExpandedKrogerStoreStates] = useState<Set<string>>(new Set())
   const [expandedKrogerDrinkBrands, setExpandedKrogerDrinkBrands] = useState<Set<string>>(new Set())
@@ -455,6 +456,7 @@ export default function AdminPage() {
     setKrogerSyncing(true)
     setKrogerSyncResult(null)
     setKrogerSyncProgress(null)
+    setKrogerDebugSample(null)
     const headers = await krogerAuthHeader()
     if (!headers) { setKrogerSyncing(false); return }
 
@@ -467,6 +469,7 @@ export default function AdminPage() {
     let totalPairs = 0
     let storeCount = 0
     let drinkCount = 0
+    let capturedDebugSample: string | null = null
     let safety = 0
     while (safety < 1000) {
       safety++
@@ -486,6 +489,10 @@ export default function AdminPage() {
       storeCount = json.storeCount ?? storeCount
       drinkCount = json.drinkCount ?? drinkCount
       offset = json.nextOffset ?? totalPairs
+      if (!capturedDebugSample && json.debugSample) {
+        capturedDebugSample = json.debugSample
+        setKrogerDebugSample(json.debugSample)
+      }
       setKrogerSyncProgress({ done: Math.min(offset, totalPairs), total: totalPairs })
       if (json.done) {
         setKrogerSyncResult(`Synced ${totalSynced} · Failed ${totalFailed} (${storeCount} store × ${drinkCount} drink pairs checked)`)
@@ -909,6 +916,19 @@ export default function AdminPage() {
             </button>
             {krogerSyncResult && (
               <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerSyncResult}</p>
+            )}
+            {krogerDebugSample && (
+              <div className="mt-3">
+                <p className="text-[10px] font-bold mb-1.5" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
+                  DEBUG SAMPLE — copy this to Claude
+                </p>
+                <pre
+                  className="text-[10px] p-3 rounded-xl overflow-x-auto whitespace-pre-wrap break-all select-all"
+                  style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)', color: 'var(--fg-60)', maxHeight: 260, overflowY: 'auto' }}
+                >
+                  {krogerDebugSample}
+                </pre>
+              </div>
             )}
           </div>
 

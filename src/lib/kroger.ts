@@ -94,6 +94,10 @@ export interface KrogerProductAvailability {
   upc: string
   inStock: boolean
   price: number | null
+  // Truncated raw API response — only populated for temporary debugging of
+  // the fulfillment-shape mismatch (see runKrogerSyncChunk's debugSample).
+  // Remove once that's confirmed fixed.
+  raw?: string
 }
 
 // Look up a single product's in-store availability + price at one location.
@@ -118,6 +122,7 @@ export async function getKrogerProductAvailability(upc: string, locationId: stri
     upc,
     inStock: !!fulfillment?.instore,
     price: typeof price === 'number' ? price : null,
+    raw: JSON.stringify(json).slice(0, 1500),
   }
 }
 
