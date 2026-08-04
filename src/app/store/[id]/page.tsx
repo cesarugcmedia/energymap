@@ -138,7 +138,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
   }
   const [search, setSearch] = useState('')
-  const [sortMode, setSortMode] = useState<'recent' | 'brand'>('recent')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
@@ -636,26 +635,10 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               )}
             </div>
 
-            {/* Sort toggle */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {(['recent', 'brand'] as const).map((mode) => {
-                const active = sortMode === mode
-                const label = mode === 'recent' ? 'Recent' : 'By Brand'
-                return (
-                  <button key={mode} onClick={() => setSortMode(mode)}
-                    style={{ padding: '6px 14px', borderRadius: 99, border: '1px solid', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : 'var(--fg-50)', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-
             <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
               {isSearching
                 ? `${filteredStock.length} result${filteredStock.length !== 1 ? 's' : ''}`
-                : sortMode === 'recent'
-                  ? `${filteredStock.length} drink${filteredStock.length !== 1 ? 's' : ''} · most recent first`
-                  : `BRANDS · ${Object.keys(byBrand).length} found`}
+                : `BRANDS · ${Object.keys(byBrand).length} found`}
             </p>
             {isSearching && filteredStock.length === 0 && (
               <div className="flex flex-col items-center gap-2 mt-8">
@@ -666,108 +649,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             )}
 
             <div className="flex flex-col gap-2.5">
-              {sortMode === 'recent' && !isSearching ? (
-                [...filteredStock].sort((a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()).map((item) => {
-                  const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                  const isKrogerOnly = !!item.isKrogerOnly
-                  const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--fg-30)'
-                  const historyOpen = expandedHistory.has(item.drink_id)
-                  const history = drinkHistory[item.drink_id] ?? []
-                  const loadingHistory = historyLoading.has(item.drink_id)
-                  return (
-                    <div key={item.drink_id}>
-                      <div
-                        style={{
-                          backgroundColor: 'var(--surface)',
-                          border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
-                          boxShadow: `inset 3px 0 0 ${q?.color ?? 'rgba(201,244,0,0.3)'}, 0 0 8px ${q?.color ? q.color + '30' : 'rgba(201,244,0,0.08)'}`,
-                          borderRadius: isTracker && historyOpen && !isKrogerOnly ? '12px 12px 0 0' : 12,
-                          cursor: isTracker && !isKrogerOnly ? 'pointer' : 'default',
-                          padding: 12,
-                        }}
-                        onClick={() => { if (!isKrogerOnly) toggleHistory(item.drink_id) }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{item.drink?.flavor ?? item.drink?.name}</p>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              <p className="text-xs" style={{ color: 'var(--fg-40)' }}>{item.drink?.brand}</p>
-                              {isKrogerOnly ? (
-                                <p className="text-xs font-semibold" style={{ color: freshColor }}>No reports yet</p>
-                              ) : (
-                                <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
-                              )}
-                              {item.drink?.caffeine_mg && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
-                                  ⚡ {item.drink.caffeine_mg}mg
-                                </span>
-                              )}
-                              {krogerStock[item.drink_id] && (() => {
-                                const k = krogerStock[item.drink_id]
-                                const kc = krogerStockColors(k.inStock, k.stockLevel)
-                                return (
-                                  <span
-                                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                    style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
-                                    title={`Kroger checked ${timeAgo(k.checkedAt)}`}
-                                  >
-                                    ✅ Verified: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
-                                  </span>
-                                )
-                              })()}
-                            </div>
-                            {/* Confirmation buttons */}
-                            {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
-                              <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-                                <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}>✓ {c?.yes ?? 0}</button>
-                                <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}>✗ {c?.no ?? 0}</button>
-                              </div>
-                            )})()}
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0 ml-2">
-                            {!isKrogerOnly && (
-                              <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                                <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                              </div>
-                            )}
-                            {isTracker && !isKrogerOnly && (
-                              <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      {isTracker && !isKrogerOnly && historyOpen && (
-                        <div className="px-3 pb-3" style={{ backgroundColor: 'var(--fg-02)', border: `1.5px solid ${q?.border ?? 'var(--fg-10)'}`, borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
-                          <p className="text-[9px] font-bold py-2" style={{ color: 'var(--fg-25)', letterSpacing: '1.5px' }}>REPORT HISTORY</p>
-                          {loadingHistory ? (
-                            <div className="flex justify-center py-3"><div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /></div>
-                          ) : history.length === 0 ? (
-                            <p className="text-xs text-white/30 pb-1">No history found.</p>
-                          ) : (
-                            <div className="flex flex-col gap-1.5">
-                              {history.map((h: any, i: number) => {
-                                const hq = QUANTITY_CONFIG[h.quantity as Quantity]
-                                const reporter = (h.reporter as any)
-                                return (
-                                  <div key={i} className="flex items-center gap-2 py-1.5" style={{ borderBottom: i < history.length - 1 ? '1px solid var(--fg-05)' : 'none' }}>
-                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: hq?.color ?? 'var(--fg-20)' }} />
-                                    <div className="px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: hq?.bg, border: `1px solid ${hq?.border}` }}>
-                                      <span className="text-[9px] font-bold" style={{ color: hq?.color }}>{hq?.label}</span>
-                                    </div>
-                                    <p className="text-[11px] text-white/50 flex-1">{timeAgo(h.reported_at)}</p>
-                                    {reporter?.username && <p className="text-[10px] text-white/30">@{reporter.username}</p>}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              ) : null}
-              {(sortMode === 'brand' || isSearching) && Object.entries(byBrand).map(([brand, items]) => {
+              {Object.entries(byBrand).map(([brand, items]) => {
                 const reportedItems = items.filter((i) => !i.isKrogerOnly)
                 const inStock = reportedItems.filter((i) => i.quantity !== 'out').length
                 const total = reportedItems.length
