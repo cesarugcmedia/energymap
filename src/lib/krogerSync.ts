@@ -84,6 +84,7 @@ export async function runKrogerSyncChunk(offset: number): Promise<KrogerSyncChun
               drink_id: drink.id,
               in_stock: availability.inStock,
               price: availability.price,
+              stock_level: availability.stockLevel,
               checked_at: new Date().toISOString(),
             },
             { onConflict: 'store_id,drink_id' }

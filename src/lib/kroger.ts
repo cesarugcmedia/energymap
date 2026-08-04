@@ -94,6 +94,9 @@ export interface KrogerProductAvailability {
   upc: string
   inStock: boolean
   price: number | null
+  // Coarse level from Kroger's inventory.stockLevel (observed live:
+  // "HIGH") — null if Kroger didn't include one for this product/location.
+  stockLevel: string | null
 }
 
 // Look up a single product's in-store availability + price at one location.
@@ -109,10 +112,12 @@ export async function getKrogerProductAvailability(upc: string, locationId: stri
   // drink as out of stock.
   const fulfillment = item.items?.[0]?.fulfillment
   const price = item.items?.[0]?.price?.regular
+  const stockLevel = item.items?.[0]?.inventory?.stockLevel
   return {
     upc,
     inStock: !!fulfillment?.inStore,
     price: typeof price === 'number' ? price : null,
+    stockLevel: typeof stockLevel === 'string' ? stockLevel : null,
   }
 }
 

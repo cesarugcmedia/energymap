@@ -24,6 +24,12 @@ CREATE TABLE IF NOT EXISTS kroger_stock (
   UNIQUE (store_id, drink_id)
 );
 
+-- Coarse stock-level signal from Kroger's inventory.stockLevel field (a
+-- string like "HIGH"/"MEDIUM"/"LOW", observed live but not exhaustively
+-- documented by Kroger) — nullable, since older synced rows and any product
+-- Kroger doesn't report a level for won't have one.
+ALTER TABLE kroger_stock ADD COLUMN IF NOT EXISTS stock_level TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_kroger_stock_store_id ON kroger_stock(store_id);
 
 ALTER TABLE kroger_stock ENABLE ROW LEVEL SECURITY;

@@ -77,6 +77,29 @@ function stalenessLabel(dateStr: string) {
   return 'Unverified'
 }
 
+// Kroger's inventory.stockLevel is a coarse, not-exhaustively-documented
+// enum (only "HIGH" confirmed live so far) — fall back to a flat "In Stock"
+// label/color for any level we don't recognize rather than guessing.
+function krogerStockLabel(inStock: boolean, stockLevel: string | null) {
+  if (!inStock) return 'Out of Stock'
+  switch (stockLevel?.toUpperCase()) {
+    case 'HIGH': return 'High Stock'
+    case 'MEDIUM': return 'Medium Stock'
+    case 'LOW': return 'Low Stock'
+    default: return 'In Stock'
+  }
+}
+
+function krogerStockColors(inStock: boolean, stockLevel: string | null) {
+  if (!inStock) return { bg: 'rgba(255,69,69,0.1)', color: '#FF4545', border: 'rgba(255,69,69,0.25)' }
+  switch (stockLevel?.toUpperCase()) {
+    case 'HIGH': return { bg: 'rgba(201,244,0,0.08)', color: '#C9F400', border: 'rgba(201,244,0,0.3)' }
+    case 'MEDIUM':
+    case 'LOW': return { bg: 'rgba(255,179,0,0.1)', color: '#FFB300', border: 'rgba(255,179,0,0.25)' }
+    default: return { bg: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: 'rgba(59,130,246,0.3)' }
+  }
+}
+
 function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()
   const params = useSearchParams()
@@ -91,7 +114,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const [stockError, setStockError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [confirmations, setConfirmations] = useState<Record<string, { yes: number; no: number; userVote: boolean | null }>>({})
-  const [krogerStock, setKrogerStock] = useState<Record<string, { inStock: boolean; checkedAt: string }>>({})
+  const [krogerStock, setKrogerStock] = useState<Record<string, { inStock: boolean; checkedAt: string; stockLevel: string | null }>>({})
 const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
   const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
@@ -170,12 +193,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   async function fetchStock() {
     const [{ data: stockData, error }, { data: krogerData }] = await Promise.all([
       supabase.from('latest_stock').select('drink_id, quantity, reported_at').eq('store_id', id),
-      supabase.from('kroger_stock').select('drink_id, in_stock, checked_at').eq('store_id', id),
+      supabase.from('kroger_stock').select('drink_id, in_stock, checked_at, stock_level').eq('store_id', id),
     ])
     if (error) { setStockError(true); setLoading(false); return }
 
-    const krogerMap: Record<string, { inStock: boolean; checkedAt: string }> = {}
-    krogerData?.forEach((k: any) => { krogerMap[k.drink_id] = { inStock: k.in_stock, checkedAt: k.checked_at } })
+    const krogerMap: Record<string, { inStock: boolean; checkedAt: string; stockLevel: string | null }> = {}
+    krogerData?.forEach((k: any) => { krogerMap[k.drink_id] = { inStock: k.in_stock, checkedAt: k.checked_at, stockLevel: k.stock_level ?? null } })
     setKrogerStock(krogerMap)
 
     // Kroger-matched drinks with no crowdsourced report yet still get a row —
@@ -679,19 +702,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   ⚡ {item.drink.caffeine_mg}mg
                                 </span>
                               )}
-                              {krogerStock[item.drink_id] && (
-                                <span
-                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                  style={{
-                                    backgroundColor: krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.1)' : 'rgba(255,69,69,0.1)',
-                                    color: krogerStock[item.drink_id].inStock ? '#60a5fa' : '#FF4545',
-                                    border: `1px solid ${krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.3)' : 'rgba(255,69,69,0.25)'}`,
-                                  }}
-                                  title={`Kroger checked ${timeAgo(krogerStock[item.drink_id].checkedAt)}`}
-                                >
-                                  ✅ Verified: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'} · {timeAgo(krogerStock[item.drink_id].checkedAt)}
-                                </span>
-                              )}
+                              {krogerStock[item.drink_id] && (() => {
+                                const k = krogerStock[item.drink_id]
+                                const kc = krogerStockColors(k.inStock, k.stockLevel)
+                                return (
+                                  <span
+                                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                    style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
+                                    title={`Kroger checked ${timeAgo(k.checkedAt)}`}
+                                  >
+                                    ✅ Verified: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
+                                  </span>
+                                )
+                              })()}
                             </div>
                             {/* Confirmation buttons */}
                             {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
@@ -823,19 +846,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                           ⚡ {item.drink.caffeine_mg}mg
                                         </span>
                                       )}
-                                      {krogerStock[item.drink_id] && (
-                                        <span
-                                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                          style={{
-                                            backgroundColor: krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.1)' : 'rgba(255,69,69,0.1)',
-                                            color: krogerStock[item.drink_id].inStock ? '#60a5fa' : '#FF4545',
-                                            border: `1px solid ${krogerStock[item.drink_id].inStock ? 'rgba(59,130,246,0.3)' : 'rgba(255,69,69,0.25)'}`,
-                                          }}
-                                          title={`Kroger checked ${timeAgo(krogerStock[item.drink_id].checkedAt)}`}
-                                        >
-                                          ✅ Verified: {krogerStock[item.drink_id].inStock ? 'In Stock' : 'Out of Stock'} · {timeAgo(krogerStock[item.drink_id].checkedAt)}
-                                        </span>
-                                      )}
+                                      {krogerStock[item.drink_id] && (() => {
+                                        const k = krogerStock[item.drink_id]
+                                        const kc = krogerStockColors(k.inStock, k.stockLevel)
+                                        return (
+                                          <span
+                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                            style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
+                                            title={`Kroger checked ${timeAgo(k.checkedAt)}`}
+                                          >
+                                            ✅ Verified: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
+                                          </span>
+                                        )
+                                      })()}
                                     </div>
                                     {/* Confirmation buttons */}
                                     {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
