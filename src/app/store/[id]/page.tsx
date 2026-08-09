@@ -745,32 +745,31 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                           ⚡ {item.drink.caffeine_mg}mg
                                         </span>
                                       )}
-                                      {krogerStock[item.drink_id] && (() => {
+                                      {krogerStock[item.drink_id] && !krogerConflictsWithCrowd(item.quantity, krogerStock[item.drink_id].inStock) && (() => {
                                         const k = krogerStock[item.drink_id]
                                         const kc = krogerStockColors(k.inStock, k.stockLevel)
-                                        const conflict = !isKrogerOnly && krogerConflictsWithCrowd(item.quantity, k.inStock)
                                         return (
-                                          <>
-                                            <span
-                                              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                              style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
-                                              title={`Kroger checked ${timeAgo(k.checkedAt)}`}
-                                            >
-                                              ✅ Verified: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
-                                            </span>
-                                            {conflict && (
-                                              <span
-                                                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                                style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#FFB300', border: '1px solid rgba(255,179,0,0.3)' }}
-                                                title="Kroger's last check and the latest crowd report disagree — compare the timestamps above to judge which is more current."
-                                              >
-                                                ⚠️ Reports disagree
-                                              </span>
-                                            )}
-                                          </>
+                                          <span
+                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                            style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
+                                            title={`Kroger checked ${timeAgo(k.checkedAt)}`}
+                                          >
+                                            {isKrogerOnly ? '📦 Store-listed' : '✅ Verified'}: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
+                                          </span>
                                         )
                                       })()}
                                     </div>
+                                    {/* When Kroger and the crowd disagree, collapse what used to be two
+                                        competing badges (Verified + "Reports disagree") into one dated,
+                                        clearly-historical note instead of two same-weight pills. */}
+                                    {krogerStock[item.drink_id] && krogerConflictsWithCrowd(item.quantity, krogerStock[item.drink_id].inStock) && (
+                                      <div
+                                        className="text-[10px] font-semibold mt-1.5 px-2 py-1.5 rounded-lg"
+                                        style={{ backgroundColor: 'rgba(255,179,0,0.06)', border: '1px dashed rgba(255,179,0,0.3)', color: '#FFB300' }}
+                                      >
+                                        ⚠️ Kroger's last check ({timeAgo(krogerStock[item.drink_id].checkedAt)}) said {krogerStockLabel(krogerStock[item.drink_id].inStock, krogerStock[item.drink_id].stockLevel)} — differs from the report above
+                                      </div>
+                                    )}
                                     {/* Confirmation buttons */}
                                     {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
                                       <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
