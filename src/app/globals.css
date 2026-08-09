@@ -9,11 +9,11 @@
   --volt-glow: rgba(201,244,0,0.18);
   --volt-glow-lg: rgba(201,244,0,0.08);
   /* Backgrounds */
-  --bg: #141A1F;
-  --surface: #1C2329;
-  --surface2: #222B33;
-  --surface3: #283038;
-  --header-bg: rgba(20,26,31,0.92);
+  --bg: #0A0B0A;
+  --surface: #131511;
+  --surface2: #191B16;
+  --surface3: #20231C;
+  --header-bg: rgba(10,11,10,0.92);
   /* Accent (volt used as text/border color) */
   --accent: #C9F400;
   /* Borders */

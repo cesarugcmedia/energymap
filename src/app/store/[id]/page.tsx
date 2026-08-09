@@ -155,6 +155,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number; names: string[] } | null>(null)
   const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
 
+  // Lets the map/list "Report it" links jump straight to the flag modal
+  // instead of landing on the store page with no obvious next step.
+  useEffect(() => {
+    if (params.get('flag') === '1') setShowFlag(true)
+  }, [params])
+
   useEffect(() => {
     fetchStore()
     fetchStock()

@@ -13,6 +13,33 @@ const TYPE_ICON: Record<string, string> = {
   other: '📍',
 }
 
+// Simplified 2-state freshness per store (mirrors the 4-bucket Fresh/Aging/
+// Stale/Unverified staleness on store pages, collapsed to a binary signal
+// suited to at-a-glance map coloring — 'fresh' covers Fresh+Aging).
+export type StoreFreshness = 'fresh' | 'stale'
+
+type MarkerFreshness = StoreFreshness | 'mixed'
+
+const FRESHNESS_COLOR: Record<MarkerFreshness, { hex: string; rgb: string }> = {
+  fresh: { hex: '#C9F400', rgb: '201,244,0' },
+  mixed: { hex: '#FFB300', rgb: '255,179,0' },
+  stale: { hex: '#8A8F86', rgb: '138,143,134' },
+}
+
+// A cluster's color reflects the mix of its members: all-fresh reads as
+// "worth a trip", all-stale as "probably dead data", anything in between
+// as mixed — rather than losing that signal once stores get grouped.
+function aggregateFreshness(values: (StoreFreshness | undefined)[]): MarkerFreshness {
+  let hasFresh = false
+  let hasStale = false
+  for (const v of values) {
+    if (v === 'fresh') hasFresh = true
+    else hasStale = true
+  }
+  if (hasFresh && hasStale) return 'mixed'
+  return hasFresh ? 'fresh' : 'stale'
+}
+
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 3958.8
   const dLat = ((lat2 - lat1) * Math.PI) / 180
@@ -23,33 +50,34 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-function createClusterEl(count: number): HTMLElement {
+function createClusterEl(count: number, freshness: MarkerFreshness): HTMLElement {
   const size = count >= 100 ? 54 : count >= 10 ? 46 : 40
   const fontSize = count >= 100 ? 13 : 14
+  const { hex, rgb } = FRESHNESS_COLOR[freshness]
   const el = document.createElement('div')
   el.style.cssText = 'cursor:pointer;pointer-events:auto;display:flex;align-items:center;justify-content:center;'
   el.innerHTML = `
-    <div style="width:${size}px;height:${size}px;background:rgba(201,244,0,0.15);border:1.5px solid rgba(201,244,0,0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(201,244,0,0.07),0 0 20px rgba(201,244,0,0.4);pointer-events:none;">
-      <span style="font-size:${fontSize}px;font-weight:900;color:#C9F400;font-family:system-ui,sans-serif;pointer-events:none;">${count}</span>
+    <div style="width:${size}px;height:${size}px;background:rgba(${rgb},0.15);border:1.5px solid rgba(${rgb},0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(${rgb},0.07),0 0 20px rgba(${rgb},0.4);pointer-events:none;">
+      <span style="font-size:${fontSize}px;font-weight:900;color:${hex};font-family:system-ui,sans-serif;pointer-events:none;">${count}</span>
     </div>
   `
   return el
 }
 
-function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
+function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshness): HTMLElement {
   const emoji = TYPE_ICON[store.type] ?? '📍'
-  const name = store.name.length > 18 ? store.name.slice(0, 18) + '…' : store.name
+  const { hex, rgb } = FRESHNESS_COLOR[freshness]
   const orbSize = isSelected ? 46 : 36
-  const orbBg = isSelected ? 'rgba(201,244,0,0.18)' : 'rgba(14,14,22,0.92)'
-  const orbBorder = isSelected ? '#C9F400' : 'rgba(201,244,0,0.55)'
+  const orbBg = isSelected ? `rgba(${rgb},0.18)` : 'rgba(14,14,22,0.92)'
+  const orbBorder = isSelected ? hex : `rgba(${rgb},0.55)`
   const orbGlow = isSelected
-    ? '0 0 0 3px rgba(201,244,0,0.18), 0 0 22px rgba(201,244,0,0.75), 0 0 44px rgba(201,244,0,0.35)'
-    : '0 0 0 1px rgba(201,244,0,0.08), 0 0 14px rgba(201,244,0,0.45)'
-  const tipColor = isSelected ? '#C9F400' : 'rgba(201,244,0,0.55)'
+    ? `0 0 0 3px rgba(${rgb},0.18), 0 0 22px rgba(${rgb},0.75), 0 0 44px rgba(${rgb},0.35)`
+    : `0 0 0 1px rgba(${rgb},0.08), 0 0 14px rgba(${rgb},0.45)`
+  const tipColor = isSelected ? hex : `rgba(${rgb},0.55)`
 
   const pulseRings = isSelected
-    ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(201,244,0,0.55);animation:markerPulse 1.6s ease-out infinite;pointer-events:none;"></div>
-       <div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(201,244,0,0.3);animation:markerPulse 1.6s ease-out infinite 0.8s;pointer-events:none;"></div>`
+    ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(${rgb},0.55);animation:markerPulse 1.6s ease-out infinite;pointer-events:none;"></div>
+       <div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(${rgb},0.3);animation:markerPulse 1.6s ease-out infinite 0.8s;pointer-events:none;"></div>`
     : ''
 
   const el = document.createElement('div')
@@ -62,9 +90,9 @@ function createStoreEl(store: Store, isSelected: boolean): HTMLElement {
       </div>
     </div>
     ${isSelected
-      ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(201,244,0,0.45);border-radius:7px;padding:3px 9px;white-space:nowrap;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(201,244,0,0.25);pointer-events:none;">${name}</div>`
+      ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(${rgb},0.45);border-radius:7px;padding:5px 9px;white-space:normal;word-break:break-word;max-width:120px;text-align:center;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;line-height:1.3;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(${rgb},0.25);pointer-events:none;">${store.name}</div>`
       : ''}
-    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(201,244,0,0.5));pointer-events:none;"></div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(${rgb},0.5));pointer-events:none;"></div>
   `
   return el
 }
@@ -76,9 +104,10 @@ interface MapViewProps {
   selected: Store | null
   onSelectStore: (store: Store) => void
   onMapReady?: (map: mapboxgl.Map) => void
+  storeFreshness?: Record<string, StoreFreshness>
 }
 
-export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady }: MapViewProps) {
+export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
@@ -96,6 +125,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   latRef.current = lat
   const lngRef = useRef(lng)
   lngRef.current = lng
+  const storeFreshnessRef = useRef<Record<string, StoreFreshness>>(storeFreshness ?? {})
+  storeFreshnessRef.current = storeFreshness ?? {}
 
   function updateMarkers() {
     const map = mapRef.current
@@ -136,7 +167,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         const key = `cluster_${cp.cluster_id}`
         newKeys.add(key)
         if (!markersRef.current.has(key)) {
-          const el = createClusterEl(cp.point_count)
+          const leaves = sc!.getLeaves(cp.cluster_id, Infinity)
+          const freshness = aggregateFreshness(leaves.map((l) => storeFreshnessRef.current[(l.properties as Store).id]))
+          const el = createClusterEl(cp.point_count, freshness)
           el.addEventListener('click', () => {
             const expansionZoom = Math.min(sc!.getClusterExpansionZoom(cp.cluster_id), 20)
             map.easeTo({ center: coords, zoom: expansionZoom, duration: 400 })
@@ -152,7 +185,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         newKeys.add(key)
         if (!markersRef.current.has(key)) {
           const isSelected = selectedRef.current?.id === store.id
-          const el = createStoreEl(store, isSelected)
+          const freshness = storeFreshnessRef.current[store.id] ?? 'stale'
+          const el = createStoreEl(store, isSelected, freshness)
           el.addEventListener('click', (e) => { e.stopPropagation(); onSelectStoreRef.current(store) })
           el.addEventListener('touchend', (e) => { e.stopPropagation(); onSelectStoreRef.current(store) })
           const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
@@ -216,6 +250,16 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     updateMarkers()
   }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Freshness colors are baked into markers at creation time — force a
+  // rebuild when the underlying data changes (e.g. a new live report comes
+  // in) so cluster/pin colors don't go stale themselves.
+  useEffect(() => {
+    markersRef.current.forEach((m) => m.remove())
+    markersRef.current.clear()
+    prevSelectedRef.current = null
+    updateMarkers()
+  }, [storeFreshness]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -259,10 +303,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     map.on('style.load', () => {
       map.setFog({
-        color: '#070710',
-        'high-color': '#0d0d1e',
+        color: '#0A0B0A',
+        'high-color': '#141610',
         'horizon-blend': 0.06,
-        'space-color': '#00000f',
+        'space-color': '#000000',
         'star-intensity': 0.4,
       })
 
@@ -270,13 +314,13 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       style?.layers?.forEach((layer) => {
         try {
           if (layer.type === 'background') {
-            map.setPaintProperty(layer.id, 'background-color', '#070710')
+            map.setPaintProperty(layer.id, 'background-color', '#0A0B0A')
           }
           if (layer.type === 'fill' && layer.id.toLowerCase().includes('water')) {
-            map.setPaintProperty(layer.id, 'fill-color', '#08091a')
+            map.setPaintProperty(layer.id, 'fill-color', '#0D0F0A')
           }
           if (layer.type === 'line' && layer.id.toLowerCase().includes('water')) {
-            map.setPaintProperty(layer.id, 'line-color', '#08091a')
+            map.setPaintProperty(layer.id, 'line-color', '#0D0F0A')
           }
           if (layer.type === 'line' && /^road/.test(layer.id)) {
             map.setPaintProperty(layer.id, 'line-color', [

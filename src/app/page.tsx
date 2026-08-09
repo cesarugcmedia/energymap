@@ -55,11 +55,10 @@ function getLatestReport(stock: any[]) {
   }, null)
 }
 
-const LEGEND_ITEMS = [
-  { icon: '⛽', label: 'Gas Station' },
-  { icon: '🏪', label: 'Convenience' },
-  { icon: '🛒', label: 'Grocery' },
-  { icon: '📍', label: 'Other' },
+const FRESHNESS_LEGEND = [
+  { color: '#C9F400', label: 'Mostly fresh' },
+  { color: '#FFB300', label: 'Mixed' },
+  { color: '#8A8F86', label: 'Mostly stale' },
 ]
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
@@ -108,7 +107,6 @@ export default function MapPage() {
 
   // Map-view state
   const [selected, setSelected] = useState<Store | null>(null)
-  const [legendOpen, setLegendOpen] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [leafletMap, setLeafletMap] = useState<any>(null)
   const swipeStartY = useRef<number | null>(null)
@@ -270,6 +268,19 @@ export default function MapPage() {
       .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
       .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
   }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng])
+
+  // Collapsed to a binary signal for map coloring — 'fresh' covers the
+  // store page's Fresh+Aging buckets (< 12h), everything else (including no
+  // reports at all) reads as 'stale' so a cold pin can't look misleadingly fresh.
+  const storeFreshness = useMemo(() => {
+    const map: Record<string, 'fresh' | 'stale'> = {}
+    for (const store of stores) {
+      const latest = getLatestReport(storeStock[store.id] ?? [])
+      const hrs = latest ? (Date.now() - new Date(latest.reported_at).getTime()) / 3600000 : Infinity
+      map[store.id] = hrs < 12 ? 'fresh' : 'stale'
+    }
+    return map
+  }, [stores, storeStock])
 
   if (authLoading || !user) {
     return (
@@ -436,6 +447,36 @@ export default function MapPage() {
             </div>
           </div>
         </div>
+
+        {view === 'map' && (
+          <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
+              <input
+                type="text"
+                placeholder="Search stores or flavors..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '11px 14px 11px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+              {TYPE_FILTERS.map((f) => {
+                const active = typeFilter === f.value
+                return (
+                  <button key={f.value ?? 'all'} className="pill-btn"
+                    onClick={() => setTypeFilter(f.value)}
+                    style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content area — cross-fades between map canvas and store list; both
@@ -459,10 +500,11 @@ export default function MapPage() {
               <MapView
                 lat={lat}
                 lng={lng}
-                stores={stores}
+                stores={sorted}
                 selected={selected}
                 onSelectStore={setSelected}
                 onMapReady={setLeafletMap}
+                storeFreshness={storeFreshness}
               />
             </div>
 
@@ -506,43 +548,23 @@ export default function MapPage() {
               </div>
             )}
 
-            {/* Map legend */}
+            {/* Freshness legend — always visible, no toggle needed now that
+                markers themselves are colored by freshness */}
             <div
-              className="absolute z-10"
-              style={{ bottom: 'calc(90px + env(safe-area-inset-bottom))', right: 16 }}
+              className="absolute z-10 rounded-xl p-2.5 flex flex-col gap-1.5"
+              style={{
+                bottom: 'calc(90px + env(safe-area-inset-bottom))', left: 16,
+                backgroundColor: 'rgba(19,21,17,0.92)',
+                border: '1px solid var(--fg-10)',
+                backdropFilter: 'blur(12px)',
+              }}
             >
-              {legendOpen && (
-                <div
-                  className="mb-2 rounded-2xl p-3 flex flex-col gap-2"
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--fg-10)',
-                    backdropFilter: 'blur(12px)',
-                    minWidth: 150,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  }}
-                >
-                  <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-40)', letterSpacing: '1.5px' }}>MAP KEY</p>
-                  {LEGEND_ITEMS.map((item) => (
-                    <div key={item.label} className="flex items-center gap-2.5">
-                      <span style={{ fontSize: 14 }}>{item.icon}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-75)' }}>{item.label}</span>
-                    </div>
-                  ))}
+              {FRESHNESS_LEGEND.map((item) => (
+                <div key={item.label} className="flex items-center gap-1.5">
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)' }}>{item.label}</span>
                 </div>
-              )}
-              <button
-                onClick={() => setLegendOpen((o) => !o)}
-                className="w-10 h-10 rounded-full flex items-center justify-center ml-auto"
-                style={{
-                  backgroundColor: legendOpen ? '#C9F400' : 'var(--surface)',
-                  border: '1px solid var(--fg-15)',
-                  backdropFilter: 'blur(12px)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                }}
-              >
-                <span style={{ fontSize: 16 }}>{legendOpen ? '✕' : '🗺️'}</span>
-              </button>
+              ))}
             </div>
 
             {/* Bottom sheet when store selected */}
@@ -606,7 +628,13 @@ export default function MapPage() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 12, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
                   <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                  <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4 }}>Location may not be accurate. If something looks off, please report it.</p>
+                  <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
+                  <button
+                    onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}&flag=1`)}
+                    style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
+                  >
+                    Report it
+                  </button>
                 </div>
 
                 <div className="flex gap-2.5">
@@ -761,7 +789,13 @@ export default function MapPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
                       <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                      <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4 }}>Location may not be accurate. If something looks off, please report it.</p>
+                      <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
+                      <button
+                        onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}&flag=1`)}
+                        style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
+                      >
+                        Report it
+                      </button>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
@@ -874,7 +908,13 @@ export default function MapPage() {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
                           <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                          <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4 }}>Location may not be accurate. If something looks off, please report it.</p>
+                          <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
+                          <button
+                            onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}&flag=1`)}
+                            style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
+                          >
+                            Report it
+                          </button>
                         </div>
 
                         <div style={{ display: 'flex', gap: 8 }}>
