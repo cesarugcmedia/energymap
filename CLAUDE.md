@@ -199,6 +199,18 @@ Three Supabase automations in `scripts/automation-*.sql` — run each once in th
 
 Requires pg_cron (enabled by default on Supabase Pro).
 
+### Flavor Alerts
+
+"Follow a flavor" — a user taps the 🔔 bell on any drink card (store page) to get notified the next time it genuinely restocks. Defined in `scripts/create-drink-alerts-tables.sql` (not yet run against production as of this writing).
+
+- **In-app only, no push** — deliberately built on the existing `notifications` table + real-time bell rather than OS-level push notifications, which would need separate infrastructure (VAPID keys, a service worker push handler, stored push subscriptions, a send endpoint) not yet built. An alert fires while the app is open/foregrounded; it won't wake a closed app.
+- **No paywall/tier gating** — every user gets unlimited alerts at any scope for now. A tiered version (e.g. radius/anywhere scope or alert count gated behind `tracker`) was considered but explicitly deferred.
+- **One alert per user+drink** (`drink_alerts`, `UNIQUE(user_id, drink_id)`) — tapping an inactive bell opens a scope-picker sheet (This store only / Within N miles / Anywhere); tapping an active bell unfollows immediately, no sheet, since following needs a scope decision but unfollowing doesn't. Radius scope anchors to the *store's* lat/lng at the time the alert was created (not the user's live location), so the "in range" set stays meaningful after they leave.
+- **Restock detection is a DB trigger** (`notify_drink_alert_subscribers()`, same pattern as `automation-badge-notifications.sql`), firing `AFTER INSERT ON stock_reports`. Only fires on a genuine transition into stock — the new report isn't `'out'`, and the prior report for that store+drink (if any) was `'out'`. A same-state re-report (already in stock, reported again) deliberately does not notify.
+- Only a **single unified alert** exists per drink — no separate "notify on brand-wide new drops" toggle. That's a different data shape (brand-level, not drink-level) and was scoped out of this pass.
+- No "Rare Find" auto-tagging (flavors with a history of low stock) — would need report-history data that's currently only fetched on-demand for `tracker` users, not eagerly for everyone.
+- Managed from `/account` → **Saved** tab, below Favorites (not a separate nav tab, to avoid crowding the bottom nav).
+
 ### Stock Report Accuracy
 
 Stock reports on store pages show a freshness state based on age:

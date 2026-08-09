@@ -138,6 +138,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [isFavorited, setIsFavorited] = useState(false)
   const [favoriteId, setFavoriteId] = useState<string | null>(null)
   const [favoritingLoading, setFavoritingLoading] = useState(false)
+  const [drinkAlerts, setDrinkAlerts] = useState<Set<string>>(new Set())
+  const [alertSheetDrinkId, setAlertSheetDrinkId] = useState<string | null>(null)
+  const [alertScope, setAlertScope] = useState<'store' | 'radius' | 'anywhere'>('store')
+  const [alertRadius, setAlertRadius] = useState(10)
+  const [alertSubmitting, setAlertSubmitting] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -165,6 +170,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     fetchStore()
     fetchStock()
     fetchFavorite()
+    fetchDrinkAlerts()
 
     const channel = supabase
       .channel(`store-detail:${id}`)
@@ -204,6 +210,50 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       if (data) { setIsFavorited(true); setFavoriteId(data.id); showToast('Added to favorites') }
     }
     setFavoritingLoading(false)
+  }
+
+  async function fetchDrinkAlerts() {
+    if (!user) return
+    const { data } = await supabase.from('drink_alerts').select('drink_id').eq('user_id', user.id)
+    if (data) setDrinkAlerts(new Set(data.map((a) => a.drink_id)))
+  }
+
+  // Active bell → instant unfollow. Inactive bell → open the scope sheet,
+  // since following needs a scope decision but unfollowing doesn't.
+  function toggleDrinkAlert(drinkId: string) {
+    if (!user) { showToast('Sign in to set alerts'); return }
+    if (drinkAlerts.has(drinkId)) {
+      supabase.from('drink_alerts').delete().eq('user_id', user.id).eq('drink_id', drinkId).then(() => {})
+      setDrinkAlerts((prev) => { const n = new Set(prev); n.delete(drinkId); return n })
+      showToast('Alert removed')
+    } else {
+      setAlertScope('store')
+      setAlertRadius(10)
+      setAlertSheetDrinkId(drinkId)
+    }
+  }
+
+  async function saveDrinkAlert() {
+    if (!user || !alertSheetDrinkId || !store || alertSubmitting) return
+    setAlertSubmitting(true)
+    const { error } = await supabase.from('drink_alerts').upsert(
+      {
+        user_id: user.id,
+        drink_id: alertSheetDrinkId,
+        scope: alertScope,
+        store_id: alertScope === 'store' ? id : null,
+        radius_miles: alertScope === 'radius' ? alertRadius : null,
+        anchor_lat: alertScope === 'radius' ? store.lat : null,
+        anchor_lng: alertScope === 'radius' ? store.lng : null,
+      },
+      { onConflict: 'user_id,drink_id' }
+    )
+    setAlertSubmitting(false)
+    if (!error) {
+      setDrinkAlerts((prev) => new Set(prev).add(alertSheetDrinkId))
+      setAlertSheetDrinkId(null)
+      showToast("You'll be notified when it's back")
+    }
   }
 
   async function fetchStock() {
@@ -784,6 +834,17 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                         <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
                                       </div>
                                     )}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
+                                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                      style={{
+                                        backgroundColor: drinkAlerts.has(item.drink_id) ? 'rgba(201,244,0,0.14)' : 'var(--fg-06)',
+                                        border: `1px solid ${drinkAlerts.has(item.drink_id) ? '#C9F400' : 'var(--fg-08)'}`,
+                                      }}
+                                      title={drinkAlerts.has(item.drink_id) ? 'Stop watching this flavor' : 'Get notified when this restocks'}
+                                    >
+                                      <span style={{ fontSize: 12, filter: drinkAlerts.has(item.drink_id) ? 'none' : 'grayscale(1) opacity(0.6)' }}>🔔</span>
+                                    </button>
                                     {isTracker && !isKrogerOnly && (
                                       <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
                                     )}
@@ -1115,6 +1176,101 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           document.body
         )}
 
+        {alertSheetDrinkId && createPortal(
+          <div
+            className="fixed inset-0 flex flex-col justify-end z-50"
+            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setAlertSheetDrinkId(null) }}
+          >
+            <div
+              className="rounded-t-3xl p-5"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
+
+              <div className="flex items-center gap-2.5 mb-1">
+                <span style={{ fontSize: 20 }}>🔔</span>
+                <p className="text-lg font-black text-white">
+                  Alert me for {(() => {
+                    const d = stock.find((i) => i.drink_id === alertSheetDrinkId)?.drink
+                    return d?.flavor ?? d?.name ?? 'this drink'
+                  })()}
+                </p>
+              </div>
+              <p className="text-xs mb-5" style={{ color: 'var(--fg-40)' }}>Choose where we watch for it</p>
+
+              <div className="flex flex-col gap-2 mb-4">
+                {([
+                  { value: 'store' as const, label: 'This store only', sub: store?.name ?? '' },
+                  { value: 'radius' as const, label: `Within ${alertRadius} miles`, sub: 'Any store in range' },
+                  { value: 'anywhere' as const, label: 'Anywhere', sub: 'Any store you\'ve added' },
+                ]).map((opt) => (
+                  <button
+                    key={opt.value}
+                    className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-left"
+                    style={{
+                      backgroundColor: alertScope === opt.value ? 'rgba(201,244,0,0.08)' : 'var(--fg-04)',
+                      border: `1.5px solid ${alertScope === opt.value ? 'rgba(201,244,0,0.4)' : 'var(--fg-07)'}`,
+                    }}
+                    onClick={() => setAlertScope(opt.value)}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: alertScope === opt.value ? '#fff' : 'var(--fg-60)' }}>{opt.label}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--fg-35)' }}>{opt.sub}</p>
+                    </div>
+                    <div
+                      className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                      style={{ borderColor: alertScope === opt.value ? '#C9F400' : 'var(--fg-20)' }}
+                    >
+                      {alertScope === opt.value && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#C9F400' }} />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {alertScope === 'radius' && (
+                <div className="flex gap-2 mb-4">
+                  {[5, 10, 25].map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setAlertRadius(r)}
+                      className="flex-1 rounded-xl py-2 text-sm font-bold"
+                      style={{
+                        backgroundColor: alertRadius === r ? '#C9F400' : 'var(--fg-04)',
+                        color: alertRadius === r ? '#0D1210' : 'var(--fg-50)',
+                        border: `1px solid ${alertRadius === r ? '#C9F400' : 'var(--fg-08)'}`,
+                      }}
+                    >
+                      {r} mi
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2.5">
+                <button
+                  className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
+                  style={{ backgroundColor: 'rgba(201,244,0,0.06)', color: 'var(--fg-50)' }}
+                  onClick={() => setAlertSheetDrinkId(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="flex-1 rounded-xl p-3.5 font-bold text-sm flex items-center justify-center"
+                  style={{ backgroundColor: alertSubmitting ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
+                  disabled={alertSubmitting}
+                  onClick={saveDrinkAlert}
+                >
+                  {alertSubmitting
+                    ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                    : 'Save Alert'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       </div>
     </div>

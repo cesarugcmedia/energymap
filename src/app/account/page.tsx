@@ -175,6 +175,9 @@ function AccountPageInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [favorites, setFavorites] = useState<any[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(false)
+  const [drinkAlerts, setDrinkAlerts] = useState<any[]>([])
+  const [drinkAlertsLoading, setDrinkAlertsLoading] = useState(false)
+  const [removingAlertId, setRemovingAlertId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
@@ -417,7 +420,7 @@ function AccountPageInner() {
   }
 
   useEffect(() => {
-    if (user) { fetchFavorites(user.id); fetchStats(user.id) }
+    if (user) { fetchFavorites(user.id); fetchStats(user.id); fetchDrinkAlerts(user.id) }
   }, [user])
 
   async function fetchFavorites(userId: string) {
@@ -429,6 +432,25 @@ function AccountPageInner() {
       .order('created_at', { ascending: false })
     if (data) setFavorites(data)
     setFavoritesLoading(false)
+  }
+
+  async function fetchDrinkAlerts(userId: string) {
+    setDrinkAlertsLoading(true)
+    const { data } = await supabase
+      .from('drink_alerts')
+      .select('id, scope, radius_miles, drink:drinks(name, flavor, brand), store:stores(name)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    if (data) setDrinkAlerts(data)
+    setDrinkAlertsLoading(false)
+  }
+
+  async function removeDrinkAlert(alertId: string) {
+    if (removingAlertId) return
+    setRemovingAlertId(alertId)
+    await supabase.from('drink_alerts').delete().eq('id', alertId)
+    setDrinkAlerts((prev) => prev.filter((a) => a.id !== alertId))
+    setRemovingAlertId(null)
   }
 
   async function fetchStats(userId: string) {
@@ -1019,6 +1041,43 @@ function selectAndContinue(tierId: TierId) {
                               {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
                             </button>
                           </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', margin: '24px 0 12px', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+                  Flavor Alerts · {drinkAlerts.length}
+                </p>
+                {drinkAlertsLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}>
+                    <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  </div>
+                ) : drinkAlerts.length === 0 ? (
+                  <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
+                    <span style={{ fontSize: 32 }}>🔔</span>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No flavor alerts yet</p>
+                    <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the bell on any drink card to get notified when it restocks.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {drinkAlerts.map((a) => {
+                      const scopeLabel = a.scope === 'store' ? (a.store?.name ?? 'This store only')
+                        : a.scope === 'radius' ? `Within ${a.radius_miles} miles`
+                        : 'Anywhere'
+                      return (
+                        <div key={a.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(201,244,0,0.4)' }}>
+                          <span style={{ fontSize: 20 }}>🔔</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {a.drink?.flavor ?? a.drink?.name}
+                            </p>
+                            <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scopeLabel}</p>
+                          </div>
+                          <button onClick={() => removeDrinkAlert(a.id)} disabled={removingAlertId === a.id} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingAlertId === a.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
+                            {removingAlertId === a.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
+                          </button>
                         </div>
                       )
                     })}
