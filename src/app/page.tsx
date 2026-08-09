@@ -518,7 +518,7 @@ export default function MapPage() {
                   <button
                     key={label}
                     onClick={fn}
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-light"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-light"
                     style={{
                       backgroundColor: 'var(--surface)',
                       border: '1px solid var(--fg-15)',
@@ -533,17 +533,18 @@ export default function MapPage() {
                 ))}
                 <button
                   onClick={() => leafletMap.flyTo({ center: [lng, lat], zoom: 15 })}
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
                   style={{
                     backgroundColor: 'var(--surface)',
-                    border: '1px solid rgba(59,130,246,0.5)',
+                    border: '1px solid rgba(201,244,0,0.4)',
                     backdropFilter: 'blur(12px)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                     fontSize: 18,
+                    color: '#C9F400',
                   }}
                   title="Re-center on my location"
                 >
-                  📍
+                  ◎
                 </button>
               </div>
             )}
