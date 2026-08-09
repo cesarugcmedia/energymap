@@ -24,6 +24,31 @@ const QUANTITY_OPTIONS: { value: Quantity; label: string; color: string; bg: str
   { value: 'full',   label: 'Full', color: 'var(--accent)', bg: 'rgba(201,244,0,0.12)',  border: 'rgba(201,244,0,0.35)'  },
 ]
 
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
+// Same 2-bucket simplification used for map marker freshness elsewhere —
+// < 12h reads as fresh, everything else (including never-reported) as
+// stale/none, rather than the store page's finer 4-bucket breakdown.
+function freshnessDot(reportedAt: string | undefined): 'fresh' | 'stale' | 'none' {
+  if (!reportedAt) return 'none'
+  const hrs = (Date.now() - new Date(reportedAt).getTime()) / 3600000
+  return hrs < 12 ? 'fresh' : 'stale'
+}
+
+const DOT_COLOR: Record<'fresh' | 'stale' | 'none', string> = {
+  fresh: '#C9F400',
+  stale: '#FFB300',
+  none: 'var(--fg-25)',
+}
+
 function DrinksContent() {
   const router = useRouter()
   const params = useSearchParams()
@@ -38,6 +63,7 @@ function DrinksContent() {
 
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [loading, setLoading] = useState(true)
+  const [storeReports, setStoreReports] = useState<Record<string, { quantity: Quantity; reported_at: string }>>({})
   const [search, setSearch] = useState('')
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedDrinks, setExpandedDrinks] = useState<Set<string>>(new Set())
@@ -58,6 +84,23 @@ function DrinksContent() {
         setLoading(false)
       })
   }, [])
+
+  // Which brands this store actually carries, so those flavors can lead
+  // the page with quick-tap buttons instead of the full catalog competing
+  // for space with what's real here.
+  useEffect(() => {
+    if (!storeId) return
+    supabase
+      .from('latest_stock')
+      .select('drink_id, quantity, reported_at')
+      .eq('store_id', storeId)
+      .then(({ data }) => {
+        if (!data) return
+        const map: Record<string, { quantity: Quantity; reported_at: string }> = {}
+        data.forEach((r) => { map[r.drink_id] = { quantity: r.quantity, reported_at: r.reported_at } })
+        setStoreReports(map)
+      })
+  }, [storeId])
 
   useEffect(() => {
     if (!storeId) { setLocationChecking(false); return }
@@ -109,6 +152,19 @@ function DrinksContent() {
       const next = new Set(prev)
       next.delete(drinkId)
       return next
+    })
+  }
+
+  // Quick-tap version for "This Store's Flavors" — no drill-down picker to
+  // open first. Tapping an already-selected level deselects it.
+  function selectQuantityDirect(drinkId: string, qty: Quantity) {
+    setSelections((prev) => {
+      if (prev[drinkId] === qty) {
+        const next = { ...prev }
+        delete next[drinkId]
+        return next
+      }
+      return { ...prev, [drinkId]: qty }
     })
   }
 
@@ -177,6 +233,32 @@ function DrinksContent() {
     acc[d.brand].push(d)
     return acc
   }, {})
+
+  // A brand counts as "this store's" once any of its flavors has ever been
+  // reported here — every other catalog flavor of that brand joins it too,
+  // since a store carrying a brand plausibly carries flavors nobody's
+  // specifically reported yet.
+  const storeBrands = new Set(
+    Object.keys(storeReports)
+      .map((drinkId) => drinks.find((d) => d.id === drinkId)?.brand)
+      .filter((b): b is string => !!b)
+  )
+
+  const storeFlavorsGrouped = drinks
+    .filter((d) => storeBrands.has(d.brand))
+    .reduce<Record<string, Drink[]>>((acc, d) => {
+      if (!acc[d.brand]) acc[d.brand] = []
+      acc[d.brand].push(d)
+      return acc
+    }, {})
+
+  const otherBrandsGrouped = filtered
+    .filter((d) => !storeBrands.has(d.brand))
+    .reduce<Record<string, Drink[]>>((acc, d) => {
+      if (!acc[d.brand]) acc[d.brand] = []
+      acc[d.brand].push(d)
+      return acc
+    }, {})
 
   const isSearching = search.length > 0
   const selectionCount = Object.keys(selections).length
@@ -251,7 +333,7 @@ function DrinksContent() {
           <input
             type="text"
             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text)' }}
-            placeholder="Search drinks..."
+            placeholder="Search drinks & flavors..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -260,29 +342,224 @@ function DrinksContent() {
           )}
         </div>
 
-        {/* ── Info chip ─────────────────────────────────────────────── */}
-        <div style={{
-          margin: '0 16px 16px',
-          padding: '10px 14px',
-          borderRadius: 12,
-          backgroundColor: 'rgba(201,244,0,0.05)',
-          border: '1px solid rgba(201,244,0,0.15)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-45)', lineHeight: 1.5 }}>
-            Tap a brand to expand, then tap a drink to set its stock level.
-          </p>
-        </div>
-
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
             <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : (
+        ) : isSearching ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 160px' }}>
             {Object.entries(grouped).map(([brand, brandDrinks]) => {
               const expanded = isSearching || expandedBrands.has(brand)
+              const brandSelections = brandDrinks.filter((d) => selections[d.id])
+              const hasBrandSelection = brandSelections.length > 0
+
+              return (
+                <div
+                  key={brand}
+                  style={{
+                    borderRadius: 16, overflow: 'hidden',
+                    backgroundColor: 'var(--surface)',
+                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.1)'}`,
+                    boxShadow: hasBrandSelection
+                      ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
+                      : 'inset 3px 0 0 rgba(201,244,0,0.2), 0 0 8px rgba(201,244,0,0.06)',
+                  }}
+                >
+                  <button
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 16, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                    onClick={() => toggleBrand(brand)}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
+                        {hasBrandSelection
+                          ? `${brandSelections.length} of ${brandDrinks.length} reported`
+                          : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
+                      </p>
+                    </div>
+                    {hasBrandSelection && (
+                      <div style={{
+                        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: '#C9F400',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
+                      </div>
+                    )}
+                    <span style={{ color: 'var(--fg-30)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
+                  </button>
+
+                  {expanded && (
+                    <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ height: 1, marginBottom: 4, backgroundColor: 'var(--fg-06)' }} />
+                      {brandDrinks.map((drink) => {
+                        const selected = selections[drink.id]
+                        const pickerOpen = expandedDrinks.has(drink.id)
+                        const selectedOpt = QUANTITY_OPTIONS.find((o) => o.value === selected)
+
+                        return (
+                          <div key={drink.id}>
+                            <button
+                              style={{
+                                width: '100%', display: 'flex', alignItems: 'center', textAlign: 'left',
+                                background: selected ? 'var(--fg-05)' : 'var(--fg-03)',
+                                border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'var(--fg-06)') : 'var(--fg-10)'}`,
+                                borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
+                                boxShadow: selected ? `0 0 10px ${selectedOpt?.color ?? 'rgba(201,244,0,0.5)'}33` : 'none',
+                                cursor: 'pointer',
+                              }}
+                              onClick={() => toggleDrink(drink.id)}
+                            >
+                              <div style={{
+                                alignSelf: 'stretch', width: 4, flexShrink: 0,
+                                backgroundColor: selected ? (selectedOpt?.color ?? 'rgba(201,244,0,0.6)') : 'rgba(201,244,0,0.2)',
+                                borderRadius: pickerOpen ? '10px 0 0 0' : '10px 0 0 10px',
+                              }} />
+                              <div style={{ flex: 1, padding: 12 }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                                  {drink.flavor ?? drink.name}
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+                                  {drink.flavor && (
+                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-35)' }}>{drink.name}</p>
+                                  )}
+                                  {drink.caffeine_mg && (
+                                    <span style={{
+                                      fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
+                                      backgroundColor: 'rgba(201,244,0,0.1)',
+                                      color: 'rgba(201,244,0,0.85)',
+                                      border: '1px solid rgba(201,244,0,0.25)',
+                                    }}>
+                                      ⚡ {drink.caffeine_mg}mg
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {selected ? (
+                                <div style={{
+                                  padding: '4px 10px', borderRadius: 999, marginRight: 12, flexShrink: 0,
+                                  backgroundColor: selectedOpt?.bg, border: `1px solid ${selectedOpt?.border}`,
+                                }}>
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: selectedOpt?.color }}>{selectedOpt?.label}</span>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 11, color: 'var(--fg-25)', marginRight: 12, flexShrink: 0 }}>Tap to report</span>
+                              )}
+                            </button>
+
+                            {pickerOpen && (
+                              <div style={{
+                                display: 'flex',
+                                borderRadius: '0 0 12px 12px',
+                                overflow: 'hidden',
+                                border: '1.5px solid var(--fg-06)',
+                                borderTop: 'none',
+                              }}>
+                                {QUANTITY_OPTIONS.map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    style={{
+                                      flex: 1, padding: '14px 0',
+                                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                      backgroundColor: selected === opt.value ? opt.bg : 'var(--fg-02)',
+                                      borderRight: opt.value !== 'full' ? '1px solid var(--fg-06)' : 'none',
+                                      border: 'none', cursor: 'pointer',
+                                    }}
+                                    onClick={() => selectQuantity(drink.id, opt.value)}
+                                  >
+                                    <div style={{
+                                      width: 10, height: 10, borderRadius: '50%',
+                                      backgroundColor: opt.color,
+                                      opacity: selected === opt.value ? 1 : 0.3,
+                                      boxShadow: selected === opt.value ? `0 0 8px ${opt.color}` : 'none',
+                                    }} />
+                                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: selected === opt.value ? opt.color : 'var(--fg-30)' }}>
+                                      {opt.label.toUpperCase()}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 160px' }}>
+
+            {Object.keys(storeFlavorsGrouped).length > 0 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px' }}>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    ⚡ THIS STORE'S FLAVORS
+                  </p>
+                  <span style={{ fontSize: 10, color: 'var(--fg-30)' }}>{Object.keys(storeFlavorsGrouped).length} brand{Object.keys(storeFlavorsGrouped).length !== 1 ? 's' : ''}</span>
+                </div>
+
+                <div style={{ borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.25)', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {Object.entries(storeFlavorsGrouped).map(([brand, brandDrinks], i) => (
+                    <div key={brand}>
+                      {i > 0 && <div style={{ height: 1, backgroundColor: 'var(--fg-06)', margin: '2px 0 10px' }} />}
+                      <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {brand} <span style={{ fontSize: 10, color: 'var(--fg-30)', fontWeight: 600 }}>{brandDrinks.length} flavor{brandDrinks.length !== 1 ? 's' : ''}</span>
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {brandDrinks.map((drink) => {
+                          const report = storeReports[drink.id]
+                          const dot = freshnessDot(report?.reported_at)
+                          const selected = selections[drink.id]
+                          return (
+                            <div key={drink.id} style={{ backgroundColor: 'var(--fg-03)', border: '1px solid var(--fg-08)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: DOT_COLOR[dot], flexShrink: 0 }} />
+                                <div style={{ minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{drink.flavor ?? drink.name}</p>
+                                  <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg-30)' }}>
+                                    {report ? `${dot === 'fresh' ? 'Fresh' : 'Stale'} · ${timeAgo(report.reported_at)}` : 'No reports yet'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: 5 }}>
+                                {QUANTITY_OPTIONS.slice().reverse().map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => selectQuantityDirect(drink.id, opt.value)}
+                                    style={{
+                                      flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 9, fontSize: 10, fontWeight: 800,
+                                      border: `1px solid ${selected === opt.value ? opt.border : 'var(--fg-08)'}`,
+                                      backgroundColor: selected === opt.value ? opt.bg : 'var(--bg)',
+                                      color: selected === opt.value ? opt.color : 'var(--fg-40)',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    {opt.label.toUpperCase()}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px', marginTop: Object.keys(storeFlavorsGrouped).length > 0 ? 6 : 0 }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'var(--fg-40)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                📦 ADD A BRAND NOT LISTED
+              </p>
+            </div>
+            <p style={{ margin: '0 2px 2px', fontSize: 10.5, color: 'var(--fg-30)' }}>Tap a brand to expand, then tap a flavor to add it.</p>
+
+            {Object.entries(otherBrandsGrouped).map(([brand, brandDrinks]) => {
+              const expanded = expandedBrands.has(brand)
               const brandSelections = brandDrinks.filter((d) => selections[d.id])
               const hasBrandSelection = brandSelections.length > 0
 

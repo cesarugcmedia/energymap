@@ -223,6 +223,13 @@ All users see the freshness label; `tracker` tier users additionally see the exa
 
 Each drink card shows ✓/✗ community confirmation buttons. Votes are stored in `stock_confirmations` and displayed as counts. Optimistic UI updates on tap; tapping the same button again removes the vote.
 
+### Report Stock Flow
+
+`/submit/drinks` splits the catalog into two sections rather than one flat brand list. A brand counts as "this store's" once any of its flavors has ever been reported there (`latest_stock` for that `store_id`) — every other catalog flavor of that brand joins it too, since a store carrying a brand plausibly carries flavors nobody's specifically reported yet:
+- **"This Store's Flavors"** — pre-expanded, quick-tap FULL/MED/LOW/OUT buttons directly on each row (no drill-down picker). Each row shows a freshness dot (lime < 12h, amber ≥ 12h, gray if never reported) and a "Fresh · Xh ago" / "No reports yet" label.
+- **"Add a brand not listed"** — every other brand, collapsed by default, using the original tap-to-expand-then-tap-a-flavor-to-open-a-picker flow, for genuinely new additions only.
+- Searching bypasses this split entirely and falls back to a single flat brand-grouped list (the original full-catalog behavior) across all matches, store-known or not.
+
 ### Geofencing & Submission Limits
 
 Stock report submission (`/submit/drinks`) posts to `/api/stock/report`, which enforces everything **server-side** using the caller's bearer token (the client's own Haversine check is just a UX hint — a status message shown before submitting — not the actual enforcement):
