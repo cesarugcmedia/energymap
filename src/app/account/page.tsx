@@ -1015,7 +1015,7 @@ function selectAndContinue(tierId: TierId) {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                             <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif" }}>View</a>
-                            <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
+                            <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
                               {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
                             </button>
                           </div>

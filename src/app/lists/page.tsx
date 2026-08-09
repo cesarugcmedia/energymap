@@ -137,7 +137,7 @@ export default function FavoritesPage() {
                       <button
                         onClick={() => removeFavorite(fav.id)}
                         disabled={removing.has(fav.id)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center"
                         style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', opacity: removing.has(fav.id) ? 0.5 : 1 }}
                       >
                         {removing.has(fav.id)
