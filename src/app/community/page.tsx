@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import NotificationBell from '@/components/NotificationBell'
 import Toast from '@/components/Toast'
 
 type FilterMode = 'trending' | 'recent' | 'following'
@@ -432,16 +431,13 @@ export default function CommunityPage() {
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px 100px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
-          <div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
-              Commu<span style={{ color: 'var(--accent)' }}>nity</span>
-            </h1>
-            <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-              {loading ? 'Loading…' : `${postsToday} post${postsToday !== 1 ? 's' : ''} today`}
-            </p>
-          </div>
-          <NotificationBell />
+        <div style={{ padding: '12px 0 16px', animation: 'fadeUp 0.5s ease' }}>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
+            Commu<span style={{ color: 'var(--accent)' }}>nity</span>
+          </h1>
+          <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+            {loading ? 'Loading…' : `${postsToday} post${postsToday !== 1 ? 's' : ''} today`}
+          </p>
         </div>
 
         {/* Feed / Leaderboard sub-tabs — Ranks no longer has its own nav slot */}

@@ -13,6 +13,8 @@ const TYPE_ICON: Record<string, string> = {
   new_drink: '🥤',
   mention: '💬',
   comment: '💬',
+  badge: '🏅',
+  drink_alert: '🔔',
 }
 
 function timeAgo(dateStr: string) {
@@ -80,7 +82,7 @@ export default function NotificationsPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: 'var(--text)' }}>
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-      <div style={{ position: 'relative', zIndex: 1, paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
+      <div className="mobile-nav-pb" style={{ position: 'relative', zIndex: 1, paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px 16px' }}>
         <div>

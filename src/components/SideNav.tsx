@@ -3,12 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications'
+import { MapIcon, CommunityIcon, AlertsIcon, AccountIcon, AdminIcon } from '@/components/NavIcons'
 
 const ALL_TABS = [
-  { href: '/', label: 'Map', icon: '🗺️', adminOnly: false, trackerOnly: false },
-  { href: '/community', label: 'Community', icon: '👥', adminOnly: false, trackerOnly: false },
-  { href: '/account', label: 'Account', icon: '👤', adminOnly: false, trackerOnly: false },
-  { href: '/admin', label: 'Admin', icon: '🔧', adminOnly: true, trackerOnly: false },
+  { href: '/', label: 'Map', Icon: MapIcon, adminOnly: false, trackerOnly: false },
+  { href: '/community', label: 'Community', Icon: CommunityIcon, adminOnly: false, trackerOnly: false },
+  { href: '/notifications', label: 'Alerts', Icon: AlertsIcon, adminOnly: false, trackerOnly: false },
+  { href: '/account', label: 'Account', Icon: AccountIcon, adminOnly: false, trackerOnly: false },
+  { href: '/admin', label: 'Admin', Icon: AdminIcon, adminOnly: true, trackerOnly: false },
 ]
 
 const TAB_PATHS = ['/', '/community', '/notifications', '/account', '/admin', '/admin/login']
@@ -16,6 +19,7 @@ const TAB_PATHS = ['/', '/community', '/notifications', '/account', '/admin', '/
 export default function SideNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
+  const unread = useUnreadNotifications()
   if (!user) return null
   if (!TAB_PATHS.includes(pathname)) return null
 
@@ -65,7 +69,21 @@ export default function SideNav() {
                 color: isActive ? '#C9F400' : '#7A8F80',
               }}
             >
-              <span style={{ fontSize: 18, filter: isActive ? 'drop-shadow(0 0 5px rgba(201,244,0,0.5))' : 'none' }}>{tab.icon}</span>
+              <div style={{ position: 'relative', filter: isActive ? 'drop-shadow(0 0 5px rgba(201,244,0,0.5))' : 'none' }}>
+                <tab.Icon active={isActive} />
+                {tab.href === '/notifications' && unread > 0 && (
+                  <div
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      top: -4, right: -6, minWidth: 14, height: 14, borderRadius: 999, padding: '0 3px',
+                      backgroundColor: '#ff5c5c', border: '2px solid var(--surface)',
+                      fontSize: 8, fontWeight: 800, color: '#fff',
+                    }}
+                  >
+                    {unread > 9 ? '9+' : unread}
+                  </div>
+                )}
+              </div>
               <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{tab.label}</span>
             </Link>
           )

@@ -41,6 +41,7 @@ All routing uses Next.js App Router. `src/middleware.ts` optionally gates the en
 Key pages:
 - `/` — Main map experience (the core feature). Has a Map View / List View toggle in the header — List View is the filterable/searchable store list (formerly the separate `/stores` route, which now just redirects here)
 - `/community` — Social feed **and** rankings, merged into one tab via a Feed / Leaderboard sub-toggle under the header (formerly the separate `/leaderboard` route, which now just redirects here with `?view=leaderboard` — same pattern as the `/stores` merge). Feed: text posts optionally tagged to a store and/or a photo, likes, comments, follow system with a Following filter, Trending/Recent/Following sort, trending-stores widget. Leaderboard: rankings via the `get_leaderboard` Supabase RPC, fetched lazily only once that sub-tab is opened.
+- `/notifications` — "Alerts" tab; every notification type in one list (badge unlocks, comment replies, drink-alert restocks, admin store approvals, etc.) — see "Notifications & Nav Icons" below
 - `/submit` — Stock report submission
 - `/add-store` — Store submission form
 - `/account` — Profile, badge, stats, subscription management
@@ -198,11 +199,17 @@ Three Supabase automations in `scripts/automation-*.sql` — run each once in th
 
 Requires pg_cron (enabled by default on Supabase Pro).
 
+### Notifications & Nav Icons
+
+Notifications have their own bottom-nav tab (**Alerts**, `/notifications`) rather than a header bell icon — `NotificationBell.tsx` was removed. `src/hooks/useUnreadNotifications.ts` holds the shared unread-count fetch + real-time subscribe logic (previously inside `NotificationBell`), used by both `BottomNav.tsx` (mobile) and `SideNav.tsx` (desktop) so the badge count works identically on both without duplicating the Supabase query. The `/notifications` page itself is unchanged — it already showed every notification type generically (badge unlocks, comments, drink-alert restocks, admin actions, etc.) via a `TYPE_ICON` lookup with a bell fallback for unmapped types.
+
+Nav icons are custom inline SVGs (`src/components/NavIcons.tsx`) instead of system emoji — emoji rendered with mismatched weights across devices (some bold/colorful like 👥🔔, some thin/monochrome like 🗺️). Each icon takes an `active` boolean: active renders a solid lime fill, inactive a gray outline, matching the lime-for-active convention used elsewhere (toggle buttons, active filter chips). The Alerts icon carries the unread-count badge as a small red circle positioned over the bell SVG.
+
 ### Flavor Alerts
 
 "Follow a flavor" — a user taps the 🔔 bell on any drink card (store page) to get notified the next time it genuinely restocks. Defined in `scripts/create-drink-alerts-tables.sql` (not yet run against production as of this writing).
 
-- **In-app only, no push** — deliberately built on the existing `notifications` table + real-time bell rather than OS-level push notifications, which would need separate infrastructure (VAPID keys, a service worker push handler, stored push subscriptions, a send endpoint) not yet built. An alert fires while the app is open/foregrounded; it won't wake a closed app.
+- **In-app only, no push** — deliberately built on the existing `notifications` table + the Alerts nav tab rather than OS-level push notifications, which would need separate infrastructure (VAPID keys, a service worker push handler, stored push subscriptions, a send endpoint) not yet built. An alert fires while the app is open/foregrounded; it won't wake a closed app.
 - **No paywall/tier gating** — every user gets unlimited alerts at any scope for now. A tiered version (e.g. radius/anywhere scope or alert count gated behind `tracker`) was considered but explicitly deferred.
 - **One alert per user+drink** (`drink_alerts`, `UNIQUE(user_id, drink_id)`) — tapping an inactive bell opens a scope-picker sheet (This store only / Within N miles / Anywhere); tapping an active bell unfollows immediately, no sheet, since following needs a scope decision but unfollowing doesn't. Radius scope anchors to the *store's* lat/lng at the time the alert was created (not the user's live location), so the "in range" set stays meaningful after they leave.
 - **Restock detection is a DB trigger** (`notify_drink_alert_subscribers()`, same pattern as `automation-badge-notifications.sql`), firing `AFTER INSERT ON stock_reports`. Only fires on a genuine transition into stock — the new report isn't `'out'`, and the prior report for that store+drink (if any) was `'out'`. A same-state re-report (already in stock, reported again) deliberately does not notify.
