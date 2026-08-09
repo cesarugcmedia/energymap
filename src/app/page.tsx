@@ -846,6 +846,8 @@ export default function MapPage() {
                     const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
                     const hasReports = stock.length > 0
                     const barColor = !hasReports ? 'rgba(201,244,0,0.12)' : pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
+                    const daysSinceReport = latestReport ? (Date.now() - new Date(latestReport.reported_at).getTime()) / 86400000 : null
+                    const isDormant = hasReports && daysSinceReport !== null && daysSinceReport > 7
 
                     return (
                       <div key={store.id} className="store-card"
@@ -874,12 +876,24 @@ export default function MapPage() {
                               </span>
                             </div>
                             {latestReport && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isDormant ? 8 : 12 }}>
                                 <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
                                 <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at), fontFamily: "'Barlow Condensed', sans-serif" }}>
                                   {timeAgo(latestReport.reported_at)}
                                 </span>
                               </div>
+                            )}
+                            {isDormant && (
+                              <button
+                                className="action-btn"
+                                style={{ width: '100%', textAlign: 'center', marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(255,179,0,0.05)', border: '1.5px dashed rgba(255,179,0,0.4)', cursor: 'pointer' }}
+                                onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
+                              >
+                                <span style={{ display: 'block', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: '#FFB300' }}>⚡ Be the one to confirm this store</span>
+                                <span style={{ display: 'block', fontSize: 11, color: 'var(--fg-40)', marginTop: 2 }}>
+                                  No one's checked in over {Math.floor(daysSinceReport!)} days
+                                </span>
+                              </button>
                             )}
                           </>
                         ) : (
