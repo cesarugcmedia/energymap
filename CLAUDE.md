@@ -40,8 +40,7 @@ All routing uses Next.js App Router. `src/middleware.ts` optionally gates the en
 
 Key pages:
 - `/` — Main map experience (the core feature). Has a Map View / List View toggle in the header — List View is the filterable/searchable store list (formerly the separate `/stores` route, which now just redirects here)
-- `/leaderboard` — Rankings via Supabase RPC
-- `/community` — Social feed: text posts optionally tagged to a store and/or a photo, likes, comments, follow system with a Following filter, Trending/Recent/Following sort, trending-stores widget
+- `/community` — Social feed **and** rankings, merged into one tab via a Feed / Leaderboard sub-toggle under the header (formerly the separate `/leaderboard` route, which now just redirects here with `?view=leaderboard` — same pattern as the `/stores` merge). Feed: text posts optionally tagged to a store and/or a photo, likes, comments, follow system with a Following filter, Trending/Recent/Following sort, trending-stores widget. Leaderboard: rankings via the `get_leaderboard` Supabase RPC, fetched lazily only once that sub-tab is opened.
 - `/submit` — Stock report submission
 - `/add-store` — Store submission form
 - `/account` — Profile, badge, stats, subscription management
