@@ -58,6 +58,7 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
   const [loading, setLoading] = useState(true)
+  const [highlightPostId, setHighlightPostId] = useState<string | null>(null)
   const [filterMode, setFilterMode] = useState<FilterMode>('trending')
   const [topWeeklyIds, setTopWeeklyIds] = useState<Set<string>>(new Set())
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
@@ -160,6 +161,22 @@ export default function CommunityPage() {
     setLoading(false)
   }
 
+  // Best-effort deep link for shared posts (?post=<id>) — scrolls to and
+  // briefly highlights the post if it's within the initial fetch. Silently
+  // does nothing if the post is older than POST_LIMIT; still lands the
+  // visitor on the right page either way.
+  useEffect(() => {
+    if (posts.length === 0) return
+    const postId = new URLSearchParams(window.location.search).get('post')
+    if (!postId || !posts.some((p) => p.id === postId)) return
+    setHighlightPostId(postId)
+    requestAnimationFrame(() => {
+      document.getElementById(`post-${postId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+    const timer = setTimeout(() => setHighlightPostId(null), 3000)
+    return () => clearTimeout(timer)
+  }, [posts])
+
   useEffect(() => {
     const q = storeQuery.trim()
     if (q.length < 2) { setStoreResults([]); return }
@@ -244,6 +261,25 @@ export default function CommunityPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ post_id: post.id, liked: nextLiked }),
     }).catch(() => {})
+  }
+
+  async function sharePost(post: Post) {
+    const url = `${window.location.origin}/community?post=${post.id}`
+    const text = `${post.username} on AmpedMap: ${post.body}`.slice(0, 200)
+    if (navigator.share) {
+      try {
+        await navigator.share({ text, url })
+      } catch {
+        // User cancelled the share sheet — not an error, nothing to do.
+      }
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      showToast('Link copied!')
+    } catch {
+      showToast('Could not copy link.')
+    }
   }
 
   async function toggleFollow(targetUserId: string) {
@@ -484,7 +520,17 @@ export default function CommunityPage() {
               const isFollowing = followingIds.has(post.user_id)
 
               return (
-                <div key={post.id} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 16, padding: '13px 14px' }}>
+                <div
+                  key={post.id}
+                  id={`post-${post.id}`}
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    border: `1px solid ${post.id === highlightPostId ? '#C9F400' : 'rgba(201,244,0,0.12)'}`,
+                    boxShadow: post.id === highlightPostId ? '0 0 0 2px rgba(201,244,0,0.25)' : 'none',
+                    borderRadius: 16, padding: '13px 14px',
+                    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9 }}>
                     <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid rgba(201,244,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>{post.username[0]?.toUpperCase()}</span>
@@ -549,6 +595,14 @@ export default function CommunityPage() {
                     >
                       <span style={{ fontSize: 12 }}>💬</span>
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{postComments.length}</span>
+                    </button>
+                    <button
+                      className="action-btn"
+                      onClick={() => sharePost(post)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: '#7A8F80' }}
+                    >
+                      <span style={{ fontSize: 12 }}>↗</span>
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>Share</span>
                     </button>
                   </div>
 
