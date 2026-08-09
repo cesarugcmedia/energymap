@@ -501,53 +501,90 @@ function DrinksContent() {
                   <span style={{ fontSize: 10, color: 'var(--fg-30)' }}>{Object.keys(storeFlavorsGrouped).length} brand{Object.keys(storeFlavorsGrouped).length !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.25)', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {Object.entries(storeFlavorsGrouped).map(([brand, brandDrinks], i) => (
-                    <div key={brand}>
-                      {i > 0 && <div style={{ height: 1, backgroundColor: 'var(--fg-06)', margin: '2px 0 10px' }} />}
-                      <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {brand} <span style={{ fontSize: 10, color: 'var(--fg-30)', fontWeight: 600 }}>{brandDrinks.length} flavor{brandDrinks.length !== 1 ? 's' : ''}</span>
-                      </p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {brandDrinks.map((drink) => {
-                          const report = storeReports[drink.id]
-                          const dot = freshnessDot(report?.reported_at)
-                          const selected = selections[drink.id]
-                          return (
-                            <div key={drink.id} style={{ backgroundColor: 'var(--fg-03)', border: '1px solid var(--fg-08)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: DOT_COLOR[dot], flexShrink: 0 }} />
-                                <div style={{ minWidth: 0 }}>
-                                  <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{drink.flavor ?? drink.name}</p>
-                                  <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg-30)' }}>
-                                    {report ? `${dot === 'fresh' ? 'Fresh' : 'Stale'} · ${timeAgo(report.reported_at)}` : 'No reports yet'}
-                                  </p>
+                {Object.entries(storeFlavorsGrouped).map(([brand, brandDrinks]) => {
+                  const expanded = expandedBrands.has(brand)
+                  const brandSelections = brandDrinks.filter((d) => selections[d.id])
+                  const hasBrandSelection = brandSelections.length > 0
+
+                  return (
+                    <div
+                      key={brand}
+                      style={{
+                        borderRadius: 16, overflow: 'hidden',
+                        backgroundColor: 'var(--surface)',
+                        border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.25)'}`,
+                        boxShadow: hasBrandSelection
+                          ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
+                          : 'inset 3px 0 0 rgba(201,244,0,0.3), 0 0 8px rgba(201,244,0,0.06)',
+                      }}
+                    >
+                      <button
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 16, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                        onClick={() => toggleBrand(brand)}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
+                            {hasBrandSelection
+                              ? `${brandSelections.length} of ${brandDrinks.length} reported`
+                              : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
+                          </p>
+                        </div>
+                        {hasBrandSelection && (
+                          <div style={{
+                            width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                            backgroundColor: '#C9F400',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
+                          </div>
+                        )}
+                        <span style={{ color: 'var(--fg-30)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
+                      </button>
+
+                      {expanded && (
+                        <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ height: 1, marginBottom: 4, backgroundColor: 'var(--fg-06)' }} />
+                          {brandDrinks.map((drink) => {
+                            const report = storeReports[drink.id]
+                            const dot = freshnessDot(report?.reported_at)
+                            const selected = selections[drink.id]
+                            return (
+                              <div key={drink.id} style={{ backgroundColor: 'var(--fg-03)', border: '1px solid var(--fg-08)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                  <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: DOT_COLOR[dot], flexShrink: 0 }} />
+                                  <div style={{ minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{drink.flavor ?? drink.name}</p>
+                                    <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg-30)' }}>
+                                      {report ? `${dot === 'fresh' ? 'Fresh' : 'Stale'} · ${timeAgo(report.reported_at)}` : 'No reports yet'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 5 }}>
+                                  {QUANTITY_OPTIONS.slice().reverse().map((opt) => (
+                                    <button
+                                      key={opt.value}
+                                      onClick={() => selectQuantityDirect(drink.id, opt.value)}
+                                      style={{
+                                        flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 9, fontSize: 10, fontWeight: 800,
+                                        border: `1px solid ${selected === opt.value ? opt.border : 'var(--fg-08)'}`,
+                                        backgroundColor: selected === opt.value ? opt.bg : 'var(--bg)',
+                                        color: selected === opt.value ? opt.color : 'var(--fg-40)',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      {opt.label.toUpperCase()}
+                                    </button>
+                                  ))}
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', gap: 5 }}>
-                                {QUANTITY_OPTIONS.slice().reverse().map((opt) => (
-                                  <button
-                                    key={opt.value}
-                                    onClick={() => selectQuantityDirect(drink.id, opt.value)}
-                                    style={{
-                                      flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 9, fontSize: 10, fontWeight: 800,
-                                      border: `1px solid ${selected === opt.value ? opt.border : 'var(--fg-08)'}`,
-                                      backgroundColor: selected === opt.value ? opt.bg : 'var(--bg)',
-                                      color: selected === opt.value ? opt.color : 'var(--fg-40)',
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    {opt.label.toUpperCase()}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
               </>
             )}
 

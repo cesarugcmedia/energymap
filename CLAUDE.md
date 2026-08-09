@@ -225,7 +225,7 @@ Each drink card shows ✓/✗ community confirmation buttons. Votes are stored i
 ### Report Stock Flow
 
 `/submit/drinks` splits the catalog into two sections rather than one flat brand list. A brand counts as "this store's" once any of its flavors has ever been reported there (`latest_stock` for that `store_id`) — every other catalog flavor of that brand joins it too, since a store carrying a brand plausibly carries flavors nobody's specifically reported yet:
-- **"This Store's Flavors"** — pre-expanded, quick-tap FULL/MED/LOW/OUT buttons directly on each row (no drill-down picker). Each row shows a freshness dot (lime < 12h, amber ≥ 12h, gray if never reported) and a "Fresh · Xh ago" / "No reports yet" label.
+- **"This Store's Flavors"** — collapsible per brand (tap the brand header to expand/collapse, same `expandedBrands`/`toggleBrand` state as "Add a brand not listed" below), so a store with many known brands doesn't dump every flavor on screen at once. Once expanded, each flavor row has quick-tap FULL/MED/LOW/OUT buttons directly on it (no drill-down picker), a freshness dot (lime < 12h, amber ≥ 12h, gray if never reported), and a "Fresh · Xh ago" / "No reports yet" label.
 - **"Add a brand not listed"** — every other brand, collapsed by default, using the original tap-to-expand-then-tap-a-flavor-to-open-a-picker flow, for genuinely new additions only.
 - Searching bypasses this split entirely and falls back to a single flat brand-grouped list (the original full-catalog behavior) across all matches, store-known or not.
 

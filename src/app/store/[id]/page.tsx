@@ -830,7 +830,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0 ml-2">
                                     {!isKrogerOnly && (
-                                      <div className="px-2.5 py-1 rounded-full" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
+                                      <div className="px-2.5 py-1.5 rounded-[9px]" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
                                         <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
                                       </div>
                                     )}
