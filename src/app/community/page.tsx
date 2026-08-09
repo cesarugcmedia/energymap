@@ -63,6 +63,7 @@ export default function CommunityPage() {
   const [topWeeklyIds, setTopWeeklyIds] = useState<Set<string>>(new Set())
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
 
+  const [composerExpanded, setComposerExpanded] = useState(false)
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
   const [storeQuery, setStoreQuery] = useState('')
@@ -243,6 +244,7 @@ export default function CommunityPage() {
     setSelectedStore(null)
     setStoreQuery('')
     clearPhoto()
+    setComposerExpanded(false)
     showToast('Posted!')
     await fetchPosts()
     setPosting(false)
@@ -413,12 +415,27 @@ export default function CommunityPage() {
         </div>
 
         {/* Composer */}
+        {!composerExpanded ? (
+          <button
+            onClick={() => setComposerExpanded(true)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 16, padding: '10px 12px', marginBottom: 18, cursor: 'pointer', textAlign: 'left' }}
+          >
+            <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)' }}>{profile?.username?.[0]?.toUpperCase() ?? 'U'}</span>
+            </div>
+            <span style={{ flex: 1, fontSize: 12, color: '#7A8F80' }}>Share a find, tip, or update...</span>
+            <span style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, backgroundColor: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Post
+            </span>
+          </button>
+        ) : (
         <div style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 16, padding: 14, marginBottom: 18 }}>
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, MAX_BODY))}
             placeholder="Share a find, tip, or update..."
             rows={3}
+            autoFocus
             style={{
               width: '100%', resize: 'none',
               backgroundColor: 'var(--bg)',
@@ -484,6 +501,14 @@ export default function CommunityPage() {
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 11, color: draft.length >= MAX_BODY ? '#FF4545' : '#4A5F50' }}>{draft.length}/{MAX_BODY}</span>
+              {!posting && (
+                <button
+                  onClick={() => setComposerExpanded(false)}
+                  style={{ background: 'none', border: 'none', color: '#7A8F80', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '9px 4px' }}
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 className="action-btn"
                 onClick={submitPost}
@@ -495,6 +520,7 @@ export default function CommunityPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Feed */}
         {loading ? (
