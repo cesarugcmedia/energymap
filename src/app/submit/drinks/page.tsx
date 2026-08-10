@@ -70,9 +70,16 @@ function DrinksContent() {
   const [selections, setSelections] = useState<Record<string, Quantity>>({})
   const [submitting, setSubmitting] = useState(false)
   const [limitError, setLimitError] = useState<string | null>(null)
-  const [distanceM, setDistanceM] = useState<number | null>(null)
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [storeCoords, setStoreCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationChecking, setLocationChecking] = useState(true)
+  // True once we've decided not to auto-request GPS — permission was never
+  // granted, so a user who doesn't want to share location never gets an
+  // unwanted browser prompt just for opening this page. They can still tap
+  // to verify if they change their mind; skipping is not a blocker either
+  // way, since the server-side geofence check is skipped without GPS.
+  const [locationSkipped, setLocationSkipped] = useState(false)
+  const distanceM = gpsCoords && storeCoords ? getDistanceMeters(gpsCoords.lat, gpsCoords.lng, storeCoords.lat, storeCoords.lng) : null
 
   useEffect(() => {
     supabase
@@ -102,32 +109,53 @@ function DrinksContent() {
       })
   }, [storeId])
 
-  useEffect(() => {
-    if (!storeId) { setLocationChecking(false); return }
+  function checkLocation() {
+    if (!navigator.geolocation) { setLocationChecking(false); setLocationSkipped(true); return }
+    setLocationChecking(true)
+    setLocationSkipped(false)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setLocationChecking(false)
+      },
+      () => {
+        setLocationChecking(false)
+        setLocationSkipped(true)
+      },
+      { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+    )
+  }
 
-    const storePromise = supabase
+  useEffect(() => {
+    if (!storeId) return
+    supabase
       .from('stores')
       .select('lat, lng')
       .eq('id', storeId)
       .single()
-      .then(({ data }) => data)
+      .then(({ data }) => setStoreCoords(data ?? null))
+  }, [storeId])
 
-    const gpsPromise = new Promise<{ lat: number; lng: number } | null>((resolve) => {
-      if (!navigator.geolocation) { resolve(null); return }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve(null),
-        { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
-      )
-    })
-
-    Promise.all([storePromise, gpsPromise]).then(([store, gps]) => {
-      if (gps) setGpsCoords(gps)
-      if (store && gps) {
-        setDistanceM(getDistanceMeters(gps.lat, gps.lng, store.lat, store.lng))
+  useEffect(() => {
+    if (!storeId) { setLocationChecking(false); return }
+    // Only auto-request GPS if permission is already granted (same pattern
+    // as useLocation.ts on the main map) — otherwise wait for an explicit
+    // tap, so opening this page never surprises someone with a permission
+    // prompt they didn't ask for.
+    (async () => {
+      if (!navigator.geolocation) { setLocationChecking(false); setLocationSkipped(true); return }
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        if (result.state === 'granted') {
+          checkLocation()
+        } else {
+          setLocationChecking(false)
+          setLocationSkipped(true)
+        }
+      } catch {
+        checkLocation()
       }
-      setLocationChecking(false)
-    })
+    })()
   }, [storeId])
 
   function toggleBrand(brand: string) {
@@ -764,6 +792,16 @@ function DrinksContent() {
               <p style={{ fontSize: 12, color: '#C9F400', textAlign: 'center', marginBottom: 10 }}>
                 📍 You're at the store — good to go
               </p>
+            ) : locationSkipped && !profile?.is_admin ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                <p style={{ fontSize: 11, color: 'var(--fg-35)' }}>Reporting without location — that's okay, it still counts.</p>
+                <button
+                  onClick={checkLocation}
+                  style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                >
+                  Verify my location (optional)
+                </button>
+              </div>
             ) : null}
 
             {limitError && (

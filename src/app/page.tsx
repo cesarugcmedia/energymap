@@ -364,9 +364,9 @@ export default function MapPage() {
       <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5">
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
-          <p className="text-xl font-black text-white mb-2">Enable Location</p>
+          <p className="text-xl font-black text-white mb-2">Find Stores Near You</p>
           <p className="text-sm text-white/45 leading-relaxed">
-            Amped Map uses your location to show nearby stores. Tap below to get started.
+            Share your location for instant results — or search by ZIP code below if you'd rather not.
           </p>
         </div>
         <button
@@ -388,11 +388,11 @@ export default function MapPage() {
         <span style={{ fontSize: 48 }}>📍</span>
         <div>
           <p className="text-xl font-black text-white mb-2">
-            {isPermissionDenied ? 'Location Access Needed' : 'Unable to Get Location'}
+            {isPermissionDenied ? 'No Location? No Problem' : 'Unable to Get Location'}
           </p>
           <p className="text-sm text-white/45 leading-relaxed">
             {isPermissionDenied
-              ? 'Amped Map uses your location to show nearby stores. Please allow location access to continue.'
+              ? "That's okay — search by ZIP code below, or enable location anytime for automatic results."
               : 'Your location permission is set to allow, but we couldn\'t get a fix. Make sure your device\'s location services are on, then try again.'}
           </p>
         </div>

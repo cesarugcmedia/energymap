@@ -243,6 +243,8 @@ Stock report submission (`/submit/drinks`) posts to `/api/stock/report`, which e
 - **25 reports/day limit** — applies to both `free` and `tracker` tiers; only admins are unlimited.
 - **30-minute same-drink dedup** — applies to `free` tier only; `tracker`/admin can re-report the same drink at the same store without waiting.
 
+`/submit/drinks` only auto-requests GPS if the Permissions API reports it's already `granted` (same pattern as `useLocation.ts`) — a user who hasn't decided yet, or already denied, never gets a surprise permission prompt just for opening this page. When skipped, the footer shows a reassuring "Reporting without location — that's okay, it still counts" line with an optional "Verify my location" link that triggers the request on tap. This is deliberately consistent with the server behavior above: no GPS was ever a silent allow, not a block — the client now just stops pushing for it upfront too.
+
 A submission where every pick was deduped returns `{ submitted: 0 }`; the client shows an "already reported" message rather than the success screen in that case.
 
 ### Location (iOS Safari)
