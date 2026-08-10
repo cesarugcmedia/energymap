@@ -111,7 +111,6 @@ function StoreDetailContent({ id }: { id: string }) {
   const params = useSearchParams()
   const name = params.get('name') ?? ''
   const { user, profile } = useAuth()
-  const isHunterPlus = profile?.is_admin || profile?.tier === 'tracker'
   const isTracker = profile?.is_admin || profile?.tier === 'tracker'
 
   const [stock, setStock] = useState<any[]>([])
@@ -215,11 +214,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   // Active bell → instant unfollow. Inactive bell → open the scope sheet,
   // since following needs a scope decision but unfollowing doesn't.
-  function toggleDrinkAlert(drinkId: string) {
+  async function toggleDrinkAlert(drinkId: string) {
     if (!user) { showToast('Sign in to set alerts'); return }
     if (drinkAlerts.has(drinkId)) {
-      supabase.from('drink_alerts').delete().eq('user_id', user.id).eq('drink_id', drinkId).then(() => {})
       setDrinkAlerts((prev) => { const n = new Set(prev); n.delete(drinkId); return n })
+      const { error } = await supabase.from('drink_alerts').delete().eq('user_id', user.id).eq('drink_id', drinkId)
+      if (error) {
+        setDrinkAlerts((prev) => new Set(prev).add(drinkId))
+        showToast('Could not remove alert — try again.')
+        return
+      }
       showToast('Alert removed')
     } else {
       setAlertScope('store')
@@ -248,6 +252,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       setDrinkAlerts((prev) => new Set(prev).add(alertSheetDrinkId))
       setAlertSheetDrinkId(null)
       showToast("You'll be notified when it's back")
+    } else {
+      showToast('Could not save alert — try again.')
     }
   }
 
@@ -339,17 +345,26 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   async function handleConfirm(drinkId: string, vote: boolean) {
     if (!user) { showToast('Sign in to confirm stock'); return }
-    const current = confirmations[drinkId] ?? { yes: 0, no: 0, userVote: null }
-    const newVote = current.userVote === vote ? null : vote
-    let yes = current.yes - (current.userVote === true ? 1 : 0) + (newVote === true ? 1 : 0)
-    let no  = current.no  - (current.userVote === false ? 1 : 0) + (newVote === false ? 1 : 0)
+    const previous = confirmations[drinkId] ?? { yes: 0, no: 0, userVote: null }
+    const newVote = previous.userVote === vote ? null : vote
+    const yes = previous.yes - (previous.userVote === true ? 1 : 0) + (newVote === true ? 1 : 0)
+    const no  = previous.no  - (previous.userVote === false ? 1 : 0) + (newVote === false ? 1 : 0)
     setConfirmations(prev => ({ ...prev, [drinkId]: { yes, no, userVote: newVote } }))
-    const { data: { session } } = await supabase.auth.getSession()
-    await fetch('/api/stock/confirm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
-      body: JSON.stringify({ store_id: id, drink_id: drinkId, confirmed: newVote }),
-    })
+    const rollback = () => {
+      setConfirmations(prev => ({ ...prev, [drinkId]: previous }))
+      showToast('Could not save your vote — try again.')
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/stock/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ store_id: id, drink_id: drinkId, confirmed: newVote }),
+      })
+      if (!res.ok) rollback()
+    } catch {
+      rollback()
+    }
   }
 
   function updateEntry(id: string, field: 'brand' | 'flavor' | 'caffeine_mg', value: string) {
@@ -538,7 +553,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               </p>
             )}
           </div>
-          {staleColor && latestReport && isHunterPlus && (
+          {staleColor && latestReport && isTracker && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
               padding: '4px 10px', borderRadius: 999,
@@ -596,7 +611,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               {store && (
                 <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--fg-40)' }}>{store.address}</p>
               )}
-              {staleColor && latestReport && isHunterPlus && (
+              {staleColor && latestReport && isTracker && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 7 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: staleColor }} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: staleColor }}>
@@ -782,7 +797,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       {isKrogerOnly ? (
                                         <p className="text-xs font-semibold" style={{ color: freshColor }}>No reports yet</p>
                                       ) : (
-                                        <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isHunterPlus ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
+                                        <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
                                       )}
                                       {item.drink?.caffeine_mg && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
@@ -1019,7 +1034,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       onClick={submitAddDrink}
                     >
                       {drinkSubmitting
-                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
                         : `Submit ${drinkEntries.filter((e) => e.brand.trim() && e.flavor.trim()).length > 1 ? `${drinkEntries.filter((e) => e.brand.trim() && e.flavor.trim()).length} Drinks` : 'Drink'}`}
                     </button>
                   </div>
@@ -1159,7 +1174,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       onClick={submitFlag}
                     >
                       {flagSubmitting
-                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                         : 'Submit Flag'}
                     </button>
                   </div>

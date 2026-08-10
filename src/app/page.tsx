@@ -102,7 +102,7 @@ export default function MapPage() {
   const lat = manualLocation?.lat ?? location?.coords.latitude ?? 0
   const lng = manualLocation?.lng ?? location?.coords.longitude ?? 0
   const tierKey = !user ? 'anon' : isTracker ? 'tracker' : 'free'
-  const { stores, nearbyCount, loading: storesLoading, refetch } = useNearbyStores(lat, lng, tierKey)
+  const { stores, nearbyCount, loading: storesLoading, error: storesError, refetch } = useNearbyStores(lat, lng, tierKey)
 
   async function searchByZip() {
     const zip = zipInput.trim()
@@ -885,6 +885,13 @@ export default function MapPage() {
               {storesLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
                   <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                </div>
+              ) : storesError && stores.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
+                  <span style={{ fontSize: 40 }}>⚠️</span>
+                  <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Couldn't load stores</p>
+                  <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>Check your connection and try again.</p>
+                  <button onClick={() => refetch()} style={{ marginTop: 6, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 12, backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer' }}>Retry</button>
                 </div>
               ) : sorted.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>

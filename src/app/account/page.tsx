@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
-import { StoreTypeIcon, CheckIcon, BellIcon, PinIcon } from '@/components/Icons'
+import { StoreTypeIcon, CheckIcon, BellIcon, PinIcon, HeartIcon, CloseIcon } from '@/components/Icons'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -625,7 +625,8 @@ function AccountPageInner() {
       await supabase.auth.signOut()
       window.location.href = '/'
     } else {
-      alert(json.error ?? 'Failed to delete account. Please try again.')
+      console.error('deleteAccount failed:', json.error)
+      showToast('Failed to delete account. Please try again.')
     }
   }
 
@@ -705,6 +706,8 @@ function selectAndContinue(tierId: TierId) {
 
   // ── LOGGED IN ──────────────────────────────────────────────
   if (user && profile) {
+    const isTracker = profile.is_admin || profile.tier === 'tracker'
+
     // Compute earned badges
     const earned = new Set<string>()
     const memberDays = Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
@@ -1011,15 +1014,27 @@ function selectAndContinue(tierId: TierId) {
             {activeTab === 'saved' && (
               <div style={{ padding: '0 20px' }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
-                  Saved Stores · {favorites.length}
+                  Saved Stores{isTracker ? ` · ${favorites.length}` : ''}
                 </p>
-                {favoritesLoading ? (
+                {!isTracker ? (
+                  <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
+                    <HeartIcon size={32} color="#8b9284" />
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Tracker Feature</p>
+                    <p style={{ fontSize: 12, color: '#4A5F50' }}>Save and organize your favorite stores with the Tracker plan.</p>
+                    <button
+                      onClick={() => setActiveTab('stats')}
+                      style={{ marginTop: 6, padding: '9px 20px', borderRadius: 10, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    >
+                      Upgrade to Tracker
+                    </button>
+                  </div>
+                ) : favoritesLoading ? (
                   <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}>
                     <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                   </div>
                 ) : favorites.length === 0 ? (
                   <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                    <span style={{ fontSize: 32 }}>🤍</span>
+                    <HeartIcon size={32} color="#8b9284" />
                     <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No favorites yet</p>
                     <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the heart on any store page to save it here.</p>
                   </div>
@@ -1037,7 +1052,7 @@ function selectAndContinue(tierId: TierId) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                             <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif" }}>View</a>
                             <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
-                              {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
+                              {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={10} color="#FF4545" />}
                             </button>
                           </div>
                         </div>

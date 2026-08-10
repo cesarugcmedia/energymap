@@ -79,10 +79,12 @@ Admin and webhook operations use the service role client (bypasses RLS). Regular
 | Tier | Features |
 |---|---|
 | `free` | 5-mile map radius, view stock, limited submissions |
-| `tracker` | Unlimited radius, advanced analytics, badge system |
+| `tracker` | Unlimited radius, advanced analytics, badge system, favorited/saved stores |
 | `admin` | All tracker features + moderation |
 
 Tier upgrades go through Stripe. The webhook at `/api/stripe/webhook` handles fulfillment by updating `profiles.tier` and `profiles.stripe_customer_id`.
+
+Favorites (the heart/save-a-store list, `favorites` table) is gated behind `tracker` consistently in both places it's surfaced — the dedicated `/lists` page and the Saved tab on `/account` — both showing the same "Tracker Feature" upsell card for `free` users. (`/account`'s Saved tab used to render favorites ungated to any logged-in user regardless of tier, a drift from `/lists`' paywall; fixed so the two entry points agree.) Flavor Alerts, which share the same Saved tab, are deliberately **not** tier-gated — see "Flavor Alerts" below.
 
 ### Maps
 

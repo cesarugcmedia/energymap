@@ -253,16 +253,11 @@ export default function AdminPage() {
       .select('id')
 
     if (error || !data || data.length === 0) {
-      window.alert(
-        `Could not update verified status — RLS is blocking this.\n\n` +
-        `Run this in Supabase SQL Editor:\n\n` +
-        `CREATE POLICY "Admins can update any profile"\n` +
-        `ON profiles FOR UPDATE TO authenticated\n` +
-        `USING (\n` +
-        `  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)\n` +
-        `);\n\n` +
-        `Error: ${error?.message ?? 'No rows updated (RLS silent block)'}`
+      console.error(
+        'toggleVerified failed — likely missing an UPDATE RLS policy on profiles for admins:',
+        error?.message ?? 'No rows updated (RLS silent block)'
       )
+      showToast('Could not update verified status — check admin permissions.')
       return
     }
 
@@ -274,7 +269,7 @@ export default function AdminPage() {
     if (deletingUserId) return
     setDeletingUserId(userId)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { window.alert('Session expired. Please sign in again.'); return }
+    if (!session) { showToast('Session expired. Please sign in again.'); setDeletingUserId(null); return }
     const res = await fetch('/api/admin/delete-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
@@ -284,7 +279,8 @@ export default function AdminPage() {
       setUsers((prev) => prev.filter((u) => u.id !== userId))
     } else {
       const { error } = await res.json()
-      window.alert(`Failed to delete user: ${error}`)
+      console.error('deleteUser failed:', error)
+      showToast('Failed to delete user.')
     }
     setDeletingUserId(null)
   }
@@ -346,7 +342,8 @@ export default function AdminPage() {
     if (!window.confirm('Permanently delete this location? This cannot be undone.')) return
     const { error } = await supabase.from('stores').delete().eq('id', id)
     if (error) {
-      window.alert('Could not delete location. Check RLS policies in Supabase.')
+      console.error('deleteLocation failed:', error.message)
+      showToast('Could not delete location — check admin permissions.')
       return
     }
     setLocations((prev) => prev.filter((s) => s.id !== id))
@@ -355,13 +352,13 @@ export default function AdminPage() {
 
   async function saveEdit() {
     if (!editName.trim()) {
-      window.alert('Store name is required.')
+      showToast('Store name is required.')
       return
     }
     const lat = parseFloat(editLat)
     const lng = parseFloat(editLng)
     if (isNaN(lat) || isNaN(lng)) {
-      window.alert('Latitude and longitude must be valid numbers.')
+      showToast('Latitude and longitude must be valid numbers.')
       return
     }
     setSaving(true)
@@ -376,7 +373,11 @@ export default function AdminPage() {
     setSaving(false)
 
     if (error || !data || data.length === 0) {
-      window.alert('Could not save changes — RLS may be blocking this.\n\nGo to Supabase → Authentication → Policies → stores and ensure there is an UPDATE policy for authenticated users.')
+      console.error(
+        'saveEdit failed — likely missing an UPDATE RLS policy on stores for admins:',
+        error?.message ?? 'No rows updated (RLS silent block)'
+      )
+      showToast('Could not save changes — check admin permissions.')
       return
     }
 
@@ -396,7 +397,7 @@ export default function AdminPage() {
 
   async function addDrink() {
     if (!newBrand.trim() || !newName.trim()) {
-      window.alert('Brand and name are required.')
+      showToast('Brand and name are required.')
       return
     }
     setAddingDrink(true)
@@ -419,7 +420,8 @@ export default function AdminPage() {
       .insert({ brand: newBrand.trim(), name: newName.trim(), flavor: newFlavor.trim() || null })
       .select()
     if (error || !data) {
-      window.alert('Could not add drink. Check RLS policies on the drinks table.')
+      console.error('addDrink failed:', error?.message)
+      showToast('Could not add drink — check admin permissions.')
       setAddingDrink(false)
       return
     }
@@ -434,7 +436,7 @@ export default function AdminPage() {
   async function deleteDrink(id: string) {
     if (!window.confirm('Delete this drink? This will also remove all stock reports for it.')) return
     const { error } = await supabase.from('drinks').delete().eq('id', id)
-    if (error) { window.alert('Could not delete drink. Check RLS policies.'); return }
+    if (error) { console.error('deleteDrink failed:', error.message); showToast('Could not delete drink — check admin permissions.'); return }
     setDrinks((prev) => prev.filter((d) => d.id !== id))
   }
 
@@ -613,12 +615,16 @@ export default function AdminPage() {
   }
 
   async function resolveFlag(flagId: string) {
+    if (!window.confirm('Mark this flag as resolved?')) return
     setResolvingFlag((prev) => new Set(prev).add(flagId))
     const { error } = await supabase.from('store_flags').update({ resolved: true }).eq('id', flagId)
     if (!error) {
       setFlags((prev) => prev.filter((f) => f.id !== flagId))
       setFlagsCount((c) => Math.max(0, c - 1))
       showToast('Flag resolved')
+    } else {
+      console.error('resolveFlag failed:', error.message)
+      showToast('Could not resolve flag — check admin permissions.')
     }
     setResolvingFlag((prev) => { const next = new Set(prev); next.delete(flagId); return next })
   }
@@ -645,7 +651,7 @@ export default function AdminPage() {
     if (res.ok) {
       setWaitlist((prev) => prev.filter((w) => w.email !== email))
     } else {
-      window.alert('Failed to remove entry.')
+      showToast('Failed to remove entry.')
     }
     setDeletingWaitlist((prev) => { const next = new Set(prev); next.delete(email); return next })
   }
@@ -660,7 +666,8 @@ export default function AdminPage() {
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      window.alert(`Failed to send invite: ${body.error ?? res.status}`)
+      console.error('inviteUser failed:', body.error ?? res.status)
+      showToast('Failed to send invite.')
     } else {
       setWaitlist((prev) =>
         prev.map((w) => w.email === email ? { ...w, invited_at: new Date().toISOString() } : w)
@@ -1357,7 +1364,7 @@ export default function AdminPage() {
                   className="w-full rounded-xl p-3 font-bold text-white text-sm flex items-center justify-center"
                   style={{ backgroundColor: addingDrink ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
                 >
-                  {addingDrink ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Add Drink'}
+                  {addingDrink ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : 'Add Drink'}
                 </button>
               </div>
             )}
@@ -1774,7 +1781,7 @@ export default function AdminPage() {
                 disabled={saving}
               >
                 {saving ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
                 ) : (
                   'Save Changes'
                 )}

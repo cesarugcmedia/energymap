@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
           style={{ backgroundColor: loading ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-black/40 border-t-black rounded-full animate-spin" />
           ) : (
             'Sign In →'
           )}

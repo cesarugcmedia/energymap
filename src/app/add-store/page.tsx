@@ -273,7 +273,7 @@ export default function AddStorePage() {
               />
             </div>
             <button
-              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: 'var(--text)', fontSize: 13, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: '#222B33', fontFamily: "'Barlow Condensed', sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase" }}
+              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: 'var(--text)', fontSize: 13, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: 'var(--surface)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
               onClick={applyManualCoords}
             >
               Use These Coordinates

@@ -25,6 +25,7 @@ export function useNearbyStores(lat: number, lng: number, tierKey: string) {
   const [stores, setStores] = useState<Store[]>(cache.get(key)?.stores ?? [])
   const [nearbyCount, setNearbyCount] = useState<number>(cache.get(key)?.nearbyCount ?? 0)
   const [loading, setLoading] = useState(!cache.has(key))
+  const [error, setError] = useState(false)
 
   const fetchStores = useCallback(async (force = false) => {
     const now = Date.now()
@@ -33,6 +34,7 @@ export function useNearbyStores(lat: number, lng: number, tierKey: string) {
       setStores(cached.stores)
       setNearbyCount(cached.nearbyCount)
       setLoading(false)
+      setError(false)
       return
     }
     setLoading(true)
@@ -50,8 +52,10 @@ export function useNearbyStores(lat: number, lng: number, tierKey: string) {
       cache.set(key, { stores: loadedStores, nearbyCount: loadedCount, time: Date.now() })
       setStores(loadedStores)
       setNearbyCount(loadedCount)
+      setError(false)
     } catch (err) {
       console.error('Failed to load stores:', err)
+      setError(true)
     }
     setLoading(false)
   }, [lat, lng, key])
@@ -60,5 +64,5 @@ export function useNearbyStores(lat: number, lng: number, tierKey: string) {
     fetchStores()
   }, [fetchStores])
 
-  return { stores, nearbyCount, loading, refetch: () => fetchStores(true) }
+  return { stores, nearbyCount, loading, error, refetch: () => fetchStores(true) }
 }

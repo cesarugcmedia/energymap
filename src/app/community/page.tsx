@@ -81,6 +81,7 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
   const [loading, setLoading] = useState(true)
+  const [postsFetchError, setPostsFetchError] = useState(false)
   const [highlightPostId, setHighlightPostId] = useState<string | null>(null)
   const [mainView, setMainView] = useState<MainView>('feed')
   const [lbEntries, setLbEntries] = useState<any[]>([])
@@ -126,11 +127,19 @@ export default function CommunityPage() {
 
   async function fetchPosts() {
     setLoading(true)
-    const { data: postRows } = await supabase
+    setPostsFetchError(false)
+    const { data: postRows, error: postsError } = await supabase
       .from('community_posts')
       .select('id, user_id, store_id, body, photo_url, created_at')
       .order('created_at', { ascending: false })
       .limit(POST_LIMIT)
+
+    if (postsError) {
+      console.error('fetchPosts failed:', postsError.message)
+      setPostsFetchError(true)
+      setLoading(false)
+      return
+    }
 
     if (!postRows || postRows.length === 0) {
       setPosts([])
@@ -230,14 +239,16 @@ export default function CommunityPage() {
     const q = storeQuery.trim()
     if (q.length < 2) { setStoreResults([]); return }
     let cancelled = false
-    supabase
-      .from('stores')
-      .select('id, name, address')
-      .eq('status', 'approved')
-      .ilike('name', `%${q}%`)
-      .limit(5)
-      .then(({ data }) => { if (!cancelled) setStoreResults(data ?? []) })
-    return () => { cancelled = true }
+    const debounce = setTimeout(() => {
+      supabase
+        .from('stores')
+        .select('id, name, address')
+        .eq('status', 'approved')
+        .ilike('name', `%${q}%`)
+        .limit(5)
+        .then(({ data }) => { if (!cancelled) setStoreResults(data ?? []) })
+    }, 300)
+    return () => { cancelled = true; clearTimeout(debounce) }
   }, [storeQuery])
 
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -304,13 +315,25 @@ export default function CommunityPage() {
       ? { ...p, likedByMe: nextLiked, likeCount: p.likeCount + (nextLiked ? 1 : -1) }
       : p
     ))
+    const rollback = () => {
+      setPosts((prev) => prev.map((p) => p.id === post.id
+        ? { ...p, likedByMe: !nextLiked, likeCount: p.likeCount + (nextLiked ? -1 : 1) }
+        : p
+      ))
+      showToast('Could not update like — try again.')
+    }
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    await fetch('/api/community/like', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ post_id: post.id, liked: nextLiked }),
-    }).catch(() => {})
+    if (!session) { rollback(); return }
+    try {
+      const res = await fetch('/api/community/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ post_id: post.id, liked: nextLiked }),
+      })
+      if (!res.ok) rollback()
+    } catch {
+      rollback()
+    }
   }
 
   async function sharePost(post: Post) {
@@ -339,13 +362,26 @@ export default function CommunityPage() {
       nextFollowing ? next.add(targetUserId) : next.delete(targetUserId)
       return next
     })
+    const rollback = () => {
+      setFollowingIds((prev) => {
+        const next = new Set(prev)
+        nextFollowing ? next.delete(targetUserId) : next.add(targetUserId)
+        return next
+      })
+      showToast('Could not update follow — try again.')
+    }
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    await fetch('/api/community/follow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ user_id: targetUserId, following: nextFollowing }),
-    }).catch(() => {})
+    if (!session) { rollback(); return }
+    try {
+      const res = await fetch('/api/community/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ user_id: targetUserId, following: nextFollowing }),
+      })
+      if (!res.ok) rollback()
+    } catch {
+      rollback()
+    }
   }
 
   function toggleComments(postId: string) {
@@ -591,6 +627,13 @@ export default function CommunityPage() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
             <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
+        ) : postsFetchError ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
+            <span style={{ fontSize: 40 }}>⚠️</span>
+            <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Couldn't load feed</p>
+            <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>Check your connection and try again.</p>
+            <button onClick={() => fetchPosts()} style={{ marginTop: 6, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 12, backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer' }}>Retry</button>
+          </div>
         ) : filtered.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
             <span style={{ fontSize: 40 }}>👥</span>
@@ -802,6 +845,19 @@ export default function CommunityPage() {
                   <span style={{ fontSize: 48 }}>⚠️</span>
                   <p style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Couldn't load leaderboard</p>
                   <p style={{ fontSize: 13, color: '#7A8F80' }}>Check your connection and try again.</p>
+                  <button
+                    onClick={() => {
+                      setLbLoading(true)
+                      setLbFetchError(false)
+                      supabase.rpc('get_leaderboard', { p_timeframe: lbTimeframe }).then(({ data, error }) => {
+                        if (error) { setLbFetchError(true) } else if (data) { setLbEntries(data) }
+                        setLbLoading(false)
+                      })
+                    }}
+                    style={{ marginTop: 6, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 12, backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer' }}
+                  >
+                    Retry
+                  </button>
                 </div>
               ) : lbEntries.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
