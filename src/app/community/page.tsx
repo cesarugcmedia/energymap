@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
+import { PinIcon, CloseIcon, CommentIcon } from '@/components/Icons'
 
 type FilterMode = 'trending' | 'recent' | 'following'
 type MainView = 'feed' | 'leaderboard'
@@ -522,10 +523,10 @@ export default function CommunityPage() {
 
           {selectedStore ? (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '5px 10px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>
-                📍 {selectedStore.name}{selectedStore.address ? ` · ${selectedStore.address}` : ''}
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <PinIcon size={11} color="var(--accent)" /> {selectedStore.name}{selectedStore.address ? ` · ${selectedStore.address}` : ''}
               </span>
-              <button onClick={() => setSelectedStore(null)} style={{ background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 11 }}>✕</button>
+              <button onClick={() => setSelectedStore(null)} style={{ background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', display: 'flex' }}><CloseIcon size={11} color="#4A5F50" /></button>
             </div>
           ) : (
             <div style={{ position: 'relative', marginTop: 8 }}>
@@ -655,7 +656,7 @@ export default function CommunityPage() {
                       onClick={() => router.push(`/store/${post.store_id}?name=${encodeURIComponent(post.storeName!)}`)}
                       style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, marginBottom: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     >
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>📍 {post.storeName}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}><PinIcon size={11} color="var(--accent)" /> {post.storeName}</span>
                       {post.storeAddress && (
                         <span style={{ fontSize: 10, color: '#4A5F50', marginLeft: 15 }}>{post.storeAddress}</span>
                       )}
@@ -682,7 +683,7 @@ export default function CommunityPage() {
                       onClick={() => toggleComments(post.id)}
                       style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: commentsOpen ? 'var(--accent)' : '#7A8F80' }}
                     >
-                      <span style={{ fontSize: 12 }}>💬</span>
+                      <CommentIcon size={12} color={commentsOpen ? 'var(--accent)' : '#7A8F80'} />
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{postComments.length}</span>
                     </button>
                     <button

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Quantity } from '@/lib/types'
+import { LightningIcon } from '@/components/Icons'
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
@@ -151,10 +152,11 @@ function ResultContent() {
               fontSize: 14, fontWeight: 800, color: '#0D1210',
               fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase',
               boxShadow: '0 0 20px rgba(201,244,0,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
             onClick={() => router.replace(`/submit/drinks?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}`)}
           >
-            ⚡ Report More Drinks
+            <LightningIcon size={14} color="#0D1210" /> Report More Drinks
           </button>
           <button
             style={{

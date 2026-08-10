@@ -4,13 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-
-const TYPE_ICON: Record<string, string> = {
-  gas_station: '⛽',
-  convenience: '🏪',
-  grocery: '🛒',
-  other: '📍',
-}
+import { StoreTypeIcon, HeartIcon, CloseIcon } from '@/components/Icons'
 
 export default function FavoritesPage() {
   const router = useRouter()
@@ -57,7 +51,7 @@ export default function FavoritesPage() {
   if (!isTracker) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
-        <span style={{ fontSize: 48, marginBottom: 20 }}>❤️</span>
+        <div style={{ marginBottom: 20 }}><HeartIcon size={48} color="#8b9284" /></div>
         <p style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>Tracker Feature</p>
         <p style={{ fontSize: 14, color: 'var(--fg-40)', lineHeight: 1.6, marginBottom: 28 }}>
           Save and organize your favorite stores with the Tracker plan.
@@ -82,7 +76,7 @@ export default function FavoritesPage() {
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div className="px-5 pb-4">
-          <p className="text-2xl font-black text-white">❤️ Favorites</p>
+          <p className="text-2xl font-black text-white flex items-center gap-2"><HeartIcon size={22} color="#f3f5ee" filled /> Favorites</p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--fg-40)' }}>
             {loading ? '' : `${favorites.length} saved store${favorites.length !== 1 ? 's' : ''}`}
           </p>
@@ -94,7 +88,7 @@ export default function FavoritesPage() {
           </div>
         ) : favorites.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-5 text-center">
-            <span style={{ fontSize: 52 }}>❤️</span>
+            <HeartIcon size={52} color="#8b9284" />
             <p className="text-lg font-bold text-white">No favorites yet</p>
             <p className="text-sm" style={{ color: 'var(--fg-40)' }}>
               Tap the heart on any store to save it here.
@@ -118,7 +112,7 @@ export default function FavoritesPage() {
                   style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
                 >
                   <div className="flex items-center gap-3">
-                    <span style={{ fontSize: 24 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
+                    <StoreTypeIcon type={store?.type} size={22} color="#7A8F80" />
                     <div
                       className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
@@ -142,7 +136,7 @@ export default function FavoritesPage() {
                       >
                         {removing.has(fav.id)
                           ? <div className="w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                          : <span style={{ fontSize: 13, color: '#ef4444' }}>✕</span>}
+                          : <CloseIcon size={13} color="#ef4444" />}
                       </button>
                     </div>
                   </div>

@@ -6,19 +6,13 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { BRAND_COLORS } from '@/components/BrandLogo'
 import Toast from '@/components/Toast'
-
-const TYPE_ICON: Record<string, string> = {
-  gas_station: '⛽',
-  convenience: '🏪',
-  grocery: '🛒',
-  other: '📍',
-}
+import { StoreTypeIcon, SearchIcon, CheckIcon, FlagIcon, PinIcon, ClockIcon, DrinkIcon, UserIcon, ClipboardIcon, GroceryIcon, CloseIcon } from '@/components/Icons'
 
 const TYPE_OPTIONS = [
-  { value: 'gas_station', label: 'Gas Station', icon: '⛽' },
-  { value: 'convenience', label: 'Convenience Store', icon: '🏪' },
-  { value: 'grocery', label: 'Grocery Store', icon: '🛒' },
-  { value: 'other', label: 'Other', icon: '📍' },
+  { value: 'gas_station', label: 'Gas Station' },
+  { value: 'convenience', label: 'Convenience Store' },
+  { value: 'grocery', label: 'Grocery Store' },
+  { value: 'other', label: 'Other' },
 ]
 
 // Full name → USPS abbreviation, for grouping the Locations tab by state.
@@ -767,8 +761,8 @@ export default function AdminPage() {
           <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'var(--fg-35)', letterSpacing: '1.5px' }}>NEEDS ATTENTION</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
             {[
-              { key: 'stores', icon: '🕐', label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
-              { key: 'flags',  icon: '🚩', label: 'Location Flags',  count: flagsCount,   badgeColor: '#FF4545', desc: 'Fix reported issues' },
+              { key: 'stores', icon: <ClockIcon size={26} color="#8b9284" />, label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
+              { key: 'flags',  icon: <FlagIcon size={26} color="#8b9284" />, label: 'Location Flags',  count: flagsCount,   badgeColor: '#FF4545', desc: 'Fix reported issues' },
             ].map(({ key, icon, label, count, badgeColor, desc }) => (
               <button
                 key={key}
@@ -790,7 +784,7 @@ export default function AdminPage() {
                     fontSize: 11, fontWeight: 900, color: 'var(--text)',
                   }}>{count}</div>
                 )}
-                <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
+                <span style={{ display: 'block', marginBottom: 10 }}>{icon}</span>
                 <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{label}</p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
               </button>
@@ -800,11 +794,11 @@ export default function AdminPage() {
           <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MANAGE</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              { key: 'locations', icon: '📍', label: 'Locations',  desc: 'Edit & delete stores' },
-              { key: 'drinks',    icon: '🥤', label: 'Drinks',     desc: 'Add & remove drinks' },
-              { key: 'users',     icon: '👤', label: 'Users',      desc: 'Verify & manage users' },
-              { key: 'waitlist',  icon: '📋', label: 'Waitlist',   desc: 'Invite signups' },
-              { key: 'kroger',    icon: '🛒', label: 'Kroger',     desc: 'Match stores & sync stock' },
+              { key: 'locations', icon: <PinIcon size={26} color="#8b9284" />, label: 'Locations',  desc: 'Edit & delete stores' },
+              { key: 'drinks',    icon: <DrinkIcon size={26} color="#8b9284" />, label: 'Drinks',     desc: 'Add & remove drinks' },
+              { key: 'users',     icon: <UserIcon size={26} color="#8b9284" />, label: 'Users',      desc: 'Verify & manage users' },
+              { key: 'waitlist',  icon: <ClipboardIcon size={26} color="#8b9284" />, label: 'Waitlist',   desc: 'Invite signups' },
+              { key: 'kroger',    icon: <GroceryIcon size={26} color="#8b9284" />, label: 'Kroger',     desc: 'Match stores & sync stock' },
             ].map(({ key, icon, label, desc }) => (
               <button
                 key={key}
@@ -815,7 +809,7 @@ export default function AdminPage() {
                   border: '1.5px solid var(--fg-07)',
                 }}
               >
-                <span style={{ fontSize: 28, display: 'block', marginBottom: 10 }}>{icon}</span>
+                <span style={{ display: 'block', marginBottom: 10 }}>{icon}</span>
                 <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{label}</p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
               </button>
@@ -831,7 +825,7 @@ export default function AdminPage() {
           </div>
         ) : flags.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <span style={{ fontSize: 40 }}>🚩</span>
+            <FlagIcon size={40} color="#8b9284" />
             <p className="text-lg font-bold text-white">No open flags</p>
             <p className="text-sm text-white/40">All location reports have been resolved.</p>
           </div>
@@ -851,7 +845,7 @@ export default function AdminPage() {
                     style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.2)' }}
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <span style={{ fontSize: 22 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
+                      <StoreTypeIcon type={store?.type} size={22} color="#7A8F80" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{store?.name ?? 'Unknown store'}</p>
                         {store?.address && <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>}
@@ -942,7 +936,7 @@ export default function AdminPage() {
               className="rounded-xl px-4 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
               style={{ backgroundColor: krogerImporting || !krogerImportZip.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
             >
-              {krogerImporting ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : '📍 Search & Import'}
+              {krogerImporting ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : <><PinIcon size={14} color="#0D1210" /> Search & Import</>}
             </button>
             {krogerImportResult && (
               <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerImportResult}</p>
@@ -1018,7 +1012,7 @@ export default function AdminPage() {
                                 </div>
                                 {store.kroger_location_id ? (
                                   <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✅ Matched</span>
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}><CheckIcon size={10} color="#60a5fa" /> Matched</span>
                                     <button onClick={() => matchStoreToKroger(store.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
                                   </div>
                                 ) : (
@@ -1154,7 +1148,7 @@ export default function AdminPage() {
                                 </div>
                                 {drink.kroger_upc ? (
                                   <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✅ {drink.kroger_upc}</span>
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}><CheckIcon size={10} color="#60a5fa" /> {drink.kroger_upc}</span>
                                     <button onClick={() => matchDrinkToKroger(drink.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
                                   </div>
                                 ) : (
@@ -1220,7 +1214,7 @@ export default function AdminPage() {
               )
               if (filtered.length === 0) return (
                 <div className="flex flex-col items-center gap-2 mt-10">
-                  <span style={{ fontSize: 36 }}>🔍</span>
+                  <SearchIcon size={36} color="#8b9284" />
                   <p className="text-sm font-bold text-white">No locations found</p>
                 </div>
               )
@@ -1260,7 +1254,7 @@ export default function AdminPage() {
                             className="rounded-2xl p-4 flex items-center gap-3"
                             style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                           >
-                            <span style={{ fontSize: 24 }}>{TYPE_ICON[store.type] ?? '📍'}</span>
+                            <StoreTypeIcon type={store.type} size={24} color="#7A8F80" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-white truncate">{store.name}</p>
                               <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
@@ -1307,7 +1301,7 @@ export default function AdminPage() {
                 className="flex-1 flex items-center gap-2 rounded-xl px-3.5 py-2.5"
                 style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
               >
-                <span className="text-white/30 text-sm">🔍</span>
+                <SearchIcon size={14} color="rgba(255,255,255,0.3)" />
                 <input
                   type="text"
                   placeholder="Search drinks..."
@@ -1315,7 +1309,7 @@ export default function AdminPage() {
                   onChange={(e) => setDrinkSearch(e.target.value)}
                   className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
                 />
-                {drinkSearch && <button onClick={() => setDrinkSearch('')} className="text-white/30 text-xs">✕</button>}
+                {drinkSearch && <button onClick={() => setDrinkSearch('')} className="text-white/30" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.3)" /></button>}
               </div>
               <button
                 onClick={() => setShowAddForm((v) => !v)}
@@ -1432,7 +1426,7 @@ export default function AdminPage() {
         ) : (
           <div className="flex flex-col gap-2.5 px-4 pb-6">
             <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-1" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}>
-              <span className="text-white/30 text-sm">🔍</span>
+              <SearchIcon size={14} color="rgba(255,255,255,0.3)" />
               <input
                 type="text"
                 placeholder="Search users..."
@@ -1440,7 +1434,7 @@ export default function AdminPage() {
                 onChange={(e) => setUserSearch(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
               />
-              {userSearch && <button onClick={() => setUserSearch('')} className="text-white/30 text-xs">✕</button>}
+              {userSearch && <button onClick={() => setUserSearch('')} className="text-white/30" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.3)" /></button>}
             </div>
             {users.filter((u) => u.username?.toLowerCase().includes(userSearch.toLowerCase())).map((u) => (
               <div
@@ -1493,7 +1487,7 @@ export default function AdminPage() {
             ))}
             {users.filter((u) => u.username?.toLowerCase().includes(userSearch.toLowerCase())).length === 0 && (
               <div className="flex flex-col items-center gap-2 mt-8">
-                <span style={{ fontSize: 36 }}>🔍</span>
+                <SearchIcon size={36} color="#8b9284" />
                 <p className="text-sm font-bold text-white">No users found</p>
               </div>
             )}
@@ -1578,7 +1572,7 @@ export default function AdminPage() {
         </div>
       ) : stores.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <span style={{ fontSize: 40 }}>✅</span>
+          <CheckIcon size={40} color="#C9F400" />
           <p className="text-lg font-bold text-white">All caught up!</p>
           <p className="text-sm text-white/40">No pending stores to review.</p>
         </div>
@@ -1592,7 +1586,7 @@ export default function AdminPage() {
             >
               {/* Store info */}
               <div className="flex gap-3 p-3.5">
-                <span style={{ fontSize: 28 }}>{TYPE_ICON[store.type]}</span>
+                <StoreTypeIcon type={store.type} size={28} color="#7A8F80" />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-white">{store.name}</p>
                   <p className="text-xs text-white/40 mt-0.5">{store.address}</p>
@@ -1604,9 +1598,10 @@ export default function AdminPage() {
               </div>
 
               {/* Coords */}
-              <div className="px-3.5 pb-2">
+              <div className="px-3.5 pb-2 flex items-center gap-1">
+                <PinIcon size={11} color="rgba(255,255,255,0.3)" />
                 <p className="text-xs text-white/30">
-                  📍 {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
+                  {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
                 </p>
               </div>
 
@@ -1753,7 +1748,7 @@ export default function AdminPage() {
                   }}
                   onClick={() => setEditType(t.value)}
                 >
-                  <span style={{ fontSize: 16 }}>{t.icon}</span>
+                  <StoreTypeIcon type={t.value} size={16} color={editType === t.value ? '#fff' : 'var(--fg-40)'} />
                   <span
                     className="text-sm font-semibold"
                     style={{ color: editType === t.value ? '#fff' : 'var(--fg-40)' }}

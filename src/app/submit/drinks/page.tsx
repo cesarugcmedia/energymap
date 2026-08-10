@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
+import { SearchIcon, PinIcon, CloseIcon, LightningIcon } from '@/components/Icons'
 
 const MAX_DISTANCE_M = 500
 
@@ -357,7 +358,7 @@ function DrinksContent() {
             border: '1px solid var(--fg-07)',
           }}
         >
-          <span style={{ fontSize: 14, opacity: 0.3 }}>🔍</span>
+          <SearchIcon size={14} color="rgba(255,255,255,0.3)" />
           <input
             type="text"
             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text)' }}
@@ -366,7 +367,7 @@ function DrinksContent() {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch('')} style={{ color: 'var(--fg-30)', fontSize: 12, cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
+            <button onClick={() => setSearch('')} style={{ color: 'var(--fg-30)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex' }}><CloseIcon size={12} color="var(--fg-30)" /></button>
           )}
         </div>
 
@@ -783,14 +784,14 @@ function DrinksContent() {
           >
             {/* Location status */}
             {locationChecking ? (
-              <p style={{ fontSize: 12, color: 'var(--fg-35)', textAlign: 'center', marginBottom: 10 }}>📍 Checking your location…</p>
+              <p style={{ fontSize: 12, color: 'var(--fg-35)', textAlign: 'center', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><PinIcon size={12} color="var(--fg-35)" /> Checking your location…</p>
             ) : !profile?.is_admin && distanceM !== null && distanceM > MAX_DISTANCE_M ? (
-              <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10 }}>
-                📍 You need to be at the store to report stock.
+              <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <PinIcon size={13} color="#f87171" /> You need to be at the store to report stock.
               </p>
             ) : distanceM !== null && !profile?.is_admin ? (
-              <p style={{ fontSize: 12, color: '#C9F400', textAlign: 'center', marginBottom: 10 }}>
-                📍 You're at the store — good to go
+              <p style={{ fontSize: 12, color: '#C9F400', textAlign: 'center', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <PinIcon size={12} color="#C9F400" /> You're at the store — good to go
               </p>
             ) : locationSkipped && !profile?.is_admin ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -830,7 +831,7 @@ function DrinksContent() {
                       Submitting…
                     </>
                   ) : (
-                    <>⚡ Submit {selectionCount} Report{selectionCount !== 1 ? 's' : ''}</>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LightningIcon size={14} color="#000" /> Submit {selectionCount} Report{selectionCount !== 1 ? 's' : ''}</span>
                   )}
                 </button>
               )

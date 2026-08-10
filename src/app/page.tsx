@@ -8,6 +8,7 @@ import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Quantity, Store } from '@/lib/types'
+import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon } from '@/components/Icons'
 
 type View = 'map' | 'list'
 
@@ -72,21 +73,14 @@ const FREE_RADIUS_OPTIONS = [5]
 const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, null]
 
 const TYPE_FILTERS = [
-  { value: null,          label: 'All'       },
-  { value: 'gas_station', label: '⛽ Gas'     },
-  { value: 'convenience', label: '🏪 Conv.'   },
-  { value: 'grocery',     label: '🛒 Grocery' },
-  { value: 'other',       label: '📍 Other'   },
+  { value: null,          label: 'All'     },
+  { value: 'gas_station', label: 'Gas'     },
+  { value: 'convenience', label: 'Conv.'   },
+  { value: 'grocery',     label: 'Grocery' },
+  { value: 'other',       label: 'Other'   },
 ]
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
-
-const TYPE_ICON: Record<string, string> = {
-  gas_station: '⛽',
-  convenience: '🏪',
-  grocery: '🛒',
-  other: '📍',
-}
 
 export default function MapPage() {
   const router = useRouter()
@@ -362,7 +356,7 @@ export default function MapPage() {
   if (!location && !locError && !manualLocation) {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5">
-        <span style={{ fontSize: 48 }}>📍</span>
+        <PinIcon size={48} color="#8b9284" />
         <div>
           <p className="text-xl font-black text-white mb-2">Find Stores Near You</p>
           <p className="text-sm text-white/45 leading-relaxed">
@@ -385,7 +379,7 @@ export default function MapPage() {
     const isPermissionDenied = locError === 'denied'
     return (
       <div className="flex flex-col items-center justify-center h-screen  px-8 text-center gap-5">
-        <span style={{ fontSize: 48 }}>📍</span>
+        <PinIcon size={48} color="#8b9284" />
         <div>
           <p className="text-xl font-black text-white mb-2">
             {isPermissionDenied ? 'No Location? No Problem' : 'Unable to Get Location'}
@@ -513,7 +507,7 @@ export default function MapPage() {
         {view === 'map' && (
           <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
               <input
                 type="text"
                 placeholder="Search stores or flavors..."
@@ -522,7 +516,7 @@ export default function MapPage() {
                 style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '11px 14px 11px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
               />
               {search && (
-                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
+                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
@@ -531,7 +525,8 @@ export default function MapPage() {
                 return (
                   <button key={f.value ?? 'all'} className="pill-btn"
                     onClick={() => setTypeFilter(f.value)}
-                    style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                    style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                    {f.value && <StoreTypeIcon type={f.value} size={13} color={active ? '#0D1210' : '#7A8F80'} />}
                     {f.label}
                   </button>
                 )
@@ -651,7 +646,7 @@ export default function MapPage() {
 
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span style={{ fontSize: 28 }}>{TYPE_ICON[selected.type]}</span>
+                    <StoreTypeIcon type={selected.type} size={28} color="#7A8F80" />
                     <div className="min-w-0">
                       <p className="text-lg font-bold text-white truncate">{selected.name}</p>
                       <p className="text-xs text-white/40 mt-0.5 truncate">{selected.address}</p>
@@ -662,7 +657,7 @@ export default function MapPage() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-2"
                     style={{ backgroundColor: 'var(--fg-07)' }}
                   >
-                    <span className="text-white/50 text-xs">✕</span>
+                    <CloseIcon size={13} color="rgba(255,255,255,0.5)" />
                   </button>
                 </div>
 
@@ -671,7 +666,7 @@ export default function MapPage() {
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                     style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
                   >
-                    <span style={{ fontSize: 11 }}>📍</span>
+                    <PinIcon size={11} color="#8b9284" />
                     <span className="text-xs font-semibold text-white/60">
                       {getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away
                     </span>
@@ -681,7 +676,7 @@ export default function MapPage() {
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                       style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
                     >
-                      <span style={{ fontSize: 11 }}>🕐</span>
+                      <ClockIcon size={11} color="#8b9284" />
                       <span className="text-xs font-semibold text-white/60">
                         Updated {timeAgo(lastUpdated)}
                       </span>
@@ -752,7 +747,7 @@ export default function MapPage() {
               {/* Search + Add Store */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, animation: 'fadeUp 0.5s ease' }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#7A8F80', fontSize: 15 }}>🔍</span>
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
                   <input
                     type="text"
                     placeholder="Search stores..."
@@ -761,7 +756,7 @@ export default function MapPage() {
                     style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
                   />
                   {search && (
-                    <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 13 }}>✕</button>
+                    <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
                   )}
                 </div>
                 <button
@@ -794,7 +789,8 @@ export default function MapPage() {
                   return (
                     <button key={f.value ?? 'all'} className="pill-btn"
                       onClick={() => setTypeFilter(f.value)}
-                      style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                      style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                      {f.value && <StoreTypeIcon type={f.value} size={13} color={active ? '#0D1210' : '#7A8F80'} />}
                       {f.label}
                     </button>
                   )
@@ -839,8 +835,8 @@ export default function MapPage() {
                       onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}
                       className="cursor-pointer"
                     >
-                      <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                        {TYPE_ICON[nearest.type]}
+                      <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <StoreTypeIcon type={nearest.type} size={22} color="#7A8F80" />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
@@ -892,7 +888,7 @@ export default function MapPage() {
                 </div>
               ) : sorted.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
-                  <span style={{ fontSize: 40 }}>🏪</span>
+                  <GroceryIcon size={40} color="#8b9284" />
                   <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No stores found</p>
                   <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>
                     {brandFilter ? `No stores with ${brandFilter} in stock nearby` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area` : search ? `No stores matching "${search}"` : 'No stores in range — try a wider radius'}
@@ -917,8 +913,8 @@ export default function MapPage() {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
                           onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                          <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                            {TYPE_ICON[store.type]}
+                          <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <StoreTypeIcon type={store.type} size={22} color="#7A8F80" />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>

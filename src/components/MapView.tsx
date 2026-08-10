@@ -5,13 +5,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import Supercluster from 'supercluster'
 import type { Store } from '@/lib/types'
-
-const TYPE_ICON: Record<string, string> = {
-  gas_station: '⛽',
-  convenience: '🏪',
-  grocery: '🛒',
-  other: '📍',
-}
+import { storeTypeIconSvg } from '@/components/Icons'
 
 // Simplified 2-state freshness per store (mirrors the 4-bucket Fresh/Aging/
 // Stale/Unverified staleness on store pages, collapsed to a binary signal
@@ -65,8 +59,8 @@ function createClusterEl(count: number, freshness: MarkerFreshness): HTMLElement
 }
 
 function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshness): HTMLElement {
-  const emoji = TYPE_ICON[store.type] ?? '📍'
   const { hex, rgb } = FRESHNESS_COLOR[freshness]
+  const iconSvg = storeTypeIconSvg(store.type, isSelected ? hex : '#f3f5ee', isSelected ? 20 : 16)
   const orbSize = isSelected ? 46 : 36
   const orbBg = isSelected ? `rgba(${rgb},0.18)` : 'rgba(14,14,22,0.92)'
   const orbBorder = isSelected ? hex : `rgba(${rgb},0.55)`
@@ -86,7 +80,7 @@ function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshn
     <div style="position:relative;width:${orbSize}px;height:${orbSize}px;">
       ${pulseRings}
       <div style="width:${orbSize}px;height:${orbSize}px;background:${orbBg};border:1.5px solid ${orbBorder};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:${orbGlow};">
-        <span style="font-size:${isSelected ? 22 : 17}px;line-height:1;pointer-events:none;">${emoji}</span>
+        <span style="display:flex;line-height:1;pointer-events:none;">${iconSvg}</span>
       </div>
     </div>
     ${isSelected

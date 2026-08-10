@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
+import { StoreTypeIcon, CheckIcon, BellIcon, PinIcon } from '@/components/Icons'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -145,9 +146,9 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
 }
 
 const ACCOUNT_TABS = [
-  { id: 'stats',   label: 'Stats',   icon: '📊' },
-  { id: 'saved',   label: 'Saved',   icon: '❤️' },
-  { id: 'badges',  label: 'Badges',  icon: '🏅' },
+  { id: 'stats',   label: 'Stats'  },
+  { id: 'saved',   label: 'Saved'  },
+  { id: 'badges',  label: 'Badges' },
 ]
 
 const HOW_IT_WORKS = [
@@ -702,8 +703,6 @@ function selectAndContinue(tierId: TierId) {
     )
   }
 
-  const TYPE_ICON: Record<string, string> = { gas_station: '⛽', convenience: '🏪', grocery: '🛒', other: '📍' }
-
   // ── LOGGED IN ──────────────────────────────────────────────
   if (user && profile) {
     // Compute earned badges
@@ -834,13 +833,13 @@ function selectAndContinue(tierId: TierId) {
             {/* Notifications */}
             <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
               {[
-                { icon: '🔔', label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
-                { icon: '📍', label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
+                { icon: <BellIcon size={18} color="#8b9284" />, label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
+                { icon: <PinIcon size={18} color="#8b9284" />, label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
               ].map((item, i) => (
                 <div key={item.label}>
                   {i > 0 && <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px' }}>
-                    <span style={{ fontSize: 18, width: 24, textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
+                    <span style={{ width: 24, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</span>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{item.label}</p>
                       <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0' }}>{item.desc}</p>
@@ -900,7 +899,7 @@ function selectAndContinue(tierId: TierId) {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
                   <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>@{profile.username}</p>
-                  {profile.is_verified_reporter && <span style={{ fontSize: 16 }}>✅</span>}
+                  {profile.is_verified_reporter && <CheckIcon size={16} color="#60a5fa" />}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
                   {profile.is_admin && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>}
@@ -1030,7 +1029,7 @@ function selectAndContinue(tierId: TierId) {
                       const store = fav.store
                       return (
                         <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
-                          <span style={{ fontSize: 20 }}>{TYPE_ICON[store?.type] ?? '📍'}</span>
+                          <StoreTypeIcon type={store?.type} size={20} color="#7A8F80" />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
                             <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>

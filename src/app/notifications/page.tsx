@@ -1,18 +1,20 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { JSX } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { notificationIcon } from '@/components/NotificationIcons'
+import { LightningIcon, GroceryIcon, DrinkIcon, PinIcon, BellIcon, SearchIcon } from '@/components/Icons'
 
 type FilterMode = 'all' | 'reports' | 'stores' | 'drinks'
 
-const FILTERS: { mode: FilterMode; label: string }[] = [
+const FILTERS: { mode: FilterMode; label: string; icon?: (color: string) => JSX.Element }[] = [
   { mode: 'all', label: 'All' },
-  { mode: 'reports', label: '⚡ Reports' },
-  { mode: 'stores', label: '🏪 Stores' },
-  { mode: 'drinks', label: '🥤 New Drinks' },
+  { mode: 'reports', label: 'Reports', icon: (c) => <LightningIcon size={12} color={c} /> },
+  { mode: 'stores', label: 'Stores', icon: (c) => <GroceryIcon size={12} color={c} /> },
+  { mode: 'drinks', label: 'New Drinks', icon: (c) => <DrinkIcon size={12} color={c} /> },
 ]
 
 function matchesFilter(type: string, mode: FilterMode) {
@@ -151,8 +153,8 @@ export default function NotificationsPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px 16px', gap: 10 }}>
           <div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
-              🔔 Notifi<span style={{ color: 'var(--accent)' }}>cations</span>
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BellIcon size={26} color="var(--text)" filled /> Notifi<span style={{ color: 'var(--accent)' }}>cations</span>
             </h1>
             <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 4 }}>
               {unreadCount > 0 ? `${unreadCount} unread` : 'Updates on your stores and reports'}
@@ -200,12 +202,14 @@ export default function NotificationsPage() {
         {/* Filter chips */}
         {notifications.length > 0 && (
           <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px', overflowX: 'auto' }} className="no-scrollbar">
-            {FILTERS.map(({ mode, label }) => {
+            {FILTERS.map(({ mode, label, icon }) => {
               const active = filterMode === mode
+              const color = active ? '#0D1210' : '#7A8F80'
               return (
                 <button key={mode}
                   onClick={() => setFilterMode(mode)}
-                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color, fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  {icon?.(color)}
                   {label}
                 </button>
               )
@@ -219,13 +223,13 @@ export default function NotificationsPage() {
           </div>
         ) : notifications.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
-            <span style={{ fontSize: 48 }}>🔔</span>
+            <BellIcon size={48} color="#8b9284" />
             <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No notifications yet</p>
             <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>You'll be notified about stock updates, new stores, and new drinks.</p>
           </div>
         ) : items.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
-            <span style={{ fontSize: 40 }}>🔍</span>
+            <SearchIcon size={40} color="#8b9284" />
             <p style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Nothing here</p>
             <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>No notifications match this filter.</p>
           </div>
@@ -287,7 +291,7 @@ export default function NotificationsPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{item.ns.length} stock updates</p>
                           {item.ns[0].store && (
-                            <p style={{ fontSize: 12, fontWeight: 700, marginTop: 3, color: 'var(--accent)' }}>📍 {item.ns[0].store.name}</p>
+                            <p style={{ fontSize: 12, fontWeight: 700, marginTop: 3, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}><PinIcon size={11} color="var(--accent)" /> {item.ns[0].store.name}</p>
                           )}
                           <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 4 }}>{timeAgo(item.ns[0].created_at)}</p>
                         </div>

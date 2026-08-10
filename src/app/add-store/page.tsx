@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { StoreTypeIcon, PinIcon, SearchIcon, CheckIcon, ChevronLeftIcon } from '@/components/Icons'
 
 const STORE_TYPES = [
-  { value: 'gas_station', label: 'Gas Station', icon: '⛽' },
-  { value: 'convenience', label: 'Convenience Store', icon: '🏪' },
-  { value: 'grocery', label: 'Grocery Store', icon: '🛒' },
-  { value: 'other', label: 'Other', icon: '📍' },
+  { value: 'gas_station', label: 'Gas Station' },
+  { value: 'convenience', label: 'Convenience Store' },
+  { value: 'grocery', label: 'Grocery Store' },
+  { value: 'other', label: 'Other' },
 ]
 
 export default function AddStorePage() {
@@ -170,9 +171,9 @@ export default function AddStorePage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 'calc(56px + env(safe-area-inset-top)) 20px 16px' }}>
         <button
           onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', color: 'var(--text)', fontSize: 18, flexShrink: 0 }}
+          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', flexShrink: 0 }}
         >
-          ←
+          <ChevronLeftIcon size={18} color="var(--text)" />
         </button>
         <div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
@@ -224,14 +225,16 @@ export default function AddStorePage() {
         >
           {geocoding ? (
             <div style={{ width: 16, height: 16, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          ) : coords ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CheckIcon size={14} color="#fff" /> Verified — Re-verify</span>
           ) : (
-            coords ? '✓ Verified — Re-verify' : '🔍 Verify Address'
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><SearchIcon size={14} color="#fff" /> Verify Address</span>
           )}
         </button>
 
         {coords && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, borderRadius: 12, padding: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
-            <span style={{ fontSize: 20 }}>📍</span>
+            <PinIcon size={20} color="var(--accent)" />
             <div>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>Location found!</p>
               <p style={{ fontSize: 11, color: '#7A8F80', marginTop: 2 }}>
@@ -294,7 +297,7 @@ export default function AddStorePage() {
               }}
               onClick={() => setType(t.value)}
             >
-              <span style={{ fontSize: 18 }}>{t.icon}</span>
+              <StoreTypeIcon type={t.value} size={18} color={type === t.value ? '#C9F400' : '#7A8F80'} />
               <span
                 style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}
               >
@@ -309,7 +312,7 @@ export default function AddStorePage() {
       <div
         style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 20px 24px', borderRadius: 12, padding: 14, backgroundColor: 'rgba(201,244,0,0.03)', border: '1px solid rgba(201,244,0,0.12)' }}
       >
-        <span style={{ fontSize: 16 }}>🔍</span>
+        <SearchIcon size={16} color="#7A8F80" />
         <p style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.5, flex: 1 }}>
           Stores are reviewed before appearing on the map to keep data accurate.
         </p>

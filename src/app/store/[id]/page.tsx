@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 import Toast from '@/components/Toast'
+import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon } from '@/components/Icons'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -28,12 +29,6 @@ function normalizeBrand(input: string): string {
   return BRAND_ALIASES[key] ?? input.trim()
 }
 
-const TYPE_ICON: Record<string, string> = {
-  gas_station: '⛽',
-  convenience: '🏪',
-  grocery: '🛒',
-  other: '📍',
-}
 
 const TYPE_LABEL: Record<string, string> = {
   gas_station: 'Gas Station',
@@ -534,8 +529,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             </svg>
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {store ? TYPE_ICON[store.type] : '📍'} {name}
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <StoreTypeIcon type={store?.type} size={14} color="var(--fg-45)" /> {name}
             </p>
             {store && (
               <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--fg-35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -568,14 +563,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               transition: 'all 0.2s ease',
             }}
           >
-            <span style={{ fontSize: 13 }}>{isFavorited ? '❤️' : '🤍'}</span>
+            <HeartIcon size={14} color={isFavorited ? '#FF4545' : '#8b9284'} filled={isFavorited} />
           </button>
           <button
             onClick={() => setShowFlag(true)}
             title="Flag incorrect location"
             style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, backgroundColor: 'var(--fg-05)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
-            <span style={{ fontSize: 13 }}>🚩</span>
+            <FlagIcon size={14} color="#8b9284" />
           </button>
         </div>
       </div>
@@ -593,9 +588,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               border: '1.5px solid rgba(201,244,0,0.3)',
               boxShadow: '0 0 20px rgba(201,244,0,0.2), 0 0 40px rgba(201,244,0,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 26,
             }}>
-              {store ? TYPE_ICON[store.type] : '📍'}
+              <StoreTypeIcon type={store?.type} size={26} color="#C9F400" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.3px' }}>{name}</p>
@@ -626,7 +620,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             }}
             onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
           >
-            <span style={{ fontSize: 15 }}>⚡</span> Report Stock
+            <LightningIcon size={15} color="#000" /> Report Stock
           </button>
           <button
             style={{
@@ -660,7 +654,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         {/* ── Content ───────────────────────────────────────────────── */}
         {storeError ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
-            <span style={{ fontSize: 48 }}>🏪</span>
+            <GroceryIcon size={48} color="#8b9284" />
             <p className="text-lg font-black text-white">Store not found</p>
             <p className="text-sm text-white/40">This store may have been removed.</p>
             <button onClick={() => router.back()} className="mt-2 text-sm font-bold px-5 py-2.5 rounded-xl" style={{ backgroundColor: 'var(--fg-07)', color: 'var(--fg-60)' }}>← Go back</button>
@@ -689,7 +683,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 mb-4"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
             >
-              <span className="text-white/30 text-sm">🔍</span>
+              <SearchIcon size={15} color="rgba(255,255,255,0.3)" />
               <input
                 type="text"
                 placeholder="Search drinks & flavors..."
@@ -698,7 +692,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
               />
               {search.length > 0 && (
-                <button onClick={() => setSearch('')} className="text-white/30 text-xs">✕</button>
+                <button onClick={() => setSearch('')} className="text-white/30" style={{ display: 'flex' }}><CloseIcon size={12} color="rgba(255,255,255,0.3)" /></button>
               )}
             </div>
 
@@ -709,7 +703,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             </p>
             {isSearching && filteredStock.length === 0 && (
               <div className="flex flex-col items-center gap-2 mt-8">
-                <span style={{ fontSize: 36 }}>🔍</span>
+                <SearchIcon size={36} color="#8b9284" />
                 <p className="text-sm font-bold text-white">No drinks found</p>
                 <p className="text-xs text-white/40">Try a different brand or flavor name</p>
               </div>
@@ -823,8 +817,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     {/* Confirmation buttons */}
                                     {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
                                       <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}>✓ {c?.yes ?? 0}</button>
-                                        <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}>✗ {c?.no ?? 0}</button>
+                                        <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}><CheckIcon size={11} color={yv ? '#C9F400' : 'var(--fg-40)'} /> {c?.yes ?? 0}</button>
+                                        <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}><CloseIcon size={11} color={nv ? '#FF4545' : 'var(--fg-40)'} /> {c?.no ?? 0}</button>
                                       </div>
                                     )})()}
                                   </div>
@@ -843,7 +837,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       }}
                                       title={drinkAlerts.has(item.drink_id) ? 'Stop watching this flavor' : 'Get notified when this restocks'}
                                     >
-                                      <span style={{ fontSize: 12, filter: drinkAlerts.has(item.drink_id) ? 'none' : 'grayscale(1) opacity(0.6)' }}>🔔</span>
+                                      <BellIcon size={12} color={drinkAlerts.has(item.drink_id) ? '#C9F400' : '#8b9284'} filled={drinkAlerts.has(item.drink_id)} />
                                     </button>
                                     {isTracker && !isKrogerOnly && (
                                       <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
@@ -919,16 +913,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
               {drinkResults ? (
                 <div className="flex flex-col items-center text-center gap-3 py-4">
-                  <span style={{ fontSize: 48 }}>🥤</span>
+                  <DrinkIcon size={48} color="#8b9284" />
                   <p className="text-xl font-black text-white">
                     {drinkResults.added > 0 ? `${drinkResults.added} Drink${drinkResults.added !== 1 ? 's' : ''} Added!` : 'Nothing Added'}
                   </p>
                   {drinkResults.names.length > 0 && (
                     <div className="w-full flex flex-col gap-1.5">
                       {drinkResults.names.map((name) => (
-                        <div key={name} className="rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/80 text-left"
+                        <div key={name} className="rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/80 text-left flex items-center gap-2"
                           style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.18)' }}>
-                          ✓ {name}
+                          <CheckIcon size={13} color="#C9F400" /> {name}
                         </div>
                       ))}
                     </div>
@@ -959,7 +953,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                         <div className="flex items-center justify-between mb-2.5">
                           <p className="text-[10px] font-bold text-white/35" style={{ letterSpacing: '1.5px' }}>DRINK {idx + 1}</p>
                           {drinkEntries.length > 1 && (
-                            <button onClick={() => removeEntry(entry.id)} className="text-white/25 text-xs">✕</button>
+                            <button onClick={() => removeEntry(entry.id)} className="text-white/25" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.25)" /></button>
                           )}
                         </div>
                         <input
@@ -1050,7 +1044,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             >
               <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'var(--fg-20)' }} />
               <div className="flex items-center gap-3 mb-3">
-                <span style={{ fontSize: 32 }}>🥤</span>
+                <DrinkIcon size={32} color="#8b9284" />
                 <p className="text-lg font-black text-white">
                   {drinkDuplicatePopup.length === 1 ? 'Already in the System' : 'Drinks Already Exist'}
                 </p>
@@ -1098,7 +1092,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
               {flagDone ? (
                 <div className="flex flex-col items-center text-center gap-3 py-4">
-                  <span style={{ fontSize: 48 }}>✅</span>
+                  <CheckIcon size={40} color="#C9F400" />
                   <p className="text-xl font-black text-white">Thanks for the report!</p>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--fg-45)' }}>We'll review this location and correct any issues.</p>
                   <button
@@ -1112,7 +1106,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               ) : (
                 <>
                   <div className="flex items-center gap-2.5 mb-1">
-                    <span style={{ fontSize: 20 }}>🚩</span>
+                    <FlagIcon size={18} color="#8b9284" />
                     <p className="text-lg font-black text-white">Flag Location</p>
                   </div>
                   <p className="text-xs mb-5" style={{ color: 'var(--fg-40)' }}>Something wrong with this location? Let us know so we can fix it.</p>
@@ -1190,7 +1184,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
 
               <div className="flex items-center gap-2.5 mb-1">
-                <span style={{ fontSize: 20 }}>🔔</span>
+                <BellIcon size={18} color="#C9F400" filled />
                 <p className="text-lg font-black text-white">
                   Alert me for {(() => {
                     const d = stock.find((i) => i.drink_id === alertSheetDrinkId)?.drink
