@@ -98,10 +98,37 @@ export default function MapPage() {
   }, [user, authLoading])
 
   const { location, loading: locLoading, error: locError, retry } = useLocation()
-  const lat = location?.coords.latitude ?? 0
-  const lng = location?.coords.longitude ?? 0
+  // Fallback for users who don't want to grant live GPS access — search by
+  // ZIP code instead. Once set, this takes over as the effective location
+  // everywhere on this page; live GPS (if later granted) is not needed.
+  const [manualLocation, setManualLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [zipInput, setZipInput] = useState('')
+  const [zipLoading, setZipLoading] = useState(false)
+  const [zipError, setZipError] = useState<string | null>(null)
+  const lat = manualLocation?.lat ?? location?.coords.latitude ?? 0
+  const lng = manualLocation?.lng ?? location?.coords.longitude ?? 0
   const tierKey = !user ? 'anon' : isTracker ? 'tracker' : 'free'
   const { stores, nearbyCount, loading: storesLoading, refetch } = useNearbyStores(lat, lng, tierKey)
+
+  async function searchByZip() {
+    const zip = zipInput.trim()
+    if (!/^\d{5}$/.test(zip)) { setZipError('Enter a 5-digit ZIP code.'); return }
+    setZipError(null)
+    setZipLoading(true)
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(zip)}`)
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setZipError('ZIP code not found. Double-check it and try again.')
+        setZipLoading(false)
+        return
+      }
+      setManualLocation({ lat: data.lat, lng: data.lng })
+    } catch {
+      setZipError('Could not look up that ZIP code. Try again.')
+    }
+    setZipLoading(false)
+  }
 
   const [view, setView] = useState<View>('map')
 
@@ -299,7 +326,40 @@ export default function MapPage() {
     )
   }
 
-  if (!location && !locError) {
+  const zipFallback = (
+    <div className="w-full" style={{ marginTop: 4 }}>
+      <div className="flex items-center gap-2.5" style={{ margin: '18px 0 10px' }}>
+        <span style={{ flex: 1, height: 1, background: 'var(--fg-10)' }} />
+        <span className="text-xs font-semibold text-white/35">OR</span>
+        <span style={{ flex: 1, height: 1, background: 'var(--fg-10)' }} />
+      </div>
+      <p className="text-xs text-white/40 mb-2.5">Don't want to share your location? Search by ZIP code instead.</p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          placeholder="ZIP code"
+          value={zipInput}
+          onChange={(e) => { setZipInput(e.target.value.replace(/\D/g, '')); setZipError(null) }}
+          onKeyDown={(e) => { if (e.key === 'Enter') searchByZip() }}
+          className="flex-1 rounded-xl px-4 py-3 text-sm text-white outline-none"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-10)' }}
+        />
+        <button
+          onClick={searchByZip}
+          disabled={zipLoading}
+          className="rounded-xl px-5 font-bold text-sm"
+          style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-75)', border: '1px solid var(--fg-15)' }}
+        >
+          {zipLoading ? '…' : 'Search'}
+        </button>
+      </div>
+      {zipError && <p className="text-xs mt-2" style={{ color: '#f87171' }}>{zipError}</p>}
+    </div>
+  )
+
+  if (!location && !locError && !manualLocation) {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5">
         <span style={{ fontSize: 48 }}>📍</span>
@@ -316,11 +376,12 @@ export default function MapPage() {
         >
           Enable Location →
         </button>
+        {zipFallback}
       </div>
     )
   }
 
-  if (locError) {
+  if (locError && !manualLocation) {
     const isPermissionDenied = locError === 'denied'
     return (
       <div className="flex flex-col items-center justify-center h-screen  px-8 text-center gap-5">
@@ -374,6 +435,7 @@ export default function MapPage() {
             </div>
           </div>
         )}
+        {zipFallback}
       </div>
     )
   }

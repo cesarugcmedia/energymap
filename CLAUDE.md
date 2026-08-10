@@ -249,6 +249,8 @@ A submission where every pick was deduped returns `{ submitted: 0 }`; the client
 
 `src/hooks/useLocation.ts` checks the Permissions API before auto-requesting geolocation. If permission is already `granted`, it requests immediately on mount. Otherwise it waits for a user tap (required for iOS Safari). The initial map screen shows an "Enable Location" button to trigger the first request via user gesture.
 
+**ZIP code fallback**: both location-blocked screens ("Enable Location" and "Location Access Needed"/"Unable to Get Location") also offer a ZIP code search, for users unwilling to grant live GPS access to a new site. Reuses the existing `/api/geocode` route (same one `/add-store` uses for street addresses — Census primary, Nominatim fallback) with just the ZIP as the query string; both geocoders resolve a bare 5-digit ZIP fine. The resulting lat/lng is stored in `manualLocation` state and takes over as the effective location everywhere on the page (`lat`/`lng` prefer `manualLocation` over live GPS) — it's a full substitute, not just a one-time search, so `/api/stores/nearby` and everything downstream behaves identically to a live GPS fix. Deliberately doesn't affect `/submit/drinks`'s own geofence check, which requests its own independent GPS fix at report time regardless of how the user got to the store page.
+
 ### PWA
 
 Manifest generated at `src/app/manifest.ts`. Service worker registered via `src/components/ServiceWorkerRegister.tsx`. Offline fallback page at `/offline`.
