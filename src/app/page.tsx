@@ -769,7 +769,7 @@ export default function MapPage() {
                   onClick={() => router.push('/add-store')}
                   style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, padding: '13px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
                 >
-                  + Add
+                  + Add Store
                 </button>
               </div>
 
