@@ -604,7 +604,7 @@ export default function MapPage() {
               <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
               <input
                 type="text"
-                placeholder="Search stores or flavors..."
+                placeholder="Search stores"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
                 onFocus={() => setSearchFocused(true)}
