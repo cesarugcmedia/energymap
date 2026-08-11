@@ -7,8 +7,8 @@ import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import type { Quantity, Store } from '@/lib/types'
-import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon } from '@/components/Icons'
+import type { Drink, Quantity, Store } from '@/lib/types'
+import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon } from '@/components/Icons'
 
 type View = 'map' | 'list'
 
@@ -144,6 +144,16 @@ export default function MapPage() {
   const [availableBrands, setAvailableBrands] = useState<string[]>([])
   const [brandFilter, setBrandFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [allDrinks, setAllDrinks] = useState<Drink[]>([])
+  const [drinkFilter, setDrinkFilter] = useState<{ id: string; label: string } | null>(null)
+  const [searchFocused, setSearchFocused] = useState(false)
+
+  // Fetched once — powers the drink half of the search-bar suggestions.
+  useEffect(() => {
+    supabase.from('drinks').select('id, name, brand, flavor, caffeine_mg').then(({ data }) => {
+      if (data) setAllDrinks(data)
+    })
+  }, [])
 
   useEffect(() => {
     if (!selected) { setLastUpdated(null); return }
@@ -281,14 +291,96 @@ export default function MapPage() {
     [stores, lat, lng]
   )
 
+  // drink_id -> lowercased "brand name flavor" for free-text search matching
+  // against what's actually in stock, not just store name/address.
+  const drinkLookup = useMemo(() => {
+    const map: Record<string, string> = {}
+    allDrinks.forEach((d) => { map[d.id] = `${d.brand} ${d.name} ${d.flavor ?? ''}`.toLowerCase() })
+    return map
+  }, [allDrinks])
+
   const sorted = useMemo(() => {
     const q = search.trim().toLowerCase()
     return byDistance
       .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
       .filter((s) => typeFilter === null || s.type === typeFilter)
       .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
-      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
-  }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng])
+      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q) ||
+        (storeStock[s.id] ?? []).some((r) => drinkLookup[r.drink_id]?.includes(q)))
+      .filter((s) => !drinkFilter || (storeStock[s.id] ?? []).some((r) => r.drink_id === drinkFilter.id && r.quantity !== 'out'))
+  }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng, storeStock, drinkLookup, drinkFilter])
+
+  // Search-bar typeahead — drink suggestions are limited to drinks actually
+  // in stock (non-'out') at a currently loaded nearby store, so picking one
+  // never filters down to zero results.
+  const inStockDrinkIds = useMemo(() => {
+    const set = new Set<string>()
+    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.quantity !== 'out') set.add(r.drink_id) }))
+    return set
+  }, [storeStock])
+
+  const drinkSuggestions = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+    return allDrinks
+      .filter((d) => inStockDrinkIds.has(d.id))
+      .filter((d) => d.brand.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || d.flavor?.toLowerCase().includes(q))
+      .slice(0, 5)
+  }, [allDrinks, inStockDrinkIds, search])
+
+  const storeSuggestions = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+    return byDistance
+      .filter((s) => s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
+      .slice(0, 5)
+  }, [byDistance, search])
+
+  function selectStoreSuggestion(store: Store) {
+    setSearchFocused(false)
+    router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
+  }
+
+  function selectDrinkSuggestion(drink: Drink) {
+    const label = `${drink.brand} ${drink.flavor || drink.name}`
+    setDrinkFilter({ id: drink.id, label })
+    setSearch(label)
+    setSearchFocused(false)
+  }
+
+  const showSuggestions = searchFocused && search.trim().length > 0 && (drinkSuggestions.length > 0 || storeSuggestions.length > 0)
+  const suggestionSectionLabelStyle = { fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const, padding: '6px 10px 4px' }
+  const suggestionRowStyle = { width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }
+
+  const searchSuggestions = showSuggestions && (
+    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 30, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.45)', maxHeight: 320, overflowY: 'auto', padding: 6 }}>
+      {drinkSuggestions.length > 0 && (
+        <>
+          <p style={suggestionSectionLabelStyle}>Drinks</p>
+          {drinkSuggestions.map((d) => (
+            <button key={d.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectDrinkSuggestion(d)} style={suggestionRowStyle}>
+              <DrinkIcon size={16} color="#8b9284" />
+              <p style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
+            </button>
+          ))}
+        </>
+      )}
+      {storeSuggestions.length > 0 && (
+        <>
+          <p style={suggestionSectionLabelStyle}>Stores</p>
+          {storeSuggestions.map((s) => (
+            <button key={s.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectStoreSuggestion(s)} style={suggestionRowStyle}>
+              <StoreTypeIcon type={s.type} size={16} color="#7A8F80" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
+                {s.address && <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.address}</p>}
+              </div>
+            </button>
+          ))}
+        </>
+      )}
+    </div>
+  )
 
   // Collapsed to a binary signal for map coloring — 'fresh' covers the
   // store page's Fresh+Aging buckets (< 12h), everything else (including no
@@ -512,12 +604,15 @@ export default function MapPage() {
                 type="text"
                 placeholder="Search stores or flavors..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
                 style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '11px 14px 11px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
               />
               {search && (
-                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
+                <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
               )}
+              {searchSuggestions}
             </div>
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
               {TYPE_FILTERS.map((f) => {
@@ -750,14 +845,17 @@ export default function MapPage() {
                   <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
                   <input
                     type="text"
-                    placeholder="Search stores..."
+                    placeholder="Search stores or flavors..."
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
                     style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
                   />
                   {search && (
-                    <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
+                    <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
                   )}
+                  {searchSuggestions}
                 </div>
                 <button
                   className="action-btn"
