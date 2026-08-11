@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
-import { PinIcon, CloseIcon, CommentIcon } from '@/components/Icons'
+import { PinIcon, CloseIcon, CommentIcon, ClipboardIcon, TrophyIcon, UsersIcon, TrendingIcon, ClockIcon, CameraIcon, CheckIcon, LightningIcon, GroceryIcon, DrinkIcon } from '@/components/Icons'
 
 type FilterMode = 'trending' | 'recent' | 'following'
 type MainView = 'feed' | 'leaderboard'
@@ -480,14 +480,16 @@ export default function CommunityPage() {
         {/* Feed / Leaderboard sub-tabs — Ranks no longer has its own nav slot */}
         <div style={{ display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 16, padding: 4, gap: 4, marginBottom: 14 }}>
           {([
-            { view: 'feed' as MainView, label: '📰 Feed' },
-            { view: 'leaderboard' as MainView, label: '🏆 Leaderboard' },
-          ]).map(({ view, label }) => {
+            { view: 'feed' as MainView, label: 'Feed', icon: ClipboardIcon },
+            { view: 'leaderboard' as MainView, label: 'Leaderboard', icon: TrophyIcon },
+          ]).map(({ view, label, icon: Icon }) => {
             const active = mainView === view
+            const color = active ? '#0D1210' : '#7A8F80'
             return (
               <button key={view} className="pill-btn"
                 onClick={() => setMainView(view)}
-                style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 800, backgroundColor: active ? '#C9F400' : 'transparent', color: active ? '#0D1210' : '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 800, backgroundColor: active ? '#C9F400' : 'transparent', color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <Icon size={14} color={color} />
                 {label}
               </button>
             )
@@ -499,15 +501,17 @@ export default function CommunityPage() {
         {/* Filter chips */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {([
-            { mode: 'trending' as FilterMode, label: '🔥 Trending' },
-            { mode: 'recent' as FilterMode, label: '🕐 Recent' },
-            { mode: 'following' as FilterMode, label: '👥 Following' },
-          ]).map(({ mode, label }) => {
+            { mode: 'trending' as FilterMode, label: 'Trending', icon: TrendingIcon },
+            { mode: 'recent' as FilterMode, label: 'Recent', icon: ClockIcon },
+            { mode: 'following' as FilterMode, label: 'Following', icon: UsersIcon },
+          ]).map(({ mode, label, icon: Icon }) => {
             const active = filterMode === mode
+            const color = active ? '#0D1210' : '#7A8F80'
             return (
               <button key={mode} className="pill-btn"
                 onClick={() => setFilterMode(mode)}
-                style={{ padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color, fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                <Icon size={12} color={color} />
                 {label}
               </button>
             )
@@ -553,7 +557,7 @@ export default function CommunityPage() {
           {photoPreview && (
             <div style={{ position: 'relative', marginTop: 8, display: 'inline-block' }}>
               <img src={photoPreview} alt="" style={{ maxHeight: 120, borderRadius: 10, display: 'block' }} />
-              <button onClick={clearPhoto} style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer' }}>✕</button>
+              <button onClick={clearPhoto} style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><CloseIcon size={11} color="#fff" /></button>
             </div>
           )}
 
@@ -597,7 +601,7 @@ export default function CommunityPage() {
               onClick={() => fileInputRef.current?.click()}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--fg-10)', borderRadius: 10, padding: '8px 10px', color: '#7A8F80', fontSize: 12, cursor: 'pointer' }}
             >
-              📷 Photo
+              <CameraIcon size={13} color="#7A8F80" /> Photo
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 11, color: draft.length >= MAX_BODY ? '#FF4545' : '#4A5F50' }}>{draft.length}/{MAX_BODY}</span>
@@ -636,7 +640,7 @@ export default function CommunityPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
-            <span style={{ fontSize: 40 }}>👥</span>
+            <UsersIcon size={40} color="#8b9284" />
             <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>
               {filterMode === 'following' ? 'Not following anyone yet' : 'No posts yet'}
             </p>
@@ -861,7 +865,7 @@ export default function CommunityPage() {
                 </div>
               ) : lbEntries.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
-                  <span style={{ fontSize: 48 }}>🏆</span>
+                  <TrophyIcon size={48} color="#8b9284" />
                   <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>No reports yet</p>
                   <p style={{ fontSize: 13, color: '#7A8F80' }}>Be the first to submit a report!</p>
                 </div>
@@ -913,8 +917,8 @@ export default function CommunityPage() {
                                   @{entry.username}
                                 </span>
                                 {isMe && <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>YOU</span>}
-                                {entry.is_verified_reporter && <span style={{ fontSize: 9, fontWeight: 800, color: '#60a5fa', backgroundColor: 'rgba(59,130,246,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>✓</span>}
-                                {entry.tier === 'tracker' && <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>⚡</span>}
+                                {entry.is_verified_reporter && <span style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(59,130,246,0.12)', borderRadius: 8, padding: '2px 5px', flexShrink: 0 }}><CheckIcon size={9} color="#60a5fa" /></span>}
+                                {entry.tier === 'tracker' && <span style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '2px 5px', flexShrink: 0 }}><LightningIcon size={9} color="var(--accent)" /></span>}
                                 {Array.isArray(entry.badges) && entry.badges.includes('weekly_champion') && <span style={{ fontSize: 9, fontWeight: 800, color: '#ffd700', backgroundColor: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '1px 6px', flexShrink: 0 }}>👑 Champ</span>}
                               </div>
                             </div>
@@ -936,14 +940,14 @@ export default function CommunityPage() {
                     <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How Points Work</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {[
-                        { icon: '⚡', label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2 pts', color: 'var(--accent)' },
-                        { icon: '🏪', label: 'Add a store',    desc: 'Awarded after admin approval',    pts: '+5 pts', color: '#FFB300' },
-                        { icon: '🥤', label: 'Add a drink',    desc: 'Each new drink you submit',        pts: '+3 pts', color: '#06b6d4' },
+                        { icon: LightningIcon, label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2 pts', color: 'var(--accent)' },
+                        { icon: GroceryIcon,   label: 'Add a store',    desc: 'Awarded after admin approval',    pts: '+5 pts', color: '#FFB300' },
+                        { icon: DrinkIcon,     label: 'Add a drink',    desc: 'Each new drink you submit',        pts: '+3 pts', color: '#06b6d4' },
                       ].map((item, i, arr) => (
                         <div key={item.label}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${item.color}18`, border: `1px solid ${item.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <span style={{ fontSize: 15 }}>{item.icon}</span>
+                              <item.icon size={15} color={item.color} />
                             </div>
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>{item.label}</p>

@@ -213,6 +213,46 @@ export function CommentIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
   )
 }
 
+export function TrophyIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+      <path d="M7 5H4a3 3 0 0 0 3 4" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+      <path d="M17 5h3a3 3 0 0 1-3 4" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+      <path d="M12 17v4M8 21h8" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function UsersIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8.5" cy="8" r="3.2" stroke={color} strokeWidth={1.6} />
+      <path d="M2.5 20c0-3.6 2.7-6.2 6-6.2s6 2.6 6 6.2" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+      <circle cx="16.5" cy="9" r="2.6" stroke={color} strokeWidth={1.6} />
+      <path d="M15 13.3c2.6.3 4.5 2.4 4.5 5.2" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function TrendingIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 17l6-6 4 4 8-9" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 6h6v6" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function CameraIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+      <circle cx="12" cy="13" r="3.5" stroke={color} strokeWidth={1.6} />
+    </svg>
+  )
+}
+
 export const OtherIcon = PinIcon
 
 const STORE_TYPE_ICON: Record<string, (p: IconProps) => JSX.Element> = {
