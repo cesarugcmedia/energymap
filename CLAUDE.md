@@ -254,6 +254,13 @@ Each drink card shows ✓/✗ community confirmation buttons. Votes are stored i
 - **"Add a brand not listed"** — every other brand, collapsed by default, using the original tap-to-expand-then-tap-a-flavor-to-open-a-picker flow, for genuinely new additions only.
 - Searching bypasses this split entirely and falls back to a single flat brand-grouped list (the original full-catalog behavior) across all matches, store-known or not.
 
+**Barcode scan**: a scan button sits next to the search box, opening `src/components/BarcodeScanner.tsx` — a full-screen camera view. Decoding uses `@zxing/browser` (`BrowserMultiFormatReader.decodeFromConstraints`) rather than the native `BarcodeDetector` API, since that API has unreliable/missing support on iOS Safari. On a successful decode (`src/app/submit/drinks/page.tsx`'s `handleScan`):
+- If the code matches a drink already in the catalog (`drinks.kroger_upc === code`), the search box is set to that drink and its quick-tap picker auto-expands — no page navigation.
+- Otherwise it calls `src/lib/openFoodFacts.ts` (Open Food Facts' public API — free, no key, so this needed no waiting-on-credentials step like the Kroger integration did) for a best-effort brand/name guess, then routes to `/store/[id]?addDrink=1&brand=…&flavor=…&upc=…`, which auto-opens that page's existing Add Drink modal pre-filled rather than duplicating its insert/duplicate-check/rate-limit logic in a second place. Add Drink's insert now also writes `kroger_upc` from the `upc` param when present, so the same physical barcode matches directly (no lookup) the next time anyone scans it.
+- The Add Drink success screen gained a "Report Stock" button (alongside the existing "Done") that jumps straight to `/submit/drinks` for that store, so scan → add-if-new → report is a continuous flow rather than a dead end.
+
+`kroger_upc` is a slightly misnamed column at this point — despite the name, it holds the product's real UPC (Kroger's Products API just happens to be where it was first sourced from, for drinks an admin has matched there), so it doubles as a generic barcode field. Most drinks don't have one yet, so most scans will miss the catalog and fall through to the Open Food Facts + Add Drink path — expected until either more drinks get Kroger-matched or enough get added via this scan flow directly.
+
 ### Geofencing & Submission Limits
 
 Stock report submission (`/submit/drinks`) posts to `/api/stock/report`, which enforces everything **server-side** using the caller's bearer token (the client's own Haversine check is just a UX hint — a status message shown before submitting — not the actual enforcement):

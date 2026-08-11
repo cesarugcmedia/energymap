@@ -16,6 +16,11 @@ export interface Drink {
   brand: string
   flavor: string
   caffeine_mg: number | null
+  // Despite the name, this holds the product's real UPC (Kroger's Products
+  // API returns it as `upc`) — only populated for drinks an admin has
+  // matched via the Kroger integration, so it's also reused as the match
+  // key for barcode scanning even though not every drink has one yet.
+  kroger_upc?: string | null
 }
 
 export interface StockReport {

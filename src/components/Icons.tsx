@@ -205,6 +205,18 @@ export function ClipboardIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
   )
 }
 
+export function BarcodeIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 8V6a2 2 0 0 1 2-2h2M18 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M6 20H4a2 2 0 0 1-2-2v-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="8" y="9" width="1.5" height="6" fill={color} />
+      <rect x="11" y="9" width="1" height="6" fill={color} />
+      <rect x="13" y="9" width="2" height="6" fill={color} />
+      <rect x="16" y="9" width="1" height="6" fill={color} />
+    </svg>
+  )
+}
+
 export function CommentIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">

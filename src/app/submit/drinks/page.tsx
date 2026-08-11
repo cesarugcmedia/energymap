@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
-import { SearchIcon, PinIcon, CloseIcon, LightningIcon } from '@/components/Icons'
+import { SearchIcon, PinIcon, CloseIcon, LightningIcon, BarcodeIcon } from '@/components/Icons'
+import BarcodeScanner from '@/components/BarcodeScanner'
+import { lookupUpc } from '@/lib/openFoodFacts'
 
 const MAX_DISTANCE_M = 500
 
@@ -80,6 +82,8 @@ function DrinksContent() {
   // to verify if they change their mind; skipping is not a blocker either
   // way, since the server-side geofence check is skipped without GPS.
   const [locationSkipped, setLocationSkipped] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scanLookupLoading, setScanLookupLoading] = useState(false)
   const distanceM = gpsCoords && storeCoords ? getDistanceMeters(gpsCoords.lat, gpsCoords.lng, storeCoords.lat, storeCoords.lng) : null
 
   useEffect(() => {
@@ -173,6 +177,35 @@ function DrinksContent() {
       next.has(drinkId) ? next.delete(drinkId) : next.add(drinkId)
       return next
     })
+  }
+
+  // A scanned UPC either matches something already in the catalog (jump
+  // straight to its quick-tap buttons, skipping search entirely) or it
+  // doesn't — in which case it falls through to the store page's existing
+  // Add Drink flow, pre-filled from a free product lookup where possible.
+  // Add Drink is intentionally a separate page (see the info banner below)
+  // rather than duplicated here, so this reuses that flow instead of a
+  // second copy of its duplicate-checking/rate-limit logic.
+  async function handleScan(code: string) {
+    setScannerOpen(false)
+
+    const match = drinks.find((d) => d.kroger_upc === code)
+    if (match) {
+      setSearch(match.flavor || match.name)
+      setExpandedDrinks((prev) => new Set(prev).add(match.id))
+      return
+    }
+
+    setScanLookupLoading(true)
+    const product = await lookupUpc(code)
+    setScanLookupLoading(false)
+
+    const params = new URLSearchParams({ name: storeName, addDrink: '1', upc: code })
+    if (product) {
+      params.set('brand', product.brand)
+      params.set('flavor', product.name)
+    }
+    router.push(`/store/${storeId}?${params.toString()}`)
   }
 
   function selectQuantity(drinkId: string, qty: Quantity) {
@@ -347,29 +380,42 @@ function DrinksContent() {
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── Search ────────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            margin: '16px 16px 12px',
-            padding: '10px 14px',
-            borderRadius: 12,
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--fg-07)',
-          }}
-        >
-          <SearchIcon size={14} color="rgba(255,255,255,0.3)" />
-          <input
-            type="text"
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text)' }}
-            placeholder="Search drinks & flavors..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button onClick={() => setSearch('')} style={{ color: 'var(--fg-30)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex' }}><CloseIcon size={12} color="var(--fg-30)" /></button>
-          )}
+        {/* ── Search + scan ─────────────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 16px 12px' }}>
+          <div
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px',
+              borderRadius: 12,
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--fg-07)',
+            }}
+          >
+            <SearchIcon size={14} color="rgba(255,255,255,0.3)" />
+            <input
+              type="text"
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text)' }}
+              placeholder="Search drinks & flavors..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ color: 'var(--fg-30)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex' }}><CloseIcon size={12} color="var(--fg-30)" /></button>
+            )}
+          </div>
+          <button
+            onClick={() => setScannerOpen(true)}
+            disabled={scanLookupLoading}
+            title="Scan a barcode"
+            style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid #C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: scanLookupLoading ? 'default' : 'pointer', opacity: scanLookupLoading ? 0.6 : 1 }}
+          >
+            {scanLookupLoading
+              ? <div className="w-4 h-4 border-2 border-[#C9F400]/40 border-t-[#C9F400] rounded-full animate-spin" />
+              : <BarcodeIcon size={20} color="#C9F400" />}
+          </button>
         </div>
+
+        {scannerOpen && <BarcodeScanner onDetect={handleScan} onClose={() => setScannerOpen(false)} />}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>

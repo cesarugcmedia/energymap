@@ -150,7 +150,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
-  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
+  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean; upc?: string }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
   const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number; names: string[] } | null>(null)
   const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
@@ -159,6 +159,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   // instead of landing on the store page with no obvious next step.
   useEffect(() => {
     if (params.get('flag') === '1') setShowFlag(true)
+  }, [params])
+
+  // Lets Report Stock's barcode scanner land here with the Add Drink modal
+  // already open and pre-filled, when a scanned UPC didn't match anything
+  // already in the catalog — brand/flavor come from a free product lookup
+  // there, upc is always present so it gets saved once this drink is added.
+  useEffect(() => {
+    if (params.get('addDrink') !== '1') return
+    const brand = params.get('brand') ?? ''
+    const flavor = params.get('flavor') ?? ''
+    const upc = params.get('upc') ?? undefined
+    setDrinkEntries([{ id: '1', brand, flavor, caffeine_mg: '', duplicate: false, upc }])
+    setShowAddDrink(true)
   }, [params])
 
   useEffect(() => {
@@ -445,7 +458,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         const brand = normalizeBrand(e.brand)
         const flavor = e.flavor.trim()
         const caffeine_mg = e.caffeine_mg.trim() ? parseInt(e.caffeine_mg.trim()) : null
-        return { brand, name: `${brand} ${flavor}`, flavor, caffeine_mg, submitted_by: user?.id ?? null }
+        return { brand, name: `${brand} ${flavor}`, flavor, caffeine_mg, submitted_by: user?.id ?? null, kroger_upc: e.upc || null }
       })
     )
 
@@ -946,9 +959,18 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   {drinkResults.skipped > 0 && (
                     <p className="text-xs text-white/35">{drinkResults.skipped} skipped — already in the system.</p>
                   )}
+                  {drinkResults.added > 0 && (
+                    <button
+                      className="mt-1 w-full rounded-2xl p-3.5 font-bold flex items-center justify-center gap-2"
+                      style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
+                      onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
+                    >
+                      <LightningIcon size={14} color="#0D1210" /> Report Stock
+                    </button>
+                  )}
                   <button
-                    className="mt-1 w-full rounded-2xl p-3.5 font-bold text-white"
-                    style={{ backgroundColor: '#C9F400' }}
+                    className="w-full rounded-2xl p-3.5 font-bold"
+                    style={{ backgroundColor: drinkResults.added > 0 ? 'var(--fg-06)' : '#C9F400', color: drinkResults.added > 0 ? 'var(--fg-70)' : '#0D1210' }}
                     onClick={closeAddDrink}
                   >
                     Done
