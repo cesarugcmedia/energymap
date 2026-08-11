@@ -2,7 +2,7 @@ export const BRAND_COLORS: Record<string, string> = {
   Monster:    '#00cc44',
   'Red Bull': '#e63946',
   Celsius:    '#7c3aed',
-  Ghost:      '#06b6d4',
+  'Ghost Energy': '#06b6d4',
   Reign:      '#f97316',
   Rockstar:   '#facc15',
   Bang:       '#ec4899',

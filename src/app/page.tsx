@@ -548,6 +548,8 @@ export default function MapPage() {
       <div
         style={{
           flexShrink: 0,
+          position: 'relative',
+          zIndex: 40,
           paddingTop: 'env(safe-area-inset-top)',
           backgroundColor: 'var(--header-bg)',
           backdropFilter: 'blur(20px)',
@@ -635,6 +637,19 @@ export default function MapPage() {
           stay mounted so the map keeps its zoom/pan state and Mapbox instance
           alive when List View is showing. */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+
+        {/* Dismiss backdrop for the search-suggestions dropdown — sits above
+            the map/list (which have no explicit z-index above 1) but below
+            the header (z-index 40, set above), so the search box + chips
+            stay interactive while this dims and captures taps on the map/
+            list underneath, closing the dropdown on the first tap instead
+            of the dropdown just silently overlapping unreachable content. */}
+        {showSuggestions && (
+          <div
+            onMouseDown={() => setSearchFocused(false)}
+            style={{ position: 'absolute', inset: 0, zIndex: 24, backgroundColor: 'rgba(5,6,4,0.55)' }}
+          />
+        )}
 
         {/* Map layer */}
         <div
