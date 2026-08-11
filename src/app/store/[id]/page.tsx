@@ -31,13 +31,6 @@ function normalizeBrand(input: string): string {
 }
 
 
-const TYPE_LABEL: Record<string, string> = {
-  gas_station: 'Gas Station',
-  convenience: 'Convenience Store',
-  grocery: 'Grocery Store',
-  other: 'Store',
-}
-
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
@@ -119,7 +112,6 @@ function StoreDetailContent({ id }: { id: string }) {
   const [storeError, setStoreError] = useState(false)
   const [stockError, setStockError] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [confirmations, setConfirmations] = useState<Record<string, { yes: number; no: number; userVote: boolean | null }>>({})
   const [krogerStock, setKrogerStock] = useState<Record<string, { inStock: boolean; checkedAt: string; stockLevel: string | null }>>({})
 const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
@@ -309,22 +301,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       setStock([])
     }
 
-    // Fetch confirmations for this store
-    const { data: confirmData } = await supabase
-      .from('stock_confirmations')
-      .select('drink_id, confirmed, user_id')
-      .eq('store_id', id)
-    if (confirmData) {
-      const map: Record<string, { yes: number; no: number; userVote: boolean | null }> = {}
-      for (const c of confirmData) {
-        if (!map[c.drink_id]) map[c.drink_id] = { yes: 0, no: 0, userVote: null }
-        if (c.confirmed) map[c.drink_id].yes++
-        else map[c.drink_id].no++
-        if (c.user_id === user?.id) map[c.drink_id].userVote = c.confirmed
-      }
-      setConfirmations(map)
-    }
-
     setLoading(false)
   }
 
@@ -354,30 +330,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         .limit(10)
       setDrinkHistory((prev) => ({ ...prev, [drinkId]: data ?? [] }))
       setHistoryLoading((prev) => { const next = new Set(prev); next.delete(drinkId); return next })
-    }
-  }
-
-  async function handleConfirm(drinkId: string, vote: boolean) {
-    if (!user) { showToast('Sign in to confirm stock'); return }
-    const previous = confirmations[drinkId] ?? { yes: 0, no: 0, userVote: null }
-    const newVote = previous.userVote === vote ? null : vote
-    const yes = previous.yes - (previous.userVote === true ? 1 : 0) + (newVote === true ? 1 : 0)
-    const no  = previous.no  - (previous.userVote === false ? 1 : 0) + (newVote === false ? 1 : 0)
-    setConfirmations(prev => ({ ...prev, [drinkId]: { yes, no, userVote: newVote } }))
-    const rollback = () => {
-      setConfirmations(prev => ({ ...prev, [drinkId]: previous }))
-      showToast('Could not save your vote — try again.')
-    }
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/stock/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ store_id: id, drink_id: drinkId, confirmed: newVote }),
-      })
-      if (!res.ok) rollback()
-    } catch {
-      rollback()
     }
   }
 
@@ -529,7 +481,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
-      {/* ── Sticky header ─────────────────────────────────────────── */}
+      {/* ── Sticky header — consolidates the old separate compact bar +
+          large hero into one compact icon-in-circle header, matching
+          Report Stock's store-head treatment. ────────────────────── */}
       <div
         style={{
           position: 'sticky',
@@ -542,11 +496,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px' }}>
           <button
             onClick={() => router.back()}
             style={{
-              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+              width: 36, height: 36, borderRadius: 10, flexShrink: 0, marginTop: 4,
               backgroundColor: 'var(--fg-07)',
               border: '1px solid var(--fg-10)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -557,50 +511,56 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               <path d="M10 12L6 8l4-4" stroke="var(--fg-75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(201,244,0,0.1)',
+            border: '1.5px solid rgba(201,244,0,0.3)',
+            boxShadow: '0 0 14px rgba(201,244,0,0.18)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <StoreTypeIcon type={store?.type} size={19} color="#C9F400" />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <StoreTypeIcon type={store?.type} size={14} color="var(--fg-45)" /> {name}
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {name}
             </p>
             {store && (
-              <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--fg-35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {TYPE_LABEL[store.type] ?? 'Store'}
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {store.address}
               </p>
             )}
+            {staleColor && latestReport && isTracker && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: staleColor }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: staleColor }}>
+                  {stalenessLabel(latestReport.reported_at)} · {timeAgo(latestReport.reported_at)}
+                </span>
+              </div>
+            )}
           </div>
-          {staleColor && latestReport && isTracker && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-              padding: '4px 10px', borderRadius: 999,
-              backgroundColor: `${staleColor}18`,
-              border: `1px solid ${staleColor}44`,
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: staleColor }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: staleColor }}>
-                {timeAgo(latestReport.reported_at)}
-              </span>
-            </div>
-          )}
-          <button
-            onClick={toggleFavorite}
-            disabled={favoritingLoading}
-            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-            style={{
-              width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
-              backgroundColor: isFavorited ? 'rgba(239,68,68,0.15)' : 'var(--fg-05)',
-              border: `1px solid ${isFavorited ? 'rgba(239,68,68,0.4)' : 'var(--fg-08)'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <HeartIcon size={14} color={isFavorited ? '#FF4545' : '#8b9284'} filled={isFavorited} />
-          </button>
-          <button
-            onClick={() => setShowFlag(true)}
-            title="Flag incorrect location"
-            style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, backgroundColor: 'var(--fg-05)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
-            <FlagIcon size={14} color="#8b9284" />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 4 }}>
+            <button
+              onClick={toggleFavorite}
+              disabled={favoritingLoading}
+              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              style={{
+                width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
+                backgroundColor: isFavorited ? 'rgba(239,68,68,0.15)' : 'var(--fg-05)',
+                border: `1px solid ${isFavorited ? 'rgba(239,68,68,0.4)' : 'var(--fg-08)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <HeartIcon size={14} color={isFavorited ? '#FF4545' : '#8b9284'} filled={isFavorited} />
+            </button>
+            <button
+              onClick={() => setShowFlag(true)}
+              title="Flag incorrect location"
+              style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, backgroundColor: 'var(--fg-05)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <FlagIcon size={14} color="#8b9284" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -608,34 +568,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── Hero ──────────────────────────────────────────────────── */}
-        <div style={{ padding: '20px 16px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{
-              width: 62, height: 62, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(201,244,0,0.1)',
-              border: '1.5px solid rgba(201,244,0,0.3)',
-              boxShadow: '0 0 20px rgba(201,244,0,0.2), 0 0 40px rgba(201,244,0,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <StoreTypeIcon type={store?.type} size={26} color="#C9F400" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.3px' }}>{name}</p>
-              {store && (
-                <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--fg-40)' }}>{store.address}</p>
-              )}
-              {staleColor && latestReport && isTracker && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 7 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: staleColor }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: staleColor }}>
-                    {stalenessLabel(latestReport.reported_at)} · {timeAgo(latestReport.reported_at)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <div style={{ height: 16 }} />
 
         {/* ── Action buttons ────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 10, margin: '0 16px 12px' }}>
@@ -725,11 +658,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               )}
             </div>
 
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
-              {isSearching
-                ? `${filteredStock.length} result${filteredStock.length !== 1 ? 's' : ''}`
-                : `BRANDS · ${Object.keys(byBrand).length} found`}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px', marginBottom: 12 }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'var(--accent)' }}>
+                🛒 BRANDS
+              </p>
+              <span style={{ fontSize: 10, color: 'var(--fg-30)' }}>
+                {isSearching
+                  ? `${filteredStock.length} result${filteredStock.length !== 1 ? 's' : ''}`
+                  : `${Object.keys(byBrand).length} found`}
+              </span>
+            </div>
             {isSearching && filteredStock.length === 0 && (
               <div className="flex flex-col items-center gap-2 mt-8">
                 <SearchIcon size={36} color="#8b9284" />
@@ -786,6 +724,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                           const q = QUANTITY_CONFIG[item.quantity as Quantity]
                           const isKrogerOnly = !!item.isKrogerOnly
                           const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--fg-30)'
+                          // Same simplified lime/amber/gray signal as Report Stock's freshness
+                          // dots (fresh < 12h, else stale, gray if never reported) — a quick
+                          // glance alongside the more precise Fresh/Aging/Stale/Unverified text.
+                          const dotColor = isKrogerOnly || !item.reported_at
+                            ? 'var(--fg-25)'
+                            : (Date.now() - new Date(item.reported_at).getTime()) / 3600000 < 12
+                              ? '#C9F400'
+                              : '#FFB300'
                           const historyOpen = expandedHistory.has(item.drink_id)
                           const history = drinkHistory[item.drink_id] ?? []
                           const loadingHistory = historyLoading.has(item.drink_id)
@@ -798,16 +744,19 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   boxShadow: `inset 3px 0 0 ${q?.color ?? 'rgba(201,244,0,0.3)'}, 0 0 8px ${q?.color ? q.color + '30' : 'rgba(201,244,0,0.08)'}`,
                                   borderRadius: isTracker && historyOpen && !isKrogerOnly ? '12px 12px 0 0' : 12,
                                   cursor: isTracker && !isKrogerOnly ? 'pointer' : 'default',
-                                  padding: 12,
+                                  padding: 10,
                                 }}
                                 onClick={() => { if (!isKrogerOnly) toggleHistory(item.drink_id) }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-white truncate">
-                                      {item.drink?.flavor ?? item.drink?.name}
-                                    </p>
-                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    <div className="flex items-center gap-1.5">
+                                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
+                                      <p className="text-sm font-semibold text-white truncate">
+                                        {item.drink?.flavor ?? item.drink?.name}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap" style={{ marginLeft: 13 }}>
                                       {isKrogerOnly ? (
                                         <p className="text-xs font-semibold" style={{ color: freshColor }}>No reports yet</p>
                                       ) : (
@@ -838,18 +787,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     {krogerStock[item.drink_id] && krogerConflictsWithCrowd(item.quantity, krogerStock[item.drink_id].inStock) && (
                                       <div
                                         className="text-[10px] font-semibold mt-1.5 px-2 py-1.5 rounded-lg"
-                                        style={{ backgroundColor: 'rgba(255,179,0,0.06)', border: '1px dashed rgba(255,179,0,0.3)', color: '#FFB300' }}
+                                        style={{ backgroundColor: 'rgba(255,179,0,0.06)', border: '1px dashed rgba(255,179,0,0.3)', color: '#FFB300', marginLeft: 13 }}
                                       >
                                         ⚠️ Kroger's last check ({timeAgo(krogerStock[item.drink_id].checkedAt)}) said {krogerStockLabel(krogerStock[item.drink_id].inStock, krogerStock[item.drink_id].stockLevel)} — differs from the report above
                                       </div>
                                     )}
-                                    {/* Confirmation buttons */}
-                                    {!isKrogerOnly && (() => { const c = confirmations[item.drink_id]; const yv = c?.userVote === true; const nv = c?.userVote === false; return (
-                                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => handleConfirm(item.drink_id, true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: yv ? 'rgba(201,244,0,0.15)' : 'var(--fg-04)', border: `1px solid ${yv ? 'rgba(201,244,0,0.5)' : 'var(--fg-08)'}`, color: yv ? '#C9F400' : 'var(--fg-40)' }}><CheckIcon size={11} color={yv ? '#C9F400' : 'var(--fg-40)'} /> {c?.yes ?? 0}</button>
-                                        <button onClick={() => handleConfirm(item.drink_id, false)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer', backgroundColor: nv ? 'rgba(255,69,69,0.12)' : 'var(--fg-04)', border: `1px solid ${nv ? 'rgba(255,69,69,0.4)' : 'var(--fg-08)'}`, color: nv ? '#FF4545' : 'var(--fg-40)' }}><CloseIcon size={11} color={nv ? '#FF4545' : 'var(--fg-40)'} /> {c?.no ?? 0}</button>
-                                      </div>
-                                    )})()}
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0 ml-2">
                                     {!isKrogerOnly && (

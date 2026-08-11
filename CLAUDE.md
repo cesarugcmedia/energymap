@@ -115,7 +115,7 @@ Key routes:
 - `POST /api/geocode` — Geocodes an address string to lat/lng
 - `POST /api/stock/report` — Submits stock reports for a store; enforces the geofence, daily limit, and dedup window server-side (see Geofencing & Submission Limits below)
 - `GET /api/stores/nearby` — Returns approved stores near `lat`/`lng`, tier-filtered server-side (5mi cap for free/anon, unlimited for tracker/admin)
-- `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report
+- `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report (currently unused — see "Stock Report Accuracy" below)
 - `POST /api/community/post` — Creates a `/community` feed post (1–500 chars, optional `store_id` tag and/or `photo_url`), rate-limited to 10/hour
 - `POST /api/community/like` — Upserts or deletes a like on a `/community` post
 - `POST /api/community/comment` — Adds a flat (non-threaded) comment to a `/community` post (1–300 chars), rate-limited to 20/hour
@@ -243,9 +243,9 @@ Stock reports on store pages show a freshness state based on age:
 - **Stale** — 12–24h ago
 - **Unverified** — > 24h ago (greyed out)
 
-All users see the freshness label; `tracker` tier users additionally see the exact time ago.
+All users see the freshness label; `tracker` tier users additionally see the exact time ago. Each drink card also shows a small lime/amber/gray status dot next to the flavor name — the same simplified fresh(<12h)/stale/never-reported signal used for Report Stock's flavor rows and the map's marker freshness, layered on top of the more precise 4-bucket text label rather than replacing it.
 
-Each drink card shows ✓/✗ community confirmation buttons. Votes are stored in `stock_confirmations` and displayed as counts. Optimistic UI updates on tap; tapping the same button again removes the vote.
+Community ✓/✗ confirmation voting on individual drink cards was removed — freshness now rests on the timestamp and status dot alone. The `stock_confirmations` table and `POST /api/stock/confirm` route still exist but are currently unused/orphaned; left in place rather than deleted in case the feature comes back, not an oversight.
 
 ### Report Stock Flow
 
