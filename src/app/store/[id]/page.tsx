@@ -142,7 +142,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
   const [search, setSearch] = useState('')
   const [showAddDrink, setShowAddDrink] = useState(false)
-  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean; upc?: string }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
+  const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
   const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number; names: string[] } | null>(null)
   const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
@@ -151,19 +151,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   // instead of landing on the store page with no obvious next step.
   useEffect(() => {
     if (params.get('flag') === '1') setShowFlag(true)
-  }, [params])
-
-  // Lets Report Stock's barcode scanner land here with the Add Drink modal
-  // already open and pre-filled, when a scanned UPC didn't match anything
-  // already in the catalog — brand/flavor come from a free product lookup
-  // there, upc is always present so it gets saved once this drink is added.
-  useEffect(() => {
-    if (params.get('addDrink') !== '1') return
-    const brand = params.get('brand') ?? ''
-    const flavor = params.get('flavor') ?? ''
-    const upc = params.get('upc') ?? undefined
-    setDrinkEntries([{ id: '1', brand, flavor, caffeine_mg: '', duplicate: false, upc }])
-    setShowAddDrink(true)
   }, [params])
 
   useEffect(() => {
@@ -410,7 +397,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         const brand = normalizeBrand(e.brand)
         const flavor = e.flavor.trim()
         const caffeine_mg = e.caffeine_mg.trim() ? parseInt(e.caffeine_mg.trim()) : null
-        return { brand, name: `${brand} ${flavor}`, flavor, caffeine_mg, submitted_by: user?.id ?? null, kroger_upc: e.upc || null }
+        return { brand, name: `${brand} ${flavor}`, flavor, caffeine_mg, submitted_by: user?.id ?? null }
       })
     )
 

@@ -125,6 +125,10 @@ export default function AdminPage() {
   const [krogerSyncing, setKrogerSyncing] = useState(false)
   const [krogerSyncResult, setKrogerSyncResult] = useState<string | null>(null)
   const [krogerSyncProgress, setKrogerSyncProgress] = useState<{ done: number; total: number } | null>(null)
+  // Persistent freshness signal for the whole integration — the most recent
+  // kroger_stock.checked_at across ALL rows, so this reflects both manual
+  // "Sync Now" runs and the daily cron sync, not just client-side button state.
+  const [krogerLastSynced, setKrogerLastSynced] = useState<string | null>(null)
   const [krogerStoreSearch, setKrogerStoreSearch] = useState('')
   const [expandedKrogerStoreStates, setExpandedKrogerStoreStates] = useState<Set<string>>(new Set())
   const [expandedKrogerDrinkBrands, setExpandedKrogerDrinkBrands] = useState<Set<string>>(new Set())
@@ -446,6 +450,16 @@ export default function AdminPage() {
     return { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
   }
 
+  async function fetchKrogerLastSynced() {
+    const { data } = await supabase
+      .from('kroger_stock')
+      .select('checked_at')
+      .order('checked_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setKrogerLastSynced(data?.checked_at ?? null)
+  }
+
   async function runKrogerSync() {
     if (krogerSyncing) return
     setKrogerSyncing(true)
@@ -490,6 +504,7 @@ export default function AdminPage() {
     }
     setKrogerSyncProgress(null)
     setKrogerSyncing(false)
+    fetchKrogerLastSynced()
   }
 
   async function importKrogerLocations() {
@@ -697,6 +712,7 @@ export default function AdminPage() {
     else if (section === 'kroger') {
       if (locations.length === 0) fetchLocations()
       if (drinks.length === 0) fetchDrinks()
+      fetchKrogerLastSynced()
     }
   }
 
@@ -707,7 +723,7 @@ export default function AdminPage() {
     else if (tab === 'users') fetchUsers()
     else if (tab === 'waitlist') fetchWaitlist()
     else if (tab === 'flags') fetchFlags()
-    else if (tab === 'kroger') { fetchLocations(); fetchDrinks() }
+    else if (tab === 'kroger') { fetchLocations(); fetchDrinks(); fetchKrogerLastSynced() }
   }
 
   return (
@@ -896,8 +912,14 @@ export default function AdminPage() {
         <div className="px-4 pb-6 flex flex-col gap-5">
           {/* Sync */}
           <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}>
-            <p className="text-sm font-bold text-white mb-1">Sync Availability</p>
-            <p className="text-xs text-white/40 mb-3">Pulls fresh stock for every matched store × matched drink pair.</p>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-bold text-white">Sync Availability</p>
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: krogerLastSynced ? 'var(--fg-50)' : '#FFB300' }}>
+                <ClockIcon size={11} color={krogerLastSynced ? 'var(--fg-50)' : '#FFB300'} />
+                {krogerLastSynced ? `Last synced ${timeAgo(krogerLastSynced)}` : 'Never synced'}
+              </span>
+            </div>
+            <p className="text-xs text-white/40 mb-3">Pulls fresh stock for every matched store × matched drink pair. Updates from both this button and the daily scheduled sync.</p>
             <button
               onClick={runKrogerSync}
               disabled={krogerSyncing}
