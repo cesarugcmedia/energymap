@@ -179,6 +179,10 @@ function AccountPageInner() {
   const [drinkAlerts, setDrinkAlerts] = useState<any[]>([])
   const [drinkAlertsLoading, setDrinkAlertsLoading] = useState(false)
   const [removingAlertId, setRemovingAlertId] = useState<string | null>(null)
+  const [flavorQuery, setFlavorQuery] = useState('')
+  const [flavorResults, setFlavorResults] = useState<any[]>([])
+  const [flavorSearching, setFlavorSearching] = useState(false)
+  const [followingDrinkId, setFollowingDrinkId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
@@ -424,6 +428,29 @@ function AccountPageInner() {
     if (user) { fetchFavorites(user.id); fetchStats(user.id); fetchDrinkAlerts(user.id) }
   }, [user])
 
+  // Searches the full drinks catalog (brand/name/flavor), not just what's
+  // currently in stock somewhere — the whole point of this box is finding
+  // a flavor precisely because it *isn't* showing up in stock anywhere.
+  useEffect(() => {
+    const q = flavorQuery.trim()
+    if (q.length < 2) { setFlavorResults([]); setFlavorSearching(false); return }
+    setFlavorSearching(true)
+    let cancelled = false
+    const debounce = setTimeout(() => {
+      supabase
+        .from('drinks')
+        .select('id, brand, name, flavor')
+        .or(`brand.ilike.%${q}%,name.ilike.%${q}%,flavor.ilike.%${q}%`)
+        .limit(8)
+        .then(({ data }) => {
+          if (cancelled) return
+          setFlavorResults(data ?? [])
+          setFlavorSearching(false)
+        })
+    }, 300)
+    return () => { cancelled = true; clearTimeout(debounce) }
+  }, [flavorQuery])
+
   async function fetchFavorites(userId: string) {
     setFavoritesLoading(true)
     const { data } = await supabase
@@ -439,7 +466,7 @@ function AccountPageInner() {
     setDrinkAlertsLoading(true)
     const { data } = await supabase
       .from('drink_alerts')
-      .select('id, scope, radius_miles, drink:drinks(name, flavor, brand), store:stores(name)')
+      .select('id, drink_id, scope, radius_miles, drink:drinks(name, flavor, brand), store:stores(name)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     if (data) setDrinkAlerts(data)
@@ -452,6 +479,29 @@ function AccountPageInner() {
     await supabase.from('drink_alerts').delete().eq('id', alertId)
     setDrinkAlerts((prev) => prev.filter((a) => a.id !== alertId))
     setRemovingAlertId(null)
+  }
+
+  // "Follow a flavor" search — lets someone follow a discontinued/rare drink
+  // directly, since the only other way to start a flavor alert (the bell on
+  // a store's stock card) requires the drink to already be in stock
+  // *somewhere nearby right now*, which a vault/discontinued item usually
+  // isn't. Searches the full catalog, not what's currently in stock.
+  async function followDrinkById(drinkId: string) {
+    if (!user || followingDrinkId) return
+    setFollowingDrinkId(drinkId)
+    const { error } = await supabase.from('drink_alerts').upsert(
+      { user_id: user.id, drink_id: drinkId, scope: 'anywhere', store_id: null, radius_miles: null, anchor_lat: null, anchor_lng: null },
+      { onConflict: 'user_id,drink_id' }
+    )
+    setFollowingDrinkId(null)
+    if (!error) {
+      showToast("You'll be notified when it's back")
+      setFlavorQuery('')
+      setFlavorResults([])
+      fetchDrinkAlerts(user.id)
+    } else {
+      showToast('Could not follow — try again.')
+    }
   }
 
   async function fetchStats(userId: string) {
@@ -1064,13 +1114,56 @@ function selectAndContinue(tierId: TierId) {
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', margin: '24px 0 12px', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
                   Flavor Alerts · {drinkAlerts.length}
                 </p>
+
+                {/* Search the full catalog, not just what's currently in
+                    stock — for following a discontinued/rare flavor that
+                    won't show up as a bell on any store's card right now. */}
+                <div style={{ position: 'relative', marginBottom: 12 }}>
+                  <input
+                    type="text"
+                    value={flavorQuery}
+                    onChange={(e) => setFlavorQuery(e.target.value)}
+                    placeholder="Follow a flavor — even discontinued ones"
+                    style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, padding: '10px 12px', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+                  />
+                  {(flavorResults.length > 0 || flavorSearching) && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 12, overflow: 'hidden' }}>
+                      {flavorSearching ? (
+                        <div style={{ padding: 14, display: 'flex', justifyContent: 'center' }}>
+                          <div style={{ width: 18, height: 18, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                        </div>
+                      ) : (
+                        flavorResults.map((d) => {
+                          const already = drinkAlerts.some((a) => a.drink_id === d.id)
+                          return (
+                            <button
+                              key={d.id}
+                              onClick={() => !already && followDrinkById(d.id)}
+                              disabled={already || followingDrinkId === d.id}
+                              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--fg-06)', textAlign: 'left', cursor: already ? 'default' : 'pointer' }}
+                            >
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
+                              </div>
+                              {followingDrinkId === d.id ? (
+                                <div style={{ width: 14, height: 14, flexShrink: 0, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                              ) : (
+                                <BellIcon size={14} color={already ? '#C9F400' : '#8b9284'} filled={already} />
+                              )}
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
                 {drinkAlertsLoading ? (
                   <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}>
                     <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                   </div>
                 ) : drinkAlerts.length === 0 ? (
                   <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                    <span style={{ fontSize: 32 }}>🔔</span>
+                    <BellIcon size={32} color="#8b9284" />
                     <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No flavor alerts yet</p>
                     <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the bell on any drink card to get notified when it restocks.</p>
                   </div>
@@ -1082,7 +1175,7 @@ function selectAndContinue(tierId: TierId) {
                         : 'Anywhere'
                       return (
                         <div key={a.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(201,244,0,0.4)' }}>
-                          <span style={{ fontSize: 20 }}>🔔</span>
+                          <BellIcon size={20} color="#C9F400" filled />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {a.drink?.flavor ?? a.drink?.name}
@@ -1090,7 +1183,7 @@ function selectAndContinue(tierId: TierId) {
                             <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scopeLabel}</p>
                           </div>
                           <button onClick={() => removeDrinkAlert(a.id)} disabled={removingAlertId === a.id} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingAlertId === a.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
-                            {removingAlertId === a.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <span style={{ fontSize: 10, color: '#FF4545' }}>✕</span>}
+                            {removingAlertId === a.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={10} color="#FF4545" />}
                           </button>
                         </div>
                       )

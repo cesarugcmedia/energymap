@@ -234,6 +234,7 @@ This replaced standalone emoji used as functional UI icons app-wide (search boxe
 - Only a **single unified alert** exists per drink — no separate "notify on brand-wide new drops" toggle. That's a different data shape (brand-level, not drink-level) and was scoped out of this pass.
 - No "Rare Find" auto-tagging (flavors with a history of low stock) — would need report-history data that's currently only fetched on-demand for `tracker` users, not eagerly for everyone.
 - Managed from `/account` → **Saved** tab, below Favorites (not a separate nav tab, to avoid crowding the bottom nav).
+- **"Follow a flavor" search** (same Saved tab) — the bell on a store's stock card only ever covers drinks currently in stock *somewhere nearby*, so there was no way to start an alert for something with zero current stock anywhere (a discontinued/rare flavor, by definition, usually has none). This box searches the full `drinks` catalog directly (brand/name/flavor, debounced 300ms) regardless of current stock, and follows immediately at `scope: 'anywhere'` — no store context to anchor "within N miles" or "this store only" against, so those two scopes aren't offered here, only via the store-page bell. Reuses the exact same `drink_alerts` upsert (`onConflict: 'user_id,drink_id'`) and restock trigger as the store-page flow; no new schema.
 
 ### Stock Report Accuracy
 
@@ -278,6 +279,31 @@ A submission where every pick was deduped returns `{ submitted: 0 }`; the client
 ### PWA
 
 Manifest generated at `src/app/manifest.ts`. Service worker registered via `src/components/ServiceWorkerRegister.tsx`. Offline fallback page at `/offline`.
+
+## Future Considerations
+
+Ideas discussed but deliberately not started — parked here instead of lost between sessions.
+
+### Retailer POS Integration (not started)
+
+Explored as a fourth stock-data source, alongside crowd reports (`stock_reports`), Kroger (`kroger_stock`), and a not-yet-built retailer self-report option (see below). The question that kicked this off: how could a gas station or retailer mark their own stock, either automatically via their point-of-sale system or manually.
+
+**Two approaches discussed:**
+
+1. **Owner self-report** (cheap, not built) — a retailer claims their store (email/phone verification or admin approval, similar to Google Business Profile), then uses the *existing* `/submit/drinks` Report Stock flow from an account flagged as that store's verified owner, distinguished by a new badge (analogous to the Kroger "Verified" badge, but human-sourced). Needs roughly a `store_owners` table (`user_id` + `store_id` + verified flag), a claim/verify flow, and one new badge — reuses essentially all of the existing report pipeline. Same staleness risk as any manual source, just from a more authoritative person.
+
+2. **Direct POS integration** (expensive, not built) — same architectural shape as the Kroger integration (a separate `pos_stock`-style table, never merged into `stock_reports`; a store-to-POS-location mapping column like `stores.kroger_location_id`; a suggest-and-confirm SKU-to-`drinks`-row matching step like Kroger drink matching) but push-based via webhooks instead of Kroger's polled/cron sync, so genuinely real-time with precise unit counts rather than coarse High/Med/Low. Would need to be built per POS vendor (Square, Clover, Toast, NCR, etc. are all separate integrations — no universal POS API), starting with Square as the most likely first target given how common it is among independent convenience stores/gas stations.
+
+**Why this is parked, not scoped for work yet:** the real blocker isn't engineering effort, it's whether the data exists to pull at all — a large share of small convenience stores and gas stations run their register as pure payment-taking with no real per-SKU inventory tracking behind it. POS integration also needs actual business development (a retailer has to be talked into connecting their POS account; doesn't scale the way crowd reporting or self-serve owner claims do), and ongoing per-retailer maintenance (token refresh, revoked access, missed webhooks). Before investing engineering time, worth a gut-check with a handful of real gas stations/convenience stores on whether their POS even tracks inventory — otherwise this risks Kroger's integration effort without Kroger's guarantee the data is there.
+
+### Limited-Edition Drop Tracker & Discontinued/Vault Watchlist
+
+Two ideas that turned out to be one shared system plus one already-existing feature, rather than two separate builds:
+
+- **Drop Tracker** (not started) — a curated feed of confirmed/rumored seasonal or limited-edition flavors (e.g. a Halloween "Witch's Brew," a returning Ghost collab, a new Red Bull edition), so users know what to hunt for before it's even reached stores. Needs a new admin-curated content table (status: rumored/confirmed/released, description, maybe a source link) plus a display surface — no store or Kroger data can tell you this, it has to be entered by a person.
+- **Discontinued/vault watchlist** (**restock half now built**, announcement half not started) — let a user flag a discontinued favorite and get notified either when a store reports it back in stock, or when the brand announces a return. The first trigger is just Flavor Alerts (`drink_alerts` + `notify_drink_alert_subscribers()`) — already existed, the only gap was *discovery* (no way to follow a flavor with zero current stock anywhere). That gap is now closed by the "Follow a flavor" search on `/account`'s Saved tab — see "Flavor Alerts" above. The second trigger ("brand announces a return") still needs the same new curated-content table the Drop Tracker needs, since that's editorial information no data source has.
+
+**Why the remaining piece is parked:** unlike everything else in the app (crowd-sourced or API-synced), a curated drops/announcements feed needs an ongoing human editor to keep researching and posting rumors/confirmations indefinitely, or the feed goes stale fast — a genuinely different kind of ongoing cost than anything else here, worth being deliberate about taking on before building the table and UI for it.
 
 ## App Store Roadmap
 
