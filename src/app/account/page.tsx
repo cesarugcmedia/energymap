@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
-import { StoreTypeIcon, CheckIcon, BellIcon, PinIcon, HeartIcon, CloseIcon } from '@/components/Icons'
+import { StoreTypeIcon, CheckIcon, BellIcon, PinIcon, HeartIcon, CloseIcon, MailIcon, TiktokIcon } from '@/components/Icons'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -1568,21 +1568,43 @@ function selectAndContinue(tierId: TierId) {
           </div>
         )}
 
+        {/* ── DIVIDER ── */}
+        <div style={{ maxWidth: 900, margin: '0 auto 24px', padding: '0 24px' }}>
+          <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,244,0,0.1), transparent)' }} />
+        </div>
+
+        {/* ── CONTACT ── */}
+        <div style={{ maxWidth: 420, margin: '0 auto', padding: '0 24px 28px' }}>
+          <div style={{ backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 20, padding: '22px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.14em', marginBottom: 14, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Get In Touch</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a
+                href="mailto:support@ampedmap.com"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '12px 16px', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 14, textDecoration: 'none' }}
+              >
+                <MailIcon size={16} color="var(--accent)" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>support@ampedmap.com</span>
+              </a>
+              <a
+                href="https://www.tiktok.com/@ampedmap"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '12px 16px', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 14, textDecoration: 'none' }}
+              >
+                <TiktokIcon size={16} color="var(--accent)" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>@ampedmap on TikTok</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* ── FOOTER ── */}
-        <div style={{ textAlign: 'center', padding: '28px 24px 48px', borderTop: '1px solid rgba(201,244,0,0.08)' }}>
+        <div style={{ textAlign: 'center', padding: '0 24px 48px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 16 }}>⚡</span>
             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#4A5F50' }}>Amped Map</span>
           </div>
-          <p style={{ fontSize: 11, color: '#4A5F50', marginBottom: 14 }}>Built for the community · Powered by real-time reports</p>
-          <p style={{ fontSize: 12, color: '#7A8F80', marginBottom: 8 }}>
-            Questions or feedback?{' '}
-            <a href="mailto:support@ampedmap.com" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>support@ampedmap.com</a>
-          </p>
-          <p style={{ fontSize: 12, color: '#7A8F80' }}>
-            Find us on TikTok{' '}
-            <a href="https://www.tiktok.com/@ampedmap" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>@ampedmap</a>
-          </p>
+          <p style={{ fontSize: 11, color: '#4A5F50' }}>Built for the community · Powered by real-time reports</p>
         </div>
       </div>
     </div>

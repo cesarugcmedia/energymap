@@ -253,6 +253,27 @@ export function CameraIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
   )
 }
 
+export function MailIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="5" width="18" height="14" rx="2" stroke={color} strokeWidth={1.6} />
+      <path d="M4 7l8 6 8-6" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// Simplified monochrome approximation of the TikTok mark — a single filled
+// path (matching LightningIcon's style) rather than the real multi-layer
+// brand logo, which needs overlapping colors that don't fit this app's
+// one-color line-icon language.
+export function TiktokIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 3c.5 2.8 2.3 4.6 5 5v3.2c-1.8 0-3.5-.6-5-1.6V15a6 6 0 1 1-6-6c.3 0 .7 0 1 .1V12a2.8 2.8 0 1 0 2 2.7V3h3z" fill={color} />
+    </svg>
+  )
+}
+
 export const OtherIcon = PinIcon
 
 const STORE_TYPE_ICON: Record<string, (p: IconProps) => JSX.Element> = {
