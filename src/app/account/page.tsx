@@ -1602,9 +1602,13 @@ function selectAndContinue(tierId: TierId) {
             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#4A5F50' }}>Amped Map</span>
           </div>
           <p style={{ fontSize: 11, color: '#4A5F50', marginBottom: 14 }}>Built for the community · Powered by real-time reports</p>
-          <p style={{ fontSize: 12, color: '#7A8F80' }}>
+          <p style={{ fontSize: 12, color: '#7A8F80', marginBottom: 8 }}>
             Questions or feedback?{' '}
             <a href="mailto:support@ampedmap.com" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>support@ampedmap.com</a>
+          </p>
+          <p style={{ fontSize: 12, color: '#7A8F80' }}>
+            Find us on TikTok{' '}
+            <a href="https://www.tiktok.com/@ampedmap" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>@ampedmap</a>
           </p>
         </div>
       </div>
