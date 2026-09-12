@@ -1311,10 +1311,9 @@ function selectAndContinue(tierId: TierId) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
             {HOW_IT_WORKS.map((item, i) => (
-              <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 16, padding: '14px 14px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
-                <div style={{ fontSize: 22, marginBottom: 8 }}>{item.icon}</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 5, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
-                <div style={{ fontSize: 11.5, color: '#7A8F80', lineHeight: 1.5 }}>{item.desc}</div>
+              <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 10px', textAlign: 'center', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
+                <div style={{ fontSize: 20, marginBottom: 6 }}>{item.icon}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
               </div>
             ))}
           </div>
