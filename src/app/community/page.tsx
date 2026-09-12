@@ -966,10 +966,10 @@ export default function CommunityPage() {
                     <div style={{ marginTop: 16, backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
                       <div>
                         <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                          ⚡ Tracker members get early alerts + history
+                          ⚡ Tracker members get unlimited alerts
                         </p>
                         <p style={{ fontSize: 12, color: '#7A8F80' }}>
-                          Full report history, custom lists, and verified badge
+                          Exact timestamps, custom lists, and verified badge
                         </p>
                       </div>
                       <button

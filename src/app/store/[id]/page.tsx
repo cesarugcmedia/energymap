@@ -114,9 +114,6 @@ function StoreDetailContent({ id }: { id: string }) {
   const [loading, setLoading] = useState(true)
   const [krogerStock, setKrogerStock] = useState<Record<string, { inStock: boolean; checkedAt: string; stockLevel: string | null }>>({})
 const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
-  const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set())
-  const [drinkHistory, setDrinkHistory] = useState<Record<string, any[]>>({})
-  const [historyLoading, setHistoryLoading] = useState<Set<string>>(new Set())
   const [showFlag, setShowFlag] = useState(false)
   const [flagReason, setFlagReason] = useState('')
   const [flagNotes, setFlagNotes] = useState('')
@@ -297,27 +294,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       next.has(brand) ? next.delete(brand) : next.add(brand)
       return next
     })
-  }
-
-  async function toggleHistory(drinkId: string) {
-    if (!isTracker) return
-    setExpandedHistory((prev) => {
-      const next = new Set(prev)
-      next.has(drinkId) ? next.delete(drinkId) : next.add(drinkId)
-      return next
-    })
-    if (!drinkHistory[drinkId]) {
-      setHistoryLoading((prev) => new Set(prev).add(drinkId))
-      const { data } = await supabase
-        .from('stock_reports')
-        .select('id, quantity, reported_at, user_id, reporter:profiles(username, is_verified_reporter)')
-        .eq('store_id', id)
-        .eq('drink_id', drinkId)
-        .order('reported_at', { ascending: false })
-        .limit(10)
-      setDrinkHistory((prev) => ({ ...prev, [drinkId]: data ?? [] }))
-      setHistoryLoading((prev) => { const next = new Set(prev); next.delete(drinkId); return next })
-    }
   }
 
   function updateEntry(id: string, field: 'brand' | 'flavor' | 'caffeine_mg', value: string) {
@@ -719,9 +695,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                             : (Date.now() - new Date(item.reported_at).getTime()) / 3600000 < 12
                               ? '#C9F400'
                               : '#FFB300'
-                          const historyOpen = expandedHistory.has(item.drink_id)
-                          const history = drinkHistory[item.drink_id] ?? []
-                          const loadingHistory = historyLoading.has(item.drink_id)
                           return (
                             <div key={item.drink_id}>
                               <div
@@ -729,11 +702,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                   backgroundColor: 'var(--fg-04)',
                                   border: `1px solid ${q?.border ?? 'rgba(201,244,0,0.1)'}`,
                                   boxShadow: `inset 3px 0 0 ${q?.color ?? 'rgba(201,244,0,0.3)'}, 0 0 8px ${q?.color ? q.color + '30' : 'rgba(201,244,0,0.08)'}`,
-                                  borderRadius: isTracker && historyOpen && !isKrogerOnly ? '12px 12px 0 0' : 12,
-                                  cursor: isTracker && !isKrogerOnly ? 'pointer' : 'default',
+                                  borderRadius: 12,
                                   padding: 10,
                                 }}
-                                onClick={() => { if (!isKrogerOnly) toggleHistory(item.drink_id) }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                                   <div className="flex-1 min-w-0">
@@ -797,52 +768,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     >
                                       <BellIcon size={12} color={drinkAlerts.has(item.drink_id) ? '#C9F400' : '#8b9284'} filled={drinkAlerts.has(item.drink_id)} />
                                     </button>
-                                    {isTracker && !isKrogerOnly && (
-                                      <span className="text-white/30 text-xs" style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▾</span>
-                                    )}
                                   </div>
                                 </div>
                               </div>
-
-                              {isTracker && !isKrogerOnly && historyOpen && (
-                                <div
-                                  className="px-3 pb-3"
-                                  style={{
-                                    backgroundColor: 'var(--fg-02)',
-                                    border: `1.5px solid ${q?.border ?? 'var(--fg-10)'}`,
-                                    borderTop: 'none',
-                                    borderRadius: '0 0 12px 12px',
-                                  }}
-                                >
-                                  <p className="text-[9px] font-bold py-2" style={{ color: 'var(--fg-25)', letterSpacing: '1.5px' }}>REPORT HISTORY</p>
-                                  {loadingHistory ? (
-                                    <div className="flex justify-center py-3">
-                                      <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                                    </div>
-                                  ) : history.length === 0 ? (
-                                    <p className="text-xs text-white/30 pb-1">No history found.</p>
-                                  ) : (
-                                    <div className="flex flex-col gap-1.5">
-                                      {history.map((h: any, i: number) => {
-                                        const hq = QUANTITY_CONFIG[h.quantity as Quantity]
-                                        const reporter = (h.reporter as any)
-                                        return (
-                                          <div key={h.id} className="flex items-center gap-2.5">
-                                            <div className="w-px self-stretch" style={{ backgroundColor: i === 0 ? hq?.color : 'var(--fg-08)', minHeight: 20 }} />
-                                            <div className="px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: hq?.bg, border: `1px solid ${hq?.border}` }}>
-                                              <span className="text-[9px] font-bold" style={{ color: hq?.color }}>{hq?.label}</span>
-                                            </div>
-                                            <p className="text-[11px] text-white/50 flex-1">{timeAgo(h.reported_at)}</p>
-                                            {reporter?.username && (
-                                              <p className="text-[10px] text-white/30">@{reporter.username}</p>
-                                            )}
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
                             </div>
                           )
                         })}

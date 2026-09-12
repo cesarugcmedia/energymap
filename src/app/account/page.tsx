@@ -129,7 +129,6 @@ const TIERS = [
       'Unlimited map radius',
       'Unlimited submissions',
       'Last updated timestamps',
-      'Full drink report history',
       'Stock notifications & alerts',
       'Favorites & custom store lists',
       'Verified reporter badge',
@@ -1012,7 +1011,7 @@ function selectAndContinue(tierId: TierId) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {(profile.tier === 'free'
                           ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
-                          : ['Live stock map', 'Unlimited radius', 'Unlimited submissions', 'Stock notifications', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge', 'Report history']
+                          : ['Live stock map', 'Unlimited radius', 'Unlimited submissions', 'Stock notifications', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
                         ).map((f) => (
                           <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                             <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
@@ -1043,7 +1042,7 @@ function selectAndContinue(tierId: TierId) {
                           </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
-                          {['Unlimited map radius', 'Unlimited submissions', 'Timestamps', 'Report history', 'Stock alerts', 'Store lists', 'Verified badge', 'Leaderboard badge'].map((f) => (
+                          {['Unlimited map radius', 'Unlimited submissions', 'Timestamps', 'Stock alerts', 'Store lists', 'Verified badge', 'Leaderboard badge'].map((f) => (
                             <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                               <span style={{ fontSize: 9, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
                               <span style={{ fontSize: 11, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
