@@ -1320,27 +1320,8 @@ function selectAndContinue(tierId: TierId) {
           </div>
         </div>
 
-        {/* ── BRANDS ── */}
-        <div style={{ textAlign: 'center', padding: '0 24px 24px', animation: 'fadeUp 0.6s ease 0.3s both' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Tracking Your Favorite Brands</p>
-          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
-            {[
-              { name: 'Celsius', color: '#7c3aed' },
-              { name: 'Ghost Energy', color: '#06b6d4' },
-              { name: 'Alani Nu', color: '#ec4899' },
-              { name: 'Red Bull', color: '#e63946' },
-              { name: 'Monster', color: '#00cc44' },
-              { name: 'Rockstar', color: '#facc15' },
-            ].map((brand, i) => (
-              <div key={i} style={{ backgroundColor: 'var(--surface)', border: `1px solid ${brand.color}33`, borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, color: brand.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
-                {brand.name}
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* ── DIVIDER ── */}
-        <div style={{ maxWidth: 900, margin: '0 auto 24px', padding: '0 24px' }}>
+        <div style={{ maxWidth: 900, margin: '8px auto 24px', padding: '0 24px' }}>
           <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,244,0,0.1), transparent)' }} />
         </div>
 
@@ -1434,11 +1415,11 @@ function selectAndContinue(tierId: TierId) {
                   {t.tag && (
                     <div style={{ position: 'absolute', top: 16, right: 14, backgroundColor: t.comingSoon ? 'rgba(249,115,22,0.85)' : t.color, borderRadius: 20, padding: '3px 10px', fontSize: 9, fontWeight: 800, letterSpacing: '0.1em', color: t.color === '#C9F400' ? '#0D1210' : '#fff', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.tag}</div>
                   )}
-                  <div style={{ padding: '16px 16px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 22, marginBottom: 4, display: 'block' }}>{t.icon}</span>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: t.color, display: 'block', marginBottom: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t.name}</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 10 }}>
-                      <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.price}</span>
+                  <div style={{ padding: '13px 14px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 19, marginBottom: 3, display: 'block' }}>{t.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: t.color, display: 'block', marginBottom: 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 8 }}>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.price}</span>
                       <span style={{ fontSize: 12, color: '#4A5F50' }}>{t.period}</span>
                     </div>
                     {t.id === 'tracker' && (() => {
@@ -1446,8 +1427,8 @@ function selectAndContinue(tierId: TierId) {
                       const remaining = Math.max(0, BETA_LIMIT - betaCount)
                       const spotsLeft = remaining > 0
                       return (
-                        <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '8px 10px', marginBottom: 10 }}>
-                          <p style={{ fontSize: 10.5, color: 'var(--fg-60)', lineHeight: 1.4, marginBottom: 6 }}>
+                        <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 9, padding: '6px 9px', marginBottom: 8 }}>
+                          <p style={{ fontSize: 10, color: 'var(--fg-60)', lineHeight: 1.3, marginBottom: 5 }}>
                             {spotsLeft
                               ? `🔥 First 60 beta users get Tracker free — ${remaining} spot${remaining !== 1 ? 's' : ''} left`
                               : '🔒 Beta is full. Tracker is $5.00/mo.'}
@@ -1463,10 +1444,10 @@ function selectAndContinue(tierId: TierId) {
                         <p style={{ fontSize: 11, color: 'var(--fg-50)', lineHeight: 1.6 }}>{t.description}</p>
                       </div>
                     )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
                       {/* Inheritance banner */}
                       {t.inherits && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'var(--fg-04)', border: '1px solid var(--fg-08)', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'var(--fg-04)', border: '1px solid var(--fg-08)', borderRadius: 8, padding: '5px 9px', marginBottom: 3 }}>
                           <span style={{ fontSize: 10 }}>⬆️</span>
                           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)', letterSpacing: 0.3 }}>
                             Includes everything in <span style={{ color: 'var(--text)' }}>{t.inherits}</span>, plus:
@@ -1474,30 +1455,30 @@ function selectAndContinue(tierId: TierId) {
                         </div>
                       )}
                       {t.features.map((f, fi) => (
-                        <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ color: t.color, fontSize: 11, marginTop: 2, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 11, color: 'var(--fg-60)', lineHeight: 1.4 }}>{f}</span>
+                        <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                          <span style={{ color: t.color, fontSize: 10.5, marginTop: 1.5, flexShrink: 0 }}>✓</span>
+                          <span style={{ fontSize: 10.5, color: 'var(--fg-60)', lineHeight: 1.3 }}>{f}</span>
                         </div>
                       ))}
                     </div>
-                    <div style={{ marginTop: 14 }}>
+                    <div style={{ marginTop: 10 }}>
                       {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' && searchParams.get('invited') !== '1' ? (
                         <a href="/waitlist"
-                          style={{ display: 'block', width: '100%', padding: 12, backgroundColor: '#C9F400', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', textDecoration: 'none', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
+                          style={{ display: 'block', width: '100%', padding: 10, backgroundColor: '#C9F400', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', textDecoration: 'none', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
                           Join Waitlist →
                         </a>
                       ) : t.comingSoon ? (
-                        <div style={{ width: '100%', padding: 12, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        <div style={{ width: '100%', padding: 10, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                           Notify Me When Available
                         </div>
                       ) : t.id === 'tracker' && betaCount >= 60 ? (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
-                          style={{ width: '100%', padding: 12, backgroundColor: '#C9F400', border: 'none', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
+                          style={{ width: '100%', padding: 10, backgroundColor: '#C9F400', border: 'none', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
                           Buy Tracker — $5.00/mo →
                         </button>
                       ) : (
                         <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
-                          style={{ width: '100%', padding: 12, backgroundColor: t.color === '#C9F400' ? '#C9F400' : t.color, border: 'none', borderRadius: 12, color: t.color === '#C9F400' ? '#0D1210' : '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: `0 0 16px ${t.glow}` }}>
+                          style={{ width: '100%', padding: 10, backgroundColor: t.color === '#C9F400' ? '#C9F400' : t.color, border: 'none', borderRadius: 12, color: t.color === '#C9F400' ? '#0D1210' : '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: `0 0 16px ${t.glow}` }}>
                           {t.id === 'tracker' ? 'Claim Beta Spot →' : 'Get Started →'}
                         </button>
                       )}
@@ -1506,7 +1487,7 @@ function selectAndContinue(tierId: TierId) {
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: 'var(--fg-20)' }}>
+            <p style={{ textAlign: 'center', marginTop: 14, fontSize: 11, color: 'var(--fg-20)' }}>
               All paid plans can be cancelled anytime · No hidden fees
             </p>
           </div>
