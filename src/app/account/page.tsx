@@ -1268,19 +1268,19 @@ function selectAndContinue(tierId: TierId) {
       <div style={{ position: 'relative', zIndex: 1, fontFamily: "'Barlow', system-ui, sans-serif" }}>
 
         {/* ── HERO ── */}
-        <div style={{ textAlign: 'center', padding: '48px 24px 40px', animation: 'fadeUp 0.6s ease' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{ textAlign: 'center', padding: '36px 24px 28px', animation: 'fadeUp 0.6s ease' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <span style={{ fontSize: 40, display: 'inline-block', animation: 'float 3s ease-in-out infinite' }}>⚡</span>
             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 48, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent)' }}>Amped Map</span>
           </div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(26px, 5vw, 44px)', fontWeight: 800, lineHeight: 1.1, marginBottom: 16, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(26px, 5vw, 44px)', fontWeight: 800, lineHeight: 1.1, marginBottom: 14, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
             Never Hunt for Your<br />
             <span style={{ color: 'var(--accent)' }}>Favorite Energy Drink</span> Again
           </h1>
-          <p style={{ fontSize: 15, color: '#7A8F80', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.7 }}>
+          <p style={{ fontSize: 15, color: '#7A8F80', maxWidth: 480, margin: '0 auto 20px', lineHeight: 1.7 }}>
             The crowdsourced platform that tracks real-time energy drink stock at stores near you. Find Celsius, Ghost, Alani Nu, Red Bull and more — before you leave the house.
           </p>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '6px 16px', marginBottom: 36 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '6px 16px', marginBottom: 24 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#C9F400', animation: 'pulse 2s ease-in-out infinite' }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif" }}>LIVE STOCK UPDATES</span>
           </div>
@@ -1299,38 +1299,31 @@ function selectAndContinue(tierId: TierId) {
         </div>
 
         {/* ── HOW IT WORKS ── */}
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 56px', animation: 'fadeUp 0.6s ease 0.2s both' }}>
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <div style={{ display: 'inline-block', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '4px 14px', marginBottom: 12 }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 32px', animation: 'fadeUp 0.6s ease 0.2s both' }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ display: 'inline-block', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '4px 14px', marginBottom: 10 }}>
               <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif" }}>HOW IT WORKS</span>
             </div>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Built by Energy Drink Fans, for Energy Drink Fans</h2>
-            <p style={{ fontSize: 13, color: '#7A8F80', maxWidth: 460, margin: '0 auto', lineHeight: 1.7 }}>
+            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6 }}>Built by Energy Drink Fans, for Energy Drink Fans</h2>
+            <p style={{ fontSize: 13, color: '#7A8F80', maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
               We know the frustration of driving to three stores for one flavor. Amped Map solves that — powered by a community just like you.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 40 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
             {HOW_IT_WORKS.map((item, i) => (
-              <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 16, padding: '18px 16px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
-                <div style={{ fontSize: 26, marginBottom: 10 }}>{item.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 6, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
-                <div style={{ fontSize: 12, color: '#7A8F80', lineHeight: 1.6 }}>{item.desc}</div>
+              <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 16, padding: '14px 14px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>{item.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 5, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
+                <div style={{ fontSize: 11.5, color: '#7A8F80', lineHeight: 1.5 }}>{item.desc}</div>
               </div>
             ))}
-          </div>
-          <div style={{ backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 20, padding: '28px 32px', textAlign: 'center' }}>
-            <span style={{ fontSize: 28, marginBottom: 12, display: 'block' }}>🎯</span>
-            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Our Mission</h3>
-            <p style={{ fontSize: 14, color: '#7A8F80', maxWidth: 520, margin: '0 auto', lineHeight: 1.8 }}>
-              Energy drink culture is exploding — new flavors drop constantly, stores sell out fast, and fans are left empty-handed. Amped Map gives the community a single place to share, discover, and track stock so no one misses out.
-            </p>
           </div>
         </div>
 
         {/* ── BRANDS ── */}
-        <div style={{ textAlign: 'center', padding: '0 24px 48px', animation: 'fadeUp 0.6s ease 0.3s both' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 16, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Tracking Your Favorite Brands</p>
-          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ textAlign: 'center', padding: '0 24px 24px', animation: 'fadeUp 0.6s ease 0.3s both' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Tracking Your Favorite Brands</p>
+          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
             {[
               { name: 'Celsius', color: '#7c3aed' },
               { name: 'Ghost Energy', color: '#06b6d4' },
@@ -1339,7 +1332,7 @@ function selectAndContinue(tierId: TierId) {
               { name: 'Monster', color: '#00cc44' },
               { name: 'Rockstar', color: '#facc15' },
             ].map((brand, i) => (
-              <div key={i} style={{ backgroundColor: 'var(--surface)', border: `1px solid ${brand.color}33`, borderRadius: 20, padding: '7px 18px', fontSize: 12, fontWeight: 700, color: brand.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+              <div key={i} style={{ backgroundColor: 'var(--surface)', border: `1px solid ${brand.color}33`, borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, color: brand.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
                 {brand.name}
               </div>
             ))}
@@ -1347,12 +1340,12 @@ function selectAndContinue(tierId: TierId) {
         </div>
 
         {/* ── DIVIDER ── */}
-        <div style={{ maxWidth: 900, margin: '0 auto 40px', padding: '0 24px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto 24px', padding: '0 24px' }}>
           <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,244,0,0.1), transparent)' }} />
         </div>
 
         {/* ── MODE TABS ── */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
           <div style={{ display: 'flex', backgroundColor: 'rgba(201,244,0,0.06)', borderRadius: 14, padding: 4, border: '1px solid rgba(201,244,0,0.1)' }}>
             {(['signup', 'signin'] as Mode[]).map((m) => (
               <button key={m} onClick={() => switchMode(m)}
@@ -1412,9 +1405,9 @@ function selectAndContinue(tierId: TierId) {
 
         {/* ── SIGN UP STEP 1 — choose plan ── */}
         {mode === 'signup' && step === 1 && (
-          <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, color: 'var(--text)' }}>Choose Your Plan</h2>
+          <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 36px', animation: 'fadeUp 0.5s ease' }}>
+            <div style={{ textAlign: 'center', marginBottom: 18 }}>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, color: 'var(--text)' }}>Choose Your Plan</h2>
               <p style={{ fontSize: 13, color: '#7A8F80' }}>Start free, upgrade anytime</p>
               {waitlistCount !== null && waitlistCount > 0 && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 24, padding: '8px 16px' }}>
@@ -1441,10 +1434,10 @@ function selectAndContinue(tierId: TierId) {
                   {t.tag && (
                     <div style={{ position: 'absolute', top: 16, right: 14, backgroundColor: t.comingSoon ? 'rgba(249,115,22,0.85)' : t.color, borderRadius: 20, padding: '3px 10px', fontSize: 9, fontWeight: 800, letterSpacing: '0.1em', color: t.color === '#C9F400' ? '#0D1210' : '#fff', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.tag}</div>
                   )}
-                  <div style={{ padding: '18px 18px 16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 24, marginBottom: 6, display: 'block' }}>{t.icon}</span>
+                  <div style={{ padding: '16px 16px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 22, marginBottom: 4, display: 'block' }}>{t.icon}</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: t.color, display: 'block', marginBottom: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t.name}</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 10 }}>
                       <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.price}</span>
                       <span style={{ fontSize: 12, color: '#4A5F50' }}>{t.period}</span>
                     </div>
@@ -1453,16 +1446,15 @@ function selectAndContinue(tierId: TierId) {
                       const remaining = Math.max(0, BETA_LIMIT - betaCount)
                       const spotsLeft = remaining > 0
                       return (
-                        <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
-                          <p style={{ fontSize: 11, color: 'var(--fg-60)', lineHeight: 1.6, marginBottom: 8 }}>
+                        <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '8px 10px', marginBottom: 10 }}>
+                          <p style={{ fontSize: 10.5, color: 'var(--fg-60)', lineHeight: 1.4, marginBottom: 6 }}>
                             {spotsLeft
-                              ? `🔥 First 60 beta users get Tracker free. Only ${remaining} spot${remaining !== 1 ? 's' : ''} left!`
+                              ? `🔥 First 60 beta users get Tracker free — ${remaining} spot${remaining !== 1 ? 's' : ''} left`
                               : '🔒 Beta is full. Tracker is $5.00/mo.'}
                           </p>
-                          <div style={{ height: 4, backgroundColor: 'var(--fg-08)', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: 3, backgroundColor: 'var(--fg-08)', borderRadius: 4, overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #C9F400, #a8d400)', borderRadius: 4, transition: 'width 0.5s ease' }} />
                           </div>
-                          <p style={{ fontSize: 10, color: 'var(--fg-30)', marginTop: 5 }}>{betaCount} / {BETA_LIMIT} beta spots claimed</p>
                         </div>
                       )
                     })()}
@@ -1471,7 +1463,7 @@ function selectAndContinue(tierId: TierId) {
                         <p style={{ fontSize: 11, color: 'var(--fg-50)', lineHeight: 1.6 }}>{t.description}</p>
                       </div>
                     )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
                       {/* Inheritance banner */}
                       {t.inherits && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'var(--fg-04)', border: '1px solid var(--fg-08)', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>
@@ -1488,7 +1480,7 @@ function selectAndContinue(tierId: TierId) {
                         </div>
                       ))}
                     </div>
-                    <div style={{ marginTop: 18 }}>
+                    <div style={{ marginTop: 14 }}>
                       {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' && searchParams.get('invited') !== '1' ? (
                         <a href="/waitlist"
                           style={{ display: 'block', width: '100%', padding: 12, backgroundColor: '#C9F400', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', textDecoration: 'none', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
