@@ -1409,7 +1409,7 @@ function selectAndContinue(tierId: TierId) {
               {TIERS.map((t, i) => (
                 <div key={t.id}
                   className={t.comingSoon ? 'tier-card tier-coming' : 'tier-card'}
-                  style={{ backgroundColor: 'var(--surface)', borderRadius: 20, border: `1.5px solid ${t.comingSoon ? 'rgba(249,115,22,0.2)' : 'rgba(201,244,0,0.1)'}`, position: 'relative', animation: `fadeUp 0.5s ease ${i * 0.08}s both`, opacity: t.comingSoon ? 0.82 : 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+                  style={{ backgroundColor: 'rgba(201,244,0,0.04)', borderRadius: 20, border: `1px solid ${t.comingSoon ? 'rgba(249,115,22,0.25)' : 'rgba(201,244,0,0.18)'}`, position: 'relative', animation: `fadeUp 0.5s ease ${i * 0.08}s both`, opacity: t.comingSoon ? 0.82 : 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
                 >
                   <div style={{ height: 4, background: `linear-gradient(90deg, ${t.color}, ${t.color}88)` }} />
                   {t.tag && (
