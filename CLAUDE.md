@@ -124,7 +124,7 @@ Key routes:
 
 ### Admin Dashboard
 
-`/admin` (`src/app/admin/page.tsx`, one large client component) is tier-gated to `is_admin` profiles. Tabs, from the dashboard home grid:
+`/admin` (`src/app/admin/page.tsx`, one large client component) is tier-gated to `is_admin` profiles. It has no bottom/side nav tab — the only entry point is the **Admin Dashboard** row on `/account` (shown to admins only); the nav stays visible on `/admin` with the Account tab highlighted, and the dashboard home has a "‹ Account" back button. Tabs, from the dashboard home grid:
 
 | Tab | Icon | Purpose |
 |---|---|---|

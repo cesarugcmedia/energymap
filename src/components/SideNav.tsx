@@ -4,14 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications'
-import { MapIcon, CommunityIcon, AlertsIcon, AccountIcon, AdminIcon } from '@/components/NavIcons'
+import { MapIcon, CommunityIcon, AlertsIcon, AccountIcon } from '@/components/NavIcons'
 
 const ALL_TABS = [
   { href: '/', label: 'Map', Icon: MapIcon, adminOnly: false, trackerOnly: false },
   { href: '/community', label: 'Community', Icon: CommunityIcon, adminOnly: false, trackerOnly: false },
   { href: '/notifications', label: 'Alerts', Icon: AlertsIcon, adminOnly: false, trackerOnly: false },
   { href: '/account', label: 'Account', Icon: AccountIcon, adminOnly: false, trackerOnly: false },
-  { href: '/admin', label: 'Admin', Icon: AdminIcon, adminOnly: true, trackerOnly: false },
 ]
 
 const TAB_PATHS = ['/', '/community', '/notifications', '/account', '/admin', '/admin/login']
@@ -58,7 +57,7 @@ export default function SideNav() {
       {/* Nav links */}
       <nav className="flex flex-col gap-1 px-3 flex-1">
         {tabs.map((tab) => {
-          const isActive = pathname === tab.href || (tab.href === '/admin' && pathname === '/admin/login')
+          const isActive = pathname === tab.href || (tab.href === '/account' && pathname.startsWith('/admin'))
           return (
             <Link
               key={tab.href}
