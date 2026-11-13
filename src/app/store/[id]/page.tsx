@@ -66,40 +66,6 @@ function stalenessLabel(dateStr: string) {
   return 'Unverified'
 }
 
-// Kroger's inventory.stockLevel is a coarse, not-exhaustively-documented
-// enum (only "HIGH" confirmed live so far) — fall back to a flat "In Stock"
-// label/color for any level we don't recognize rather than guessing.
-function krogerStockLabel(inStock: boolean, stockLevel: string | null) {
-  if (!inStock) return 'Out of Stock'
-  switch (stockLevel?.toUpperCase()) {
-    case 'HIGH': return 'High Stock'
-    case 'MEDIUM': return 'Medium Stock'
-    case 'LOW': return 'Low Stock'
-    default: return 'In Stock'
-  }
-}
-
-function krogerStockColors(inStock: boolean, stockLevel: string | null) {
-  if (!inStock) return { bg: 'rgba(255,69,69,0.1)', color: '#FF4545', border: 'rgba(255,69,69,0.25)' }
-  switch (stockLevel?.toUpperCase()) {
-    case 'HIGH': return { bg: 'rgba(201,244,0,0.08)', color: '#C9F400', border: 'rgba(201,244,0,0.3)' }
-    case 'MEDIUM':
-    case 'LOW': return { bg: 'rgba(255,179,0,0.1)', color: '#FFB300', border: 'rgba(255,179,0,0.25)' }
-    default: return { bg: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: 'rgba(59,130,246,0.3)' }
-  }
-}
-
-// True when the most recent crowd report and Kroger's last check disagree
-// on plain in-stock/out-of-stock (ignores quantity level vs. stock level
-// nuance — this is just "do the two sources even agree it's there at all").
-// We don't try to pick a winner — just flag it so the user can compare the
-// two freshness timestamps themselves and judge which to trust.
-function krogerConflictsWithCrowd(quantity: string | null | undefined, krogerInStock: boolean): boolean {
-  if (!quantity) return false
-  const crowdSaysInStock = quantity !== 'out'
-  return crowdSaysInStock !== krogerInStock
-}
-
 function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()
   const params = useSearchParams()
@@ -112,7 +78,6 @@ function StoreDetailContent({ id }: { id: string }) {
   const [storeError, setStoreError] = useState(false)
   const [stockError, setStockError] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [krogerStock, setKrogerStock] = useState<Record<string, { inStock: boolean; checkedAt: string; stockLevel: string | null }>>({})
 const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [showFlag, setShowFlag] = useState(false)
   const [flagReason, setFlagReason] = useState('')
@@ -248,39 +213,22 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
 
   async function fetchStock() {
-    const [{ data: stockData, error }, { data: krogerData }] = await Promise.all([
-      supabase.from('latest_stock').select('drink_id, quantity, reported_at').eq('store_id', id),
-      supabase.from('kroger_stock').select('drink_id, in_stock, checked_at, stock_level').eq('store_id', id),
-    ])
+    const { data: stockData, error } = await supabase
+      .from('latest_stock')
+      .select('drink_id, quantity, reported_at')
+      .eq('store_id', id)
     if (error) { setStockError(true); setLoading(false); return }
 
-    const krogerMap: Record<string, { inStock: boolean; checkedAt: string; stockLevel: string | null }> = {}
-    krogerData?.forEach((k: any) => { krogerMap[k.drink_id] = { inStock: k.in_stock, checkedAt: k.checked_at, stockLevel: k.stock_level ?? null } })
-    setKrogerStock(krogerMap)
+    const drinkIds = [...new Set((stockData ?? []).map((d) => d.drink_id).filter(Boolean))]
 
-    // Kroger-matched drinks with no crowdsourced report yet still get a row —
-    // otherwise a freshly Kroger-synced store with zero user reports would
-    // show "No reports yet" despite having real availability data.
-    const reportedDrinkIds = new Set((stockData ?? []).map((d) => d.drink_id).filter(Boolean))
-    const krogerOnlyDrinkIds = Object.keys(krogerMap).filter((did) => !reportedDrinkIds.has(did))
-    const allDrinkIds = [...new Set([...reportedDrinkIds, ...krogerOnlyDrinkIds])]
-
-    if (allDrinkIds.length > 0) {
+    if (drinkIds.length > 0) {
       const { data: drinksData } = await supabase
         .from('drinks')
         .select('id, name, brand, flavor, caffeine_mg')
-        .in('id', allDrinkIds)
+        .in('id', drinkIds)
       const drinksMap: Record<string, any> = {}
       drinksData?.forEach((d) => { drinksMap[d.id] = d })
-      const reported = (stockData ?? []).map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null, isKrogerOnly: false }))
-      const krogerOnly = krogerOnlyDrinkIds.map((drinkId) => ({
-        drink_id: drinkId,
-        quantity: null,
-        reported_at: null,
-        drink: drinksMap[drinkId] ?? null,
-        isKrogerOnly: true,
-      }))
-      setStock([...reported, ...krogerOnly])
+      setStock((stockData ?? []).map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null })))
     } else {
       setStock([])
     }
@@ -412,7 +360,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     setDrinkDuplicatePopup(null)
   }
 
-  const latestReport = stock.filter((item) => !item.isKrogerOnly).reduce<any>((latest, item) => {
+  const latestReport = stock.reduce<any>((latest, item) => {
     if (!latest) return item
     return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
   }, null)
@@ -641,9 +589,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
             <div className="flex flex-col gap-2.5">
               {Object.entries(byBrand).map(([brand, items]) => {
-                const reportedItems = items.filter((i) => !i.isKrogerOnly)
-                const inStock = reportedItems.filter((i) => i.quantity !== 'out').length
-                const total = reportedItems.length
+                const inStock = items.filter((i) => i.quantity !== 'out').length
+                const total = items.length
                 const pct = total > 0 ? inStock / total : 0
                 const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
                 const isExpanded = isSearching || expandedBrands.has(brand)
@@ -685,12 +632,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                         <div className="h-px mb-1" style={{ backgroundColor: 'rgba(201,244,0,0.06)' }} />
                         {[...items].sort((a, b) => (STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)).map((item) => {
                           const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                          const isKrogerOnly = !!item.isKrogerOnly
                           const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--fg-30)'
                           // Same simplified lime/amber/gray signal as Report Stock's freshness
                           // dots (fresh < 12h, else stale, gray if never reported) — a quick
                           // glance alongside the more precise Fresh/Aging/Stale/Unverified text.
-                          const dotColor = isKrogerOnly || !item.reported_at
+                          const dotColor = !item.reported_at
                             ? 'var(--fg-25)'
                             : (Date.now() - new Date(item.reported_at).getTime()) / 3600000 < 12
                               ? '#C9F400'
@@ -715,48 +661,18 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap" style={{ marginLeft: 13 }}>
-                                      {isKrogerOnly ? (
-                                        <p className="text-xs font-semibold" style={{ color: freshColor }}>No reports yet</p>
-                                      ) : (
-                                        <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
-                                      )}
+                                      <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
                                       {item.drink?.caffeine_mg && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
                                           ⚡ {item.drink.caffeine_mg}mg
                                         </span>
                                       )}
-                                      {krogerStock[item.drink_id] && !krogerConflictsWithCrowd(item.quantity, krogerStock[item.drink_id].inStock) && (() => {
-                                        const k = krogerStock[item.drink_id]
-                                        const kc = krogerStockColors(k.inStock, k.stockLevel)
-                                        return (
-                                          <span
-                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                            style={{ backgroundColor: kc.bg, color: kc.color, border: `1px solid ${kc.border}` }}
-                                            title={`Kroger checked ${timeAgo(k.checkedAt)}`}
-                                          >
-                                            {isKrogerOnly ? '📦 Store-listed' : '✅ Verified'}: {krogerStockLabel(k.inStock, k.stockLevel)} · {timeAgo(k.checkedAt)}
-                                          </span>
-                                        )
-                                      })()}
                                     </div>
-                                    {/* When Kroger and the crowd disagree, collapse what used to be two
-                                        competing badges (Verified + "Reports disagree") into one dated,
-                                        clearly-historical note instead of two same-weight pills. */}
-                                    {krogerStock[item.drink_id] && krogerConflictsWithCrowd(item.quantity, krogerStock[item.drink_id].inStock) && (
-                                      <div
-                                        className="text-[10px] font-semibold mt-1.5 px-2 py-1.5 rounded-lg"
-                                        style={{ backgroundColor: 'rgba(255,179,0,0.06)', border: '1px dashed rgba(255,179,0,0.3)', color: '#FFB300', marginLeft: 13 }}
-                                      >
-                                        ⚠️ Kroger's last check ({timeAgo(krogerStock[item.drink_id].checkedAt)}) said {krogerStockLabel(krogerStock[item.drink_id].inStock, krogerStock[item.drink_id].stockLevel)} — differs from the report above
-                                      </div>
-                                    )}
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                                    {!isKrogerOnly && (
-                                      <div className="px-2.5 py-1.5 rounded-[9px]" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                                        <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                                      </div>
-                                    )}
+                                    <div className="px-2.5 py-1.5 rounded-[9px]" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
+                                      <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
+                                    </div>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
                                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"

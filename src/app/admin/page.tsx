@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { BRAND_COLORS } from '@/components/BrandLogo'
 import Toast from '@/components/Toast'
-import { StoreTypeIcon, SearchIcon, CheckIcon, FlagIcon, PinIcon, ClockIcon, DrinkIcon, UserIcon, ClipboardIcon, GroceryIcon, CloseIcon } from '@/components/Icons'
+import { StoreTypeIcon, SearchIcon, CheckIcon, FlagIcon, PinIcon, ClockIcon, DrinkIcon, UserIcon, ClipboardIcon, CloseIcon } from '@/components/Icons'
 
 const TYPE_OPTIONS = [
   { value: 'gas_station', label: 'Gas Station' },
@@ -67,7 +67,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<null | 'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags' | 'kroger'>(null)
+  const [tab, setTab] = useState<null | 'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags'>(null)
   const [pendingCount, setPendingCount] = useState(0)
   const [flagsCount, setFlagsCount] = useState(0)
   const [stores, setStores] = useState<any[]>([])
@@ -120,30 +120,6 @@ export default function AdminPage() {
   const [deletingWaitlist, setDeletingWaitlist] = useState<Set<string>>(new Set())
   const [userSearch, setUserSearch] = useState('')
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
-
-  // Kroger integration state
-  const [krogerSyncing, setKrogerSyncing] = useState(false)
-  const [krogerSyncResult, setKrogerSyncResult] = useState<string | null>(null)
-  const [krogerSyncProgress, setKrogerSyncProgress] = useState<{ done: number; total: number } | null>(null)
-  // Persistent freshness signal for the whole integration — the most recent
-  // kroger_stock.checked_at across ALL rows, so this reflects both manual
-  // "Sync Now" runs and the daily cron sync, not just client-side button state.
-  const [krogerLastSynced, setKrogerLastSynced] = useState<string | null>(null)
-  const [krogerStoreSearch, setKrogerStoreSearch] = useState('')
-  const [expandedKrogerStoreStates, setExpandedKrogerStoreStates] = useState<Set<string>>(new Set())
-  const [expandedKrogerDrinkBrands, setExpandedKrogerDrinkBrands] = useState<Set<string>>(new Set())
-  const [krogerLocationCandidates, setKrogerLocationCandidates] = useState<Record<string, { locationId: string; name: string; address: string }[]>>({})
-  const [krogerLocationSearching, setKrogerLocationSearching] = useState<Set<string>>(new Set())
-  const [krogerDrinkSearch, setKrogerDrinkSearch] = useState('')
-  const [krogerSearchLocationId, setKrogerSearchLocationId] = useState('')
-  const [krogerProductCandidates, setKrogerProductCandidates] = useState<Record<string, { upc: string; description: string; brand: string | null; size: string | null; inStock: boolean | null }[]>>({})
-  const [krogerProductSearching, setKrogerProductSearching] = useState<Set<string>>(new Set())
-  const [krogerBulkStoreProgress, setKrogerBulkStoreProgress] = useState<{ done: number; total: number } | null>(null)
-  const [krogerBulkDrinkProgress, setKrogerBulkDrinkProgress] = useState<{ done: number; total: number } | null>(null)
-  const [krogerImportZip, setKrogerImportZip] = useState('')
-  const [krogerImportRadius, setKrogerImportRadius] = useState('10')
-  const [krogerImporting, setKrogerImporting] = useState(false)
-  const [krogerImportResult, setKrogerImportResult] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -444,167 +420,6 @@ export default function AdminPage() {
     setDrinks((prev) => prev.filter((d) => d.id !== id))
   }
 
-  async function krogerAuthHeader() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { showToast('Session expired. Please sign in again.'); return null }
-    return { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
-  }
-
-  async function fetchKrogerLastSynced() {
-    const { data } = await supabase
-      .from('kroger_stock')
-      .select('checked_at')
-      .order('checked_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    setKrogerLastSynced(data?.checked_at ?? null)
-  }
-
-  async function runKrogerSync() {
-    if (krogerSyncing) return
-    setKrogerSyncing(true)
-    setKrogerSyncResult(null)
-    setKrogerSyncProgress(null)
-    const headers = await krogerAuthHeader()
-    if (!headers) { setKrogerSyncing(false); return }
-
-    // The route processes a bounded chunk of store×drink pairs per request
-    // (so it can't get killed mid-sync by the serverless duration limit) —
-    // keep calling it with the returned offset until it reports done.
-    let offset = 0
-    let totalSynced = 0
-    let totalFailed = 0
-    let totalPairs = 0
-    let storeCount = 0
-    let drinkCount = 0
-    let safety = 0
-    while (safety < 1000) {
-      safety++
-      const res = await fetch('/api/admin/kroger-sync', { method: 'POST', headers, body: JSON.stringify({ offset }) })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setKrogerSyncResult(`Error: ${json.error ?? 'sync failed'}`)
-        break
-      }
-      if (json.message) {
-        setKrogerSyncResult(json.message)
-        break
-      }
-      totalSynced += json.synced ?? 0
-      totalFailed += json.failed ?? 0
-      totalPairs = json.totalPairs ?? totalPairs
-      storeCount = json.storeCount ?? storeCount
-      drinkCount = json.drinkCount ?? drinkCount
-      offset = json.nextOffset ?? totalPairs
-      setKrogerSyncProgress({ done: Math.min(offset, totalPairs), total: totalPairs })
-      if (json.done) {
-        setKrogerSyncResult(`Synced ${totalSynced} · Failed ${totalFailed} (${storeCount} store × ${drinkCount} drink pairs checked)`)
-        break
-      }
-    }
-    setKrogerSyncProgress(null)
-    setKrogerSyncing(false)
-    fetchKrogerLastSynced()
-  }
-
-  async function importKrogerLocations() {
-    if (krogerImporting || !krogerImportZip.trim()) return
-    setKrogerImporting(true)
-    setKrogerImportResult(null)
-    const headers = await krogerAuthHeader()
-    if (!headers) { setKrogerImporting(false); return }
-    const res = await fetch('/api/admin/kroger-import-locations', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ zipCode: krogerImportZip.trim(), radiusMiles: parseFloat(krogerImportRadius) || 10 }),
-    })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      setKrogerImportResult(`Error: ${json.error ?? 'import failed'}`)
-    } else {
-      setKrogerImportResult(`Found ${json.candidatesFound} · Created ${json.created} · Matched to existing ${json.matched} · Already linked ${json.alreadyLinked} · Failed ${json.failed}`)
-      fetchLocations()
-    }
-    setKrogerImporting(false)
-  }
-
-  async function findKrogerLocationMatches(storeId: string) {
-    setKrogerLocationSearching((prev) => new Set(prev).add(storeId))
-    const headers = await krogerAuthHeader()
-    if (!headers) { setKrogerLocationSearching((prev) => { const n = new Set(prev); n.delete(storeId); return n }); return }
-    const res = await fetch(`/api/admin/kroger-search-locations?storeId=${storeId}`, { headers })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      showToast(json.error ?? 'Kroger location search failed')
-    } else {
-      setKrogerLocationCandidates((prev) => ({ ...prev, [storeId]: json.candidates ?? [] }))
-    }
-    setKrogerLocationSearching((prev) => { const n = new Set(prev); n.delete(storeId); return n })
-  }
-
-  async function matchStoreToKroger(storeId: string, krogerLocationId: string | null) {
-    const headers = await krogerAuthHeader()
-    if (!headers) return
-    const res = await fetch('/api/admin/kroger-match-store', { method: 'POST', headers, body: JSON.stringify({ storeId, krogerLocationId }) })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) { showToast(json.error ?? 'Could not update match'); return }
-    setLocations((prev) => prev.map((s) => s.id === storeId ? { ...s, kroger_location_id: krogerLocationId } : s))
-    setKrogerLocationCandidates((prev) => { const n = { ...prev }; delete n[storeId]; return n })
-    showToast(krogerLocationId ? 'Matched to Kroger' : 'Unmatched')
-  }
-
-  async function findAllKrogerLocationMatches() {
-    const unmatched = locations.filter((s) => !s.kroger_location_id)
-    if (unmatched.length === 0) { showToast('Every store is already matched'); return }
-    setKrogerBulkStoreProgress({ done: 0, total: unmatched.length })
-    for (let i = 0; i < unmatched.length; i++) {
-      await findKrogerLocationMatches(unmatched[i].id)
-      setKrogerBulkStoreProgress({ done: i + 1, total: unmatched.length })
-      await new Promise((r) => setTimeout(r, 150))
-    }
-    setKrogerBulkStoreProgress(null)
-  }
-
-  async function findKrogerProductMatches(drinkId: string, term: string) {
-    if (!krogerSearchLocationId) { showToast('Pick a matched store to search against first'); return }
-    setKrogerProductSearching((prev) => new Set(prev).add(drinkId))
-    const headers = await krogerAuthHeader()
-    if (!headers) { setKrogerProductSearching((prev) => { const n = new Set(prev); n.delete(drinkId); return n }); return }
-    const res = await fetch(`/api/admin/kroger-search-products?term=${encodeURIComponent(term)}&locationId=${encodeURIComponent(krogerSearchLocationId)}`, { headers })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      showToast(json.error ?? 'Kroger product search failed')
-    } else {
-      setKrogerProductCandidates((prev) => ({ ...prev, [drinkId]: json.candidates ?? [] }))
-    }
-    setKrogerProductSearching((prev) => { const n = new Set(prev); n.delete(drinkId); return n })
-  }
-
-  async function matchDrinkToKroger(drinkId: string, upc: string | null) {
-    const headers = await krogerAuthHeader()
-    if (!headers) return
-    const res = await fetch('/api/admin/kroger-match-drink', { method: 'POST', headers, body: JSON.stringify({ drinkId, upc }) })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) { showToast(json.error ?? 'Could not update match'); return }
-    setDrinks((prev) => prev.map((d) => d.id === drinkId ? { ...d, kroger_upc: upc } : d))
-    setKrogerProductCandidates((prev) => { const n = { ...prev }; delete n[drinkId]; return n })
-    showToast(upc ? 'Matched to Kroger' : 'Unmatched')
-  }
-
-  async function findAllKrogerProductMatches() {
-    if (!krogerSearchLocationId) { showToast('Pick a matched store to search against first'); return }
-    const unmatched = drinks.filter((d) => !d.kroger_upc)
-    if (unmatched.length === 0) { showToast('Every drink is already matched'); return }
-    setKrogerBulkDrinkProgress({ done: 0, total: unmatched.length })
-    for (let i = 0; i < unmatched.length; i++) {
-      const d = unmatched[i]
-      await findKrogerProductMatches(d.id, `${d.brand} ${d.flavor ?? d.name}`)
-      setKrogerBulkDrinkProgress({ done: i + 1, total: unmatched.length })
-      await new Promise((r) => setTimeout(r, 150))
-    }
-    setKrogerBulkDrinkProgress(null)
-  }
-
   async function fetchFlags() {
     setFlagsLoading(true)
     const { data, error } = await supabase
@@ -698,7 +513,6 @@ export default function AdminPage() {
     users: 'Users',
     waitlist: 'Waitlist',
     flags: 'Location Flags',
-    kroger: 'Kroger Integration',
   }
 
   function navigate(section: typeof tab) {
@@ -709,11 +523,6 @@ export default function AdminPage() {
     else if (section === 'users' && users.length === 0) fetchUsers()
     else if (section === 'waitlist' && waitlist.length === 0) fetchWaitlist()
     else if (section === 'flags') fetchFlags()
-    else if (section === 'kroger') {
-      if (locations.length === 0) fetchLocations()
-      if (drinks.length === 0) fetchDrinks()
-      fetchKrogerLastSynced()
-    }
   }
 
   function refreshCurrentTab() {
@@ -723,7 +532,6 @@ export default function AdminPage() {
     else if (tab === 'users') fetchUsers()
     else if (tab === 'waitlist') fetchWaitlist()
     else if (tab === 'flags') fetchFlags()
-    else if (tab === 'kroger') { fetchLocations(); fetchDrinks(); fetchKrogerLastSynced() }
   }
 
   return (
@@ -821,7 +629,6 @@ export default function AdminPage() {
               { key: 'drinks',    icon: <DrinkIcon size={26} color="#8b9284" />, label: 'Drinks',     desc: 'Add & remove drinks' },
               { key: 'users',     icon: <UserIcon size={26} color="#8b9284" />, label: 'Users',      desc: 'Verify & manage users' },
               { key: 'waitlist',  icon: <ClipboardIcon size={26} color="#8b9284" />, label: 'Waitlist',   desc: 'Invite signups' },
-              { key: 'kroger',    icon: <GroceryIcon size={26} color="#8b9284" />, label: 'Kroger',     desc: 'Match stores & sync stock' },
             ].map(({ key, icon, label, desc }) => (
               <button
                 key={key}
@@ -908,320 +715,6 @@ export default function AdminPage() {
             </div>
           </div>
         )
-      ) : tab === 'kroger' ? (
-        <div className="px-4 pb-6 flex flex-col gap-5">
-          {/* Sync */}
-          <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}>
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-bold text-white">Sync Availability</p>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: krogerLastSynced ? 'var(--fg-50)' : '#FFB300' }}>
-                <ClockIcon size={11} color={krogerLastSynced ? 'var(--fg-50)' : '#FFB300'} />
-                {krogerLastSynced ? `Last synced ${timeAgo(krogerLastSynced)}` : 'Never synced'}
-              </span>
-            </div>
-            <p className="text-xs text-white/40 mb-3">Pulls fresh stock for every matched store × matched drink pair. Updates from both this button and the daily scheduled sync.</p>
-            <button
-              onClick={runKrogerSync}
-              disabled={krogerSyncing}
-              className="rounded-xl px-4 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
-              style={{ backgroundColor: krogerSyncing ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
-            >
-              {krogerSyncing
-                ? (krogerSyncProgress ? `Syncing ${krogerSyncProgress.done}/${krogerSyncProgress.total}…` : <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />)
-                : '⚡ Sync Now'}
-            </button>
-            {krogerSyncResult && (
-              <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerSyncResult}</p>
-            )}
-          </div>
-
-          {/* Import locations */}
-          <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}>
-            <p className="text-sm font-bold text-white mb-1">Import Kroger Locations</p>
-            <p className="text-xs text-white/40 mb-3">
-              Pulls Kroger's own store locations near a zip code. A location within ~150m of an existing store links to it automatically; otherwise it's added as a new store. Repeat for each metro area — Kroger's API is zip+radius based, there's no single "whole state" query.
-            </p>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                placeholder="Zip code"
-                value={krogerImportZip}
-                onChange={(e) => setKrogerImportZip(e.target.value)}
-                className="flex-1 rounded-xl p-2.5 text-sm text-white outline-none"
-                style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
-              />
-              <input
-                type="number"
-                placeholder="Radius (mi)"
-                value={krogerImportRadius}
-                onChange={(e) => setKrogerImportRadius(e.target.value)}
-                className="w-28 rounded-xl p-2.5 text-sm text-white outline-none"
-                style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
-              />
-            </div>
-            <button
-              onClick={importKrogerLocations}
-              disabled={krogerImporting || !krogerImportZip.trim()}
-              className="rounded-xl px-4 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
-              style={{ backgroundColor: krogerImporting || !krogerImportZip.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
-            >
-              {krogerImporting ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : <><PinIcon size={14} color="#0D1210" /> Search & Import</>}
-            </button>
-            {krogerImportResult && (
-              <p className="text-xs mt-3" style={{ color: 'var(--fg-50)' }}>{krogerImportResult}</p>
-            )}
-          </div>
-
-          {/* Match stores */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-bold" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MATCH STORES</p>
-              <button
-                onClick={findAllKrogerLocationMatches}
-                disabled={!!krogerBulkStoreProgress}
-                className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
-                style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
-              >
-                {krogerBulkStoreProgress ? `Searching ${krogerBulkStoreProgress.done}/${krogerBulkStoreProgress.total}…` : 'Find Matches for All'}
-              </button>
-            </div>
-            <input
-              type="text"
-              placeholder="Search locations..."
-              value={krogerStoreSearch}
-              onChange={(e) => setKrogerStoreSearch(e.target.value)}
-              className="w-full rounded-xl p-3 text-sm text-white outline-none mb-3"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-            />
-            {locationsLoading ? (
-              <div className="flex items-center justify-center h-24">
-                <div className="w-6 h-6 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : (
-              (() => {
-                const filtered = locations.filter((s) =>
-                  s.name.toLowerCase().includes(krogerStoreSearch.toLowerCase()) || s.address?.toLowerCase().includes(krogerStoreSearch.toLowerCase())
-                )
-                const grouped = filtered.reduce<Record<string, any[]>>((acc, s) => {
-                  const abbr = extractStateAbbr(s.address)
-                  if (!acc[abbr]) acc[abbr] = []
-                  acc[abbr].push(s)
-                  return acc
-                }, {})
-                const sortedStates = Object.keys(grouped).sort((a, b) =>
-                  a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)
-                )
-
-                return sortedStates.map((abbr) => {
-                  const isOpen = expandedKrogerStoreStates.has(abbr)
-                  const matchedCount = grouped[abbr].filter((s) => s.kroger_location_id).length
-                  return (
-                    <div
-                      key={abbr}
-                      className="rounded-2xl mb-2.5 overflow-hidden"
-                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                    >
-                      <button
-                        onClick={() => setExpandedKrogerStoreStates((prev) => toggleInSet(prev, abbr))}
-                        className="w-full flex items-center justify-between px-4 py-3.5"
-                      >
-                        <span className="text-sm font-bold text-white" style={{ letterSpacing: '0.5px' }}>
-                          {abbr} <span style={{ color: 'var(--fg-35)', fontWeight: 600 }}>· {matchedCount}/{grouped[abbr].length} matched</span>
-                        </span>
-                        <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
-                      </button>
-                      {isOpen && (
-                        <div className="flex flex-col gap-2.5 px-4 pb-4">
-                          {grouped[abbr].map((store) => (
-                            <div key={store.id} className="rounded-2xl p-3.5" style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}>
-                              <div className="flex items-center justify-between gap-3 mb-1">
-                                <div className="min-w-0">
-                                  <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                                  <p className="text-xs text-white/40 truncate">{store.address}</p>
-                                </div>
-                                {store.kroger_location_id ? (
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}><CheckIcon size={10} color="#60a5fa" /> Matched</span>
-                                    <button onClick={() => matchStoreToKroger(store.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => findKrogerLocationMatches(store.id)}
-                                    disabled={krogerLocationSearching.has(store.id)}
-                                    className="text-[10px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
-                                  >
-                                    {krogerLocationSearching.has(store.id) ? '...' : 'Find Kroger Match'}
-                                  </button>
-                                )}
-                              </div>
-                              {krogerLocationCandidates[store.id] && (
-                                <div className="flex flex-col gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--fg-06)' }}>
-                                  {krogerLocationCandidates[store.id].length === 0 ? (
-                                    <p className="text-xs text-white/30">No candidates found near this store's zip code.</p>
-                                  ) : krogerLocationCandidates[store.id].map((c) => (
-                                    <button
-                                      key={c.locationId}
-                                      onClick={() => matchStoreToKroger(store.id, c.locationId)}
-                                      className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
-                                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                                    >
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-white truncate">{c.name}</p>
-                                        <p className="text-[10px] text-white/35 truncate">{c.address}</p>
-                                      </div>
-                                      <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>Use this →</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              })()
-            )}
-          </div>
-
-          {/* Match drinks */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-bold" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MATCH DRINKS</p>
-              {locations.filter((s) => s.kroger_location_id).length > 0 && (
-                <button
-                  onClick={findAllKrogerProductMatches}
-                  disabled={!!krogerBulkDrinkProgress || !krogerSearchLocationId}
-                  className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
-                >
-                  {krogerBulkDrinkProgress ? `Searching ${krogerBulkDrinkProgress.done}/${krogerBulkDrinkProgress.total}…` : 'Find Matches for All'}
-                </button>
-              )}
-            </div>
-            {locations.filter((s) => s.kroger_location_id).length === 0 ? (
-              <p className="text-xs text-white/35 mb-3">Match at least one store above first — Kroger's product search needs a store location to search against.</p>
-            ) : (
-              <select
-                value={krogerSearchLocationId}
-                onChange={(e) => setKrogerSearchLocationId(e.target.value)}
-                className="w-full rounded-xl p-3 text-sm text-white outline-none mb-3"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-              >
-                <option value="">Search against which store's location?</option>
-                {locations.filter((s) => s.kroger_location_id).map((s) => (
-                  <option key={s.id} value={s.kroger_location_id}>{s.name}</option>
-                ))}
-              </select>
-            )}
-            <input
-              type="text"
-              placeholder="Search drinks..."
-              value={krogerDrinkSearch}
-              onChange={(e) => setKrogerDrinkSearch(e.target.value)}
-              className="w-full rounded-xl p-3 text-sm text-white outline-none mb-3"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-            />
-            {drinksLoading ? (
-              <div className="flex items-center justify-center h-24">
-                <div className="w-6 h-6 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : (
-              (() => {
-                const filtered = drinks.filter((d) => {
-                  const q = krogerDrinkSearch.toLowerCase()
-                  return !q || d.brand.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || (d.flavor ?? '').toLowerCase().includes(q)
-                })
-                const grouped = filtered.reduce<Record<string, any[]>>((acc, d) => {
-                  if (!acc[d.brand]) acc[d.brand] = []
-                  acc[d.brand].push(d)
-                  return acc
-                }, {})
-                const sortedBrands = Object.keys(grouped).sort((a, b) => a.localeCompare(b))
-
-                if (filtered.length === 0) return (
-                  <div className="flex flex-col items-center gap-2 mt-8">
-                    <span style={{ fontSize: 36 }}>🥤</span>
-                    <p className="text-sm font-bold text-white">No drinks found</p>
-                  </div>
-                )
-
-                return sortedBrands.map((brand) => {
-                  const isOpen = expandedKrogerDrinkBrands.has(brand)
-                  const matchedCount = grouped[brand].filter((d) => d.kroger_upc).length
-                  const brandColor = BRAND_COLORS[brand] ?? 'var(--fg-40)'
-                  return (
-                    <div
-                      key={brand}
-                      className="rounded-2xl mb-2.5 overflow-hidden"
-                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                    >
-                      <button
-                        onClick={() => setExpandedKrogerDrinkBrands((prev) => toggleInSet(prev, brand))}
-                        className="w-full flex items-center justify-between px-4 py-3.5"
-                      >
-                        <span className="text-sm font-bold" style={{ color: brandColor, letterSpacing: '0.5px' }}>
-                          {brand.toUpperCase()} <span style={{ color: 'var(--fg-35)', fontWeight: 600 }}>· {matchedCount}/{grouped[brand].length} matched</span>
-                        </span>
-                        <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
-                      </button>
-                      {isOpen && (
-                        <div className="flex flex-col gap-2.5 px-4 pb-4">
-                          {grouped[brand].map((drink) => (
-                            <div key={drink.id} className="rounded-2xl p-3.5" style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}>
-                              <div className="flex items-center justify-between gap-3 mb-1">
-                                <div className="min-w-0">
-                                  <p className="text-sm font-bold text-white truncate">{drink.brand} {drink.flavor ?? drink.name}</p>
-                                </div>
-                                {drink.kroger_upc ? (
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}><CheckIcon size={10} color="#60a5fa" /> {drink.kroger_upc}</span>
-                                    <button onClick={() => matchDrinkToKroger(drink.id, null)} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,69,69,0.08)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}>Unmatch</button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => findKrogerProductMatches(drink.id, `${drink.brand} ${drink.flavor ?? drink.name}`)}
-                                    disabled={krogerProductSearching.has(drink.id)}
-                                    className="text-[10px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}
-                                  >
-                                    {krogerProductSearching.has(drink.id) ? '...' : 'Find Kroger Match'}
-                                  </button>
-                                )}
-                              </div>
-                              {krogerProductCandidates[drink.id] && (
-                                <div className="flex flex-col gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--fg-06)' }}>
-                                  {krogerProductCandidates[drink.id].length === 0 ? (
-                                    <p className="text-xs text-white/30">No candidates found for that search term.</p>
-                                  ) : krogerProductCandidates[drink.id].map((c) => (
-                                    <button
-                                      key={c.upc}
-                                      onClick={() => matchDrinkToKroger(drink.id, c.upc)}
-                                      className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
-                                      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                                    >
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-white truncate">{c.description}</p>
-                                        <p className="text-[10px] text-white/35 truncate">{c.brand ?? ''} {c.size ?? ''} · UPC {c.upc}</p>
-                                      </div>
-                                      <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>Use this →</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              })()
-            )}
-          </div>
-        </div>
       ) : tab === 'locations' ? (
         locationsLoading ? (
           <div className="flex items-center justify-center h-64">
