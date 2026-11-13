@@ -36,10 +36,24 @@ export async function POST(req: NextRequest) {
     .eq('tier', 'tracker')
 
   if ((count ?? 0) < BETA_LIMIT) {
-    // Free beta spot available — upsert profile with tracker tier
-    await supabaseAdmin
+    // Free beta spot available. An existing profile only gets its tier bumped —
+    // never touch its username, since the /account upgrade button sends no
+    // username and would otherwise overwrite it with the email prefix.
+    const { data: existing } = await supabaseAdmin
       .from('profiles')
-      .upsert({ id: user.id, username: username ?? user.email?.split('@')[0] ?? 'user', tier: 'tracker' })
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const { error: upgradeError } = existing
+      ? await supabaseAdmin.from('profiles').update({ tier: 'tracker' }).eq('id', user.id)
+      : await supabaseAdmin
+          .from('profiles')
+          .insert({ id: user.id, username: username ?? user.email?.split('@')[0] ?? 'user', tier: 'tracker' })
+
+    if (upgradeError) {
+      return NextResponse.json({ error: 'Upgrade failed' }, { status: 500 })
+    }
     return NextResponse.json({ upgraded: true })
   }
 

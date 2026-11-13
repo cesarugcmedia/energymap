@@ -14,7 +14,7 @@ Live at: `https://ampedmap.com`
 npm run dev      # Start dev server (Next.js + Turbopack)
 npm run build    # Production build
 npm run start    # Start production server
-npm run lint     # ESLint via Next.js
+npm run lint     # ESLint 9 CLI (flat config in eslint.config.mjs); also runs during `next build`, so lint errors fail deploys
 ```
 
 No test runner is configured.
