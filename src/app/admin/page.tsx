@@ -78,6 +78,7 @@ export default function AdminPage() {
   const [locationsLoading, setLocationsLoading] = useState(false)
   const [locationSearch, setLocationSearch] = useState('')
   const [expandedLocationStates, setExpandedLocationStates] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [editStore, setEditStore] = useState<any | null>(null)
   const [editName, setEditName] = useState('')
   const [editAddress, setEditAddress] = useState('')
@@ -328,6 +329,32 @@ export default function AdminPage() {
     }
     setLocations((prev) => prev.filter((s) => s.id !== id))
     setEditStore(null)
+  }
+
+  // Bulk delete for a whole state group (used for the "Unknown" bucket —
+  // stores whose address has no parseable state). Deletes in chunks and
+  // trusts only the ids Supabase reports back as deleted, so an RLS policy
+  // that silently skips rows can't make the UI drop stores that still exist.
+  async function deleteLocationGroup(label: string, ids: string[]) {
+    if (ids.length === 0 || bulkDeleting) return
+    if (!window.confirm(`Permanently delete all ${ids.length} location${ids.length === 1 ? '' : 's'} in "${label}"? Their stock reports go with them. This cannot be undone.`)) return
+    setBulkDeleting(true)
+    const deleted = new Set<string>()
+    const CHUNK = 100
+    let failed = false
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const { data, error } = await supabase.from('stores').delete().in('id', ids.slice(i, i + CHUNK)).select('id')
+      if (error) { console.error('deleteLocationGroup failed:', error.message); failed = true; break }
+      data?.forEach((r: any) => deleted.add(r.id))
+    }
+    setLocations((prev) => prev.filter((s) => !deleted.has(s.id)))
+    setBulkDeleting(false)
+    const missed = ids.length - deleted.size
+    showToast(
+      failed || missed > 0
+        ? `Deleted ${deleted.size} of ${ids.length} — ${missed} could not be deleted.`
+        : `Deleted ${deleted.size} location${deleted.size === 1 ? '' : 's'}.`
+    )
   }
 
   async function saveEdit() {
@@ -770,6 +797,16 @@ export default function AdminPage() {
                     </button>
                     {isOpen && (
                       <div className="flex flex-col gap-2.5 px-4 pb-4">
+                        {abbr === 'Unknown' && (
+                          <button
+                            onClick={() => deleteLocationGroup('Unknown', grouped[abbr].map((s) => s.id))}
+                            disabled={bulkDeleting}
+                            className="w-full text-xs font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-2"
+                            style={{ backgroundColor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.25)', opacity: bulkDeleting ? 0.5 : 1 }}
+                          >
+                            {bulkDeleting ? 'Deleting…' : `🗑️ Delete all ${grouped[abbr].length} in Unknown`}
+                          </button>
+                        )}
                         {grouped[abbr].map((store) => (
                           <div
                             key={store.id}
