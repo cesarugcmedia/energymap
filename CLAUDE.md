@@ -83,7 +83,7 @@ Admin and webhook operations use the service role client (bypasses RLS). Regular
 
 Tier upgrades go through Stripe. The webhook at `/api/stripe/webhook` handles fulfillment by updating `profiles.tier` and `profiles.stripe_customer_id`.
 
-Favorites (the heart/save-a-store list, `favorites` table) is gated behind `tracker` consistently in both places it's surfaced — the dedicated `/lists` page and the Saved tab on `/account` — both showing the same "Tracker Feature" upsell card for `free` users. (`/account`'s Saved tab used to render favorites ungated to any logged-in user regardless of tier, a drift from `/lists`' paywall; fixed so the two entry points agree.) Flavor Alerts, which share the same Saved tab, are deliberately **not** tier-gated — see "Flavor Alerts" below.
+Favorites (the heart/save-a-store list, `favorites` table) is gated behind `tracker` consistently in both places it's surfaced — the dedicated `/lists` page and the Saved Stores page on `/account` — both showing the same "Tracker Feature" upsell card for `free` users. (`/account`'s saved-stores view used to render favorites ungated to any logged-in user regardless of tier, a drift from `/lists`' paywall; fixed so the two entry points agree.) Flavor Alerts, which live on their own `/account` page, are deliberately **not** tier-gated — see "Flavor Alerts" below.
 
 ### Maps
 
@@ -142,6 +142,10 @@ Two UI conventions used by the Locations and Drinks tabs, reusable for any futur
 ### Kroger Integration (removed)
 
 A Kroger Products/Locations API integration ("Verified" stock badges on store pages, an admin Kroger tab for matching stores/drinks, and a daily Vercel cron sync) was built and then removed on 2026-11-13 — not wanted. All code, routes, `vercel.json` (it only held the Kroger cron) and the creation migration are gone. Stores that were created by the Kroger location import were deliberately kept, since they are real approved stores. `scripts/remove-kroger-integration.sql` drops `kroger_stock`, `stores.kroger_location_id` and `drinks.kroger_upc`; run it only after the code removal is deployed, never before.
+### Account Tab
+
+`/account` (logged in) is laid out like iOS Settings: a large "Account" title, a profile card, then grouped rows (lime icon tiles, right-side value, chevron) for Plan · Badges / Saved Stores / Flavor Alerts · Username / Password / Notifications · Admin Dashboard (admins only, links to `/admin`) · Terms / Privacy · Log Out · Delete Account. Each row drills into a sub-page (`accountPage` state) with a "‹ Account" back button; opening one pushes a history entry and a `popstate` listener returns to the list, so the phone's back gesture works instead of leaving `/account`. Rows and groups are plain render functions (`row()`, `group()`), not components defined in render, so the username/password inputs don't remount and lose focus. The Notifications toggles only persist to `localStorage` (`notif_flavors`/`notif_location`) and nothing reads them yet.
+
 ### Theming
 
 The app is **dark mode only**. CSS custom properties (`--bg`, `--surface`, `--accent`, `--text`, `--fg-*` alpha series, etc.) drive all colors and are defined in `src/app/globals.css`. `ThemeContext.tsx` is a no-op stub kept for import compatibility.
@@ -152,7 +156,7 @@ The app is **dark mode only**. CSS custom properties (`--bg`, `--surface`, `--ac
 - `verified` — read from `profiles.is_verified_reporter` (admin-toggled)
 - `weekly_champion` — read from `profiles.badges` (text[] column), assigned by the weekly cron function
 
-The account page profile tab shows badges in earned-first order, 4 visible by default with a "Show more" toggle.
+`/account` → **Badges** shows all badges in earned-first order.
 
 ### Automations
 
@@ -196,8 +200,8 @@ This replaced standalone emoji used as functional UI icons app-wide (search boxe
 - **Restock detection is a DB trigger** (`notify_drink_alert_subscribers()`, same pattern as `automation-badge-notifications.sql`), firing `AFTER INSERT ON stock_reports`. Only fires on a genuine transition into stock — the new report isn't `'out'`, and the prior report for that store+drink (if any) was `'out'`. A same-state re-report (already in stock, reported again) deliberately does not notify.
 - Only a **single unified alert** exists per drink — no separate "notify on brand-wide new drops" toggle. That's a different data shape (brand-level, not drink-level) and was scoped out of this pass.
 - No "Rare Find" auto-tagging (flavors with a history of low stock) — would need report-history data that's currently only fetched on-demand for `tracker` users, not eagerly for everyone.
-- Managed from `/account` → **Saved** tab, below Favorites (not a separate nav tab, to avoid crowding the bottom nav).
-- **"Follow a flavor" search** (same Saved tab) — the bell on a store's stock card only ever covers drinks currently in stock *somewhere nearby*, so there was no way to start an alert for something with zero current stock anywhere (a discontinued/rare flavor, by definition, usually has none). This box searches the full `drinks` catalog directly (brand/name/flavor, debounced 300ms) regardless of current stock, and follows immediately at `scope: 'anywhere'` — no store context to anchor "within N miles" or "this store only" against, so those two scopes aren't offered here, only via the store-page bell. Reuses the exact same `drink_alerts` upsert (`onConflict: 'user_id,drink_id'`) and restock trigger as the store-page flow; no new schema.
+- Managed from `/account` → **Flavor Alerts** (not a separate nav tab, to avoid crowding the bottom nav).
+- **"Follow a flavor" search** (same Flavor Alerts page) — the bell on a store's stock card only ever covers drinks currently in stock *somewhere nearby*, so there was no way to start an alert for something with zero current stock anywhere (a discontinued/rare flavor, by definition, usually has none). This box searches the full `drinks` catalog directly (brand/name/flavor, debounced 300ms) regardless of current stock, and follows immediately at `scope: 'anywhere'` — no store context to anchor "within N miles" or "this store only" against, so those two scopes aren't offered here, only via the store-page bell. Reuses the exact same `drink_alerts` upsert (`onConflict: 'user_id,drink_id'`) and restock trigger as the store-page flow; no new schema.
 
 ### Stock Report Accuracy
 
@@ -266,7 +270,7 @@ Explored as a fourth stock-data source, alongside crowd reports (`stock_reports`
 Two ideas that turned out to be one shared system plus one already-existing feature, rather than two separate builds:
 
 - **Drop Tracker** (not started) — a curated feed of confirmed/rumored seasonal or limited-edition flavors (e.g. a Halloween "Witch's Brew," a returning Ghost collab, a new Red Bull edition), so users know what to hunt for before it's even reached stores. Needs a new admin-curated content table (status: rumored/confirmed/released, description, maybe a source link) plus a display surface — no store or Kroger data can tell you this, it has to be entered by a person.
-- **Discontinued/vault watchlist** (**restock half now built**, announcement half not started) — let a user flag a discontinued favorite and get notified either when a store reports it back in stock, or when the brand announces a return. The first trigger is just Flavor Alerts (`drink_alerts` + `notify_drink_alert_subscribers()`) — already existed, the only gap was *discovery* (no way to follow a flavor with zero current stock anywhere). That gap is now closed by the "Follow a flavor" search on `/account`'s Saved tab — see "Flavor Alerts" above. The second trigger ("brand announces a return") still needs the same new curated-content table the Drop Tracker needs, since that's editorial information no data source has.
+- **Discontinued/vault watchlist** (**restock half now built**, announcement half not started) — let a user flag a discontinued favorite and get notified either when a store reports it back in stock, or when the brand announces a return. The first trigger is just Flavor Alerts (`drink_alerts` + `notify_drink_alert_subscribers()`) — already existed, the only gap was *discovery* (no way to follow a flavor with zero current stock anywhere). That gap is now closed by the "Follow a flavor" search on `/account` → Flavor Alerts — see "Flavor Alerts" above. The second trigger ("brand announces a return") still needs the same new curated-content table the Drop Tracker needs, since that's editorial information no data source has.
 
 **Why the remaining piece is parked:** unlike everything else in the app (crowd-sourced or API-synced), a curated drops/announcements feed needs an ongoing human editor to keep researching and posting rumors/confirmations indefinitely, or the feed goes stale fast — a genuinely different kind of ongoing cost than anything else here, worth being deliberate about taking on before building the table and UI for it.
 

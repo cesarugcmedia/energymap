@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
-import { StoreTypeIcon, CheckIcon, BellIcon, PinIcon, HeartIcon, CloseIcon, MailIcon, TiktokIcon } from '@/components/Icons'
+import { StoreTypeIcon, CheckIcon, BellIcon, HeartIcon, CloseIcon, MailIcon, TiktokIcon, ChevronLeftIcon, ChevronRightIcon, LightningIcon, TrophyIcon, DrinkIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -144,11 +144,31 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
   full:   { label: 'FULL', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
-const ACCOUNT_TABS = [
-  { id: 'stats',   label: 'Stats'  },
-  { id: 'saved',   label: 'Saved'  },
-  { id: 'badges',  label: 'Badges' },
-]
+type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'notifications'
+
+// Small line icons used only by the Account settings list (no equivalent in
+// the shared Icons set). Same 24×24 / rounded-stroke language as Icons.tsx.
+function KeyIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3 20 3M16 7l3 3M18 5l2 2" />
+    </svg>
+  )
+}
+function LockIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  )
+}
+function ShieldIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z" /><path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
 
 const HOW_IT_WORKS = [
   { icon: '📍', title: 'Find Nearby Stores', desc: 'See gas stations and convenience stores around you on a live map, sorted by distance.' },
@@ -196,14 +216,12 @@ function AccountPageInner() {
   const [streak, setStreak] = useState<number>(0)
   const [nightOwl, setNightOwl] = useState(false)
   const [earlyBird, setEarlyBird] = useState(false)
-  const [badgesExpanded, setBadgesExpanded] = useState(false)
   const [rank, setRank] = useState<number | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [platformStores, setPlatformStores] = useState<number>(0)
   const [platformDrinks, setPlatformDrinks] = useState<number>(0)
 
   // Profile management
-  const [editingUsername, setEditingUsername] = useState(false)
   const [newUsername, setNewUsername] = useState('')
   const [usernameError, setUsernameError] = useState<string | null>(null)
   const [savingUsername, setSavingUsername] = useState(false)
@@ -218,16 +236,37 @@ function AccountPageInner() {
     toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
   }
 
-  const [changingPassword, setChangingPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [savingPassword, setSavingPassword] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
-  // Tabs
-  const [activeTab, setActiveTab] = useState<'stats' | 'saved' | 'badges'>('stats')
-  const [showSettings, setShowSettings] = useState(false)
+  // iOS Settings-style navigation: 'root' is the grouped list, everything
+  // else is a drill-down page. Each drill-down pushes a history entry so the
+  // phone's back gesture/button returns to the list instead of leaving /account.
+  const [accountPage, setAccountPage] = useState<AccountSubpage>('root')
+
+  useEffect(() => {
+    function onPop(e: PopStateEvent) {
+      setAccountPage((e.state?.accountPage as AccountSubpage) ?? 'root')
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  function openAccountPage(p: AccountSubpage) {
+    setAccountPage(p)
+    window.history.pushState({ accountPage: p }, '')
+    window.scrollTo(0, 0)
+  }
+
+  function closeAccountPage() {
+    if (window.history.state?.accountPage) window.history.back()
+    else setAccountPage('root')
+    setNewUsername(''); setUsernameError(null)
+    setNewPassword(''); setConfirmPassword(''); setPasswordError(null)
+  }
 
   // All reports (Reports tab, paginated)
   const [allReports, setAllReports] = useState<any[]>([])
@@ -561,8 +600,7 @@ function AccountPageInner() {
     if (upErr) { setUsernameError('Could not save. Try again.'); setSavingUsername(false); return }
     await refreshProfile()
     setSavingUsername(false)
-    setEditingUsername(false)
-    setNewUsername('')
+    closeAccountPage()
     showToast('Username saved!')
   }
 
@@ -577,7 +615,7 @@ function AccountPageInner() {
     setSavingPassword(false)
     setNewPassword('')
     setConfirmPassword('')
-    setChangingPassword(false)
+    closeAccountPage()
     showToast('Password updated!')
   }
 
@@ -800,156 +838,104 @@ function selectAndContinue(tierId: TierId) {
     }
     const tierInfo = TIER_LABEL[profile.tier ?? 'free']
 
-    const SettingsRow = ({ icon, label, sublabel, onPress, chevron = true, danger = false }: { icon: string; label: string; sublabel?: string; onPress?: () => void; chevron?: boolean; danger?: boolean }) => (
-      <button onClick={onPress} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-        <span style={{ fontSize: 18, width: 24, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: danger ? '#FF4545' : 'var(--text)', margin: 0 }}>{label}</p>
-          {sublabel && <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0' }}>{sublabel}</p>}
+    // ── iOS Settings-style layout ──────────────────────────────
+    // Plain render helpers (not components) so inputs inside a page never
+    // remount and lose focus on re-render.
+    const ROW_SEP = <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 58 }} />
+
+    function iconTile(icon: React.ReactNode) {
+      return (
+        <span style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {icon}
+        </span>
+      )
+    }
+
+    function group(children: React.ReactNode, opts: { header?: string; footer?: string } = {}) {
+      return (
+        <div style={{ margin: '0 16px 22px' }}>
+          {opts.header && (
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 16px 7px' }}>{opts.header}</p>
+          )}
+          <div style={{ borderRadius: 12, backgroundColor: 'var(--surface)', overflow: 'hidden' }}>{children}</div>
+          {opts.footer && (
+            <p style={{ fontSize: 12, color: '#6B7F70', lineHeight: 1.45, margin: '7px 16px 0' }}>{opts.footer}</p>
+          )}
         </div>
-        {chevron && <span style={{ fontSize: 13, color: '#4A5F50', flexShrink: 0 }}>›</span>}
-      </button>
+      )
+    }
+
+    function row(opts: { icon?: React.ReactNode; label: string; value?: React.ReactNode; onPress?: () => void; href?: string; chevron?: boolean; danger?: boolean; center?: boolean }) {
+      const { icon, label, value, onPress, href, chevron = !!(onPress || href), danger = false, center = false } = opts
+      const inner = (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minHeight: 50, padding: '9px 16px' }}>
+          {icon && iconTile(icon)}
+          <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 500, textAlign: center ? 'center' : 'left', color: danger ? '#FF4545' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+          {value !== undefined && <span style={{ fontSize: 15, color: 'var(--fg-45)', flexShrink: 0, maxWidth: '45%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>}
+          {chevron && !center && <ChevronRightIcon size={15} color="var(--fg-25)" />}
+        </div>
+      )
+      if (href) return <a href={href} style={{ display: 'block', textDecoration: 'none' }}>{inner}</a>
+      if (onPress) return <button onClick={onPress} style={{ display: 'block', width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>{inner}</button>
+      return inner
+    }
+
+    function toggleRow(label: string, desc: string, value: boolean, set: (v: boolean) => void) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minHeight: 50, padding: '10px 16px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', margin: 0 }}>{label}</p>
+            <p style={{ fontSize: 12, color: '#6B7F70', margin: '2px 0 0' }}>{desc}</p>
+          </div>
+          <button onClick={() => set(!value)} aria-pressed={value} style={{ flexShrink: 0, borderRadius: 99, width: 51, height: 31, backgroundColor: value ? '#C9F400' : 'var(--fg-15)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}>
+            <div style={{ position: 'absolute', top: 2, left: value ? 22 : 2, width: 27, height: 27, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.35)' }} />
+          </button>
+        </div>
+      )
+    }
+
+    const inputStyle: React.CSSProperties = { width: '100%', padding: '14px 16px', fontSize: 16, color: 'var(--text)', outline: 'none', backgroundColor: 'transparent', border: 'none', fontFamily: "'Barlow', sans-serif" }
+    const ICON = '#0D1210'
+    const PAGE_TITLES: Record<AccountSubpage, string> = {
+      root: 'Account', profile: 'Profile', plan: 'Plan', badges: 'Badges', saved: 'Saved Stores',
+      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', notifications: 'Notifications',
+    }
+
+    const avatar = (size: number) => (
+      <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.3), rgba(201,244,0,0.08))', border: `${size > 70 ? 3 : 2}px solid rgba(201,244,0,0.5)` }}>
+        <span style={{ fontSize: size * 0.42, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
+      </div>
     )
 
-    return (
-      <div style={{ backgroundColor: 'var(--bg)', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    const spinner = (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
+        <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    )
 
-        <Toast message={toastMessage} visible={toastVisible} />
+    function emptyState(icon: React.ReactNode, title: string, body: string, action?: { label: string; onPress: () => void }) {
+      return (
+        <div style={{ margin: '0 16px 22px', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)' }}>
+          {icon}
+          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{title}</p>
+          <p style={{ fontSize: 13, color: '#6B7F70' }}>{body}</p>
+          {action && (
+            <button onClick={action.onPress} style={{ marginTop: 6, padding: '10px 20px', borderRadius: 10, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              {action.label}
+            </button>
+          )}
+        </div>
+      )
+    }
 
-        {showSettings ? (
-          /* ── SETTINGS PANEL ── */
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
-            {/* Settings header */}
-            <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 16px', gap: 8 }}>
-              <button onClick={() => { setShowSettings(false); setEditingUsername(false); setChangingPassword(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', color: 'var(--fg-55)', fontSize: 20, lineHeight: 1 }}>‹</button>
-              <p style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginRight: 40 }}>Settings</p>
-            </div>
-
-            {/* Mini profile row */}
-            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px' }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.25), rgba(201,244,0,0.08))', border: '1.5px solid rgba(201,244,0,0.35)' }}>
-                  <span style={{ fontSize: 18, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>@{profile.username}</p>
-                  <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
-                </div>
-                <span style={{ fontSize: 13, color: '#4A5F50' }}>›</span>
-              </div>
-            </div>
-
-            {/* Settings rows */}
-            <div style={{ margin: '8px 16px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
-              {/* Username */}
-              {editingUsername ? (
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4A5F50', marginBottom: 10 }}>Change Username</p>
-                  <input type="text" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
-                    placeholder={profile.username} value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
-                  {usernameError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{usernameError}</p>}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setEditingUsername(false); setNewUsername(''); setUsernameError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                    <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: 'pointer', backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
-                      {savingUsername ? '…' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <SettingsRow icon="✏️" label="Change Username" sublabel={`@${profile.username}`} onPress={() => { setEditingUsername(true); setChangingPassword(false) }} />
-              )}
-              <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />
-              {/* Password */}
-              {changingPassword ? (
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4A5F50', marginBottom: 10 }}>Change Password</p>
-                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
-                    placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoFocus />
-                  <input type="password" style={{ width: '100%', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', marginBottom: 8, backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
-                    placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                  {passwordError && <p style={{ fontSize: 12, color: '#FF4545', marginBottom: 8 }}>{passwordError}</p>}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setChangingPassword(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(null) }} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, backgroundColor: 'var(--fg-06)', color: '#7A8F80', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                    <button onClick={savePassword} disabled={savingPassword} style={{ flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#0D1210', border: 'none', cursor: 'pointer', backgroundColor: savingPassword ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
-                      {savingPassword ? '…' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <SettingsRow icon="🔑" label="Change Password" onPress={() => { setChangingPassword(true); setEditingUsername(false) }} />
-              )}
-            </div>
-
-            {/* Notifications */}
-            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
-              {[
-                { icon: <BellIcon size={18} color="#8b9284" />, label: 'Flavor alerts', desc: 'Notify when a saved drink is spotted nearby', value: notifFlavors, set: setNotifFlavors },
-                { icon: <PinIcon size={18} color="#8b9284" />, label: 'Location alerts', desc: 'Alerts based on your current location', value: notifLocation, set: setNotifLocation },
-              ].map((item, i) => (
-                <div key={item.label}>
-                  {i > 0 && <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px' }}>
-                    <span style={{ width: 24, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{item.label}</p>
-                      <p style={{ fontSize: 12, color: '#4A5F50', margin: '2px 0 0' }}>{item.desc}</p>
-                    </div>
-                    <button onClick={() => item.set(!item.value)} style={{ flexShrink: 0, borderRadius: 99, width: 44, height: 24, backgroundColor: item.value ? '#C9F400' : 'var(--fg-10)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}>
-                      <div style={{ position: 'absolute', top: 2, left: item.value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: item.value ? '#0D1210' : '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Links */}
-            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.08)', overflow: 'hidden' }}>
-              <a href="/terms" style={{ textDecoration: 'none' }}>
-                <SettingsRow icon="📄" label="Terms of Service" />
-              </a>
-              <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', margin: '0 16px' }} />
-              <a href="/privacy" style={{ textDecoration: 'none' }}>
-                <SettingsRow icon="🔒" label="Privacy Policy" />
-              </a>
-            </div>
-
-            {/* Sign out */}
-            <div style={{ margin: '0 16px 8px', borderRadius: 16, backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.15)', overflow: 'hidden' }}>
-              <SettingsRow icon="→" label="Log Out" danger onPress={handleSignOut} />
-              <div style={{ height: 1, backgroundColor: 'rgba(255,69,69,0.08)', margin: '0 16px' }} />
-              <SettingsRow icon="🗑️" label="Delete Account" sublabel="Permanently deletes all your data" danger onPress={deleteAccount} />
-            </div>
-          </div>
-        ) : (
-          /* ── MAIN PROFILE VIEW ── */
-          <>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 20px 20px' }}>
-              <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>My Profile</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {streak > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 99, backgroundColor: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                    <span style={{ fontSize: 13 }}>🔥</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#f97316' }}>{streak}</span>
-                  </div>
-                )}
-                <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--fg-40)' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Avatar + name */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '0 20px 24px' }}>
-              <div style={{ width: 90, height: 90, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.3), rgba(201,244,0,0.08))', border: '3px solid rgba(201,244,0,0.5)', boxShadow: '0 0 32px rgba(201,244,0,0.2)' }}>
-                <span style={{ fontSize: 38, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+    function renderSubpage() {
+      switch (accountPage) {
+        case 'profile':
+          return (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 20px 24px' }}>
+                {avatar(90)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>@{profile.username}</p>
                   {profile.is_verified_reporter && <CheckIcon size={16} color="#60a5fa" />}
                 </div>
@@ -959,277 +945,310 @@ function selectAndContinue(tierId: TierId) {
                   {!statsLoading && rank && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.25)' }}>#{rank} All-Time</span>}
                 </div>
               </div>
-              {/* Inline stats */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4A5F50', fontSize: 13 }}>
-                <span style={{ fontWeight: 700, color: 'var(--fg-75)' }}>{statsLoading ? '–' : reportCount}</span>
-                <span>Reports</span>
-                <span style={{ opacity: 0.4 }}>·</span>
-                <span style={{ fontWeight: 700, color: 'var(--fg-75)' }}>{statsLoading ? '–' : storeCount}</span>
-                <span>Stores</span>
-                <span style={{ opacity: 0.4 }}>·</span>
-                <span style={{ fontWeight: 700, color: 'var(--fg-75)' }}>{statsLoading ? '–' : uniqueFlavors}</span>
-                <span>Drinks</span>
-              </div>
-            </div>
+              {group(<>
+                {row({ label: 'Reports', value: statsLoading ? '–' : reportCount })}
+                {ROW_SEP}
+                {row({ label: 'Stores Added', value: statsLoading ? '–' : storeCount })}
+                {ROW_SEP}
+                {row({ label: 'Drinks Reported', value: statsLoading ? '–' : uniqueFlavors })}
+                {ROW_SEP}
+                {row({ label: 'Reporting Streak', value: statsLoading ? '–' : `${streak} day${streak === 1 ? '' : 's'}${streak > 0 ? ' 🔥' : ''}` })}
+              </>, { header: 'Activity' })}
+              {group(row({ label: 'Email', value: user!.email }), { header: 'Account' })}
+            </>
+          )
 
-            {/* Tab bar */}
-            <div style={{ padding: '0 20px 16px' }}>
-              <div style={{ display: 'flex', gap: 6, borderRadius: 14, padding: 4, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                {ACCOUNT_TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    style={{
-                      flex: 1, padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12, border: 'none', cursor: 'pointer',
-                      fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'all 0.15s',
-                      backgroundColor: activeTab === tab.id ? '#C9F400' : 'transparent',
-                      color: activeTab === tab.id ? '#0D1210' : '#4A5F50',
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* ── STATS TAB ── */}
-            {activeTab === 'stats' && (
-              <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {checkoutError && <p style={{ fontSize: 12, color: '#FF4545' }}>{checkoutError}</p>}
-                <div style={{ display: 'flex', gap: 12 }}>
-                  {/* Current plan */}
-                  <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${tierInfo.color}35` }}>
-                    <div style={{ height: 3, background: tierInfo.color }} />
-                    <div style={{ padding: 14 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                        <span style={{ fontSize: 20 }}>{tierInfo.icon}</span>
-                        <div>
-                          <p style={{ fontSize: 15, fontWeight: 800, color: tierInfo.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{tierInfo.label}</p>
-                          <p style={{ fontSize: 11, color: '#4A5F50' }}>{profile.tier === 'free' ? 'Free' : '$5.00/mo'}</p>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {(profile.tier === 'free'
-                          ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
-                          : ['Live stock map', 'Unlimited radius', 'Unlimited submissions', 'Stock notifications', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
-                        ).map((f) => (
-                          <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                            <span style={{ fontSize: 9, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
-                            <span style={{ fontSize: 11, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {profile.tier === 'tracker' && (
-                        <div style={{ marginTop: 12 }}>
-                          {cancelError && <p style={{ fontSize: 10, color: '#FF4545', marginBottom: 4 }}>{cancelError}</p>}
-                          <button onClick={cancelSubscription} disabled={cancelLoading} style={{ width: '100%', borderRadius: 8, padding: '8px 0', fontSize: 11, fontWeight: 700, backgroundColor: 'rgba(255,69,69,0.05)', border: '1px solid rgba(255,69,69,0.15)', color: '#FF4545', opacity: cancelLoading ? 0.6 : 1, cursor: 'pointer' }}>
-                            {cancelLoading ? 'Cancelling...' : 'Cancel Plan'}
-                          </button>
-                        </div>
-                      )}
+        case 'plan':
+          return (
+            <div style={{ padding: '0 16px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {checkoutError && <p style={{ fontSize: 12, color: '#FF4545' }}>{checkoutError}</p>}
+              <div style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${tierInfo.color}35` }}>
+                <div style={{ height: 3, background: tierInfo.color }} />
+                <div style={{ padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                    <span style={{ fontSize: 22 }}>{tierInfo.icon}</span>
+                    <div>
+                      <p style={{ fontSize: 17, fontWeight: 800, color: tierInfo.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{tierInfo.label} <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70' }}>· Current plan</span></p>
+                      <p style={{ fontSize: 12, color: '#6B7F70' }}>{profile.tier === 'free' ? 'Free' : '$5.00/mo'}</p>
                     </div>
                   </div>
-                  {/* Upgrade */}
-                  {profile.tier !== 'tracker' && (
-                    <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.35)' }}>
-                      <div style={{ height: 3, background: '#C9F400' }} />
-                      <div style={{ padding: 14 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                          <span style={{ fontSize: 20 }}>⚡</span>
-                          <div>
-                            <p style={{ fontSize: 15, fontWeight: 800, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>Tracker</p>
-                            <p style={{ fontSize: 11, color: '#4A5F50' }}>$5.00/mo</p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
-                          {['Unlimited map radius', 'Unlimited submissions', 'Timestamps', 'Stock alerts', 'Store lists', 'Verified badge', 'Leaderboard badge'].map((f) => (
-                            <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                              <span style={{ fontSize: 9, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
-                              <span style={{ fontSize: 11, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 8, padding: '9px 0', fontSize: 12, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 12px rgba(201,244,0,0.3)' }}>
-                          {checkoutLoading ? '...' : 'Upgrade ⚡'}
-                        </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {(profile.tier === 'free'
+                      ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
+                      : ['Live stock map', 'Unlimited radius', 'Unlimited submissions', 'Stock notifications', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
+                    ).map((f) => (
+                      <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <span style={{ fontSize: 10, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
+                        <span style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
                       </div>
+                    ))}
+                  </div>
+                  {profile.tier === 'tracker' && (
+                    <div style={{ marginTop: 14 }}>
+                      {cancelError && <p style={{ fontSize: 11, color: '#FF4545', marginBottom: 6 }}>{cancelError}</p>}
+                      <button onClick={cancelSubscription} disabled={cancelLoading} style={{ width: '100%', borderRadius: 10, padding: '11px 0', fontSize: 14, fontWeight: 600, backgroundColor: 'rgba(255,69,69,0.06)', border: '1px solid rgba(255,69,69,0.18)', color: '#FF4545', opacity: cancelLoading ? 0.6 : 1, cursor: 'pointer' }}>
+                        {cancelLoading ? 'Cancelling...' : 'Cancel Plan'}
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
-            )}
-
-            {/* ── SAVED TAB ── */}
-            {activeTab === 'saved' && (
-              <div style={{ padding: '0 20px' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
-                  Saved Stores{isTracker ? ` · ${favorites.length}` : ''}
-                </p>
-                {!isTracker ? (
-                  <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                    <HeartIcon size={32} color="#8b9284" />
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Tracker Feature</p>
-                    <p style={{ fontSize: 12, color: '#4A5F50' }}>Save and organize your favorite stores with the Tracker plan.</p>
-                    <button
-                      onClick={() => setActiveTab('stats')}
-                      style={{ marginTop: 6, padding: '9px 20px', borderRadius: 10, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                    >
-                      Upgrade to Tracker
+              {profile.tier !== 'tracker' && (
+                <div style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.35)' }}>
+                  <div style={{ height: 3, background: '#C9F400' }} />
+                  <div style={{ padding: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <span style={{ fontSize: 22 }}>⚡</span>
+                      <div>
+                        <p style={{ fontSize: 17, fontWeight: 800, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>Tracker</p>
+                        <p style={{ fontSize: 12, color: '#6B7F70' }}>$5.00/mo</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                      {['Unlimited map radius', 'Unlimited submissions', 'Timestamps', 'Stock alerts', 'Store lists', 'Verified badge', 'Leaderboard badge'].map((f) => (
+                        <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <span style={{ fontSize: 10, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
+                          <span style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 12px rgba(201,244,0,0.3)' }}>
+                      {checkoutLoading ? '...' : 'Upgrade ⚡'}
                     </button>
                   </div>
-                ) : favoritesLoading ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}>
-                    <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  </div>
-                ) : favorites.length === 0 ? (
-                  <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                    <HeartIcon size={32} color="#8b9284" />
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No favorites yet</p>
-                    <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the heart on any store page to save it here.</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {favorites.map((fav) => {
-                      const store = fav.store
-                      return (
-                        <div key={fav.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(255,69,69,0.5)' }}>
-                          <StoreTypeIcon type={store?.type} size={20} color="#7A8F80" />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
-                            <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.2)', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif" }}>View</a>
-                            <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer' }}>
-                              {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={10} color="#FF4545" />}
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                </div>
+              )}
+            </div>
+          )
 
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', margin: '24px 0 12px', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
-                  Flavor Alerts · {drinkAlerts.length}
-                </p>
+        case 'badges': {
+          const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
+          return (
+            <div style={{ padding: '0 16px 22px' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 16px 7px' }}>{earned.size} of {BADGE_DEFS.length} earned</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                {sorted.map((b) => {
+                  const isEarned = earned.has(b.id)
+                  const hint = progressHint(b.id)
+                  return (
+                    <div key={b.id} style={{ borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid transparent', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
+                      <span style={{ fontSize: 26, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
+                      <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#6B7F70', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
+                      <p style={{ fontSize: 10, lineHeight: 1.3, color: '#6B7F70' }}>{hint ?? b.desc}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        }
 
-                {/* Search the full catalog, not just what's currently in
-                    stock — for following a discontinued/rare flavor that
-                    won't show up as a bell on any store's card right now. */}
-                <div style={{ position: 'relative', marginBottom: 12 }}>
+        case 'saved':
+          if (!isTracker) return emptyState(<HeartIcon size={32} color="#8b9284" />, 'Tracker Feature', 'Save and organize your favorite stores with the Tracker plan.', { label: 'See Plans', onPress: () => openAccountPage('plan') })
+          if (favoritesLoading) return spinner
+          if (favorites.length === 0) return emptyState(<HeartIcon size={32} color="#8b9284" />, 'No favorites yet', 'Tap the heart on any store page to save it here.')
+          return group(favorites.map((fav, i) => {
+            const store = fav.store
+            return (
+              <div key={fav.id}>
+                {i > 0 && <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 50 }} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px' }}>
+                  <StoreTypeIcon type={store?.type} size={22} color="#7A8F80" />
+                  <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
+                    <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
+                    <p style={{ fontSize: 12, color: '#6B7F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
+                  </a>
+                  <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} aria-label="Remove from saved" style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: 'none', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
+                    {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={11} color="#FF4545" />}
+                  </button>
+                </div>
+              </div>
+            )
+          }), { footer: 'Tap a store to open it.' })
+
+        case 'alerts':
+          return (
+            <>
+              {/* Search the full catalog, not just what's currently in stock —
+                  for following a discontinued/rare flavor that won't show up as
+                  a bell on any store's card right now. */}
+              <div style={{ position: 'relative', margin: '0 16px 22px' }}>
+                <div style={{ borderRadius: 12, backgroundColor: 'var(--surface)' }}>
                   <input
                     type="text"
                     value={flavorQuery}
                     onChange={(e) => setFlavorQuery(e.target.value)}
                     placeholder="Follow a flavor — even discontinued ones"
-                    style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, padding: '10px 12px', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+                    style={{ ...inputStyle, fontSize: 15 }}
                   />
-                  {(flavorResults.length > 0 || flavorSearching) && (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 12, overflow: 'hidden' }}>
-                      {flavorSearching ? (
-                        <div style={{ padding: 14, display: 'flex', justifyContent: 'center' }}>
-                          <div style={{ width: 18, height: 18, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                        </div>
-                      ) : (
-                        flavorResults.map((d) => {
-                          const already = drinkAlerts.some((a) => a.drink_id === d.id)
-                          return (
-                            <button
-                              key={d.id}
-                              onClick={() => !already && followDrinkById(d.id)}
-                              disabled={already || followingDrinkId === d.id}
-                              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--fg-06)', textAlign: 'left', cursor: already ? 'default' : 'pointer' }}
-                            >
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
-                              </div>
-                              {followingDrinkId === d.id ? (
-                                <div style={{ width: 14, height: 14, flexShrink: 0, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                              ) : (
-                                <BellIcon size={14} color={already ? '#C9F400' : '#8b9284'} filled={already} />
-                              )}
-                            </button>
-                          )
-                        })
-                      )}
-                    </div>
-                  )}
                 </div>
-                {drinkAlertsLoading ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}>
-                    <div style={{ width: 24, height: 24, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  </div>
-                ) : drinkAlerts.length === 0 ? (
-                  <div style={{ borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)' }}>
-                    <BellIcon size={32} color="#8b9284" />
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>No flavor alerts yet</p>
-                    <p style={{ fontSize: 12, color: '#4A5F50' }}>Tap the bell on any drink card to get notified when it restocks.</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {drinkAlerts.map((a) => {
-                      const scopeLabel = a.scope === 'store' ? (a.store?.name ?? 'This store only')
-                        : a.scope === 'radius' ? `Within ${a.radius_miles} miles`
-                        : 'Anywhere'
+                {(flavorResults.length > 0 || flavorSearching) && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 12, overflow: 'hidden' }}>
+                    {flavorSearching ? spinner : flavorResults.map((d) => {
+                      const already = drinkAlerts.some((a) => a.drink_id === d.id)
                       return (
-                        <div key={a.id} style={{ borderRadius: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', boxShadow: 'inset 3px 0 0 rgba(201,244,0,0.4)' }}>
-                          <BellIcon size={20} color="#C9F400" filled />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {a.drink?.flavor ?? a.drink?.name}
-                            </p>
-                            <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scopeLabel}</p>
-                          </div>
-                          <button onClick={() => removeDrinkAlert(a.id)} disabled={removingAlertId === a.id} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', opacity: removingAlertId === a.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
-                            {removingAlertId === a.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={10} color="#FF4545" />}
-                          </button>
-                        </div>
+                        <button
+                          key={d.id}
+                          onClick={() => !already && followDrinkById(d.id)}
+                          disabled={already || followingDrinkId === d.id}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--fg-06)', textAlign: 'left', cursor: already ? 'default' : 'pointer' }}
+                        >
+                          <p style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
+                          {followingDrinkId === d.id ? (
+                            <div style={{ width: 14, height: 14, flexShrink: 0, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                          ) : (
+                            <BellIcon size={15} color={already ? '#C9F400' : '#8b9284'} filled={already} />
+                          )}
+                        </button>
                       )
                     })}
                   </div>
                 )}
               </div>
-            )}
-
-            {/* ── BADGES TAB ── */}
-            {activeTab === 'badges' && (
-              <div style={{ padding: '0 20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Badges</p>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50' }}>{earned.size}/{BADGE_DEFS.length} earned</p>
-                </div>
-                {(() => {
-                  const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
-                  const visible = badgesExpanded ? sorted : sorted.slice(0, 4)
-                  const hiddenCount = sorted.length - 4
-                  return (
-                    <>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                        {visible.map((b) => {
-                          const isEarned = earned.has(b.id)
-                          const hint = progressHint(b.id)
-                          return (
-                            <div key={b.id} style={{ borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid rgba(201,244,0,0.08)', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
-                              <span style={{ fontSize: 26, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
-                              <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
-                              <p style={{ fontSize: 10, lineHeight: 1.3, color: '#4A5F50' }}>{hint ?? b.desc}</p>
-                            </div>
-                          )
-                        })}
+              {drinkAlertsLoading ? spinner : drinkAlerts.length === 0
+                ? emptyState(<BellIcon size={32} color="#8b9284" />, 'No flavor alerts yet', 'Tap the bell on any drink card to get notified when it restocks.')
+                : group(drinkAlerts.map((a, i) => {
+                    const scopeLabel = a.scope === 'store' ? (a.store?.name ?? 'This store only')
+                      : a.scope === 'radius' ? `Within ${a.radius_miles} miles`
+                      : 'Anywhere'
+                    return (
+                      <div key={a.id}>
+                        {i > 0 && <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 50 }} />}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px' }}>
+                          <BellIcon size={22} color="#C9F400" filled />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.drink?.flavor ?? a.drink?.name}</p>
+                            <p style={{ fontSize: 12, color: '#6B7F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scopeLabel}</p>
+                          </div>
+                          <button onClick={() => removeDrinkAlert(a.id)} disabled={removingAlertId === a.id} aria-label="Remove alert" style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: 'none', opacity: removingAlertId === a.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
+                            {removingAlertId === a.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={11} color="#FF4545" />}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setBadgesExpanded(!badgesExpanded)}
-                        style={{ marginTop: 8, width: '100%', padding: '11px 0', borderRadius: 12, backgroundColor: 'var(--fg-04)', border: '1px solid rgba(201,244,0,0.08)', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}
-                      >
-                        {badgesExpanded ? 'Show less ▴' : `Show ${hiddenCount} more ▾`}
-                      </button>
-                    </>
-                  )
-                })()}
+                    )
+                  }), { header: `Following · ${drinkAlerts.length}`, footer: "You'll get an alert in the Alerts tab the next time one of these restocks." })}
+            </>
+          )
+
+        case 'username':
+          return (
+            <>
+              {group(
+                <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 16 }}>
+                  <span style={{ fontSize: 16, color: 'var(--fg-45)' }}>@</span>
+                  <input type="text" style={{ ...inputStyle, paddingLeft: 2 }} placeholder={profile.username} value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
+                </div>,
+                { header: 'New username', footer: usernameError ?? 'Lowercase letters, numbers and underscores. At least 3 characters.' },
+              )}
+              <div style={{ padding: '0 16px' }}>
+                <button onClick={saveUsername} disabled={savingUsername || !newUsername.trim()} style={{ width: '100%', borderRadius: 12, padding: '14px 0', fontSize: 16, fontWeight: 700, color: '#0D1210', border: 'none', cursor: 'pointer', backgroundColor: savingUsername || !newUsername.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
+                  {savingUsername ? 'Saving…' : 'Save'}
+                </button>
               </div>
-            )}
-          </>
+            </>
+          )
+
+        case 'password':
+          return (
+            <>
+              {group(<>
+                <input type="password" style={inputStyle} placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoFocus />
+                <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 16 }} />
+                <input type="password" style={inputStyle} placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              </>, { footer: passwordError ?? 'At least 6 characters.' })}
+              <div style={{ padding: '0 16px' }}>
+                <button onClick={savePassword} disabled={savingPassword || !newPassword} style={{ width: '100%', borderRadius: 12, padding: '14px 0', fontSize: 16, fontWeight: 700, color: '#0D1210', border: 'none', cursor: 'pointer', backgroundColor: savingPassword || !newPassword ? 'rgba(201,244,0,0.4)' : '#C9F400' }}>
+                  {savingPassword ? 'Saving…' : 'Update Password'}
+                </button>
+              </div>
+            </>
+          )
+
+        case 'notifications':
+          return group(<>
+            {toggleRow('Flavor alerts', 'Notify when a saved drink is spotted nearby', notifFlavors, setNotifFlavors)}
+            <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 16 }} />
+            {toggleRow('Location alerts', 'Alerts based on your current location', notifLocation, setNotifLocation)}
+          </>)
+
+        default:
+          return null
+      }
+    }
+
+    return (
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes acctSlideIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+          @keyframes acctFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        `}</style>
+
+        <Toast message={toastMessage} visible={toastVisible} />
+
+        {accountPage === 'root' ? (
+          /* ── ROOT LIST ── */
+          <div key="root" style={{ animation: 'acctFadeIn 0.18s ease' }}>
+            <h1 style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', padding: '4px 20px 14px', letterSpacing: '-0.01em' }}>Account</h1>
+
+            {/* Profile card */}
+            <div style={{ margin: '0 16px 22px' }}>
+              <button onClick={() => openAccountPage('profile')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 12, backgroundColor: 'var(--surface)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                {avatar(60)}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{profile.username}</p>
+                    {profile.is_verified_reporter && <CheckIcon size={15} color="#60a5fa" />}
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--fg-45)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {tierInfo.label}{!statsLoading && rank ? ` · #${rank} All-Time` : ''}{streak > 0 ? ` · 🔥 ${streak}` : ''}
+                  </p>
+                </div>
+                <ChevronRightIcon size={15} color="var(--fg-25)" />
+              </button>
+            </div>
+
+            {group(row({ icon: <LightningIcon size={17} color={ICON} />, label: 'Plan', value: tierInfo.label, onPress: () => openAccountPage('plan') }))}
+
+            {group(<>
+              {row({ icon: <TrophyIcon size={17} color={ICON} />, label: 'Badges', value: `${earned.size} of ${BADGE_DEFS.length}`, onPress: () => openAccountPage('badges') })}
+              {ROW_SEP}
+              {row({ icon: <HeartIcon size={17} color={ICON} />, label: 'Saved Stores', value: isTracker ? favorites.length : 'Tracker', onPress: () => openAccountPage('saved') })}
+              {ROW_SEP}
+              {row({ icon: <DrinkIcon size={17} color={ICON} />, label: 'Flavor Alerts', value: drinkAlerts.length, onPress: () => openAccountPage('alerts') })}
+            </>)}
+
+            {group(<>
+              {row({ icon: <UserIcon size={17} color={ICON} />, label: 'Username', value: `@${profile.username}`, onPress: () => openAccountPage('username') })}
+              {ROW_SEP}
+              {row({ icon: <KeyIcon />, label: 'Password', onPress: () => openAccountPage('password') })}
+              {ROW_SEP}
+              {row({ icon: <BellIcon size={17} color={ICON} />, label: 'Notifications', onPress: () => openAccountPage('notifications') })}
+            </>)}
+
+            {profile.is_admin && group(row({ icon: <ShieldIcon />, label: 'Admin Dashboard', href: '/admin' }))}
+
+            {group(<>
+              {row({ icon: <ClipboardIcon size={17} color={ICON} />, label: 'Terms of Service', href: '/terms' })}
+              {ROW_SEP}
+              {row({ icon: <LockIcon />, label: 'Privacy Policy', href: '/privacy' })}
+            </>)}
+
+            {group(row({ label: 'Log Out', danger: true, center: true, onPress: handleSignOut }))}
+            {group(row({ label: 'Delete Account', danger: true, center: true, onPress: deleteAccount }), { footer: 'Permanently deletes your account and all of your data.' })}
+          </div>
+        ) : (
+          /* ── SUBPAGE ── */
+          <div key={accountPage} style={{ animation: 'acctSlideIn 0.22s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '2px 8px 16px', position: 'relative', minHeight: 40 }}>
+              <button onClick={closeAccountPage} style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', color: '#C9F400', fontSize: 16, fontWeight: 500, position: 'relative', zIndex: 1 }}>
+                <ChevronLeftIcon size={20} color="#C9F400" /> Account
+              </button>
+              <p style={{ position: 'absolute', left: 0, right: 0, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--text)', pointerEvents: 'none' }}>{PAGE_TITLES[accountPage]}</p>
+            </div>
+            {renderSubpage()}
+          </div>
         )}
       </div>
     )
