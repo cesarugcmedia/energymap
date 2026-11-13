@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { BRAND_COLORS } from '@/components/BrandLogo'
 import Toast from '@/components/Toast'
+import BackButton from '@/components/BackButton'
 import { StoreTypeIcon, SearchIcon, CheckIcon, FlagIcon, PinIcon, ClockIcon, DrinkIcon, UserIcon, ClipboardIcon, CloseIcon } from '@/components/Icons'
 
 const TYPE_OPTIONS = [
@@ -578,6 +579,7 @@ export default function AdminPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
+          {tab === null && <BackButton to="/account" />}
           {tab !== null && (
             <button
               onClick={() => setTab(null)}

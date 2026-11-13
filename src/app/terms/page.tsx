@@ -1,9 +1,12 @@
 'use client'
 
+import BackButton from '@/components/BackButton'
+
 export default function TermsPage() {
   return (
     <div className="bg-[#141A1F] min-h-screen" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '8px 24px 32px' }}>
+        <div style={{ marginBottom: 16 }}><BackButton /></div>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Terms of Service</h1>
         <p style={{ fontSize: 13, color: 'var(--fg-30)', marginBottom: 40 }}>Last updated: April 7, 2025</p>
 
