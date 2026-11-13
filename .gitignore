@@ -19,3 +19,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Claude Code personal settings (per-machine permissions)
+.claude/settings.local.json
