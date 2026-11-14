@@ -1,5 +1,15 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import WaitlistForm from './WaitlistForm'
+import PhoneMockup from '@/components/landing/PhoneMockup'
+import { PinIcon, LightningIcon, BellIcon } from '@/components/Icons'
+import styles from '@/components/landing/landing.module.css'
+
+export const metadata: Metadata = {
+  title: 'Join the waitlist · AmpedMap',
+  description: 'AmpedMap is letting people in from the waitlist. Join to find out which stores near you have your favorite energy drinks in stock.',
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,106 +42,100 @@ async function getStats(): Promise<{ stores: number; drinks: number }> {
 
 export const revalidate = 60
 
+const FEATURES = [
+  { Icon: PinIcon, title: 'Every store near you', body: 'Gas stations, convenience and grocery stores on one live map.' },
+  { Icon: LightningIcon, title: 'What’s in the cooler', body: 'Flavors and stock levels reported by people who just saw the shelf.' },
+  { Icon: BellIcon, title: 'Restock alerts', body: 'Follow a flavor and get told when it’s back.' },
+]
+
+// Waitlist page (invite-only mode). Same visual language as the landing page:
+// reuses its stylesheet and phone mockup so the two stay consistent.
 export default async function WaitlistPage() {
   const [count, stats] = await Promise.all([getCount(), getStats()])
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        backgroundColor: 'var(--bg)',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--text)',
-      }}
-    >
-      {/* Ambient glow */}
-
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 420, padding: '40px 28px 60px' }}>
-
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
-          <div
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 10, fontSize: 20, backgroundColor: 'var(--surface)', border: '1.5px solid rgba(201,244,0,0.4)' }}
-          >
-            ⚡
-          </div>
-          <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)' }}>Amped Map</span>
+    <div className={styles.page} style={{ position: 'fixed', inset: 0, zIndex: 50, overflowY: 'auto' }}>
+      <header className={styles.header}>
+        <div className={`${styles.container} ${styles.headerInner}`}>
+          <Link href="/" className={styles.brand}>
+            <span className={styles.logoMark} style={{ width: 30, height: 30, borderRadius: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
+            </span>
+            <span>AmpedMap</span>
+          </Link>
+          <nav className={styles.headerNav}>
+            <Link href="/account?mode=signin" className={styles.headerLink}>Sign in</Link>
+          </nav>
         </div>
+      </header>
 
-        {/* Headline */}
-        <h1 style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.05, marginBottom: 16, color: 'var(--text)' }}>
-          Find energy drinks<br />
-          <span style={{ color: 'var(--accent)' }}>near you.</span>
-        </h1>
-
-        <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 32, color: 'var(--text-muted)' }}>
-          Community-powered stock tracking for your favorite energy drinks. See what's in stock at nearby stores — in real time.
-        </p>
-
-        {/* Features */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-          {[
-            { icon: '🗺️', text: 'Live map of nearby stores' },
-            { icon: '⚡', text: 'Real-time stock reports from the community' },
-            { icon: '🔍', text: 'Search by brand, flavor, and location' },
-          ].map(({ icon, text }) => (
-            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 15 }}>{icon}</span>
-              <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>{text}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Stats */}
-        {(stats.stores > 0 || stats.drinks > 0) && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-            {stats.stores > 0 && (
-              <div style={{ flex: 1, borderRadius: 12, padding: '12px 14px', backgroundColor: 'rgba(201,244,0,0.05)', border: '1px solid var(--border)', textAlign: 'center' }}>
-                <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>
-                  {stats.stores.toLocaleString()}+
-                </p>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginTop: 4 }}>Stores Mapped</p>
-              </div>
-            )}
-            {stats.drinks > 0 && (
-              <div style={{ flex: 1, borderRadius: 12, padding: '12px 14px', backgroundColor: 'rgba(201,244,0,0.05)', border: '1px solid var(--border)', textAlign: 'center' }}>
-                <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>
-                  {stats.drinks.toLocaleString()}+
-                </p>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginTop: 4 }}>Drink Flavors</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Social proof */}
-        {count > 0 && (
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 99, marginBottom: 20, width: 'fit-content', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}
-          >
-            <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
-              <div className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', opacity: 0.5, backgroundColor: '#C9F400' }} />
-              <div style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#C9F400' }} />
-            </div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(201,244,0,0.9)' }}>
-              <span style={{ color: 'var(--accent)', fontSize: 14 }}>{count.toLocaleString()}</span> people waiting to join
+      <main>
+        <section className={`${styles.container} ${styles.hero}`}>
+          <div>
+            <p className={styles.eyebrow}>Invite only, for now</p>
+            <h1 className={styles.h1}>Never hunt for your favorite energy drink again.</h1>
+            <p className={styles.lead}>
+              We&apos;re letting people in from the waitlist. Add your email and we&apos;ll send your invite when your spot opens.
             </p>
+
+            <div style={{ maxWidth: 440 }}>
+              <WaitlistForm />
+            </div>
+
+            {count > 0 && (
+              <p style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 15, color: 'var(--lp-muted)' }}>
+                <span style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
+                  <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', opacity: 0.5, backgroundColor: '#C9F400' }} />
+                  <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: '#C9F400' }} />
+                </span>
+                <span><strong style={{ color: 'var(--lp-text)', fontWeight: 600 }}>{count.toLocaleString()}</strong> people are already waiting</span>
+              </p>
+            )}
+            {(stats.stores > 0 || stats.drinks > 0) && (
+              <p className={styles.statLine} style={{ marginTop: 6 }}>
+                {stats.stores > 0 && <><strong>{stats.stores.toLocaleString()}</strong> stores</>}
+                {stats.stores > 0 && stats.drinks > 0 && ' and '}
+                {stats.drinks > 0 && <><strong>{stats.drinks.toLocaleString()}</strong> flavors</>} already on the map
+              </p>
+            )}
           </div>
-        )}
+          <div className={styles.heroVisual}>
+            <PhoneMockup />
+          </div>
+        </section>
 
-        {/* Form */}
-        <WaitlistForm />
+        <section className={styles.section} aria-labelledby="what">
+          <div className={styles.container}>
+            <h2 id="what" className={`${styles.h2} reveal`}>What you&apos;ll get</h2>
+            <div className={styles.steps}>
+              {FEATURES.map(({ Icon, title, body }) => (
+                <div key={title} className={`${styles.step} reveal`}>
+                  <span className={styles.stepIcon}><Icon size={20} color="#C9F400" /></span>
+                  <h3 className={styles.h3}>{title}</h3>
+                  <p className={styles.body}>{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
 
-        <p style={{ fontSize: 12, textAlign: 'center', marginTop: 16, color: 'var(--text-dim)' }}>
-          No spam. We'll only email you when we launch.
-        </p>
-      </div>
+      <footer className={styles.footer}>
+        <div className={`${styles.container} ${styles.footerInner}`}>
+          <Link href="/" className={styles.brand}>
+            <span className={styles.logoMark} style={{ width: 24, height: 24, borderRadius: 7 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
+            </span>
+            <span>AmpedMap</span>
+          </Link>
+          <nav className={styles.footerNav}>
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+            <a href="mailto:support@ampedmap.com">Contact</a>
+          </nav>
+          <p className={styles.copyright}>No spam. We only email you about your invite.</p>
+        </div>
+      </footer>
     </div>
   )
 }
