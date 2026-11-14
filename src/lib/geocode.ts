@@ -6,6 +6,22 @@
 export async function geocode(address: string): Promise<{ lat: number; lng: number } | null> {
   const query = encodeURIComponent(address)
 
+  // Bare ZIP: use Nominatim's structured postal-code search. A free-text
+  // search fuzzy-matches nonsense like "00000" to some random place.
+  if (/^\d{5}$/.test(address.trim())) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?postalcode=${address.trim()}&countrycodes=us&format=json&limit=1`,
+        { headers: { 'User-Agent': 'Amped Map/1.0' } }
+      )
+      const data = await res.json()
+      if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    } catch {
+      // fall through to the general lookup below
+    }
+    return null
+  }
+
   try {
     const censusRes = await fetch(
       `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${query}&benchmark=Public_AR_Current&format=json`,

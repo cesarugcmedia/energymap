@@ -69,12 +69,18 @@ export async function GET(req: NextRequest) {
 
   // Latest report per drink per store, newest first.
   const ids = nearby.map((s) => s.id)
-  const { data: stock } = await supabaseAdmin
+  const { data: stock, error: stockError } = await supabaseAdmin
     .from('latest_stock')
     .select('store_id, drink_id, quantity, reported_at')
     .in('store_id', ids.slice(0, 300))
     .order('reported_at', { ascending: false })
     .range(0, 999)
+
+  // Surface a failed stock query instead of silently showing '0 reports'.
+  if (stockError) {
+    console.error('preview: latest_stock query failed', stockError.message)
+    return NextResponse.json({ error: 'Something went wrong. Try again.' }, { status: 500 })
+  }
 
   const drinkIds = [...new Set((stock ?? []).map((r) => r.drink_id))]
   const { data: drinks } = drinkIds.length
