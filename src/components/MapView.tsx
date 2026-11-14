@@ -104,9 +104,14 @@ interface MapViewProps {
   onSelectStore: (store: Store) => void
   onMapReady?: (map: mapboxgl.Map) => void
   storeFreshness?: Record<string, StoreFreshness>
+  /** When set (a drink filter is active), stores NOT in the set are dimmed
+   *  instead of hidden, so the whole map stays visible but the answer pops. */
+  highlightIds?: Set<string> | null
 }
 
-export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness }: MapViewProps) {
+export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds }: MapViewProps) {
+  const highlightRef = useRef<Set<string> | null>(highlightIds ?? null)
+  highlightRef.current = highlightIds ?? null
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
@@ -172,6 +177,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           const leaves = sc!.getLeaves(cp.cluster_id, Infinity)
           const freshness = aggregateFreshness(leaves.map((l) => storeFreshnessRef.current[(l.properties as Store).id]))
           const el = createClusterEl(cp.point_count, freshness, Date.now() < dropInUntilRef.current)
+          const hl = highlightRef.current
+          if (hl && !leaves.some((l) => hl.has((l.properties as Store).id))) el.style.opacity = '0.3'
           el.addEventListener('click', () => {
             const expansionZoom = Math.min(sc!.getClusterExpansionZoom(cp.cluster_id), 20)
             map.easeTo({ center: coords, zoom: expansionZoom, duration: 400 })
@@ -189,6 +196,11 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           const isSelected = selectedRef.current?.id === store.id
           const freshness = storeFreshnessRef.current[store.id] ?? 'stale'
           const el = createStoreEl(store, isSelected, freshness, Date.now() < dropInUntilRef.current)
+          const hl = highlightRef.current
+          if (hl && !isSelected) {
+            if (hl.has(store.id)) el.style.zIndex = '2'
+            else el.style.opacity = '0.3'
+          }
           el.addEventListener('click', (e) => { e.stopPropagation(); onSelectStoreRef.current(store) })
           el.addEventListener('touchend', (e) => { e.stopPropagation(); onSelectStoreRef.current(store) })
           const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
@@ -261,7 +273,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     markersRef.current.clear()
     prevSelectedRef.current = null
     updateMarkers()
-  }, [storeFreshness]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeFreshness, highlightIds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize map once
   useEffect(() => {
@@ -319,23 +331,33 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           if (layer.type === 'background') {
             map.setPaintProperty(layer.id, 'background-color', '#0A0B0A')
           }
-          if (layer.type === 'fill' && layer.id.toLowerCase().includes('water')) {
-            map.setPaintProperty(layer.id, 'fill-color', '#0D0F0A')
+          // Neutral palette matching the app (dark surfaces, gray roads,
+          // muted labels) so lime stays reserved for pins and actions.
+          const id = layer.id.toLowerCase()
+          if (layer.type === 'fill' && id.includes('water')) {
+            map.setPaintProperty(layer.id, 'fill-color', '#0E1214')
           }
-          if (layer.type === 'line' && layer.id.toLowerCase().includes('water')) {
-            map.setPaintProperty(layer.id, 'line-color', '#0D0F0A')
+          if (layer.type === 'line' && id.includes('water')) {
+            map.setPaintProperty(layer.id, 'line-color', '#0E1214')
+          }
+          if (layer.type === 'fill' && (id.includes('park') || id.includes('landuse') || id.includes('national-park'))) {
+            map.setPaintProperty(layer.id, 'fill-color', '#10140F')
           }
           if (layer.type === 'line' && /^road/.test(layer.id)) {
             map.setPaintProperty(layer.id, 'line-color', [
               'match', ['get', 'class'],
-              ['motorway', 'trunk'],    '#1e5c2e',
-              ['primary', 'secondary'], '#163d1e',
-              ['tertiary', 'street'],   '#0f2614',
-              '#0a1a0d',
+              ['motorway', 'trunk'],    '#3A3F36',
+              ['primary', 'secondary'], '#2C3029',
+              ['tertiary', 'street'],   '#21251F',
+              '#1A1D18',
             ])
           }
           if (layer.id === 'building') {
-            map.setPaintProperty(layer.id, 'fill-color', '#0a0f0d')
+            map.setPaintProperty(layer.id, 'fill-color', '#131511')
+          }
+          if (layer.type === 'symbol' && (id.includes('label') || id.includes('place') || id.includes('poi'))) {
+            map.setPaintProperty(layer.id, 'text-color', '#7E8A80')
+            map.setPaintProperty(layer.id, 'text-halo-color', '#0A0B0A')
           }
         } catch {}
       })
@@ -351,9 +373,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           paint: {
             'fill-extrusion-color': [
               'interpolate', ['linear'], ['get', 'height'],
-              0,   '#0a1010',
-              50,  '#0d1a14',
-              200, '#0f1e16',
+              0,   '#121410',
+              50,  '#161813',
+              200, '#1B1E18',
             ],
             'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15, ['get', 'height']],
             'fill-extrusion-base':   ['interpolate', ['linear'], ['zoom'], 14, 0, 15, ['get', 'min_height']],
