@@ -171,18 +171,29 @@ export default function NotificationsPage() {
 
   // Read state is explicit — visiting this page doesn't silently mark
   // everything read. Tapping a row (or Mark all read) does.
+  // Saved through /api/notifications/read (service role), then the nav badge
+  // is told to recount — it doesn't rely on realtime UPDATE events arriving.
+  async function saveRead(payload: { ids: string[] } | { all: true }) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await fetch('/api/notifications/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(payload),
+    }).catch(() => {})
+    window.dispatchEvent(new Event('notifications-changed'))
+  }
+
   async function markRead(ids: string[]) {
     const unreadIds = ids.filter((id) => notifications.some((n) => n.id === id && !n.read))
     if (unreadIds.length === 0) return
     setNotifications((prev) => prev.map((n) => (unreadIds.includes(n.id) ? { ...n, read: true } : n)))
-    await supabase.from('notifications').update({ read: true }).in('id', unreadIds)
+    await saveRead({ ids: unreadIds })
   }
 
   async function markAllRead() {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id)
-    if (unreadIds.length === 0) return
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-    await supabase.from('notifications').update({ read: true }).eq('user_id', user!.id).eq('read', false)
+    await saveRead({ all: true })
   }
 
   async function clearAll() {
@@ -191,6 +202,7 @@ export default function NotificationsPage() {
     if (error) return
     setNotifications([])
     setHasMore(false)
+    window.dispatchEvent(new Event('notifications-changed'))
   }
 
   function open(ids: string[], href: string | null) {

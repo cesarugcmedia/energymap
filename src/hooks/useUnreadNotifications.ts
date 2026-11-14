@@ -27,10 +27,20 @@ export function useUnreadNotifications() {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('read', false)
+        // Same visibility rule as the /notifications list, so the badge never
+        // counts something the page doesn't show yet.
+        .lte('visible_after', new Date().toISOString())
         .then(({ count }) => setUnread(count ?? 0))
     }
 
     fetchCount()
+
+    // Realtime UPDATE events aren't guaranteed (depends on the table's
+    // publication settings), so also recount when the notifications page
+    // says it changed something, and when the app comes back into view.
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchCount() }
+    window.addEventListener('notifications-changed', fetchCount)
+    document.addEventListener('visibilitychange', onVisible)
 
     const channel = supabase
       .channel(`unread-notifications-${user.id}`)
@@ -42,7 +52,11 @@ export function useUnreadNotifications() {
       }, fetchCount)
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+      window.removeEventListener('notifications-changed', fetchCount)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [user])
 
   return unread
