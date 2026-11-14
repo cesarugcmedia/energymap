@@ -71,8 +71,8 @@ export default function CheckEmailModal({ email, kind, onClose }: {
         </h2>
         <p style={{ fontSize: 15, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, marginBottom: 18 }}>
           {kind === 'confirm'
-            ? <>We sent a confirmation link to <strong style={{ color: 'var(--text)', fontWeight: 600, wordBreak: 'break-all' }}>{email}</strong>. Tap it to activate your account.</>
-            : <>We&apos;ll email <strong style={{ color: 'var(--text)', fontWeight: 600, wordBreak: 'break-all' }}>{email}</strong> when your spot opens up.</>}
+            ? <>We sent a confirmation link to <strong style={{ color: 'var(--text)', fontWeight: 600, overflowWrap: 'anywhere' }}>{email}</strong>. Tap it to activate your account.</>
+            : <>We&apos;ll email <strong style={{ color: 'var(--text)', fontWeight: 600, overflowWrap: 'anywhere' }}>{email}</strong> when your spot opens up.</>}
         </p>
 
         <ul style={{ listStyle: 'none', margin: '0 0 20px', padding: '14px 16px', borderRadius: 14, background: 'var(--fg-04)', display: 'flex', flexDirection: 'column', gap: 10 }}>
