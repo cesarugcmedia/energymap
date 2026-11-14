@@ -112,7 +112,7 @@ export default function FavoritesPage() {
                   style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
                 >
                   <div className="flex items-center gap-3">
-                    <StoreTypeIcon type={store?.type} size={22} color="#7A8F80" />
+                    <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />
                     <div
                       className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}

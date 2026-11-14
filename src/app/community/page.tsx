@@ -472,7 +472,7 @@ export default function CommunityPage() {
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
             Commu<span style={{ color: 'var(--accent)' }}>nity</span>
           </h1>
-          <p style={{ fontSize: 13, color: '#7A8F80', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
             {loading ? 'Loading…' : `${postsToday} post${postsToday !== 1 ? 's' : ''} today`}
           </p>
         </div>
@@ -484,7 +484,7 @@ export default function CommunityPage() {
             { view: 'leaderboard' as MainView, label: 'Leaderboard', icon: TrophyIcon },
           ]).map(({ view, label, icon: Icon }) => {
             const active = mainView === view
-            const color = active ? '#0D1210' : '#7A8F80'
+            const color = active ? '#0D1210' : 'var(--text-muted)'
             return (
               <button key={view} className="pill-btn"
                 onClick={() => setMainView(view)}
@@ -506,7 +506,7 @@ export default function CommunityPage() {
             { mode: 'following' as FilterMode, label: 'Following', icon: UsersIcon },
           ]).map(({ mode, label, icon: Icon }) => {
             const active = filterMode === mode
-            const color = active ? '#0D1210' : '#7A8F80'
+            const color = active ? '#0D1210' : 'var(--text-muted)'
             return (
               <button key={mode} className="pill-btn"
                 onClick={() => setFilterMode(mode)}
@@ -527,7 +527,7 @@ export default function CommunityPage() {
             <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)' }}>{profile?.username?.[0]?.toUpperCase() ?? 'U'}</span>
             </div>
-            <span style={{ flex: 1, fontSize: 12, color: '#7A8F80' }}>Share a find, tip, or update...</span>
+            <span style={{ flex: 1, fontSize: 12, color: 'var(--text-muted)' }}>Share a find, tip, or update...</span>
             <span style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, backgroundColor: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               Post
             </span>
@@ -566,7 +566,7 @@ export default function CommunityPage() {
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <PinIcon size={11} color="var(--accent)" /> {selectedStore.name}{selectedStore.address ? ` · ${selectedStore.address}` : ''}
               </span>
-              <button onClick={() => setSelectedStore(null)} style={{ background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', display: 'flex' }}><CloseIcon size={11} color="#4A5F50" /></button>
+              <button onClick={() => setSelectedStore(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex' }}><CloseIcon size={11} color="var(--text-dim)" /></button>
             </div>
           ) : (
             <div style={{ position: 'relative', marginTop: 8 }}>
@@ -586,7 +586,7 @@ export default function CommunityPage() {
                       style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
                       <div style={{ fontSize: 12, color: 'var(--fg-80)' }}>{s.name}</div>
-                      {s.address && <div style={{ fontSize: 10.5, color: '#4A5F50', marginTop: 1 }}>{s.address}</div>}
+                      {s.address && <div style={{ fontSize: 10.5, color: 'var(--text-dim)', marginTop: 1 }}>{s.address}</div>}
                     </button>
                   ))}
                 </div>
@@ -599,16 +599,16 @@ export default function CommunityPage() {
             <button
               className="action-btn"
               onClick={() => fileInputRef.current?.click()}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--fg-10)', borderRadius: 10, padding: '8px 10px', color: '#7A8F80', fontSize: 12, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--fg-10)', borderRadius: 10, padding: '8px 10px', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer' }}
             >
-              <CameraIcon size={13} color="#7A8F80" /> Photo
+              <CameraIcon size={13} color="var(--text-muted)" /> Photo
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 11, color: draft.length >= MAX_BODY ? '#FF4545' : '#4A5F50' }}>{draft.length}/{MAX_BODY}</span>
+              <span style={{ fontSize: 11, color: draft.length >= MAX_BODY ? '#FF4545' : 'var(--text-dim)' }}>{draft.length}/{MAX_BODY}</span>
               {!posting && (
                 <button
                   onClick={() => setComposerExpanded(false)}
-                  style={{ background: 'none', border: 'none', color: '#7A8F80', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '9px 4px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '9px 4px' }}
                 >
                   Cancel
                 </button>
@@ -635,7 +635,7 @@ export default function CommunityPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
             <span style={{ fontSize: 40 }}>⚠️</span>
             <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Couldn't load feed</p>
-            <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>Check your connection and try again.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>Check your connection and try again.</p>
             <button onClick={() => fetchPosts()} style={{ marginTop: 6, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 12, backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer' }}>Retry</button>
           </div>
         ) : filtered.length === 0 ? (
@@ -644,7 +644,7 @@ export default function CommunityPage() {
             <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>
               {filterMode === 'following' ? 'Not following anyone yet' : 'No posts yet'}
             </p>
-            <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
               {filterMode === 'following' ? 'Follow people from their posts to see them here.' : 'Be the first to share something with the community.'}
             </p>
           </div>
@@ -679,7 +679,7 @@ export default function CommunityPage() {
                           <span style={{ fontSize: 9, fontWeight: 800, color: '#ffd700', backgroundColor: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: 6, padding: '2px 6px' }}>TOP 10</span>
                         )}
                       </div>
-                      <span style={{ fontSize: 10.5, color: '#4A5F50' }}>{timeAgo(post.created_at)}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--text-dim)' }}>{timeAgo(post.created_at)}</span>
                     </div>
                     {!isMe && (
                       <button
@@ -690,7 +690,7 @@ export default function CommunityPage() {
                           fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
                           border: isFollowing ? '1px solid var(--fg-15)' : '1px solid #C9F400',
                           backgroundColor: isFollowing ? 'transparent' : 'rgba(201,244,0,0.1)',
-                          color: isFollowing ? '#7A8F80' : 'var(--accent)',
+                          color: isFollowing ? 'var(--text-muted)' : 'var(--accent)',
                         }}
                       >
                         {isFollowing ? 'Following' : '+ Follow'}
@@ -705,7 +705,7 @@ export default function CommunityPage() {
                     >
                       <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}><PinIcon size={11} color="var(--accent)" /> {post.storeName}</span>
                       {post.storeAddress && (
-                        <span style={{ fontSize: 10, color: '#4A5F50', marginLeft: 15 }}>{post.storeAddress}</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 15 }}>{post.storeAddress}</span>
                       )}
                     </button>
                   )}
@@ -720,7 +720,7 @@ export default function CommunityPage() {
                     <button
                       className="action-btn"
                       onClick={() => toggleLike(post)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: post.likedByMe ? 'var(--accent)' : '#7A8F80' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: post.likedByMe ? 'var(--accent)' : 'var(--text-muted)' }}
                     >
                       <span style={{ fontSize: 13 }}>{post.likedByMe ? '▲' : '△'}</span>
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{post.likeCount}</span>
@@ -728,15 +728,15 @@ export default function CommunityPage() {
                     <button
                       className="action-btn"
                       onClick={() => toggleComments(post.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: commentsOpen ? 'var(--accent)' : '#7A8F80' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: commentsOpen ? 'var(--accent)' : 'var(--text-muted)' }}
                     >
-                      <CommentIcon size={12} color={commentsOpen ? 'var(--accent)' : '#7A8F80'} />
+                      <CommentIcon size={12} color={commentsOpen ? 'var(--accent)' : 'var(--text-muted)'} />
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{postComments.length}</span>
                     </button>
                     <button
                       className="action-btn"
                       onClick={() => sharePost(post)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: '#7A8F80' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, cursor: 'pointer', color: 'var(--text-muted)' }}
                     >
                       <span style={{ fontSize: 12 }}>↗</span>
                       <span style={{ fontSize: 12, fontWeight: 700 }}>Share</span>
@@ -784,7 +784,7 @@ export default function CommunityPage() {
         {/* Trending stores */}
         {trendingStores.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
               Trending Stores This Week
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -796,7 +796,7 @@ export default function CommunityPage() {
                 >
                   <div>
                     <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{s.name}</p>
-                    <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 2 }}>{s.count} mention{s.count !== 1 ? 's' : ''} this week</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{s.count} mention{s.count !== 1 ? 's' : ''} this week</p>
                   </div>
                   <span style={{ color: 'var(--accent)', fontSize: 18 }}>›</span>
                 </button>
@@ -817,7 +817,7 @@ export default function CommunityPage() {
                 {TIMEFRAMES.map((tf) => (
                   <button key={tf} className="pill-btn"
                     onClick={() => setLbTimeframe(tf)}
-                    style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', backgroundColor: lbTimeframe === tf ? '#C9F400' : 'transparent', color: lbTimeframe === tf ? '#0D1210' : '#4A5F50', boxShadow: lbTimeframe === tf ? '0 0 12px rgba(201,244,0,0.3)' : 'none' }}>
+                    style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', backgroundColor: lbTimeframe === tf ? '#C9F400' : 'transparent', color: lbTimeframe === tf ? '#0D1210' : 'var(--text-dim)', boxShadow: lbTimeframe === tf ? '0 0 12px rgba(201,244,0,0.3)' : 'none' }}>
                     {tf}
                   </button>
                 ))}
@@ -848,7 +848,7 @@ export default function CommunityPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
                   <span style={{ fontSize: 48 }}>⚠️</span>
                   <p style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Couldn't load leaderboard</p>
-                  <p style={{ fontSize: 13, color: '#7A8F80' }}>Check your connection and try again.</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Check your connection and try again.</p>
                   <button
                     onClick={() => {
                       setLbLoading(true)
@@ -867,7 +867,7 @@ export default function CommunityPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '80px 0' }}>
                   <TrophyIcon size={48} color="#8b9284" />
                   <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>No reports yet</p>
-                  <p style={{ fontSize: 13, color: '#7A8F80' }}>Be the first to submit a report!</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Be the first to submit a report!</p>
                 </div>
               ) : (
                 <>
@@ -875,7 +875,7 @@ export default function CommunityPage() {
                   <div style={{ backgroundColor: 'var(--surface)', borderRadius: 16, border: '1px solid rgba(201,244,0,0.12)', overflow: 'hidden' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 72px', padding: '10px 16px', backgroundColor: 'rgba(201,244,0,0.03)', borderBottom: '1px solid rgba(201,244,0,0.08)' }}>
                       {['#', 'Reporter', 'Points'].map((h, i) => (
-                        <div key={h} style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', textAlign: i > 0 ? 'right' : 'left', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+                        <div key={h} style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', textAlign: i > 0 ? 'right' : 'left', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
                           {h}
                         </div>
                       ))}
@@ -903,7 +903,7 @@ export default function CommunityPage() {
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             {medal
                               ? <span style={{ fontSize: 18 }}>{medal}</span>
-                              : <span style={{ fontSize: 13, fontWeight: 800, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>{rank}</span>
+                              : <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-dim)', fontFamily: "'Barlow Condensed', sans-serif" }}>{rank}</span>
                             }
                           </div>
 
@@ -928,7 +928,7 @@ export default function CommunityPage() {
                             <span style={{ fontSize: 14, fontWeight: 800, color: isTop3 ? rankStyle.text || 'var(--text)' : 'var(--fg-50)', fontFamily: "'Barlow Condensed', sans-serif" }}>
                               {entry.points}
                             </span>
-                            <span style={{ fontSize: 11, color: '#4A5F50', fontFamily: "'Barlow Condensed', sans-serif" }}>pts</span>
+                            <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'Barlow Condensed', sans-serif" }}>pts</span>
                           </div>
                         </div>
                       )
@@ -937,7 +937,7 @@ export default function CommunityPage() {
 
                   {/* How points work */}
                   <div style={{ marginTop: 16, backgroundColor: 'var(--surface)', borderRadius: 16, border: '1px solid rgba(201,244,0,0.12)', padding: '16px' }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How Points Work</p>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', marginBottom: 12, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>How Points Work</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {[
                         { icon: LightningIcon, label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2 pts', color: 'var(--accent)' },
@@ -951,7 +951,7 @@ export default function CommunityPage() {
                             </div>
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>{item.label}</p>
-                              <p style={{ fontSize: 11, color: '#7A8F80', marginTop: 1 }}>{item.desc}</p>
+                              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{item.desc}</p>
                             </div>
                             <span style={{ fontSize: 13, fontWeight: 800, color: item.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{item.pts}</span>
                           </div>
@@ -968,7 +968,7 @@ export default function CommunityPage() {
                         <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                           ⚡ Tracker members get unlimited alerts
                         </p>
-                        <p style={{ fontSize: 12, color: '#7A8F80' }}>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                           Exact timestamps, custom lists, and verified badge
                         </p>
                       </div>

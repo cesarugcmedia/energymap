@@ -704,7 +704,7 @@ export default function AdminPage() {
                     style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(255,69,69,0.2)' }}
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <StoreTypeIcon type={store?.type} size={22} color="#7A8F80" />
+                      <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{store?.name ?? 'Unknown store'}</p>
                         {store?.address && <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>}
@@ -815,7 +815,7 @@ export default function AdminPage() {
                             className="rounded-2xl p-4 flex items-center gap-3"
                             style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
                           >
-                            <StoreTypeIcon type={store.type} size={24} color="#7A8F80" />
+                            <StoreTypeIcon type={store.type} size={24} color="var(--text-muted)" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-white truncate">{store.name}</p>
                               <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
@@ -1147,7 +1147,7 @@ export default function AdminPage() {
             >
               {/* Store info */}
               <div className="flex gap-3 p-3.5">
-                <StoreTypeIcon type={store.type} size={28} color="#7A8F80" />
+                <StoreTypeIcon type={store.type} size={28} color="var(--text-muted)" />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-white">{store.name}</p>
                   <p className="text-xs text-white/40 mt-0.5">{store.address}</p>

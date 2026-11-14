@@ -8,7 +8,8 @@ import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Drink, Quantity, Store } from '@/lib/types'
-import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon } from '@/components/Icons'
+import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon, ChevronRightIcon } from '@/components/Icons'
+import ui from '@/components/ui/ui.module.css'
 
 type View = 'map' | 'list'
 
@@ -347,18 +348,18 @@ export default function MapHome() {
   }
 
   const showSuggestions = searchFocused && search.trim().length > 0 && (drinkSuggestions.length > 0 || storeSuggestions.length > 0)
-  const suggestionSectionLabelStyle = { fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const, padding: '6px 10px 4px' }
+  const suggestionSectionLabelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', padding: '6px 10px 4px' }
   const suggestionRowStyle = { width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }
 
   const searchSuggestions = showSuggestions && (
-    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 30, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.45)', maxHeight: 320, overflowY: 'auto', padding: 6 }}>
+    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 30, backgroundColor: 'var(--surface)', border: '1px solid var(--fg-10)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.45)', maxHeight: 320, overflowY: 'auto', padding: 6 }}>
       {drinkSuggestions.length > 0 && (
         <>
           <p style={suggestionSectionLabelStyle}>Drinks</p>
           {drinkSuggestions.map((d) => (
             <button key={d.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectDrinkSuggestion(d)} style={suggestionRowStyle}>
-              <DrinkIcon size={16} color="#8b9284" />
-              <p style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
+              <DrinkIcon size={16} color="var(--text-muted)" />
+              <p style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
             </button>
           ))}
         </>
@@ -368,10 +369,10 @@ export default function MapHome() {
           <p style={suggestionSectionLabelStyle}>Stores</p>
           {storeSuggestions.map((s) => (
             <button key={s.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectStoreSuggestion(s)} style={suggestionRowStyle}>
-              <StoreTypeIcon type={s.type} size={16} color="#7A8F80" />
+              <StoreTypeIcon type={s.type} size={16} color="var(--text-muted)" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
-                {s.address && <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.address}</p>}
+                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
+                {s.address && <p style={{ fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.address}</p>}
               </div>
             </button>
           ))}
@@ -405,60 +406,54 @@ export default function MapHome() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3 ">
         <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
-        <p className="text-white/40 text-sm">Finding your location…</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Finding your location…</p>
       </div>
     )
   }
 
   const zipFallback = (
     <div className="w-full" style={{ marginTop: 4 }}>
-      <div className="flex items-center gap-2.5" style={{ margin: '18px 0 10px' }}>
+      <div className="flex items-center gap-2.5" style={{ margin: '18px 0 12px' }}>
         <span style={{ flex: 1, height: 1, background: 'var(--fg-10)' }} />
-        <span className="text-xs font-semibold text-white/35">OR</span>
+        <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>or</span>
         <span style={{ flex: 1, height: 1, background: 'var(--fg-10)' }} />
       </div>
-      <p className="text-xs text-white/40 mb-2.5">Don't want to share your location? Search by ZIP code instead.</p>
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 10, textAlign: 'left' }}>Rather not share your location? Search by ZIP code.</p>
       <div className="flex gap-2">
         <input
           type="text"
           inputMode="numeric"
+          autoComplete="postal-code"
           maxLength={5}
           placeholder="ZIP code"
           value={zipInput}
           onChange={(e) => { setZipInput(e.target.value.replace(/\D/g, '')); setZipError(null) }}
           onKeyDown={(e) => { if (e.key === 'Enter') searchByZip() }}
-          className="flex-1 rounded-xl px-4 py-3 text-sm text-white outline-none"
-          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-10)' }}
+          className={ui.input}
+          style={{ flex: 1 }}
         />
-        <button
-          onClick={searchByZip}
-          disabled={zipLoading}
-          className="rounded-xl px-5 font-bold text-sm"
-          style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-75)', border: '1px solid var(--fg-15)' }}
-        >
-          {zipLoading ? '…' : 'Search'}
+        <button onClick={searchByZip} disabled={zipLoading} className={ui.btnSecondary}>
+          {zipLoading ? 'Searching…' : 'Search'}
         </button>
       </div>
-      {zipError && <p className="text-xs mt-2" style={{ color: '#f87171' }}>{zipError}</p>}
+      {zipError && <p style={{ fontSize: 14, marginTop: 8, color: '#FF6B6B', textAlign: 'left' }}>{zipError}</p>}
     </div>
   )
 
   if (!location && !locError && !manualLocation) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5">
-        <PinIcon size={48} color="#8b9284" />
+      <div className="flex flex-col items-center justify-center h-screen px-6 text-center gap-4" style={{ maxWidth: 420, margin: '0 auto' }}>
+        <span style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <PinIcon size={26} color="#C9F400" />
+        </span>
         <div>
-          <p className="text-xl font-black text-white mb-2">Find Stores Near You</p>
-          <p className="text-sm text-white/45 leading-relaxed">
-            Share your location for instant results — or search by ZIP code below if you'd rather not.
+          <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Find stores near you</p>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            Share your location to see what&apos;s in stock around you.
           </p>
         </div>
-        <button
-          onClick={retry}
-          className="w-full rounded-2xl p-4 font-bold"
-          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
-        >
-          Enable Location →
+        <button onClick={retry} className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`}>
+          Use my location
         </button>
         {zipFallback}
       </div>
@@ -468,56 +463,34 @@ export default function MapHome() {
   if (locError && !manualLocation) {
     const isPermissionDenied = locError === 'denied'
     return (
-      <div className="flex flex-col items-center justify-center h-screen  px-8 text-center gap-5">
-        <PinIcon size={48} color="#8b9284" />
+      <div className="flex flex-col items-center justify-center h-screen px-6 text-center gap-4" style={{ maxWidth: 420, margin: '0 auto' }}>
+        <span style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <PinIcon size={26} color="#C9F400" />
+        </span>
         <div>
-          <p className="text-xl font-black text-white mb-2">
-            {isPermissionDenied ? 'No Location? No Problem' : 'Unable to Get Location'}
+          <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            {isPermissionDenied ? 'No location? No problem.' : "Couldn't get your location"}
           </p>
-          <p className="text-sm text-white/45 leading-relaxed">
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {isPermissionDenied
-              ? "That's okay — search by ZIP code below, or enable location anytime for automatic results."
-              : 'Your location permission is set to allow, but we couldn\'t get a fix. Make sure your device\'s location services are on, then try again.'}
+              ? 'Search by ZIP code below, or turn on location anytime for automatic results.'
+              : "Location is allowed, but we couldn't get a fix. Make sure location services are on, then try again."}
           </p>
         </div>
 
-        <button
-          onClick={retry}
-          className="w-full rounded-2xl p-4 font-bold"
-          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
-        >
-          Try Again →
+        <button onClick={retry} className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`}>
+          Try again
         </button>
 
         {isPermissionDenied && (
-          <div
-            className="w-full rounded-2xl p-4 text-left"
-            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-          >
-            <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
-              HOW TO ENABLE IN YOUR BROWSER
-            </p>
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-start gap-2.5">
-                <span className="text-sm mt-0.5">🔒</span>
-                <p className="text-xs text-white/50 leading-relaxed">
-                  <span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon in the address bar → Site settings → Location → Allow
-                </p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="text-sm mt-0.5">🧭</span>
-                <p className="text-xs text-white/50 leading-relaxed">
-                  <span className="text-white/70 font-semibold">iPhone Safari:</span> Tap the <span className="text-white/70 font-semibold">aA</span> icon in the address bar → Website Settings → Location → Allow. Also check Settings → Privacy &amp; Security → Location Services → Safari Websites → While Using
-                </p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="text-sm mt-0.5">🦊</span>
-                <p className="text-xs text-white/50 leading-relaxed">
-                  <span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Access Your Location → Allow
-                </p>
-              </div>
-            </div>
-          </div>
+          <details className={ui.card} style={{ width: '100%', textAlign: 'left' }}>
+            <summary style={{ cursor: 'pointer', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>How to turn location back on</summary>
+            <ul style={{ margin: '12px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              <li><strong style={{ color: 'var(--text)', fontWeight: 600 }}>iPhone Safari:</strong> tap <strong style={{ color: 'var(--text)', fontWeight: 600 }}>aA</strong> in the address bar → Website Settings → Location → Allow. Also check Settings → Privacy &amp; Security → Location Services → Safari Websites → While Using.</li>
+              <li><strong style={{ color: 'var(--text)', fontWeight: 600 }}>Chrome / Edge:</strong> tap the lock icon in the address bar → Site settings → Location → Allow.</li>
+              <li><strong style={{ color: 'var(--text)', fontWeight: 600 }}>Firefox:</strong> tap the shield icon → Permissions → Access Your Location → Allow.</li>
+            </ul>
+          </details>
         )}
         {zipFallback}
       </div>
@@ -552,76 +525,52 @@ export default function MapHome() {
           backgroundColor: 'var(--header-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(201,244,0,0.12)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 10px' }}>
-          <div>
-            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
-              ⚡ Amped Map
-            </p>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--fg-40)', marginTop: 2 }}>
-              {storesLoading ? '— stores' : `${nearbyCount} stores nearby`}
-            </p>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 14, padding: 3, boxShadow: '0 0 16px rgba(201,244,0,0.12)' }}>
-              <button
-                onClick={() => setView('map')}
-                className="pill-btn"
-                style={{
-                  padding: '11px 18px', borderRadius: 11, border: 'none',
-                  backgroundColor: view === 'map' ? '#C9F400' : 'transparent',
-                  color: view === 'map' ? '#0D1210' : '#7A8F80',
-                  fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
-                  boxShadow: view === 'map' ? '0 0 14px rgba(201,244,0,0.4)' : 'none',
-                }}
-              >
-                Map
-              </button>
-              <button
-                onClick={() => setView('list')}
-                className="pill-btn"
-                style={{
-                  padding: '11px 18px', borderRadius: 11, border: 'none',
-                  backgroundColor: view === 'list' ? '#C9F400' : 'transparent',
-                  color: view === 'list' ? '#0D1210' : '#7A8F80',
-                  fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
-                  boxShadow: view === 'list' ? '0 0 14px rgba(201,244,0,0.4)' : 'none',
-                }}
-              >
-                List
-              </button>
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
+            </span>
+            <div>
+              <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', lineHeight: 1.1 }}>AmpedMap</p>
+              <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
+                {storesLoading ? 'Loading stores…' : `${nearbyCount} store${nearbyCount === 1 ? '' : 's'} nearby`}
+              </p>
             </div>
+          </div>
+          <div className={ui.segmented} role="tablist" aria-label="View">
+            <button role="tab" aria-selected={view === 'map'} onClick={() => setView('map')} className={`${ui.segment} ${view === 'map' ? ui.segmentActive : ''}`}>Map</button>
+            <button role="tab" aria-selected={view === 'list'} onClick={() => setView('list')} className={`${ui.segment} ${view === 'list' ? ui.segmentActive : ''}`}>List</button>
           </div>
         </div>
 
         {view === 'map' && (
           <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={16} color="var(--text-dim)" /></span>
               <input
                 type="text"
-                placeholder="Search stores"
+                placeholder="Search stores or flavors"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-                style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '11px 14px 11px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+                className={`${ui.input} ${ui.inputWithIcon}`}
+                style={{ padding: '10px 36px 10px 40px', fontSize: 15 }}
               />
               {search && (
-                <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
+                <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="var(--text-dim)" /></button>
               )}
               {searchSuggestions}
             </div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+            <div className={ui.chipRow}>
               {TYPE_FILTERS.map((f) => {
                 const active = typeFilter === f.value
                 return (
-                  <button key={f.value ?? 'all'} className="pill-btn"
-                    onClick={() => setTypeFilter(f.value)}
-                    style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
-                    {f.value && <StoreTypeIcon type={f.value} size={13} color={active ? '#0D1210' : '#7A8F80'} />}
+                  <button key={f.value ?? 'all'} onClick={() => setTypeFilter(f.value)} className={`${ui.chip} ${active ? ui.chipActive : ''}`}>
+                    {f.value && <StoreTypeIcon type={f.value} size={14} color={active ? '#0D1210' : 'var(--text-muted)'} />}
                     {f.label}
                   </button>
                 )
@@ -679,37 +628,21 @@ export default function MapHome() {
                 className="absolute z-10 flex flex-col gap-2"
                 style={{ bottom: 'calc(160px + env(safe-area-inset-bottom))', right: 16 }}
               >
-                {[{ label: '+', fn: () => leafletMap.zoomIn() }, { label: '−', fn: () => leafletMap.zoomOut() }].map(({ label, fn }) => (
-                  <button
-                    key={label}
-                    onClick={fn}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center font-light"
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--fg-15)',
-                      backdropFilter: 'blur(12px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                      color: 'var(--text)',
-                      fontSize: 22,
-                    }}
-                  >
+                {[{ label: '+', aria: 'Zoom in', fn: () => leafletMap.zoomIn() }, { label: '−', aria: 'Zoom out', fn: () => leafletMap.zoomOut() }].map(({ label, aria, fn }) => (
+                  <button key={label} onClick={fn} aria-label={aria} className={ui.iconBtn} style={{ fontSize: 22, fontWeight: 300, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                     {label}
                   </button>
                 ))}
                 <button
                   onClick={() => leafletMap.flyTo({ center: [lng, lat], zoom: 15 })}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid rgba(201,244,0,0.4)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                    fontSize: 18,
-                    color: '#C9F400',
-                  }}
+                  className={ui.iconBtn}
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
                   title="Re-center on my location"
+                  aria-label="Re-center on my location"
                 >
-                  ◎
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                  </svg>
                 </button>
               </div>
             )}
@@ -728,7 +661,7 @@ export default function MapHome() {
               {FRESHNESS_LEGEND.map((item) => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)' }}>{item.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{item.label}</span>
                 </div>
               ))}
             </div>
@@ -752,86 +685,39 @@ export default function MapHome() {
               >
                 <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
 
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-start justify-between" style={{ marginBottom: 10 }}>
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <StoreTypeIcon type={selected.type} size={28} color="#7A8F80" />
+                    <span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <StoreTypeIcon type={selected.type} size={22} color="var(--text-muted)" />
+                    </span>
                     <div className="min-w-0">
-                      <p className="text-lg font-bold text-white truncate">{selected.name}</p>
-                      <p className="text-xs text-white/40 mt-0.5 truncate">{selected.address}</p>
+                      <p className="truncate" style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{selected.name}</p>
+                      <p className="truncate" style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 1 }}>{selected.address}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-2"
-                    style={{ backgroundColor: 'var(--fg-07)' }}
-                  >
-                    <CloseIcon size={13} color="rgba(255,255,255,0.5)" />
+                  <button onClick={() => setSelected(null)} aria-label="Close" className={ui.iconBtn} style={{ width: 32, height: 32, borderRadius: 10, marginLeft: 8, flexShrink: 0 }}>
+                    <CloseIcon size={12} color="var(--text-muted)" />
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                    style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
-                  >
-                    <PinIcon size={11} color="#8b9284" />
-                    <span className="text-xs font-semibold text-white/60">
-                      {getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away
-                    </span>
-                  </div>
+                <div className="flex items-center flex-wrap" style={{ gap: '4px 14px', marginBottom: 16, fontSize: 14, color: 'var(--text-muted)' }}>
+                  <span className="flex items-center gap-1.5"><PinIcon size={13} color="var(--text-dim)" />{getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away</span>
                   {lastUpdated && isTracker && (
-                    <div
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                      style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
-                    >
-                      <ClockIcon size={11} color="#8b9284" />
-                      <span className="text-xs font-semibold text-white/60">
-                        Updated {timeAgo(lastUpdated)}
-                      </span>
-                    </div>
+                    <span className="flex items-center gap-1.5"><ClockIcon size={13} color="var(--text-dim)" />Updated {timeAgo(lastUpdated)}</span>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 12, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                  <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
-                  <button
-                    onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}&flag=1`)}
-                    style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
-                  >
-                    Report it
+                <div className="flex gap-2.5">
+                  <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(selected.lat, selected.lng)}>
+                    Directions
+                  </button>
+                  <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}>
+                    View stock
                   </button>
                 </div>
-
-                <div className="flex gap-2.5">
-                  <button
-                    className="flex-1 rounded-xl py-3 font-semibold text-sm"
-                    style={{
-                      backgroundColor: 'var(--fg-06)',
-                      border: '1.5px solid var(--fg-50)',
-                      color: 'var(--fg-90)',
-                      boxShadow: '0 0 12px var(--fg-15), 0 0 24px var(--fg-07)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    }}
-                    onClick={() => openDirections(selected.lat, selected.lng)}
-                  >
-                    Directions
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                  <button
-                    className="flex-1 rounded-xl py-3 font-bold text-sm"
-                    style={{
-                      backgroundColor: '#C9F400',
-                      border: '1.5px solid rgba(201,244,0,0.8)',
-                      color: '#0D1210',
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      boxShadow: '0 0 12px rgba(201,244,0,0.4), 0 0 24px rgba(201,244,0,0.15)',
-                    }}
-                    onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}
-                  >
-                    View Stock
+                <div style={{ textAlign: 'center', marginTop: 12 }}>
+                  <button className={ui.linkQuiet} onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}&flag=1`)}>
+                    Pin in the wrong spot?
                   </button>
                 </div>
               </div>
@@ -853,167 +739,128 @@ export default function MapHome() {
             <div style={{ padding: '16px 16px 100px' }}>
 
               {/* Search + Add Store */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, animation: 'fadeUp 0.5s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={16} color="var(--text-dim)" /></span>
                   <input
                     type="text"
-                    placeholder="Search stores or flavors..."
+                    placeholder="Search stores or flavors"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-                    style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+                    className={`${ui.input} ${ui.inputWithIcon}`}
+                    style={{ paddingRight: 36, fontSize: 15 }}
                   />
                   {search && (
-                    <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
+                    <button onClick={() => { setSearch(''); setDrinkFilter(null) }} aria-label="Clear search" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="var(--text-dim)" /></button>
                   )}
                   {searchSuggestions}
                 </div>
-                <button
-                  className="action-btn"
-                  onClick={() => router.push('/add-store')}
-                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, padding: '13px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
-                >
-                  + Add Store
+                <button className={ui.btnSecondary} onClick={() => router.push('/add-store')} style={{ flexShrink: 0 }}>
+                  + Add store
                 </button>
               </div>
 
-              {/* Radius filter */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
-                {(isTracker ? HUNTER_RADIUS_OPTIONS : FREE_RADIUS_OPTIONS).map((r) => {
-                  const active = radius === r
-                  return (
-                    <button key={r ?? 'all'} className="pill-btn"
-                      onClick={() => setRadius(r)}
-                      style={{ flexShrink: 0, padding: '7px 16px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
-                      {r === null ? 'ALL' : `${r} MI`}
-                    </button>
-                  )
-                })}
+              {/* Filters */}
+              <div className={ui.chipRow} style={{ marginBottom: 8 }}>
+                {(isTracker ? HUNTER_RADIUS_OPTIONS : FREE_RADIUS_OPTIONS).map((r) => (
+                  <button key={r ?? 'all'} onClick={() => setRadius(r)} className={`${ui.chip} ${radius === r ? ui.chipActive : ''}`}>
+                    {r === null ? 'Any distance' : `${r} mi`}
+                  </button>
+                ))}
               </div>
-
-              {/* Type filter */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+              <div className={ui.chipRow} style={{ marginBottom: 8 }}>
                 {TYPE_FILTERS.map((f) => {
                   const active = typeFilter === f.value
                   return (
-                    <button key={f.value ?? 'all'} className="pill-btn"
-                      onClick={() => setTypeFilter(f.value)}
-                      style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
-                      {f.value && <StoreTypeIcon type={f.value} size={13} color={active ? '#0D1210' : '#7A8F80'} />}
+                    <button key={f.value ?? 'all'} onClick={() => setTypeFilter(f.value)} className={`${ui.chip} ${active ? ui.chipActive : ''}`}>
+                      {f.value && <StoreTypeIcon type={f.value} size={14} color={active ? '#0D1210' : 'var(--text-muted)'} />}
                       {f.label}
                     </button>
                   )
                 })}
               </div>
-
-              {/* Brand filter */}
               {availableBrands.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
-                  <button className="pill-btn"
-                    onClick={() => setBrandFilter(null)}
-                    style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? '#C9F400' : 'var(--surface)', color: brandFilter === null ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
-                    ALL BRANDS
-                  </button>
+                <div className={ui.chipRow} style={{ marginBottom: 18 }}>
+                  <button onClick={() => setBrandFilter(null)} className={`${ui.chip} ${brandFilter === null ? ui.chipActive : ''}`}>All brands</button>
                   {availableBrands.map((brand) => {
                     const active = brandFilter === brand
                     return (
-                      <button key={brand} className="pill-btn"
-                        onClick={() => setBrandFilter(active ? null : brand)}
-                        style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
-                        {brand}
-                      </button>
+                      <button key={brand} onClick={() => setBrandFilter(active ? null : brand)} className={`${ui.chip} ${active ? ui.chipActive : ''}`}>{brand}</button>
                     )
                   })}
                 </div>
               )}
 
-              {/* Nearest / You're At card */}
+              {/* Nearest / You're at */}
               {storesLoading ? (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ height: 10, width: 80, borderRadius: 6, backgroundColor: 'rgba(201,244,0,0.07)', marginBottom: 8 }} />
-                  <div style={{ borderRadius: 16, height: 96, backgroundColor: 'var(--surface)' }} className="animate-pulse" />
+                  <div style={{ height: 12, width: 110, borderRadius: 6, backgroundColor: 'var(--fg-06)', marginBottom: 10 }} />
+                  <div style={{ borderRadius: 16, height: 120, backgroundColor: 'var(--surface)' }} className="animate-pulse" />
                 </div>
               ) : nearest && (
-                <div style={{ marginBottom: 20, animation: 'fadeUp 0.5s ease 0.08s both' }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    ⚡ {isAtStore ? "You're At" : 'Nearest to You'}
-                    <span style={{ flex: 1, height: 1, background: 'rgba(201,244,0,0.12)', display: 'block' }} />
-                  </p>
-                  <div className="store-card" style={{ backgroundColor: 'var(--surface)', borderRadius: 16, padding: 14, border: `1px solid ${isAtStore ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.25)'}`, boxShadow: '0 0 24px rgba(201,244,0,0.08)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}
+                <div style={{ marginBottom: 22 }}>
+                  <p className={ui.sectionLabel}>{isAtStore ? "You're here" : 'Nearest to you'}</p>
+                  <div className={ui.card} style={{ borderColor: isAtStore ? 'rgba(201,244,0,0.45)' : 'var(--border)' }}>
+                    <button
                       onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}
-                      className="cursor-pointer"
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit' }}
                     >
-                      <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <StoreTypeIcon type={nearest.type} size={22} color="#7A8F80" />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
-                        <p style={{ fontSize: 12, color: 'var(--fg-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
-                      </div>
-                      <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
-                        {isAtStore ? '● HERE' : `${nearestDist!.toFixed(1)} mi`}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
-                      <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                      <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
-                      <button
-                        onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}&flag=1`)}
-                        style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
-                      >
-                        Report it
-                      </button>
-                    </div>
+                      <span style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <StoreTypeIcon type={nearest.type} size={22} color="var(--text-muted)" />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 17, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.name}</span>
+                        <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</span>
+                      </span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: isAtStore ? 'var(--accent)' : 'var(--text-muted)', flexShrink: 0 }}>
+                        {isAtStore ? 'Here' : `${nearestDist!.toFixed(1)} mi`}
+                      </span>
+                      <ChevronRightIcon size={16} color="var(--text-dim)" />
+                    </button>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
-                        onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
-                        ⚡ Report
-                      </button>
-                      <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
-                        onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
-                        View
+                      <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
+                        Report stock
                       </button>
                       {!isAtStore && (
-                        <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
-                          onClick={() => openDirections(nearest.lat, nearest.lng)}>
+                        <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(nearest.lat, nearest.lng)}>
                           Directions
                         </button>
                       )}
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: 10 }}>
+                      <button className={ui.linkQuiet} onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}&flag=1`)}>Pin in the wrong spot?</button>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* All stores */}
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {search ? `Results (${sorted.length})` : 'All Stores'}
-                <span style={{ flex: 1, height: 1, background: 'rgba(201,244,0,0.12)', display: 'block' }} />
-              </p>
+              <p className={ui.sectionLabel}>{search ? `Results (${sorted.length})` : 'All stores'}</p>
 
               {storesLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
                   <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 </div>
               ) : storesError && stores.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
-                  <span style={{ fontSize: 40 }}>⚠️</span>
-                  <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Couldn't load stores</p>
-                  <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>Check your connection and try again.</p>
-                  <button onClick={() => refetch()} style={{ marginTop: 6, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 12, backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer' }}>Retry</button>
+                <div className={ui.emptyState}>
+                  <GroceryIcon size={36} color="var(--text-dim)" />
+                  <p className={ui.emptyTitle}>Couldn&apos;t load stores</p>
+                  <p className={ui.emptyBody}>Check your connection and try again.</p>
+                  <button onClick={() => refetch()} className={ui.btnSecondary} style={{ marginTop: 6 }}>Try again</button>
                 </div>
               ) : sorted.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
-                  <GroceryIcon size={40} color="#8b9284" />
-                  <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No stores found</p>
-                  <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>
-                    {brandFilter ? `No stores with ${brandFilter} in stock nearby` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area` : search ? `No stores matching "${search}"` : 'No stores in range — try a wider radius'}
+                <div className={ui.emptyState}>
+                  <GroceryIcon size={36} color="var(--text-dim)" />
+                  <p className={ui.emptyTitle}>No stores found</p>
+                  <p className={ui.emptyBody}>
+                    {brandFilter ? `No stores with ${brandFilter} in stock nearby.` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area.` : search ? `No stores matching "${search}".` : 'No stores in range. Try a wider distance.'}
                   </p>
+                  <button className={ui.btnSecondary} style={{ marginTop: 6 }} onClick={() => router.push('/add-store')}>Add a missing store</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease 0.12s both' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {sorted.map((store) => {
                     const stock = storeStock[store.id] ?? []
                     const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
@@ -1021,104 +868,74 @@ export default function MapHome() {
                     const inStockCount = stock.filter((s) => s.quantity !== 'out').length
                     const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
                     const hasReports = stock.length > 0
-                    const barColor = !hasReports ? 'rgba(201,244,0,0.12)' : pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
+                    const barColor = pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
                     const daysSinceReport = latestReport ? (Date.now() - new Date(latestReport.reported_at).getTime()) / 86400000 : null
                     const isDormant = hasReports && daysSinceReport !== null && daysSinceReport > 7
+                    const reportHref = `/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`
 
                     return (
-                      <div key={store.id} className="store-card"
-                        style={{ backgroundColor: 'var(--surface)', borderRadius: 16, padding: 14, border: `1px solid rgba(201,244,0,0.12)` }}>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
-                          onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                          <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <StoreTypeIcon type={store.type} size={22} color="#7A8F80" />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
-                            <p style={{ fontSize: 12, color: 'var(--fg-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
-                          </div>
-                          <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
-                        </div>
+                      <div key={store.id} className={ui.card}>
+                        <button
+                          onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit' }}
+                        >
+                          <span style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <StoreTypeIcon type={store.type} size={22} color="var(--text-muted)" />
+                          </span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 17, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.name}</span>
+                            <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</span>
+                          </span>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>{dist} mi</span>
+                          <ChevronRightIcon size={16} color="var(--text-dim)" />
+                        </button>
 
                         {hasReports ? (
-                          <>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                              <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(201,244,0,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ marginBottom: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                              <div style={{ flex: 1, height: 6, backgroundColor: 'var(--fg-06)', borderRadius: 3, overflow: 'hidden' }}>
                                 <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
                               </div>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif" }}>
-                                {inStockCount}/{stock.length} IN STOCK
+                              <span style={{ fontSize: 13, fontWeight: 600, color: barColor, flexShrink: 0 }}>
+                                {inStockCount} of {stock.length} in stock
                               </span>
                             </div>
                             {latestReport && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isDormant ? 8 : 12 }}>
-                                <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
-                                <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at), fontFamily: "'Barlow Condensed', sans-serif" }}>
-                                  {timeAgo(latestReport.reported_at)}
-                                </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
+                                Reported {timeAgo(latestReport.reported_at)}
                               </div>
                             )}
                             {isDormant && (
-                              <button
-                                className="action-btn"
-                                style={{ width: '100%', textAlign: 'center', marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(255,179,0,0.05)', border: '1.5px dashed rgba(255,179,0,0.4)', cursor: 'pointer' }}
-                                onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
-                              >
-                                <span style={{ display: 'block', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: '#FFB300' }}>⚡ Be the one to confirm this store</span>
-                                <span style={{ display: 'block', fontSize: 11, color: 'var(--fg-40)', marginTop: 2 }}>
-                                  No one's checked in over {Math.floor(daysSinceReport!)} days
-                                </span>
-                              </button>
+                              <p style={{ margin: '8px 0 0', fontSize: 13, color: '#FFB300' }}>
+                                No one&apos;s checked in over {Math.floor(daysSinceReport!)} days. Be the one to confirm it.
+                              </p>
                             )}
-                          </>
+                          </div>
                         ) : (
-                          <button
-                            className="action-btn"
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.03)', border: '1.5px dashed rgba(201,244,0,0.35)', cursor: 'pointer' }}
-                            onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
-                          >
-                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--accent)' }}>⚡ Be the first to report here →</span>
-                          </button>
+                          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-dim)' }}>No reports yet. Be the first to report here.</p>
                         )}
 
                         {(liveUpdates[store.id] ?? []).map((update) => {
-                          const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : update.quantity === 'low' ? '#FFB300' : '#FFB300'
+                          const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : '#FFB300'
                           const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
                           return (
-                            <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}>
+                            <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: 'var(--fg-04)' }}>
                               <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
-                              <p style={{ fontSize: 12, color: '#7A8F80', flex: 1 }}>
-                                <span style={{ fontWeight: 700, color: 'var(--text)' }}>@{update.username}</span> reported{' '}
-                                <span style={{ fontWeight: 600 }}>{update.drinkName}</span> as{' '}
-                                <span style={{ fontWeight: 700, color: qColor }}>{qLabel}</span>
+                              <p style={{ fontSize: 13, color: 'var(--text-muted)', flex: 1 }}>
+                                <span style={{ fontWeight: 600, color: 'var(--text)' }}>@{update.username}</span> reported{' '}
+                                <span style={{ fontWeight: 500, color: 'var(--text)' }}>{update.drinkName}</span> as{' '}
+                                <span style={{ fontWeight: 600, color: qColor }}>{qLabel}</span>
                               </p>
                             </div>
                           )
                         })}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
-                          <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
-                          <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
-                          <button
-                            onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}&flag=1`)}
-                            style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
-                          >
-                            Report it
-                          </button>
-                        </div>
-
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '10px 0', color: '#0D1210', fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
-                            onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
-                            ⚡ Report
+                          <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(reportHref)}>
+                            Report stock
                           </button>
-                          <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
-                            onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
-                            View
-                          </button>
-                          <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
-                            onClick={() => openDirections(store.lat, store.lng)}>
+                          <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(store.lat, store.lng)}>
                             Directions
                           </button>
                         </div>

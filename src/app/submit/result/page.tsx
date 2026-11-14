@@ -81,14 +81,14 @@ function ResultContent() {
           <p style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>
             {count !== null ? `${count} Report${count !== 1 ? 's' : ''} Submitted!` : 'Report Submitted!'}
           </p>
-          <p style={{ margin: 0, fontSize: 13, color: '#7A8F80' }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
             Thanks for updating <span style={{ color: 'var(--text)', fontWeight: 600 }}>{storeName}</span>
           </p>
         </div>
 
         {/* ── Current stock snapshot ────────────────────────────────── */}
         <div style={{ padding: '0 16px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
             Current Stock at {storeName}
           </p>
 
@@ -98,14 +98,14 @@ function ResultContent() {
               <div style={{ width: 28, height: 28, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             </div>
           ) : stock.length === 0 ? (
-            <p style={{ fontSize: 13, color: '#4A5F50', textAlign: 'center', marginTop: 20 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', textAlign: 'center', marginTop: 20 }}>
               No other reports for this store yet.
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {Object.entries(grouped).map(([brand, items]) => (
                 <div key={brand}>
-                  <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
                     {brand}
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -163,7 +163,7 @@ function ResultContent() {
               width: '100%', borderRadius: 14, padding: '14px 0', cursor: 'pointer',
               backgroundColor: 'var(--surface)',
               border: '1px solid rgba(201,244,0,0.12)',
-              fontSize: 14, fontWeight: 700, color: '#7A8F80',
+              fontSize: 14, fontWeight: 700, color: 'var(--text-muted)',
               fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase',
             }}
             onClick={() => router.replace(`/store/${storeId}?name=${encodeURIComponent(storeName)}`)}
@@ -174,7 +174,7 @@ function ResultContent() {
             style={{
               width: '100%', borderRadius: 14, padding: '12px 0', cursor: 'pointer',
               background: 'none', border: 'none',
-              fontSize: 13, fontWeight: 500, color: '#4A5F50',
+              fontSize: 13, fontWeight: 500, color: 'var(--text-dim)',
             }}
             onClick={() => router.replace('/')}
           >

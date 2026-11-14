@@ -1,0 +1,168 @@
+/* Shared app UI building blocks, matching the landing page's look
+   (src/components/landing/landing.module.css): one lime accent for the
+   primary action and active states, neutral borders, sentence-case text,
+   contrast-safe grays from globals.css (--text, --text-muted, --text-dim). */
+
+/* ── Buttons ── */
+.btnPrimary,
+.btnSecondary,
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.btnPrimary { background: var(--accent); color: #0D1210; border: none; }
+.btnPrimary:hover { background: #D7FF2E; }
+.btnSecondary { background: var(--fg-06); color: var(--text); border: 1px solid var(--fg-13); }
+.btnSecondary:hover { border-color: var(--fg-25); }
+.btnGhost { background: none; color: var(--text-muted); border: none; padding-left: 8px; padding-right: 8px; }
+.btnGhost:hover { color: var(--text); }
+.btnPrimary:disabled, .btnSecondary:disabled { opacity: 0.5; cursor: default; }
+.btnBlock { width: 100%; }
+.btnLarge { min-height: 50px; font-size: 16px; }
+
+/* ── Chips (filters) ── */
+.chipRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.chipRow::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--fg-10);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.chip:hover { color: var(--text); }
+.chipActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0D1210;
+}
+.chipActive:hover { color: #0D1210; }
+
+/* ── Segmented control (e.g. Map / List) ── */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--fg-10);
+}
+.segment {
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.segmentActive { background: var(--accent); color: #0D1210; }
+
+/* ── Inputs ── */
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--text);
+  background: #0C0E0B;
+  border: 1px solid var(--fg-13);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input::placeholder { color: #66716A; }
+.input:focus {
+  border-color: rgba(201, 244, 0, 0.6);
+  box-shadow: 0 0 0 3px rgba(201, 244, 0, 0.12);
+}
+.inputWithIcon { padding-left: 40px; }
+
+/* ── Cards & text ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+.cardInteractive { cursor: pointer; transition: border-color 0.15s ease; }
+.cardInteractive:hover { border-color: var(--fg-15); }
+
+.sectionLabel {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.muted { color: var(--text-muted); }
+.dim { color: var(--text-dim); }
+
+.linkQuiet {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.linkQuiet:hover { color: var(--text-muted); }
+
+/* ── Icon button (map controls, close) ── */
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--fg-13);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* ── Empty / status screens ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 48px 24px;
+}
+.emptyTitle { margin: 6px 0 0; font-size: 18px; font-weight: 600; color: var(--text); }
+.emptyBody { margin: 0; font-size: 15px; color: var(--text-muted); max-width: 28em; line-height: 1.5; }

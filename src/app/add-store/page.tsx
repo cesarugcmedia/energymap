@@ -131,14 +131,14 @@ export default function AddStorePage() {
   }
 
   const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: 'var(--text)', fontSize: 15, outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
-  const labelStyle = { fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 8, display: 'block', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const }
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', marginBottom: 8, display: 'block', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const }
 
   if (submitted) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
         <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Store Submitted!</p>
-        <p style={{ fontSize: 14, color: '#7A8F80', marginBottom: 40, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 40, lineHeight: 1.6 }}>
           Thanks! Your store will appear on the map once it&apos;s been reviewed.
         </p>
         <button
@@ -148,7 +148,7 @@ export default function AddStorePage() {
           Back to Map
         </button>
         <button
-          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 700, fontSize: 14, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: 'var(--surface)', color: '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 700, fontSize: 14, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: 'var(--surface)', color: 'var(--text-muted)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
           onClick={() => {
             setName('')
             setAddress('')
@@ -179,7 +179,7 @@ export default function AddStorePage() {
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
             Add a <span style={{ color: 'var(--accent)' }}>Store</span>
           </h1>
-          <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 2 }}>Help grow the map ⚡</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Help grow the map ⚡</p>
         </div>
       </div>
 
@@ -214,7 +214,7 @@ export default function AddStorePage() {
             setCoords(null)
           }}
         />
-        <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 6 }}>
+        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 6 }}>
           Include street number, city and state for best results
         </p>
 
@@ -237,7 +237,7 @@ export default function AddStorePage() {
             <PinIcon size={20} color="var(--accent)" />
             <div>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>Location found!</p>
-              <p style={{ fontSize: 11, color: '#7A8F80', marginTop: 2 }}>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
             </div>
@@ -246,7 +246,7 @@ export default function AddStorePage() {
 
         {/* Manual coordinates fallback */}
         <button
-          style={{ marginTop: 12, background: 'none', border: 'none', fontSize: 12, fontWeight: 600, color: '#4A5F50', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
+          style={{ marginTop: 12, background: 'none', border: 'none', fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
           onClick={() => setManualCoords((v) => !v)}
         >
           {manualCoords ? 'Hide manual entry' : "Can't find address? Enter coordinates manually"}
@@ -297,9 +297,9 @@ export default function AddStorePage() {
               }}
               onClick={() => setType(t.value)}
             >
-              <StoreTypeIcon type={t.value} size={18} color={type === t.value ? '#C9F400' : '#7A8F80'} />
+              <StoreTypeIcon type={t.value} size={18} color={type === t.value ? '#C9F400' : 'var(--text-muted)'} />
               <span
-                style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : '#7A8F80', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}
+                style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : 'var(--text-muted)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}
               >
                 {t.label}
               </span>
@@ -312,8 +312,8 @@ export default function AddStorePage() {
       <div
         style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 20px 24px', borderRadius: 12, padding: 14, backgroundColor: 'rgba(201,244,0,0.03)', border: '1px solid rgba(201,244,0,0.12)' }}
       >
-        <SearchIcon size={16} color="#7A8F80" />
-        <p style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.5, flex: 1 }}>
+        <SearchIcon size={16} color="var(--text-muted)" />
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, flex: 1 }}>
           Stores are reviewed before appearing on the map to keep data accurate.
         </p>
       </div>
@@ -359,7 +359,7 @@ export default function AddStorePage() {
                 {duplicate === 'approved' ? 'Already on the Map' : 'Already Submitted'}
               </p>
             </div>
-            <p style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.6, marginBottom: 24 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
               {duplicate === 'approved'
                 ? 'This store already exists on the map. You can find it by searching nearby stores.'
                 : 'This store has already been submitted and is currently pending approval. Check back soon!'}

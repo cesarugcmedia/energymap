@@ -156,7 +156,7 @@ export default function NotificationsPage() {
             <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
               <BellIcon size={26} color="var(--text)" filled /> Notifi<span style={{ color: 'var(--accent)' }}>cations</span>
             </h1>
-            <p style={{ fontSize: 12, color: '#7A8F80', marginTop: 4 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
               {unreadCount > 0 ? `${unreadCount} unread` : 'Updates on your stores and reports'}
             </p>
           </div>
@@ -165,7 +165,7 @@ export default function NotificationsPage() {
               <>
                 <button
                   onClick={() => setConfirmClear(false)}
-                  style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
+                  style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--text-muted)', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
                 >
                   Cancel
                 </button>
@@ -189,7 +189,7 @@ export default function NotificationsPage() {
                 {notifications.length > 0 && (
                   <button
                     onClick={() => setConfirmClear(true)}
-                    style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#7A8F80', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
+                    style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--text-muted)', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
                   >
                     Clear All
                   </button>
@@ -204,7 +204,7 @@ export default function NotificationsPage() {
           <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px', overflowX: 'auto' }} className="no-scrollbar">
             {FILTERS.map(({ mode, label, icon }) => {
               const active = filterMode === mode
-              const color = active ? '#0D1210' : '#7A8F80'
+              const color = active ? '#0D1210' : 'var(--text-muted)'
               return (
                 <button key={mode}
                   onClick={() => setFilterMode(mode)}
@@ -225,13 +225,13 @@ export default function NotificationsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
             <BellIcon size={48} color="#8b9284" />
             <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No notifications yet</p>
-            <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>You'll be notified about stock updates, new stores, and new drinks.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>You'll be notified about stock updates, new stores, and new drinks.</p>
           </div>
         ) : items.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
             <SearchIcon size={40} color="#8b9284" />
             <p style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Nothing here</p>
-            <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center' }}>No notifications match this filter.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No notifications match this filter.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 32px' }}>
@@ -244,7 +244,7 @@ export default function NotificationsPage() {
               return (
                 <div key={item.kind === 'single' ? item.n.id : item.ns[0].id}>
                   {showDate && (
-                    <p style={{ fontSize: 10.5, color: '#4A5F50', letterSpacing: '0.1em', fontWeight: 800, padding: '2px 2px', marginTop: i === 0 ? 0 : 6, marginBottom: 2 }}>
+                    <p style={{ fontSize: 10.5, color: 'var(--text-dim)', letterSpacing: '0.1em', fontWeight: 800, padding: '2px 2px', marginTop: i === 0 ? 0 : 6, marginBottom: 2 }}>
                       {dateLabel(firstN.created_at)}
                     </p>
                   )}
@@ -275,7 +275,7 @@ export default function NotificationsPage() {
                             {item.n.store.name} → View Stock
                           </a>
                         )}
-                        <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 4 }}>{timeAgo(item.n.created_at)}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.n.created_at)}</p>
                       </div>
                     </div>
                   ) : (
@@ -293,7 +293,7 @@ export default function NotificationsPage() {
                           {item.ns[0].store && (
                             <p style={{ fontSize: 12, fontWeight: 700, marginTop: 3, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}><PinIcon size={11} color="var(--accent)" /> {item.ns[0].store.name}</p>
                           )}
-                          <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 4 }}>{timeAgo(item.ns[0].created_at)}</p>
+                          <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.ns[0].created_at)}</p>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 48 }}>

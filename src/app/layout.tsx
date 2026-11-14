@@ -59,22 +59,6 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <ThemeProvider>
-          {/* Ambient background — fixed so it covers the full viewport */}
-          <div
-            aria-hidden
-            style={{
-              position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-              background: 'radial-gradient(ellipse 70% 45% at 85% 10%, rgba(201,244,0,0.07) 0%, transparent 60%), radial-gradient(ellipse 60% 45% at 15% 85%, rgba(201,244,0,0.03) 0%, transparent 60%)',
-            }}
-          />
-          <div
-            aria-hidden
-            style={{
-              position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-              backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)',
-              backgroundSize: '32px 32px',
-            }}
-          />
           <AppStartGuard />
           <ServiceWorkerRegister />
           {/* Desktop sidebar */}

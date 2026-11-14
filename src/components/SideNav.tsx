@@ -30,7 +30,7 @@ export default function SideNav() {
   })
 
   const tierLabel = profile?.is_admin ? 'Admin' : profile?.tier === 'tracker' ? 'Tracker' : 'Free'
-  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? '#C9F400' : '#4A5F50'
+  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? '#C9F400' : 'var(--text-dim)'
 
   return (
     <aside
@@ -51,7 +51,7 @@ export default function SideNav() {
         <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: 2, color: 'var(--accent)', lineHeight: 1, textTransform: 'uppercase' }}>
           Amped Map
         </p>
-        <p style={{ fontSize: 11, color: '#4A5F50', marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>Find drinks near you</p>
+        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>Find drinks near you</p>
       </div>
 
       {/* Nav links */}
@@ -65,7 +65,7 @@ export default function SideNav() {
               className="flex items-center gap-3 rounded-xl px-3 py-3 no-underline transition-colors"
               style={{
                 backgroundColor: isActive ? 'rgba(201,244,0,0.08)' : 'transparent',
-                color: isActive ? '#C9F400' : '#7A8F80',
+                color: isActive ? '#C9F400' : 'var(--text-muted)',
               }}
             >
               <div style={{ position: 'relative', filter: isActive ? 'drop-shadow(0 0 5px rgba(201,244,0,0.5))' : 'none' }}>

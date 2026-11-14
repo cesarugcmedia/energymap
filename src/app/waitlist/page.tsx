@@ -72,7 +72,7 @@ export default async function WaitlistPage() {
           <span style={{ color: 'var(--accent)' }}>near you.</span>
         </h1>
 
-        <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 32, color: '#7A8F80' }}>
+        <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 32, color: 'var(--text-muted)' }}>
           Community-powered stock tracking for your favorite energy drinks. See what's in stock at nearby stores — in real time.
         </p>
 
@@ -85,7 +85,7 @@ export default async function WaitlistPage() {
           ].map(({ icon, text }) => (
             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 15 }}>{icon}</span>
-              <p style={{ fontSize: 14, fontWeight: 500, color: '#7A8F80' }}>{text}</p>
+              <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>{text}</p>
             </div>
           ))}
         </div>
@@ -98,7 +98,7 @@ export default async function WaitlistPage() {
                 <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.02em', lineHeight: 1 }}>
                   {stats.stores.toLocaleString()}+
                 </p>
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#4A5F50', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Stores Mapped</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Stores Mapped</p>
               </div>
             )}
             {stats.drinks > 0 && (
@@ -106,7 +106,7 @@ export default async function WaitlistPage() {
                 <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.02em', lineHeight: 1 }}>
                   {stats.drinks.toLocaleString()}+
                 </p>
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#4A5F50', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Drink Flavors</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Drink Flavors</p>
               </div>
             )}
           </div>
@@ -130,7 +130,7 @@ export default async function WaitlistPage() {
         {/* Form */}
         <WaitlistForm />
 
-        <p style={{ fontSize: 12, textAlign: 'center', marginTop: 16, color: '#4A5F50' }}>
+        <p style={{ fontSize: 12, textAlign: 'center', marginTop: 16, color: 'var(--text-dim)' }}>
           No spam. We'll only email you when we launch.
         </p>
       </div>

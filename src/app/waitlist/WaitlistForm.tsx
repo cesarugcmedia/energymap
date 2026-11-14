@@ -30,7 +30,7 @@ export default function WaitlistForm() {
       >
         <p style={{ fontSize: 24, marginBottom: 8 }}>🎉</p>
         <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>You're on the list!</p>
-        <p style={{ fontSize: 13, color: '#7A8F80' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           We'll email you the moment we launch.
         </p>
       </div>
@@ -44,7 +44,7 @@ export default function WaitlistForm() {
       >
         <p style={{ fontSize: 24, marginBottom: 8 }}>⚡</p>
         <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Already on the list!</p>
-        <p style={{ fontSize: 13, color: '#7A8F80' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           We've already got your email — you'll be first to know.
         </p>
       </div>

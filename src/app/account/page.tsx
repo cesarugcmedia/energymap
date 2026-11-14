@@ -95,10 +95,10 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
   return (
     <div style={{ height: '100%', backgroundColor: 'var(--bg)', paddingLeft: 20, paddingRight: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
       <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>One more step</p>
-      <p style={{ fontSize: 12, color: '#7A8F80', marginBottom: 24 }}>Pick a username for your account ({email})</p>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 24 }}>Pick a username for your account ({email})</p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5F50', marginBottom: 8, letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 8, letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</p>
           <input
             type="text"
             style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: 'var(--text)', outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
@@ -107,7 +107,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
             autoFocus
           />
-          <p style={{ fontSize: 10, color: '#4A5F50', marginTop: 6 }}>Lowercase letters, numbers, underscores only</p>
+          <p style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 6 }}>Lowercase letters, numbers, underscores only</p>
         </div>
         {error && <p style={{ fontSize: 13, color: '#FF4545' }}>{error}</p>}
         <button
@@ -119,8 +119,8 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
             ? <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             : 'Save Username →'}
         </button>
-        <p style={{ fontSize: 11, color: '#4A5F50', textAlign: 'center', lineHeight: 1.5 }}>
-          By continuing you agree to the <a href="/terms" style={{ color: '#7A8F80' }}>Terms of Service</a> and <a href="/privacy" style={{ color: '#7A8F80' }}>Privacy Policy</a>.
+        <p style={{ fontSize: 11, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.5 }}>
+          By continuing you agree to the <a href="/terms" style={{ color: 'var(--text-muted)' }}>Terms of Service</a> and <a href="/privacy" style={{ color: 'var(--text-muted)' }}>Privacy Policy</a>.
         </p>
       </form>
     </div>
@@ -170,7 +170,7 @@ function GoogleSignInButton({ tier = 'free', onError }: { tier?: TierId; onError
       </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
         <div style={{ flex: 1, height: 1, backgroundColor: 'var(--fg-08)' }} />
-        <span style={{ fontSize: 12, color: '#4A5F50' }}>or</span>
+        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>or</span>
         <div style={{ flex: 1, height: 1, backgroundColor: 'var(--fg-08)' }} />
       </div>
     </>
@@ -792,7 +792,7 @@ function switchMode(m: Mode) {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)', gap: 16 }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <p style={{ fontSize: 15, fontWeight: 700, color: '#7A8F80' }}>Redirecting to payment...</p>
+        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-muted)' }}>Redirecting to payment...</p>
       </div>
     )
   }
@@ -994,7 +994,7 @@ function switchMode(m: Mode) {
                     ).map((f) => (
                       <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                         <span style={{ fontSize: 10, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
-                        <span style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
                       </div>
                     ))}
                   </div>
@@ -1023,7 +1023,7 @@ function switchMode(m: Mode) {
                       {['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait'].map((f) => (
                         <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                           <span style={{ fontSize: 10, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
+                          <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
                         </div>
                       ))}
                     </div>
@@ -1068,7 +1068,7 @@ function switchMode(m: Mode) {
               <div key={fav.id}>
                 {i > 0 && <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 50 }} />}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px' }}>
-                  <StoreTypeIcon type={store?.type} size={22} color="#7A8F80" />
+                  <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />
                   <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
                     <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
                     <p style={{ fontSize: 12, color: '#6B7F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
