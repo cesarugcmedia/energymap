@@ -39,8 +39,20 @@ const FAQ = [
 export default function Landing({ stats }: { stats: LandingStats | null }) {
   const spotsLeft = stats?.trackers != null ? Math.max(0, BETA_LIMIT - stats.trackers) : null
 
+  // Structured data so search engines can show the FAQ answers and site name
+  // directly in results. Built from the same FAQ content rendered below.
+  const jsonLd = [
+    { '@context': 'https://schema.org', '@type': 'WebSite', name: 'AmpedMap', url: 'https://ampedmap.com' },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+    },
+  ]
+
   return (
     <div className={styles.page}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       {/* Header */}
       <header className={styles.header}>
         <div className={`${styles.container} ${styles.headerInner}`}>

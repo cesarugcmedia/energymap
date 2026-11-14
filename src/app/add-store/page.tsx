@@ -89,7 +89,7 @@ export default function AddStorePage() {
         .eq('submitted_by', user.id)
         .gte('created_at', todayStart.toISOString())
       if ((count ?? 0) >= 10) {
-        setError("You've reached the daily limit of 10 store submissions. Upgrade to Tracker for unlimited submissions.")
+        setError("You've reached the daily limit of 10 store submissions. Upgrade to Tracker for unlimited store submissions.")
         setSubmitting(false)
         return
       }

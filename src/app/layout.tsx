@@ -14,18 +14,20 @@ const barlow = Barlow({ subsets: ['latin'], weight: ['400', '500', '600'], varia
 const barlowCondensed = Barlow_Condensed({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-barlow-condensed' })
 
 export const metadata: Metadata = {
-  title: 'Amped Map',
-  description: 'Find energy drinks near you — powered by the community.',
+  metadataBase: new URL('https://ampedmap.com'),
+  title: 'AmpedMap',
+  description: 'See which stores near you have your favorite energy drinks in stock, reported by the community.',
   openGraph: {
-    title: 'Amped Map',
-    description: 'Find energy drinks near you — powered by the community.',
-    siteName: 'Amped Map',
+    title: 'AmpedMap — Find energy drinks in stock near you',
+    description: 'See which stores near you have your favorite energy drinks in stock, reported by the community.',
+    siteName: 'AmpedMap',
     type: 'website',
+    url: 'https://ampedmap.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Amped Map',
-    description: 'Find energy drinks near you — powered by the community.',
+    title: 'AmpedMap — Find energy drinks in stock near you',
+    description: 'See which stores near you have your favorite energy drinks in stock, reported by the community.',
   },
 }
 

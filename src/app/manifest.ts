@@ -2,13 +2,13 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Amped Map',
+    name: 'AmpedMap',
     short_name: 'AmpedMap',
-    description: 'Find energy drinks near you.',
+    description: 'Find energy drinks in stock near you.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#070710',
-    theme_color: '#070710',
+    background_color: '#0A0B0A',
+    theme_color: '#0A0B0A',
     icons: [
       {
         src: '/icon',

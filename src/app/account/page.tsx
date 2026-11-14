@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
+import authStyles from './auth.module.css'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -176,54 +177,6 @@ function GoogleSignInButton({ tier = 'free', onError }: { tier?: TierId; onError
   )
 }
 
-const TIERS = [
-  {
-    id: 'free' as TierId,
-    name: 'Free',
-    price: '$0',
-    period: '',
-    color: '#6b7280',
-    glow: 'rgba(107,114,128,0.3)',
-    border: 'rgba(107,114,128,0.3)',
-    icon: '🗺️',
-    tag: null as string | null,
-    comingSoon: false,
-    description: null as string | null,
-    inherits: null as string | null,
-    features: [
-      '5 mile map radius',
-      'View stock reports',
-      'Submit stock reports (25/day)',
-      'Add missing stores (10/day)',
-      'Add new drinks (25/day)',
-      'Community leaderboard',
-    ],
-  },
-  {
-    id: 'tracker' as TierId,
-    name: 'Tracker',
-    price: '$5.00',
-    period: '/month',
-    color: 'var(--accent)',
-    glow: 'rgba(201,244,0,0.25)',
-    border: 'rgba(201,244,0,0.4)',
-    icon: '⚡',
-    tag: 'EARLY ACCESS' as string | null,
-    comingSoon: false,
-    description: null as string | null,
-    inherits: null as string | null,
-    features: [
-      'Unlimited map radius',
-      'Unlimited submissions',
-      'Last updated timestamps',
-      'Stock notifications & alerts',
-      'Favorites & custom store lists',
-      'Verified reporter badge',
-      'Leaderboard placement + badge',
-    ],
-  },
-]
-
 const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',   border: 'rgba(255,69,69,0.25)'   },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
@@ -266,8 +219,7 @@ function AccountPageInner() {
   const initialPlan = searchParams.get('plan')
   const planParam: TierId | null = initialPlan === 'free' || initialPlan === 'tracker' ? initialPlan : null
   const [mode, setMode] = useState<Mode>(searchParams.get('mode') === 'signin' ? 'signin' : 'signup')
-  const [selectedTier, setSelectedTier] = useState<TierId | null>(planParam)
-  const [step, setStep] = useState(planParam ? 2 : 1)
+  const [selectedTier, setSelectedTier] = useState<TierId>(planParam ?? 'free')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -380,8 +332,6 @@ function AccountPageInner() {
     // If user cancelled Stripe and came back, reset to signup form
     if (searchParams.get('payment') === 'cancelled') {
       setSubmitting(false)
-      setSelectedTier(null)
-      setStep(1)
       setMode('signup')
     }
     // After email confirmation (cross-device fallback), switch to sign-in with a message
@@ -392,7 +342,7 @@ function AccountPageInner() {
     // Tracker upgrade couldn't be started after email confirmation — account
     // was created on the free tier, let them know to retry from settings
     if (searchParams.get('upgradeError') === '1') {
-      showToast("Couldn't start your Tracker upgrade — you're on Free for now, retry anytime from Settings.")
+      showToast("Couldn't start your Tracker upgrade — you're on Free for now. Retry anytime from Account → Plan.")
     }
   }, [searchParams])
 
@@ -401,8 +351,6 @@ function AccountPageInner() {
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
         setSubmitting(false)
-        setSelectedTier(null)
-        setStep(1)
       }
     }
     window.addEventListener('pageshow', handlePageShow)
@@ -420,9 +368,12 @@ function AccountPageInner() {
       const { data: existingProfile } = await supabase.from('profiles').select('id').eq('id', signInData.user.id).maybeSingle()
       if (!existingProfile) {
         const pending = localStorage.getItem('pending_profile')
-        const { username: pendingUsername, tier: pendingTier } = pending
-          ? JSON.parse(pending)
-          : { username: email.split('@')[0], tier: 'free' }
+        const parsed = pending ? JSON.parse(pending) : null
+        // No username chosen on this device (e.g. confirmed the email on
+        // another one): stay here and let the pick-a-username screen
+        // (SetupProfile) take over, instead of publishing the email prefix.
+        if (!parsed?.username) { setSubmitting(false); return }
+        const { username: pendingUsername, tier: pendingTier } = parsed
 
         if (pendingTier === 'tracker') {
           try {
@@ -462,7 +413,8 @@ function AccountPageInner() {
     setError(null)
     if (!username.trim()) { setError('Username is required.'); return }
     if (username.length < 3) { setError('Username must be at least 3 characters.'); return }
-    if (!agreedToTerms) { setError('You must agree to the Terms of Service and Privacy Policy.'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (!agreedToTerms) { setError('Please agree to the Terms of Service and Privacy Policy.'); return }
     setSubmitting(true)
     const { data: existing } = await supabase.from('profiles').select('id').eq('username', username.trim()).maybeSingle()
     if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
@@ -819,15 +771,8 @@ function AccountPageInner() {
   useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_location', String(notifLocation)) }, [notifLocation])
 
 
-function selectAndContinue(tierId: TierId) {
-    setSelectedTier(tierId)
-    setStep(2)
-  }
-
-  function switchMode(m: Mode) {
+function switchMode(m: Mode) {
     setMode(m)
-    setStep(1)
-    setSelectedTier(null)
     setError(null)
     setConfirmEmail(false)
   }
@@ -1044,8 +989,8 @@ function selectAndContinue(tierId: TierId) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                     {(profile.tier === 'free'
-                      ? ['Live stock map', 'View & submit reports', 'Add missing stores', 'Community leaderboard']
-                      : ['Live stock map', 'Unlimited radius', 'Unlimited submissions', 'Stock notifications', 'Custom store lists', 'Verified reporter badge', 'Leaderboard badge']
+                      ? ['See stock within 5 miles', 'Report stock and add missing stores', 'Flavor restock alerts', 'Community feed and leaderboard']
+                      : ['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait', 'Everything in Free']
                     ).map((f) => (
                       <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                         <span style={{ fontSize: 10, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
@@ -1075,7 +1020,7 @@ function selectAndContinue(tierId: TierId) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-                      {['Unlimited map radius', 'Unlimited submissions', 'Timestamps', 'Stock alerts', 'Store lists', 'Verified badge', 'Leaderboard badge'].map((f) => (
+                      {['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait'].map((f) => (
                         <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                           <span style={{ fontSize: 10, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
                           <span style={{ fontSize: 13, color: '#7A8F80', lineHeight: 1.4 }}>{f}</span>
@@ -1324,299 +1269,157 @@ function selectAndContinue(tierId: TierId) {
     )
   }
 
-  // ── LOGGED OUT ─────────────────────────────────────────────
-  const tier = TIERS.find((t) => t.id === selectedTier) ?? TIERS[0]
+  // ── LOGGED OUT: sign in / sign up ──────────────────────────
+  // Styled to match the landing page at / (shared look via auth.module.css).
+  // Sign-up is a single form; new accounts start on Free unless the visitor
+  // chose Tracker on the landing page's pricing cards (?plan=tracker).
+  const waitlistGated = process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' && searchParams.get('invited') !== '1'
+  const spotsLeft = Math.max(0, 60 - betaCount)
+
+  const passwordField = (placeholder: string, autoComplete: string) => (
+    <div className={authStyles.passwordWrap}>
+      <input
+        id="password"
+        className={authStyles.input}
+        type={showPassword ? 'text' : 'password'}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <button type="button" className={authStyles.eye} onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
+          {showPassword && <path d="M4 4l16 16" />}
+        </svg>
+      </button>
+    </div>
+  )
+
+  const spinnerDark = <span className={authStyles.btnSpinner} aria-label="Loading" />
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-      <style>{`
-        * { box-sizing: border-box; }
-        .em-input { outline: none; transition: border-color 0.2s ease; font-family: 'Barlow', system-ui, sans-serif; }
-        .em-input:focus { border-color: rgba(201,244,0,0.4) !important; box-shadow: 0 0 0 3px rgba(201,244,0,0.08) !important; }
-        .em-input::placeholder { color: #4A5F50; }
-        .tier-card { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
-        .tier-card:hover { transform: translateY(-4px); }
-        .tier-coming { cursor: default !important; }
-        .tier-coming:hover { transform: none !important; }
-        .cta-btn { transition: opacity 0.15s ease, transform 0.15s ease; }
-        .cta-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-        .cta-btn:active { transform: translateY(0); }
-        .how-card { transition: border-color 0.2s ease, transform 0.2s ease; }
-        .how-card:hover { border-color: rgba(201,244,0,0.25) !important; transform: translateY(-2px); }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+    <div className={authStyles.page}>
+      <header className={authStyles.header}>
+        <Link href="/" className={authStyles.brand}>
+          <span className={authStyles.logoMark}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
+          </span>
+          AmpedMap
+        </Link>
+      </header>
 
-      {/* Background */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
+      <main className={authStyles.main}>
+        <div className={authStyles.card}>
+          {mode === 'signin' ? (
+            <>
+              <h1 className={authStyles.title}>Welcome back</h1>
+              <p className={authStyles.subtitle}>Sign in to see what&apos;s in stock near you.</p>
 
-      <div style={{ position: 'relative', zIndex: 1, fontFamily: "'Barlow', system-ui, sans-serif" }}>
-
-        {/* Brand bar — the marketing landing page now lives at /. */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '28px 24px 24px' }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
-            <span style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
-            </span>
-            <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.01em' }}>AmpedMap</span>
-          </Link>
-        </div>
-        {/* ── MODE TABS ── */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-          <div style={{ display: 'flex', backgroundColor: 'rgba(201,244,0,0.06)', borderRadius: 14, padding: 4, border: '1px solid rgba(201,244,0,0.1)' }}>
-            {(['signup', 'signin'] as Mode[]).map((m) => (
-              <button key={m} onClick={() => switchMode(m)}
-                style={{ padding: '10px 28px', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', backgroundColor: mode === m ? '#C9F400' : 'transparent', color: mode === m ? '#0D1210' : '#4A5F50', transition: 'all 0.2s ease' }}>
-                {m === 'signup' ? 'Sign Up' : 'Sign In'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── SIGN IN ── */}
-        {mode === 'signin' && (
-          <div style={{ maxWidth: 400, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
-            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
-              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Welcome back</h2>
-              <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: searchParams.get('confirmed') === '1' ? 16 : 24 }}>Sign in to your Amped Map account</p>
               {searchParams.get('confirmed') === '1' && (
-                <div style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 20 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>Email confirmed! Sign in to finish setting up your account.</p>
-                </div>
+                <p className={authStyles.notice}>Email confirmed! Sign in to finish setting up your account.</p>
               )}
+
               <GoogleSignInButton onError={setError} />
-              <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
-                  <input className="em-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
+
+              <form onSubmit={handleSignIn} className={authStyles.form}>
+                <div className={authStyles.field}>
+                  <label htmlFor="email" className={authStyles.label}>Email</label>
+                  <input id="email" className={authStyles.input} type="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Password</label>
-                  <div style={{ position: 'relative' }}>
-                    <input className="em-input" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required
-                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 16 }}>
-                      {showPassword ? '🙈' : '👁️'}
-                    </button>
+                <div className={authStyles.field}>
+                  <div className={authStyles.labelRow}>
+                    <label htmlFor="password" className={authStyles.label}>Password</label>
+                    <button type="button" className={authStyles.linkBtn} onClick={handleForgotPassword}>Forgot password?</button>
                   </div>
+                  {passwordField('Your password', 'current-password')}
                 </div>
-                <div style={{ textAlign: 'right', marginTop: -6 }}>
-                  <button type="button" onClick={handleForgotPassword} style={{ background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 12, fontFamily: "'Barlow', sans-serif" }}>
-                    Forgot password?
-                  </button>
-                </div>
-                {resetSent && <p style={{ fontSize: 13, color: 'var(--accent)', textAlign: 'center' }}>Reset link sent — check your email.</p>}
-                {error && <p style={{ fontSize: 13, color: '#FF4545' }}>{error}</p>}
-                <button type="submit" className="cta-btn" disabled={submitting}
-                  style={{ width: '100%', padding: 15, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, color: '#0D1210', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)' }}>
-                  {submitting ? <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} /> : 'Sign In →'}
+                {resetSent && <p className={authStyles.notice}>Reset link sent. Check your email.</p>}
+                {error && <p className={authStyles.error}>{error}</p>}
+                <button type="submit" className={authStyles.btnPrimary} disabled={submitting}>
+                  {submitting ? spinnerDark : 'Sign in'}
                 </button>
               </form>
-              <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#4A5F50' }}>
-                Don't have an account?{' '}
-                <button onClick={() => switchMode('signup')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.04em' }}>Sign up free</button>
-              </p>
-            </div>
-          </div>
-        )}
 
-        {/* ── SIGN UP STEP 1 — choose plan ── */}
-        {mode === 'signup' && step === 1 && (
-          <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 36px', animation: 'fadeUp 0.5s ease' }}>
-            <div style={{ textAlign: 'center', marginBottom: 18 }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, color: 'var(--text)' }}>Choose Your Plan</h2>
-              <p style={{ fontSize: 13, color: '#7A8F80' }}>Start free, upgrade anytime</p>
-              {waitlistCount !== null && waitlistCount > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 24, padding: '8px 16px' }}>
-                  <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
-                    <div className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: '#C9F400', opacity: 0.5 }} />
-                    <div style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#C9F400' }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                    {waitlistCount.toLocaleString()}
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#7A8F80' }}>
-                    people waiting to join
-                  </span>
+              <p className={authStyles.switch}>
+                New to AmpedMap? <button type="button" className={authStyles.linkBtnAccent} onClick={() => switchMode('signup')}>Create an account</button>
+              </p>
+            </>
+          ) : waitlistGated ? (
+            <>
+              <h1 className={authStyles.title}>Invite only, for now</h1>
+              <p className={authStyles.subtitle}>
+                AmpedMap is letting people in from the waitlist.{waitlistCount != null ? ` ${waitlistCount.toLocaleString()} people are already on it.` : ''}
+              </p>
+              <a href="/waitlist" className={authStyles.btnPrimary}>Join the waitlist</a>
+              <p className={authStyles.switch}>
+                Already have an account? <button type="button" className={authStyles.linkBtnAccent} onClick={() => switchMode('signin')}>Sign in</button>
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className={authStyles.title}>Create your account</h1>
+              <p className={authStyles.subtitle}>Free to join. Takes about a minute.</p>
+
+              {selectedTier === 'tracker' && (
+                <div className={authStyles.planNote}>
+                  <p>
+                    <strong>Signing up for Tracker.</strong>{' '}
+                    {spotsLeft > 0 ? `The first 60 members get it free. ${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left.` : '$5/month, cancel anytime.'}
+                  </p>
+                  <button type="button" className={authStyles.linkBtn} onClick={() => setSelectedTier('free')}>Start on Free instead</button>
                 </div>
               )}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
-              {TIERS.map((t, i) => (
-                <div key={t.id}
-                  className={t.comingSoon ? 'tier-card tier-coming' : 'tier-card'}
-                  style={{ backgroundColor: 'rgba(201,244,0,0.04)', borderRadius: 20, border: `1px solid ${t.comingSoon ? 'rgba(249,115,22,0.25)' : 'rgba(201,244,0,0.18)'}`, position: 'relative', animation: `fadeUp 0.5s ease ${i * 0.08}s both`, opacity: t.comingSoon ? 0.82 : 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-                >
-                  <div style={{ height: 4, background: `linear-gradient(90deg, ${t.color}, ${t.color}88)` }} />
-                  {t.tag && (
-                    <div style={{ position: 'absolute', top: 16, right: 14, backgroundColor: t.comingSoon ? 'rgba(249,115,22,0.85)' : t.color, borderRadius: 20, padding: '3px 10px', fontSize: 9, fontWeight: 800, letterSpacing: '0.1em', color: t.color === '#C9F400' ? '#0D1210' : '#fff', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.tag}</div>
-                  )}
-                  <div style={{ padding: '13px 14px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 19, marginBottom: 3, display: 'block' }}>{t.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 800, color: t.color, display: 'block', marginBottom: 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t.name}</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 8 }}>
-                      <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{t.price}</span>
-                      <span style={{ fontSize: 12, color: '#4A5F50' }}>{t.period}</span>
-                    </div>
-                    {t.id === 'tracker' && (() => {
-                      const BETA_LIMIT = 60
-                      const remaining = Math.max(0, BETA_LIMIT - betaCount)
-                      const spotsLeft = remaining > 0
-                      return (
-                        <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 9, padding: '6px 9px', marginBottom: 8 }}>
-                          <p style={{ fontSize: 10, color: 'var(--fg-60)', lineHeight: 1.3, marginBottom: 5 }}>
-                            {spotsLeft
-                              ? `🔥 First 60 beta users get Tracker free — ${remaining} spot${remaining !== 1 ? 's' : ''} left`
-                              : '🔒 Beta is full. Tracker is $5.00/mo.'}
-                          </p>
-                          <div style={{ height: 3, backgroundColor: 'var(--fg-08)', borderRadius: 4, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${Math.min((betaCount / BETA_LIMIT) * 100, 100)}%`, background: 'linear-gradient(90deg, #C9F400, #a8d400)', borderRadius: 4, transition: 'width 0.5s ease' }} />
-                          </div>
-                        </div>
-                      )
-                    })()}
-                    {t.comingSoon && t.description && (
-                      <div style={{ backgroundColor: 'rgba(249,115,22,0.07)', border: '1px dashed rgba(249,115,22,0.35)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
-                        <p style={{ fontSize: 11, color: 'var(--fg-50)', lineHeight: 1.6 }}>{t.description}</p>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5, opacity: t.comingSoon ? 0.35 : 1, flex: 1 }}>
-                      {/* Inheritance banner */}
-                      {t.inherits && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'var(--fg-04)', border: '1px solid var(--fg-08)', borderRadius: 8, padding: '5px 9px', marginBottom: 3 }}>
-                          <span style={{ fontSize: 10 }}>⬆️</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)', letterSpacing: 0.3 }}>
-                            Includes everything in <span style={{ color: 'var(--text)' }}>{t.inherits}</span>, plus:
-                          </span>
-                        </div>
-                      )}
-                      {t.features.map((f, fi) => (
-                        <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-                          <span style={{ color: t.color, fontSize: 10.5, marginTop: 1.5, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 10.5, color: 'var(--fg-60)', lineHeight: 1.3 }}>{f}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ marginTop: 10 }}>
-                      {process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1' && searchParams.get('invited') !== '1' ? (
-                        <a href="/waitlist"
-                          style={{ display: 'block', width: '100%', padding: 10, backgroundColor: '#C9F400', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', textDecoration: 'none', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
-                          Join Waitlist →
-                        </a>
-                      ) : t.comingSoon ? (
-                        <div style={{ width: '100%', padding: 10, background: 'rgba(249,115,22,0.08)', border: '1px dashed rgba(249,115,22,0.3)', borderRadius: 12, textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'rgba(249,115,22,0.6)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                          Notify Me When Available
-                        </div>
-                      ) : t.id === 'tracker' && betaCount >= 60 ? (
-                        <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
-                          style={{ width: '100%', padding: 10, backgroundColor: '#C9F400', border: 'none', borderRadius: 12, color: '#0D1210', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}>
-                          Buy Tracker — $5.00/mo →
-                        </button>
-                      ) : (
-                        <button className="cta-btn" onClick={() => selectAndContinue(t.id)}
-                          style={{ width: '100%', padding: 10, backgroundColor: t.color === '#C9F400' ? '#C9F400' : t.color, border: 'none', borderRadius: 12, color: t.color === '#C9F400' ? '#0D1210' : '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: `0 0 16px ${t.glow}` }}>
-                          {t.id === 'tracker' ? 'Claim Beta Spot →' : 'Get Started →'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p style={{ textAlign: 'center', marginTop: 14, fontSize: 11, color: 'var(--fg-20)' }}>
-              All paid plans can be cancelled anytime · No hidden fees
-            </p>
-          </div>
-        )}
 
-        {/* ── SIGN UP STEP 2 — create account ── */}
-        {mode === 'signup' && step === 2 && (
-          <div style={{ maxWidth: 420, margin: '0 auto', padding: '0 24px 60px', animation: 'fadeUp 0.5s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
-              <button onClick={() => setStep(1)} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 8, padding: '4px 10px', color: '#7A8F80', cursor: 'pointer', fontSize: 12, fontFamily: "'Barlow Condensed', sans-serif" }}>← Back</button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(201,244,0,0.06)', border: `1px solid ${tier.border}`, borderRadius: 20, padding: '6px 16px' }}>
-                <span style={{ fontSize: 14 }}>{tier.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: tier.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{tier.name}</span>
-                <span style={{ fontSize: 13, color: '#4A5F50' }}>{tier.price}{tier.period}</span>
-              </div>
-            </div>
-            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
-              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Create your account</h2>
-              <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: 24 }}>Join the Amped Map community</p>
-              <GoogleSignInButton tier={tier.id} onError={setError} />
-              <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</label>
-                  <input className="em-input" type="text" placeholder="yourname" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(null) }} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
-                  <p style={{ fontSize: 10, color: '#4A5F50', marginTop: 6 }}>Letters, numbers, underscores only</p>
+              <GoogleSignInButton tier={selectedTier} onError={setError} />
+
+              <form onSubmit={handleSignUp} className={authStyles.form}>
+                <div className={authStyles.field}>
+                  <label htmlFor="username" className={authStyles.label}>Username</label>
+                  <input id="username" className={authStyles.input} type="text" placeholder="yourname" autoComplete="username" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(null) }} required />
+                  <p className={authStyles.hint}>Shown on reports and the leaderboard. Lowercase letters, numbers and underscores.</p>
                 </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
-                  <input className="em-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    style={{ width: '100%', padding: '13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
+                <div className={authStyles.field}>
+                  <label htmlFor="email" className={authStyles.label}>Email</label>
+                  <input id="email" className={authStyles.input} type="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Password</label>
-                  <div style={{ position: 'relative' }}>
-                    <input className="em-input" type={showPassword ? 'text' : 'password'} placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required
-                      style={{ width: '100%', padding: '13px 48px 13px 16px', backgroundColor: 'var(--bg)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 12, color: 'var(--text)', fontSize: 15 }} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4A5F50', cursor: 'pointer', fontSize: 16 }}>
-                      {showPassword ? '🙈' : '👁️'}
-                    </button>
-                  </div>
+                <div className={authStyles.field}>
+                  <label htmlFor="password" className={authStyles.label}>Password</label>
+                  {passwordField('At least 8 characters', 'new-password')}
                 </div>
-                {error && <p style={{ fontSize: 13, color: '#FF4545' }}>{error}</p>}
-                {confirmEmail && (
-                  <div style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>Check your email and click the confirmation link to activate your account.</p>
-                    <button
-                      type="button"
-                      onClick={() => { setConfirmEmail(false); switchMode('signin') }}
-                      style={{ background: 'none', border: '1px solid rgba(201,244,0,0.3)', borderRadius: 8, color: 'var(--accent)', fontSize: 12, fontWeight: 700, padding: '7px 14px', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', alignSelf: 'flex-start' }}
-                    >
-                      Already confirmed? Sign in →
-                    </button>
-                  </div>
-                )}
-                <button type="submit" className="cta-btn" disabled={submitting || confirmEmail}
-                  style={{ width: '100%', padding: 15, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, color: '#0D1210', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)', marginTop: 4 }}>
-                  {submitting
-                    ? <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-                    : selectedTier === 'free' ? 'Create Free Account →' : 'Continue →'}
-                </button>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginTop: 4 }}>
-                  <input
-                    type="checkbox"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    style={{ marginTop: 2, accentColor: '#C9F400', width: 14, height: 14, flexShrink: 0 }}
-                  />
-                  <span style={{ fontSize: 11, color: '#4A5F50', lineHeight: 1.6 }}>
-                    I agree to the <a href="/terms" target="_blank" style={{ color: '#7A8F80', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" target="_blank" style={{ color: '#7A8F80', textDecoration: 'underline' }}>Privacy Policy</a>.
-                  </span>
+                <label className={authStyles.checkRow}>
+                  <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} />
+                  <span>I agree to the <a href="/terms" target="_blank">Terms of Service</a> and <a href="/privacy" target="_blank">Privacy Policy</a>.</span>
                 </label>
+                {error && <p className={authStyles.error}>{error}</p>}
+                {confirmEmail ? (
+                  <div className={authStyles.notice}>
+                    <p style={{ margin: 0 }}>Check your email and tap the link to activate your account.</p>
+                    <button type="button" className={authStyles.linkBtnAccent} style={{ marginTop: 8 }} onClick={() => { setConfirmEmail(false); switchMode('signin') }}>Already confirmed? Sign in</button>
+                  </div>
+                ) : (
+                  <button type="submit" className={authStyles.btnPrimary} disabled={submitting}>
+                    {submitting ? spinnerDark : selectedTier === 'tracker' ? 'Create account and continue' : 'Create account'}
+                  </button>
+                )}
               </form>
-              <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#4A5F50' }}>
-                Already have an account?{' '}
-                <button onClick={() => switchMode('signin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.04em' }}>Sign in</button>
-              </p>
-            </div>
-          </div>
-        )}
 
-        {/* Footer links */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 20px', padding: '8px 24px 48px', fontSize: 14 }}>
-          <Link href="/" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Home</Link>
-          <a href="/terms" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Terms</a>
-          <a href="/privacy" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Privacy</a>
-          <a href="mailto:support@ampedmap.com" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Contact</a>
+              <p className={authStyles.switch}>
+                Already have an account? <button type="button" className={authStyles.linkBtnAccent} onClick={() => switchMode('signin')}>Sign in</button>
+              </p>
+            </>
+          )}
         </div>
-      </div>
+      </main>
+
+      <footer className={authStyles.footer}>
+        <Link href="/">Home</Link>
+        <Link href="/terms">Terms</Link>
+        <Link href="/privacy">Privacy</Link>
+        <a href="mailto:support@ampedmap.com">Contact</a>
+      </footer>
     </div>
   )
 }

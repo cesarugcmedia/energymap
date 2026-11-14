@@ -4,48 +4,15 @@ export const runtime = 'edge'
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
 
+// iOS home-screen icon. Square and opaque on purpose: iOS applies its own
+// rounded mask, and transparent corners would show up as black.
 export default function AppleIcon() {
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: 180,
-          height: 180,
-          borderRadius: 40,
-          background: 'linear-gradient(145deg, #0a0a14 0%, #0d1a12 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            width: 120,
-            height: 120,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,197,94,0.22) 0%, transparent 70%)',
-            top: 20,
-            left: 30,
-            display: 'flex',
-          }}
-        />
-        <div style={{ fontSize: 78, lineHeight: 1, display: 'flex', marginBottom: 4 }}>⚡</div>
-        <div
-          style={{
-            fontSize: 24,
-            fontWeight: 900,
-            color: '#22c55e',
-            letterSpacing: 4,
-            display: 'flex',
-            fontFamily: 'sans-serif',
-          }}
-        >
-          AMPED
-        </div>
+      <div style={{ width: 180, height: 180, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="104" height="104" viewBox="0 0 24 24">
+          <path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" />
+        </svg>
       </div>
     ),
     { ...size }

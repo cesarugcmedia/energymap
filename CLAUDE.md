@@ -148,6 +148,16 @@ A Kroger Products/Locations API integration ("Verified" stock badges on store pa
 
 `/account` (logged in) is laid out like iOS Settings: a large "Account" title, a profile card, then grouped rows (lime icon tiles, right-side value, chevron) for Plan · Badges / Saved Stores / Flavor Alerts · Username / Password / Notifications · Admin Dashboard (admins only, links to `/admin`) · Terms / Privacy · Log Out · Delete Account. Each row drills into a sub-page (`accountPage` state) with a "‹ Account" back button; opening one pushes a history entry and a `popstate` listener returns to the list, so the phone's back gesture works instead of leaving `/account`. Rows and groups are plain render functions (`row()`, `group()`), not components defined in render, so the username/password inputs don't remount and lose focus. The Notifications toggles only persist to `localStorage` (`notif_flavors`/`notif_location`) and nothing reads them yet.
 
+### Sign In / Sign Up
+
+`/account` (logged out) is a single centered card styled like the landing page (`src/app/account/auth.module.css`). Sign-up is one form (username, email, password ≥ 8 chars, terms) — there is no plan-picker step; new accounts start on Free and upgrade later from Account → Plan. Arriving with `?plan=tracker` (landing pricing card) shows a "Signing up for Tracker" note with a "Start on Free instead" link and runs the existing `/api/upgrade/tracker` beta/Stripe flow after signup. When `NEXT_PUBLIC_WAITLIST_ACTIVE=1` and the visitor isn't `?invited=1`, the sign-up card is replaced by a "Join the waitlist" gate. No code path ever derives a username from the email address — a missing profile always routes to `SetupProfile`.
+
+**Plan copy must match enforcement.** Tracker's real perks are: unlimited map radius (`/api/stores/nearby`), exact report times (store page), saved store lists (favorites), and no 30-minute same-drink dedup (`/api/stock/report`); it also lifts the 10/day store-submission cap. It does **not** lift the 25 reports/day limit, and Flavor Alerts are free for everyone — don't advertise "unlimited submissions" or alerts as Tracker perks.
+
+### Brand Assets & SEO
+
+The logo mark is a dark bolt on a lime (`#C9F400`) rounded square, used in the landing/auth headers and generated (no image files) by `src/app/icon.tsx` (full-bleed, doubles as the maskable manifest icon), `apple-icon.tsx` (square and opaque — iOS applies its own mask) and `opengraph-image.tsx`. `ImageResponse` can't resolve CSS variables, so those files must use literal hex colors. `src/app/robots.ts` keeps admin/API/auth and signed-in-only routes out of search; `src/app/sitemap.ts` lists the public pages; the landing page embeds `WebSite` + `FAQPage` JSON-LD built from its FAQ content. `metadataBase` is set to `https://ampedmap.com` in `layout.tsx`.
+
 ### Layout Shell
 
 `ContentShell` (`src/components/ContentShell.tsx`) wraps the main column and only adds the desktop `md:ml-[220px]` sidebar offset when a user is signed in — `SideNav` doesn't render for logged-out visitors, so the landing and sign-in pages use the full width instead of leaving an empty strip.

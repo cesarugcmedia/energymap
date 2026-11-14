@@ -4,49 +4,16 @@ export const runtime = 'edge'
 export const size = { width: 512, height: 512 }
 export const contentType = 'image/png'
 
+// App/tab icon: the AmpedMap logo mark (dark bolt on lime), full-bleed so it
+// also works as the manifest's maskable icon — the bolt sits well inside the
+// 80% safe zone that Android masks to.
 export default function Icon() {
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: 512,
-          height: 512,
-          borderRadius: 116,
-          background: 'linear-gradient(145deg, #0a0a14 0%, #0d1a12 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* ambient glow */}
-        <div
-          style={{
-            position: 'absolute',
-            width: 340,
-            height: 340,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,197,94,0.22) 0%, transparent 70%)',
-            top: 60,
-            left: 86,
-            display: 'flex',
-          }}
-        />
-        <div style={{ fontSize: 220, lineHeight: 1, display: 'flex', marginBottom: 12 }}>⚡</div>
-        <div
-          style={{
-            fontSize: 68,
-            fontWeight: 900,
-            color: '#22c55e',
-            letterSpacing: 10,
-            display: 'flex',
-            fontFamily: 'sans-serif',
-          }}
-        >
-          AMPED
-        </div>
+      <div style={{ width: 512, height: 512, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="280" height="280" viewBox="0 0 24 24">
+          <path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" />
+        </svg>
       </div>
     ),
     { ...size }
