@@ -1,5 +1,6 @@
 'use client'
 
+import ui from '@/components/ui/ui.module.css'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -130,25 +131,28 @@ export default function AddStorePage() {
     setSubmitting(false)
   }
 
-  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: 'var(--text)', fontSize: 15, outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }
-  const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', marginBottom: 8, display: 'block', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const }
+  const inputStyle = { width: '100%', borderRadius: 12, padding: '14px', color: 'var(--text)', fontSize: 15, outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', fontFamily: "'Barlow', sans-serif" }
+  const labelStyle = { fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 8, display: 'block' }
 
   if (submitted) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
-        <span style={{ fontSize: 56, marginBottom: 16 }}>🎉</span>
-        <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Store Submitted!</p>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 40, lineHeight: 1.6 }}>
+        <span style={{ width: 64, height: 64, borderRadius: '50%', marginBottom: 16, background: 'rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        </span>
+        <p style={{ fontSize: 24, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Store sent for review</p>
+        <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 32, lineHeight: 1.6 }}>
           Thanks! Your store will appear on the map once it&apos;s been reviewed.
         </p>
         <button
-          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, color: '#0D1210', fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 10, backgroundColor: '#C9F400', boxShadow: '0 0 20px rgba(201,244,0,0.35)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`}
+          style={{ marginBottom: 10 }}
           onClick={() => router.replace('/')}
         >
-          Back to Map
+          Back to map
         </button>
         <button
-          style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 700, fontSize: 14, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: 'var(--surface)', color: 'var(--text-muted)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          className={`${ui.btnSecondary} ${ui.btnBlock} ${ui.btnLarge}`}
           onClick={() => {
             setName('')
             setAddress('')
@@ -157,7 +161,7 @@ export default function AddStorePage() {
             setSubmitted(false)
           }}
         >
-          Add Another Store
+          Add another store
         </button>
       </div>
     )
@@ -171,15 +175,13 @@ export default function AddStorePage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 'calc(56px + env(safe-area-inset-top)) 20px 16px' }}>
         <button
           onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', flexShrink: 0 }}
         >
           <ChevronLeftIcon size={18} color="var(--text)" />
         </button>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1 }}>
-            Add a <span style={{ color: 'var(--accent)' }}>Store</span>
-          </h1>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Help grow the map ⚡</p>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--text)', lineHeight: 1.1 }}>Add a store</h1>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 3 }}>Missing a store? Add it to the map.</p>
         </div>
       </div>
 
@@ -214,12 +216,12 @@ export default function AddStorePage() {
             setCoords(null)
           }}
         />
-        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 6 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 6 }}>
           Include street number, city and state for best results
         </p>
 
         <button
-          style={{ marginTop: 10, width: '100%', borderRadius: 12, padding: '14px', fontWeight: 800, color: 'var(--text)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: geocoding ? 'not-allowed' : 'pointer', backgroundColor: geocoding ? 'rgba(59,130,246,0.4)' : '#3b82f6', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          style={{ marginTop: 10, width: '100%', borderRadius: 12, padding: '14px', fontWeight: 800, color: 'var(--text)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: geocoding ? 'not-allowed' : 'pointer', backgroundColor: geocoding ? 'rgba(59,130,246,0.4)' : '#3b82f6' }}
           onClick={geocodeAddress}
           disabled={geocoding}
         >
@@ -236,8 +238,8 @@ export default function AddStorePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, borderRadius: 12, padding: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
             <PinIcon size={20} color="var(--accent)" />
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Barlow Condensed', sans-serif" }}>Location found!</p>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Location found!</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
             </div>
@@ -273,7 +275,7 @@ export default function AddStorePage() {
               />
             </div>
             <button
-              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: 'var(--text)', fontSize: 13, border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', backgroundColor: 'var(--surface)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
+              style={{ width: '100%', borderRadius: 12, padding: 12, fontWeight: 700, color: 'var(--text)', fontSize: 13, border: '1px solid var(--border)', cursor: 'pointer', backgroundColor: 'var(--surface)' }}
               onClick={applyManualCoords}
             >
               Use These Coordinates
@@ -292,14 +294,14 @@ export default function AddStorePage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, padding: '12px 14px', cursor: 'pointer',
                 backgroundColor: type === t.value ? 'rgba(201,244,0,0.08)' : 'var(--surface)',
-                border: `1.5px solid ${type === t.value ? '#C9F400' : 'rgba(201,244,0,0.12)'}`,
+                border: `1.5px solid ${type === t.value ? '#C9F400' : 'var(--border)'}`,
                 minWidth: '47%',
               }}
               onClick={() => setType(t.value)}
             >
               <StoreTypeIcon type={t.value} size={18} color={type === t.value ? '#C9F400' : 'var(--text-muted)'} />
               <span
-                style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : 'var(--text-muted)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}
+                style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : 'var(--text-muted)' }}
               >
                 {t.label}
               </span>
@@ -310,7 +312,7 @@ export default function AddStorePage() {
 
       {/* Review notice */}
       <div
-        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 20px 24px', borderRadius: 12, padding: 14, backgroundColor: 'rgba(201,244,0,0.03)', border: '1px solid rgba(201,244,0,0.12)' }}
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 20px 24px', borderRadius: 12, padding: 14, backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         <SearchIcon size={16} color="var(--text-muted)" />
         <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, flex: 1 }}>
@@ -322,21 +324,19 @@ export default function AddStorePage() {
       <div style={{ padding: '0 20px' }}>
         <button
           style={{
-            width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none',
+            width: '100%', borderRadius: 12, minHeight: 52, fontWeight: 600, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none',
             cursor: !name.trim() || !address.trim() || !type || !coords || submitting ? 'not-allowed' : 'pointer',
-            backgroundColor: !name.trim() || !address.trim() || !type || !coords || submitting ? 'rgba(201,244,0,0.2)' : '#C9F400',
+            backgroundColor: !name.trim() || !address.trim() || !type || !coords || submitting ? 'rgba(201,244,0,0.4)' : '#C9F400',
             color: '#0D1210',
-            boxShadow: !name.trim() || !address.trim() || !type || !coords || submitting ? 'none' : '0 0 20px rgba(201,244,0,0.35)',
-            fontFamily: "'Barlow Condensed', sans-serif",
-            letterSpacing: '0.06em', textTransform: 'uppercase',
-          }}
+            boxShadow: 'none',
+                                  }}
           onClick={handleSubmit}
           disabled={!name.trim() || !address.trim() || !type || !coords || submitting}
         >
           {submitting ? (
             <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           ) : (
-            'Submit Store →'
+            'Submit store'
           )}
         </button>
       </div>
@@ -349,13 +349,13 @@ export default function AddStorePage() {
           onClick={() => setDuplicate(null)}
         >
           <div
-            style={{ width: '100%', maxWidth: 480, borderRadius: '24px 24px 0 0', padding: '24px 24px 40px', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)' }}
+            style={{ width: '100%', maxWidth: 480, borderRadius: '24px 24px 0 0', padding: '24px 24px 40px', backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ width: 36, height: 4, borderRadius: 2, margin: '0 auto 20px', backgroundColor: 'rgba(201,244,0,0.2)' }} />
+            <div style={{ width: 36, height: 4, borderRadius: 2, margin: '0 auto 20px', backgroundColor: 'var(--fg-20)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 32 }}>{duplicate === 'approved' ? '🗺️' : '⏳'}</span>
-              <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>
                 {duplicate === 'approved' ? 'Already on the Map' : 'Already Submitted'}
               </p>
             </div>
@@ -365,7 +365,7 @@ export default function AddStorePage() {
                 : 'This store has already been submitted and is currently pending approval. Check back soon!'}
             </p>
             <button
-              style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, color: '#0D1210', fontSize: 15, border: 'none', cursor: 'pointer', backgroundColor: '#C9F400', boxShadow: '0 0 14px rgba(201,244,0,0.3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}
+              style={{ width: '100%', borderRadius: 14, padding: '16px', fontWeight: 800, color: '#0D1210', fontSize: 15, border: 'none', cursor: 'pointer', backgroundColor: '#C9F400' }}
               onClick={() => setDuplicate(null)}
             >
               Got it
