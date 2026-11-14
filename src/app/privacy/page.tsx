@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '8px 24px 32px' }}>
         <div style={{ marginBottom: 16 }}><BackButton /></div>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Privacy Policy</h1>
-        <p style={{ fontSize: 13, color: 'var(--fg-30)', marginBottom: 40 }}>Last updated: May 23, 2026</p>
+        <p style={{ fontSize: 13, color: 'var(--fg-30)', marginBottom: 40 }}>Last updated: November 13, 2026</p>
 
         {[
           {
@@ -46,6 +46,7 @@ export default function PrivacyPage() {
 • Stripe — payment processing.
 • Mapbox — map rendering (your location is used to center the map; it is not transmitted to Mapbox in an identifiable form).
 • Resend — transactional email delivery.
+• Vercel — website hosting and anonymous, cookie-free page-view analytics (which pages are visited, referrer, device type and country). No personal identifiers are collected.
 
 These providers are contractually obligated to protect your data and may not use it for their own purposes.`,
           },

@@ -115,6 +115,7 @@ Key routes:
 - `POST /api/email/welcome` — Sends welcome email via Resend (internal calls from the Stripe webhook authenticate via `INTERNAL_API_SECRET`, not a user token)
 - `POST /api/geocode` — Geocodes an address string to lat/lng
 - `POST /api/stock/report` — Submits stock reports for a store; enforces the geofence, daily limit, and dedup window server-side (see Geofencing & Submission Limits below)
+- `GET /api/preview?zip=` — Public, no-login teaser behind the landing page's "See what's near you" box (`src/components/landing/ZipPreview.tsx`): geocodes the ZIP, bounding-box-queries stores within 5 miles (the free-tier radius), and returns at most 5 stores (reported-first, freshest first) with up to 3 in-stock drinks each and no store IDs. Rate-limited 15/min per IP and edge-cached per ZIP for 5 minutes (`s-maxage=300`). Geocoding lives in `src/lib/geocode.ts`, shared with `/api/geocode`
 - `GET /api/stores/nearby` — Returns approved stores near `lat`/`lng`, tier-filtered server-side (5mi cap for free/anon, unlimited for tracker/admin)
 - `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report (currently unused — see "Stock Report Accuracy" below)
 - `POST /api/community/post` — Creates a `/community` feed post (1–500 chars, optional `store_id` tag and/or `photo_url`), rate-limited to 10/hour
@@ -157,6 +158,10 @@ A Kroger Products/Locations API integration ("Verified" stock badges on store pa
 ### Brand Assets & SEO
 
 The logo mark is a dark bolt on a lime (`#C9F400`) rounded square, used in the landing/auth headers and generated (no image files) by `src/app/icon.tsx` (full-bleed, doubles as the maskable manifest icon), `apple-icon.tsx` (square and opaque — iOS applies its own mask) and `opengraph-image.tsx`. `ImageResponse` can't resolve CSS variables, so those files must use literal hex colors. `src/app/robots.ts` keeps admin/API/auth and signed-in-only routes out of search; `src/app/sitemap.ts` lists the public pages; the landing page embeds `WebSite` + `FAQPage` JSON-LD built from its FAQ content. `metadataBase` is set to `https://ampedmap.com` in `layout.tsx`.
+
+### Analytics
+
+Vercel Web Analytics (`<Analytics />` from `@vercel/analytics/next` in `layout.tsx`) records cookieless page views; it must also be enabled in the Vercel dashboard (project → Analytics) to collect anything. Custom events need a paid Vercel plan, so the signup funnel is read from page views: `/` → `/account?mode=signup` → back to `/` signed in. Disclosed in the Privacy Policy's service-provider list.
 
 ### Layout Shell
 

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon } from '@/components/Icons'
 import PhoneMockup from './PhoneMockup'
+import ZipPreview from './ZipPreview'
 import styles from './landing.module.css'
 
 export type LandingStats = { stores: number; drinks: number; trackers: number | null }
@@ -88,6 +89,15 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
           </div>
           <div className={styles.heroVisual}>
             <PhoneMockup />
+          </div>
+        </section>
+
+        {/* Try it — no account needed */}
+        <section className={styles.section} aria-labelledby="near">
+          <div className={styles.container}>
+            <h2 id="near" className={styles.h2}>See what&apos;s near you</h2>
+            <p className={styles.sectionLead} style={{ marginBottom: 0 }}>Check the stores around any ZIP code. No account needed.</p>
+            <ZipPreview />
           </div>
         </section>
 

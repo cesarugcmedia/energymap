@@ -5,6 +5,7 @@ import BottomNav from '@/components/BottomNav'
 import SideNav from '@/components/SideNav'
 import MainWrapper from '@/components/MainWrapper'
 import ContentShell from '@/components/ContentShell'
+import { Analytics } from '@vercel/analytics/next'
 import AppStartGuard from '@/components/AppStartGuard'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -85,6 +86,8 @@ export default function RootLayout({
           </ContentShell>
           </ThemeProvider>
         </AuthProvider>
+        {/* Cookieless page-view analytics (enable under Vercel → Analytics). */}
+        <Analytics />
       </body>
     </html>
   )
