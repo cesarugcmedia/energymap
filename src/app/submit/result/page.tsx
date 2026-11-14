@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Quantity } from '@/lib/types'
-import { LightningIcon } from '@/components/Icons'
+import ui from '@/components/ui/ui.module.css'
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
@@ -61,8 +61,6 @@ function ResultContent() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden', color: 'var(--text)' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 1, paddingBottom: 80 }}>
 
@@ -70,26 +68,23 @@ function ResultContent() {
         <div style={{ padding: 'calc(env(safe-area-inset-top) + 48px) 16px 24px', textAlign: 'center' }}>
           <div style={{
             width: 72, height: 72, borderRadius: '50%', margin: '0 auto 16px',
-            background: 'rgba(201,244,0,0.1)',
-            border: '1.5px solid rgba(201,244,0,0.4)',
-            boxShadow: '0 0 30px rgba(201,244,0,0.25), 0 0 60px rgba(201,244,0,0.08)',
+            background: 'rgba(201,244,0,0.12)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 32,
           }}>
-            ⚡
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
           </div>
-          <p style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-            {count !== null ? `${count} Report${count !== 1 ? 's' : ''} Submitted!` : 'Report Submitted!'}
+          <p style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 600, color: 'var(--text)' }}>
+            {count !== null ? `${count} report${count !== 1 ? 's' : ''} sent` : 'Report sent'}
           </p>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
+          <p style={{ margin: 0, fontSize: 15, color: 'var(--text-muted)' }}>
             Thanks for updating <span style={{ color: 'var(--text)', fontWeight: 600 }}>{storeName}</span>
           </p>
         </div>
 
         {/* ── Current stock snapshot ────────────────────────────────── */}
         <div style={{ padding: '0 16px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
-            Current Stock at {storeName}
+          <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: 'var(--text-muted)' }}>
+            What&apos;s in stock now
           </p>
 
           {loading ? (
@@ -98,14 +93,14 @@ function ResultContent() {
               <div style={{ width: 28, height: 28, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             </div>
           ) : stock.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--text-dim)', textAlign: 'center', marginTop: 20 }}>
+            <p style={{ fontSize: 14, color: 'var(--text-dim)', textAlign: 'center', marginTop: 20 }}>
               No other reports for this store yet.
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {Object.entries(grouped).map(([brand, items]) => (
                 <div key={brand}>
-                  <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: 'var(--text-dim)' }}>
                     {brand}
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -131,7 +126,7 @@ function ResultContent() {
                             padding: '4px 10px', borderRadius: 999,
                             backgroundColor: q?.bg, border: `1px solid ${q?.border}`,
                           }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: q?.color, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em' }}>{q?.label}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: q?.color }}>{q?.label}</span>
                           </div>
                         </div>
                       )
@@ -146,29 +141,16 @@ function ResultContent() {
         {/* ── Actions ───────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '24px 16px 0' }}>
           <button
-            style={{
-              width: '100%', borderRadius: 14, padding: '14px 0', cursor: 'pointer',
-              backgroundColor: '#C9F400', border: 'none',
-              fontSize: 14, fontWeight: 800, color: '#0D1210',
-              fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase',
-              boxShadow: '0 0 20px rgba(201,244,0,0.35)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}
+            className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`}
             onClick={() => router.replace(`/submit/drinks?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}`)}
           >
-            <LightningIcon size={14} color="#0D1210" /> Report More Drinks
+            Report more flavors
           </button>
           <button
-            style={{
-              width: '100%', borderRadius: 14, padding: '14px 0', cursor: 'pointer',
-              backgroundColor: 'var(--surface)',
-              border: '1px solid rgba(201,244,0,0.12)',
-              fontSize: 14, fontWeight: 700, color: 'var(--text-muted)',
-              fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase',
-            }}
+            className={`${ui.btnSecondary} ${ui.btnBlock} ${ui.btnLarge}`}
             onClick={() => router.replace(`/store/${storeId}?name=${encodeURIComponent(storeName)}`)}
           >
-            View Store
+            View store
           </button>
           <button
             style={{
@@ -178,7 +160,7 @@ function ResultContent() {
             }}
             onClick={() => router.replace('/')}
           >
-            Back to Map
+            Back to map
           </button>
         </div>
       </div>

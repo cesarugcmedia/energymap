@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
-import { SearchIcon, PinIcon, CloseIcon, LightningIcon } from '@/components/Icons'
+import { SearchIcon, PinIcon, CloseIcon } from '@/components/Icons'
 
 const MAX_DISTANCE_M = 500
 
@@ -294,8 +294,6 @@ function DrinksContent() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div
@@ -306,7 +304,7 @@ function DrinksContent() {
           backgroundColor: 'var(--header-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(201,244,0,0.1)',
+          borderBottom: '1px solid var(--border)',
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
@@ -328,7 +326,7 @@ function DrinksContent() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>Report Stock</p>
             {storeName && (
-              <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--fg-35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {storeName}
               </p>
             )}
@@ -367,7 +365,7 @@ function DrinksContent() {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch('')} style={{ color: 'var(--fg-30)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex' }}><CloseIcon size={12} color="var(--fg-30)" /></button>
+            <button onClick={() => setSearch('')} style={{ color: 'var(--text-dim)', cursor: 'pointer', background: 'none', border: 'none', display: 'flex' }}><CloseIcon size={12} color="var(--fg-30)" /></button>
           )}
         </div>
 
@@ -388,10 +386,10 @@ function DrinksContent() {
                   style={{
                     borderRadius: 16, overflow: 'hidden',
                     backgroundColor: 'var(--surface)',
-                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.1)'}`,
+                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'var(--border)'}`,
                     boxShadow: hasBrandSelection
-                      ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
-                      : 'inset 3px 0 0 rgba(201,244,0,0.2), 0 0 8px rgba(201,244,0,0.06)',
+                      ? 'inset 3px 0 0 #C9F400'
+                      : 'inset 3px 0 0 rgba(201,244,0,0.2)',
                   }}
                 >
                   <button
@@ -399,8 +397,8 @@ function DrinksContent() {
                     onClick={() => toggleBrand(brand)}
                   >
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{brand}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-dim)' }}>
                         {hasBrandSelection
                           ? `${brandSelections.length} of ${brandDrinks.length} reported`
                           : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
@@ -415,7 +413,7 @@ function DrinksContent() {
                         <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
                       </div>
                     )}
-                    <span style={{ color: 'var(--fg-30)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
                   </button>
 
                   {expanded && (
@@ -434,7 +432,7 @@ function DrinksContent() {
                                 background: selected ? 'var(--fg-05)' : 'var(--fg-03)',
                                 border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'var(--fg-06)') : 'var(--fg-10)'}`,
                                 borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
-                                boxShadow: selected ? `0 0 10px ${selectedOpt?.color ?? 'rgba(201,244,0,0.5)'}33` : 'none',
+                                boxShadow: 'none',
                                 cursor: 'pointer',
                               }}
                               onClick={() => toggleDrink(drink.id)}
@@ -450,7 +448,7 @@ function DrinksContent() {
                                 </p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
                                   {drink.flavor && (
-                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-35)' }}>{drink.name}</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-dim)' }}>{drink.name}</p>
                                   )}
                                   {drink.caffeine_mg && (
                                     <span style={{
@@ -459,7 +457,7 @@ function DrinksContent() {
                                       color: 'rgba(201,244,0,0.85)',
                                       border: '1px solid rgba(201,244,0,0.25)',
                                     }}>
-                                      ⚡ {drink.caffeine_mg}mg
+                                      {drink.caffeine_mg}mg
                                     </span>
                                   )}
                                 </div>
@@ -500,9 +498,9 @@ function DrinksContent() {
                                       width: 10, height: 10, borderRadius: '50%',
                                       backgroundColor: opt.color,
                                       opacity: selected === opt.value ? 1 : 0.3,
-                                      boxShadow: selected === opt.value ? `0 0 8px ${opt.color}` : 'none',
+                                      boxShadow: 'none',
                                     }} />
-                                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: selected === opt.value ? opt.color : 'var(--fg-30)' }}>
+                                    <span style={{ fontSize: 10, fontWeight: 800, color: selected === opt.value ? opt.color : 'var(--text-dim)' }}>
                                       {opt.label.toUpperCase()}
                                     </span>
                                   </button>
@@ -524,10 +522,10 @@ function DrinksContent() {
             {Object.keys(storeFlavorsGrouped).length > 0 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px' }}>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    ⚡ THIS STORE'S FLAVORS
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    This store&apos;s flavors
                   </p>
-                  <span style={{ fontSize: 10, color: 'var(--fg-30)' }}>{Object.keys(storeFlavorsGrouped).length} brand{Object.keys(storeFlavorsGrouped).length !== 1 ? 's' : ''}</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{Object.keys(storeFlavorsGrouped).length} brand{Object.keys(storeFlavorsGrouped).length !== 1 ? 's' : ''}</span>
                 </div>
 
                 {Object.entries(storeFlavorsGrouped).map(([brand, brandDrinks]) => {
@@ -543,8 +541,8 @@ function DrinksContent() {
                         backgroundColor: 'var(--surface)',
                         border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.25)'}`,
                         boxShadow: hasBrandSelection
-                          ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
-                          : 'inset 3px 0 0 rgba(201,244,0,0.3), 0 0 8px rgba(201,244,0,0.06)',
+                          ? 'inset 3px 0 0 #C9F400'
+                          : 'inset 3px 0 0 rgba(201,244,0,0.3)',
                       }}
                     >
                       <button
@@ -552,8 +550,8 @@ function DrinksContent() {
                         onClick={() => toggleBrand(brand)}
                       >
                         <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
+                          <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{brand}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-dim)' }}>
                             {hasBrandSelection
                               ? `${brandSelections.length} of ${brandDrinks.length} reported`
                               : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
@@ -568,7 +566,7 @@ function DrinksContent() {
                             <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
                           </div>
                         )}
-                        <span style={{ color: 'var(--fg-30)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
+                        <span style={{ color: 'var(--text-dim)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
                       </button>
 
                       {expanded && (
@@ -584,7 +582,7 @@ function DrinksContent() {
                                   <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: DOT_COLOR[dot], flexShrink: 0 }} />
                                   <div style={{ minWidth: 0 }}>
                                     <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{drink.flavor ?? drink.name}</p>
-                                    <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg-30)' }}>
+                                    <p style={{ margin: 0, fontSize: 9.5, color: 'var(--text-dim)' }}>
                                       {report ? `${dot === 'fresh' ? 'Fresh' : 'Stale'} · ${timeAgo(report.reported_at)}` : 'No reports yet'}
                                     </p>
                                   </div>
@@ -598,7 +596,7 @@ function DrinksContent() {
                                         flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 9, fontSize: 10, fontWeight: 800,
                                         border: `1px solid ${selected === opt.value ? opt.border : 'var(--fg-08)'}`,
                                         backgroundColor: selected === opt.value ? opt.bg : 'var(--bg)',
-                                        color: selected === opt.value ? opt.color : 'var(--fg-40)',
+                                        color: selected === opt.value ? opt.color : 'var(--text-dim)',
                                         cursor: 'pointer',
                                       }}
                                     >
@@ -618,11 +616,11 @@ function DrinksContent() {
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px', marginTop: Object.keys(storeFlavorsGrouped).length > 0 ? 6 : 0 }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: 'var(--fg-40)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                📦 ADD A BRAND NOT LISTED
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                Add a brand that isn&apos;t listed
               </p>
             </div>
-            <p style={{ margin: '0 2px 2px', fontSize: 10.5, color: 'var(--fg-30)' }}>Tap a brand to expand, then tap a flavor to add it.</p>
+            <p style={{ margin: '0 2px 2px', fontSize: 13, color: 'var(--text-dim)' }}>Tap a brand to expand, then tap a flavor to add it.</p>
 
             {Object.entries(otherBrandsGrouped).map(([brand, brandDrinks]) => {
               const expanded = expandedBrands.has(brand)
@@ -635,10 +633,10 @@ function DrinksContent() {
                   style={{
                     borderRadius: 16, overflow: 'hidden',
                     backgroundColor: 'var(--surface)',
-                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.1)'}`,
+                    border: `1px solid ${hasBrandSelection ? 'rgba(201,244,0,0.4)' : 'var(--border)'}`,
                     boxShadow: hasBrandSelection
-                      ? 'inset 3px 0 0 #C9F400, 0 0 14px rgba(201,244,0,0.15)'
-                      : 'inset 3px 0 0 rgba(201,244,0,0.2), 0 0 8px rgba(201,244,0,0.06)',
+                      ? 'inset 3px 0 0 #C9F400'
+                      : 'inset 3px 0 0 rgba(201,244,0,0.2)',
                   }}
                 >
                   <button
@@ -646,8 +644,8 @@ function DrinksContent() {
                     onClick={() => toggleBrand(brand)}
                   >
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{brand}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-35)' }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{brand}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-dim)' }}>
                         {hasBrandSelection
                           ? `${brandSelections.length} of ${brandDrinks.length} reported`
                           : `${brandDrinks.length} flavor${brandDrinks.length !== 1 ? 's' : ''}`}
@@ -662,7 +660,7 @@ function DrinksContent() {
                         <span style={{ fontSize: 10, fontWeight: 700, color: '#000' }}>{brandSelections.length}</span>
                       </div>
                     )}
-                    <span style={{ color: 'var(--fg-30)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', display: 'inline-block', flexShrink: 0 }}>▾</span>
                   </button>
 
                   {expanded && (
@@ -681,7 +679,7 @@ function DrinksContent() {
                                 background: selected ? 'var(--fg-05)' : 'var(--fg-03)',
                                 border: `1.5px solid ${selected ? (selectedOpt?.border ?? 'var(--fg-06)') : 'var(--fg-10)'}`,
                                 borderRadius: pickerOpen ? '12px 12px 0 0' : 12,
-                                boxShadow: selected ? `0 0 10px ${selectedOpt?.color ?? 'rgba(201,244,0,0.5)'}33` : 'none',
+                                boxShadow: 'none',
                                 cursor: 'pointer',
                               }}
                               onClick={() => toggleDrink(drink.id)}
@@ -697,7 +695,7 @@ function DrinksContent() {
                                 </p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
                                   {drink.flavor && (
-                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-35)' }}>{drink.name}</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-dim)' }}>{drink.name}</p>
                                   )}
                                   {drink.caffeine_mg && (
                                     <span style={{
@@ -706,7 +704,7 @@ function DrinksContent() {
                                       color: 'rgba(201,244,0,0.85)',
                                       border: '1px solid rgba(201,244,0,0.25)',
                                     }}>
-                                      ⚡ {drink.caffeine_mg}mg
+                                      {drink.caffeine_mg}mg
                                     </span>
                                   )}
                                 </div>
@@ -747,9 +745,9 @@ function DrinksContent() {
                                       width: 10, height: 10, borderRadius: '50%',
                                       backgroundColor: opt.color,
                                       opacity: selected === opt.value ? 1 : 0.3,
-                                      boxShadow: selected === opt.value ? `0 0 8px ${opt.color}` : 'none',
+                                      boxShadow: 'none',
                                     }} />
-                                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: selected === opt.value ? opt.color : 'var(--fg-30)' }}>
+                                    <span style={{ fontSize: 10, fontWeight: 800, color: selected === opt.value ? opt.color : 'var(--text-dim)' }}>
                                       {opt.label.toUpperCase()}
                                     </span>
                                   </button>
@@ -778,13 +776,13 @@ function DrinksContent() {
               backgroundColor: 'var(--header-bg)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              borderTop: '1px solid rgba(201,244,0,0.1)',
+              borderTop: '1px solid var(--border)',
               zIndex: 30,
             }}
           >
             {/* Location status */}
             {locationChecking ? (
-              <p style={{ fontSize: 12, color: 'var(--fg-35)', textAlign: 'center', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><PinIcon size={12} color="var(--fg-35)" /> Checking your location…</p>
+              <p style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><PinIcon size={12} color="var(--fg-35)" /> Checking your location…</p>
             ) : !profile?.is_admin && distanceM !== null && distanceM > MAX_DISTANCE_M ? (
               <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                 <PinIcon size={13} color="#f87171" /> You need to be at the store to report stock.
@@ -795,7 +793,7 @@ function DrinksContent() {
               </p>
             ) : locationSkipped && !profile?.is_admin ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-                <p style={{ fontSize: 11, color: 'var(--fg-35)' }}>Reporting without location — that's okay, it still counts.</p>
+                <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>Reporting without location — that's okay, it still counts.</p>
                 <button
                   onClick={checkLocation}
                   style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
@@ -814,13 +812,13 @@ function DrinksContent() {
               return (
                 <button
                   style={{
-                    width: '100%', borderRadius: 16, padding: '15px 0',
+                    width: '100%', borderRadius: 12, minHeight: 52,
                     backgroundColor: blocked ? 'rgba(201,244,0,0.4)' : '#C9F400',
                     border: 'none', cursor: blocked ? 'default' : 'pointer',
-                    fontSize: 15, fontWeight: 800, color: '#0D1210',
-                    fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase',
+                    fontSize: 16, fontWeight: 600, color: '#0D1210',
+                    
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    boxShadow: blocked ? 'none' : '0 0 24px rgba(201,244,0,0.35)',
+                    boxShadow: 'none',
                   }}
                   onClick={handleSubmit}
                   disabled={blocked}
@@ -831,7 +829,7 @@ function DrinksContent() {
                       Submitting…
                     </>
                   ) : (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LightningIcon size={14} color="#000" /> Submit {selectionCount} Report{selectionCount !== 1 ? 's' : ''}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Submit {selectionCount} report{selectionCount !== 1 ? 's' : ''}</span>
                   )}
                 </button>
               )
