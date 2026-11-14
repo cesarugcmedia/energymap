@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { StoreTypeIcon, HeartIcon, CloseIcon } from '@/components/Icons'
+import SkeletonList from '@/components/ui/SkeletonList'
 
 export default function FavoritesPage() {
   const router = useRouter()
@@ -81,9 +82,7 @@ export default function FavoritesPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center mt-16">
-            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div style={{ padding: '4px 20px' }}><SkeletonList count={3} /></div>
         ) : favorites.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-5 text-center">
             <HeartIcon size={52} color="#8b9284" />

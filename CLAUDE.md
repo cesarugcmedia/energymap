@@ -147,7 +147,7 @@ Two UI conventions used by the Locations and Drinks tabs, reusable for any futur
 A Kroger Products/Locations API integration ("Verified" stock badges on store pages, an admin Kroger tab for matching stores/drinks, and a daily Vercel cron sync) was built and then removed on 2026-11-13 — not wanted. All code, routes, `vercel.json` (it only held the Kroger cron) and the creation migration are gone. Stores that were created by the Kroger location import were deliberately kept, since they are real approved stores. `scripts/remove-kroger-integration.sql` drops `kroger_stock`, `stores.kroger_location_id` and `drinks.kroger_upc`; run it only after the code removal is deployed, never before.
 ### Account Tab
 
-`/account` (logged in) is laid out like iOS Settings: a large "Account" title, a profile card, then grouped rows (lime icon tiles, right-side value, chevron) for Plan · Badges / Saved Stores / Flavor Alerts · Username / Password / Notifications · Admin Dashboard (admins only, links to `/admin`) · Terms / Privacy · Log Out · Delete Account. Each row drills into a sub-page (`accountPage` state) with a "‹ Account" back button; opening one pushes a history entry and a `popstate` listener returns to the list, so the phone's back gesture works instead of leaving `/account`. Rows and groups are plain render functions (`row()`, `group()`), not components defined in render, so the username/password inputs don't remount and lose focus. The Notifications toggles only persist to `localStorage` (`notif_flavors`/`notif_location`) and nothing reads them yet.
+`/account` (logged in) is laid out like iOS Settings: a large "Account" title, a profile card, then grouped rows (lime icon tiles, right-side value, chevron) for Plan · Badges / Saved Stores / Flavor Alerts · Username / Password · Admin Dashboard (admins only, links to `/admin`) · Terms / Privacy · Log Out · Delete Account. Each row drills into a sub-page (`accountPage` state) with a "‹ Account" back button; opening one pushes a history entry and a `popstate` listener returns to the list, so the phone's back gesture works instead of leaving `/account`. Rows and groups are plain render functions (`row()`, `group()`), not components defined in render, so the username/password inputs don't remount and lose focus. (A Notifications page with two toggles was removed: they only saved a localStorage flag nothing read. Bring real controls back with push notifications.)
 
 ### Sign In / Sign Up
 
@@ -158,6 +158,14 @@ A Kroger Products/Locations API integration ("Verified" stock badges on store pa
 ### Brand Assets & SEO
 
 The logo mark is a dark bolt on a lime (`#C9F400`) rounded square, used in the landing/auth headers and generated (no image files) by `src/app/icon.tsx` (full-bleed, doubles as the maskable manifest icon), `apple-icon.tsx` (square and opaque — iOS applies its own mask) and `opengraph-image.tsx`. `ImageResponse` can't resolve CSS variables, so those files must use literal hex colors. `src/app/robots.ts` keeps admin/API/auth and signed-in-only routes out of search; `src/app/sitemap.ts` lists the public pages; the landing page embeds `WebSite` + `FAQPage` JSON-LD built from its FAQ content. `metadataBase` is set to `https://ampedmap.com` in `layout.tsx`.
+
+### Polish Details
+
+- **Map store cards** lead with "View stock" (store page) + "Directions"; reporting happens from the store page. Exception: when `isAtStore` (nearest store < 0.15 mi), the map shows a dismissible "You're at X — Report stock" banner (dismissal stored per store in `sessionStorage.at_store_dismissed`) and the "You're here" card swaps Directions for Report stock.
+- **First-run welcome sheet** on the map (pin colors, tap a store, report at a store), shown once per device (`localStorage.welcome_seen_v1`).
+- **Store page** shows an at-a-glance line ("8 of 12 flavors in stock · last report 2h ago", exact time for Tracker, freshness label for Free) and orders brands by most recent report, drinks by stock level then freshness.
+- **Skeleton loaders** (`src/components/ui/SkeletonList.tsx`) replace spinners on the main content lists; full-screen auth-check spinners remain.
+- **Motion**: shared `anim-fade` / `anim-rise` / `anim-sheet` classes in `globals.css` (≤ 280ms, disabled under `prefers-reduced-motion`).
 
 ### Analytics
 

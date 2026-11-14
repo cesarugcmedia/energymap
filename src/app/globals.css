@@ -136,3 +136,15 @@ select:focus {
 .home-auth-spinner { display: none; }
 html[data-authed="1"] .landing-root { display: none; }
 html[data-authed="1"] .home-auth-spinner { display: block; }
+
+/* ── Motion ── Small entrance animations shared across the app. Kept short
+   (≤ 260ms) and disabled for people who ask their OS for reduced motion. */
+@keyframes animFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes animRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes animSheet { from { transform: translateY(100%); } to { transform: none; } }
+.anim-fade { animation: animFade 0.2s ease both; }
+.anim-rise { animation: animRise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.anim-sheet { animation: animSheet 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade, .anim-rise, .anim-sheet { animation: none; }
+}

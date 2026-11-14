@@ -9,6 +9,7 @@ import type { Quantity } from '@/lib/types'
 import Toast from '@/components/Toast'
 import ui from '@/components/ui/ui.module.css'
 import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon } from '@/components/Icons'
+import SkeletonList from '@/components/ui/SkeletonList'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -378,7 +379,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       })
     : stock
 
-  const byBrand = filteredStock.reduce<Record<string, any[]>>((acc, item) => {
+  // Freshest reports first: brands appear in order of their most recent
+  // report (object insertion order), so the most current info is on top.
+  const byBrand = [...filteredStock]
+    .sort((a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())
+    .reduce<Record<string, any[]>>((acc, item) => {
     const brand = item.drink?.brand ?? 'Other'
     if (!acc[brand]) acc[brand] = []
     acc[brand].push(item)
@@ -386,6 +391,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }, {})
 
   const staleColor = latestReport ? stalenessColor(latestReport.reported_at) : null
+  const inStockTotal = stock.filter((i) => i.quantity !== 'out').length
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden' }}>
@@ -437,14 +443,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 {store.address}
               </p>
             )}
-            {staleColor && latestReport && isTracker && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: staleColor }} />
-                <span style={{ fontSize: 13, fontWeight: 500, color: staleColor }}>
-                  {stalenessLabel(latestReport.reported_at)} · {timeAgo(latestReport.reported_at)}
-                </span>
-              </div>
-            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 4 }}>
             <button
@@ -477,6 +475,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       <div style={{ position: 'relative', zIndex: 1 }}>
 
         <div style={{ height: 16 }} />
+
+        {/* ── At-a-glance summary ── */}
+        {!loading && stock.length > 0 && latestReport && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 16px 14px', fontSize: 15, color: 'var(--text-muted)' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
+            <span>
+              <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{inStockTotal} of {stock.length}</strong> flavors in stock · {isTracker ? `last report ${timeAgo(latestReport.reported_at)}` : stalenessLabel(latestReport.reported_at).toLowerCase()}
+            </span>
+          </div>
+        )}
 
         {/* ── Action buttons ────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 10, margin: '0 16px 12px' }}>
@@ -517,9 +525,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             <button onClick={() => { setStockError(false); setLoading(true); fetchStock() }} className={ui.btnSecondary} style={{ marginTop: 6 }}>Try again</button>
           </div>
         ) : loading ? (
-          <div className="flex justify-center mt-8">
-            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div style={{ padding: '8px 16px 0' }}><SkeletonList count={4} /></div>
         ) : stock.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-16">
             <DrinkIcon size={36} color="var(--text-dim)" />
@@ -608,7 +614,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     {isExpanded && (
                       <div className="px-4 pb-3 flex flex-col gap-2">
                         <div className="h-px mb-1" style={{ backgroundColor: 'var(--fg-06)' }} />
-                        {[...items].sort((a, b) => (STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)).map((item) => {
+                        {[...items].sort((a, b) => ((STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())).map((item) => {
                           const q = QUANTITY_CONFIG[item.quantity as Quantity]
                           const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--text-dim)'
                           // Same simplified lime/amber/gray signal as Report Stock's freshness

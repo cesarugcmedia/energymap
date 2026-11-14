@@ -184,7 +184,7 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
   full:   { label: 'FULL', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
-type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'notifications'
+type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password'
 
 // Small line icons used only by the Account settings list (no equivalent in
 // the shared Icons set). Same 24×24 / rounded-stroke language as Icons.tsx.
@@ -303,13 +303,6 @@ function AccountPageInner() {
   const [allReportsLoading, setAllReportsLoading] = useState(false)
   const [allReportsHasMore, setAllReportsHasMore] = useState(true)
 
-  // Notification preferences (persisted to localStorage)
-  const [notifFlavors, setNotifFlavors] = useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('notif_flavors') !== 'false' : true
-  )
-  const [notifLocation, setNotifLocation] = useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('notif_location') !== 'false' : true
-  )
   useEffect(() => {
     supabase
       .from('profiles')
@@ -767,8 +760,6 @@ function AccountPageInner() {
   }
 
   // Persist notification prefs
-  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_flavors', String(notifFlavors)) }, [notifFlavors])
-  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('notif_location', String(notifLocation)) }, [notifLocation])
 
 
 function switchMode(m: Mode) {
@@ -895,25 +886,11 @@ function switchMode(m: Mode) {
       return inner
     }
 
-    function toggleRow(label: string, desc: string, value: boolean, set: (v: boolean) => void) {
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minHeight: 50, padding: '10px 16px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', margin: 0 }}>{label}</p>
-            <p style={{ fontSize: 12, color: '#6B7F70', margin: '2px 0 0' }}>{desc}</p>
-          </div>
-          <button onClick={() => set(!value)} aria-pressed={value} style={{ flexShrink: 0, borderRadius: 99, width: 51, height: 31, backgroundColor: value ? '#C9F400' : 'var(--fg-15)', position: 'relative', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}>
-            <div style={{ position: 'absolute', top: 2, left: value ? 22 : 2, width: 27, height: 27, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.35)' }} />
-          </button>
-        </div>
-      )
-    }
-
     const inputStyle: React.CSSProperties = { width: '100%', padding: '14px 16px', fontSize: 16, color: 'var(--text)', outline: 'none', backgroundColor: 'transparent', border: 'none', fontFamily: "'Barlow', sans-serif" }
     const ICON = '#0D1210'
     const PAGE_TITLES: Record<AccountSubpage, string> = {
       root: 'Account', profile: 'Profile', plan: 'Plan', badges: 'Badges', saved: 'Saved Stores',
-      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', notifications: 'Notifications',
+      alerts: 'Flavor Alerts', username: 'Username', password: 'Password',
     }
 
     const avatar = (size: number) => (
@@ -1180,13 +1157,6 @@ function switchMode(m: Mode) {
             </>
           )
 
-        case 'notifications':
-          return group(<>
-            {toggleRow('Flavor alerts', 'Notify when a saved drink is spotted nearby', notifFlavors, setNotifFlavors)}
-            <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 16 }} />
-            {toggleRow('Location alerts', 'Alerts based on your current location', notifLocation, setNotifLocation)}
-          </>)
-
         default:
           return null
       }
@@ -1238,8 +1208,6 @@ function switchMode(m: Mode) {
               {row({ icon: <UserIcon size={17} color={ICON} />, label: 'Username', value: `@${profile.username}`, onPress: () => openAccountPage('username') })}
               {ROW_SEP}
               {row({ icon: <KeyIcon />, label: 'Password', onPress: () => openAccountPage('password') })}
-              {ROW_SEP}
-              {row({ icon: <BellIcon size={17} color={ICON} />, label: 'Notifications', onPress: () => openAccountPage('notifications') })}
             </>)}
 
             {profile.is_admin && group(row({ icon: <ShieldIcon />, label: 'Admin Dashboard', href: '/admin' }))}

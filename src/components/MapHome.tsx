@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import type { Drink, Quantity, Store } from '@/lib/types'
 import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon, ChevronRightIcon } from '@/components/Icons'
 import ui from '@/components/ui/ui.module.css'
+import SkeletonList from '@/components/ui/SkeletonList'
 
 type View = 'map' | 'list'
 
@@ -127,6 +128,18 @@ export default function MapHome() {
 
   // Map-view state
   const [selected, setSelected] = useState<Store | null>(null)
+  // One-time welcome tips, shown the first time the map opens on this device.
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return typeof window !== 'undefined' && !localStorage.getItem('welcome_seen_v1') } catch { return false }
+  })
+  function dismissWelcome() {
+    setShowWelcome(false)
+    try { localStorage.setItem('welcome_seen_v1', '1') } catch {}
+  }
+  // At-store report prompt: dismissed per store for the rest of the session.
+  const [dismissedAtStore, setDismissedAtStore] = useState<string | null>(() => {
+    try { return typeof window !== 'undefined' ? sessionStorage.getItem('at_store_dismissed') : null } catch { return null }
+  })
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [leafletMap, setLeafletMap] = useState<any>(null)
   const swipeStartY = useRef<number | null>(null)
@@ -645,6 +658,49 @@ export default function MapHome() {
               </div>
             )}
 
+            {/* First-run welcome tips */}
+            {showWelcome && (
+              <div className="absolute inset-0 z-30 flex items-end anim-fade" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} onClick={dismissWelcome}>
+                <div className="w-full rounded-t-3xl anim-sheet" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', padding: '20px 20px calc(70px + env(safe-area-inset-bottom) + 20px)' }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Welcome to AmpedMap">
+                  <div className="w-9 h-1 rounded-sm mx-auto" style={{ backgroundColor: 'var(--fg-20)', marginBottom: 18 }} />
+                  <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Welcome to AmpedMap</p>
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 18 }}>Three things to know:</p>
+                  <ul style={{ listStyle: 'none', margin: '0 0 22px', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ display: 'flex', gap: 3, paddingTop: 5, flexShrink: 0 }}>{FRESHNESS_LEGEND.map((l) => <span key={l.label} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: l.color }} />)}</span>
+                      <span style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>Pin colors show freshness.</strong> Lime means someone reported in the last 12 hours.</span>
+                    </li>
+                    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ paddingTop: 2, flexShrink: 0, width: 30, display: 'flex', justifyContent: 'center' }}><DrinkIcon size={18} color="#C9F400" /></span>
+                      <span style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>Tap a store to see its cooler.</strong> Every flavor shows how full it was and when.</span>
+                    </li>
+                    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ paddingTop: 2, flexShrink: 0, width: 30, display: 'flex', justifyContent: 'center' }}><PinIcon size={18} color="#C9F400" /></span>
+                      <span style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>At a store? Report what you see.</strong> It takes seconds and saves the next person a trip.</span>
+                    </li>
+                  </ul>
+                  <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={dismissWelcome}>Got it</button>
+                </div>
+              </div>
+            )}
+
+            {/* At-store prompt — the cards lead with "View stock", so someone
+                standing in a store gets a direct path to reporting here. */}
+            {isAtStore && nearest && !selected && dismissedAtStore !== nearest.id && (
+              <div className={`absolute z-10 ${ui.card} anim-rise`} style={{ top: 12, left: 12, right: 12, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px 12px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>You&apos;re at {nearest.name}</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Seen the cooler? Report what&apos;s there.</p>
+                </div>
+                <button className={ui.btnPrimary} style={{ minHeight: 38, padding: '8px 14px', fontSize: 14 }} onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
+                  Report stock
+                </button>
+                <button aria-label="Dismiss" className={ui.iconBtn} style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0 }} onClick={() => { setDismissedAtStore(nearest.id); try { sessionStorage.setItem('at_store_dismissed', nearest.id) } catch {} }}>
+                  <CloseIcon size={11} color="var(--text-muted)" />
+                </button>
+              </div>
+            )}
+
             {/* Freshness legend — always visible, no toggle needed now that
                 markers themselves are colored by freshness */}
             <div
@@ -821,7 +877,11 @@ export default function MapHome() {
                       <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
                         View stock
                       </button>
-                      {!isAtStore && (
+                      {isAtStore ? (
+                        <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
+                          Report stock
+                        </button>
+                      ) : (
                         <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(nearest.lat, nearest.lng)}>
                           Directions
                         </button>
@@ -838,9 +898,7 @@ export default function MapHome() {
               <p className={ui.sectionLabel}>{search ? `Results (${sorted.length})` : 'All stores'}</p>
 
               {storesLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-                  <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                </div>
+                <div style={{ padding: 0 }}><SkeletonList count={4} /></div>
               ) : storesError && stores.length === 0 ? (
                 <div className={ui.emptyState}>
                   <GroceryIcon size={36} color="var(--text-dim)" />

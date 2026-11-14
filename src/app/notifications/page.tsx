@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { notificationIcon } from '@/components/NotificationIcons'
 import { LightningIcon, GroceryIcon, DrinkIcon, PinIcon, BellIcon, SearchIcon } from '@/components/Icons'
+import SkeletonList from '@/components/ui/SkeletonList'
 
 type FilterMode = 'all' | 'reports' | 'stores' | 'drinks'
 
@@ -216,9 +217,7 @@ export default function NotificationsPage() {
         )}
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 64 }}>
-            <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          </div>
+          <div style={{ padding: '4px 20px' }}><SkeletonList count={5} /></div>
         ) : notifications.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
             <BellIcon size={48} color="#8b9284" />

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink, Quantity } from '@/lib/types'
 import { SearchIcon, PinIcon, CloseIcon } from '@/components/Icons'
+import SkeletonList from '@/components/ui/SkeletonList'
 
 const MAX_DISTANCE_M = 500
 
@@ -370,9 +371,7 @@ function DrinksContent() {
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-            <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div style={{ padding: '0 16px' }}><SkeletonList count={5} /></div>
         ) : isSearching ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 160px' }}>
             {Object.entries(grouped).map(([brand, brandDrinks]) => {

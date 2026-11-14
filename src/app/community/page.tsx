@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
 import { PinIcon, CloseIcon, CommentIcon, ClipboardIcon, TrophyIcon, UsersIcon, TrendingIcon, ClockIcon, CameraIcon, CheckIcon, LightningIcon, GroceryIcon, DrinkIcon } from '@/components/Icons'
+import SkeletonList from '@/components/ui/SkeletonList'
 
 type FilterMode = 'trending' | 'recent' | 'following'
 type MainView = 'feed' | 'leaderboard'
@@ -626,9 +627,7 @@ export default function CommunityPage() {
 
         {/* Feed */}
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-            <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          </div>
+          <div style={{ padding: '4px 0' }}><SkeletonList count={3} /></div>
         ) : postsFetchError ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
             <span style={{ fontSize: 40 }}>⚠️</span>
