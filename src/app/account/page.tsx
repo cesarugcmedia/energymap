@@ -1,5 +1,6 @@
 'use client'
 
+import PlanDetails from '@/components/account/PlanDetails'
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import authStyles from './auth.module.css'
@@ -965,65 +966,7 @@ function switchMode(m: Mode) {
 
         case 'plan':
           return (
-            <div style={{ padding: '0 16px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {checkoutError && <p style={{ fontSize: 12, color: '#FF4545' }}>{checkoutError}</p>}
-              <div style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: 'var(--surface)', border: `1px solid ${tierInfo.color}35` }}>
-                <div style={{ height: 3, background: tierInfo.color }} />
-                <div style={{ padding: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <span style={{ fontSize: 22 }}>{tierInfo.icon}</span>
-                    <div>
-                      <p style={{ fontSize: 17, fontWeight: 800, color: tierInfo.color }}>{tierInfo.label} <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70' }}>· Current plan</span></p>
-                      <p style={{ fontSize: 12, color: '#6B7F70' }}>{profile.tier === 'free' ? 'Free' : '$5.00/mo'}</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {(profile.tier === 'free'
-                      ? ['See stock within 5 miles', 'Report stock and add missing stores', 'Flavor restock alerts', 'Community feed and leaderboard']
-                      : ['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait', 'Everything in Free']
-                    ).map((f) => (
-                      <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <span style={{ fontSize: 10, color: tierInfo.color, marginTop: 3, flexShrink: 0 }}>✓</span>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {profile.tier === 'tracker' && (
-                    <div style={{ marginTop: 14 }}>
-                      {cancelError && <p style={{ fontSize: 11, color: '#FF4545', marginBottom: 6 }}>{cancelError}</p>}
-                      <button onClick={cancelSubscription} disabled={cancelLoading} style={{ width: '100%', borderRadius: 10, padding: '11px 0', fontSize: 14, fontWeight: 600, backgroundColor: 'rgba(255,69,69,0.06)', border: '1px solid rgba(255,69,69,0.18)', color: '#FF4545', opacity: cancelLoading ? 0.6 : 1, cursor: 'pointer' }}>
-                        {cancelLoading ? 'Cancelling...' : 'Cancel Plan'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {profile.tier !== 'tracker' && (
-                <div style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.35)' }}>
-                  <div style={{ height: 3, background: '#C9F400' }} />
-                  <div style={{ padding: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                      <span style={{ fontSize: 22 }}>⚡</span>
-                      <div>
-                        <p style={{ fontSize: 17, fontWeight: 800, color: '#C9F400' }}>Tracker</p>
-                        <p style={{ fontSize: 12, color: '#6B7F70' }}>$5.00/mo</p>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-                      {['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait'].map((f) => (
-                        <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ fontSize: 10, color: '#C9F400', marginTop: 3, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1 }}>
-                      {checkoutLoading ? '...' : 'Upgrade ⚡'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <PlanDetails betaSpotsLeft={Math.max(0, 60 - betaCount)} checkoutLoading={checkoutLoading} checkoutError={checkoutError} onUpgrade={() => startCheckout('tracker')} cancelLoading={cancelLoading} cancelError={cancelError} onCancel={cancelSubscription} />
           )
 
         case 'badges': {
