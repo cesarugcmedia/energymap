@@ -53,7 +53,40 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
     setSubmitting(true)
     const { data: existing } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle()
     if (existing) { setError('That username is already taken.'); setSubmitting(false); return }
-    await supabase.from('profiles').insert({ id: userId, username })
+    const { error: insertError } = await supabase.from('profiles').insert({ id: userId, username, tier: 'free' })
+    if (insertError) { setError('Could not save your username. Try again.'); setSubmitting(false); return }
+
+    // Users who signed in with Google land here on first login. Pick up the
+    // plan they chose on the signup screen (stashed before the Google
+    // redirect), send the welcome email, and continue a Tracker signup.
+    let pendingTier = 'free'
+    try { pendingTier = JSON.parse(localStorage.getItem('pending_profile') ?? 'null')?.tier ?? 'free' } catch {}
+    localStorage.removeItem('pending_profile')
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ email, username, tier: pendingTier }),
+      }).catch(() => {})
+
+      if (pendingTier === 'tracker') {
+        try {
+          const res = await fetch('/api/upgrade/tracker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ username }),
+          })
+          const json = await res.json()
+          if (json.url) { window.location.href = json.url; return }
+          if (!json.upgraded) { window.location.href = '/account?upgradeError=1'; return }
+        } catch {
+          window.location.href = '/account?upgradeError=1'
+          return
+        }
+      }
+    }
     window.location.href = '/'
   }
 
@@ -84,8 +117,61 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
             ? <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             : 'Save Username →'}
         </button>
+        <p style={{ fontSize: 11, color: '#4A5F50', textAlign: 'center', lineHeight: 1.5 }}>
+          By continuing you agree to the <a href="/terms" style={{ color: '#7A8F80' }}>Terms of Service</a> and <a href="/privacy" style={{ color: '#7A8F80' }}>Privacy Policy</a>.
+        </p>
       </form>
     </div>
+  )
+}
+
+// "Continue with Google". Before redirecting to Google, stash the plan the
+// user picked so /auth/callback → SetupProfile can finish the signup the same
+// way the email flow does (no username yet, so the callback hands off to the
+// username screen instead of inventing one from the email address).
+function GoogleSignInButton({ tier = 'free', onError }: { tier?: TierId; onError: (msg: string) => void }) {
+  const [busy, setBusy] = useState(false)
+
+  // Hidden until Google is enabled as a provider in Supabase (Auth → Providers).
+  // Without that, the redirect lands on a raw Supabase error page.
+  if (process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'true') return null
+
+  async function signIn() {
+    if (busy) return
+    setBusy(true)
+    localStorage.setItem('pending_profile', JSON.stringify({ tier }))
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (error) {
+      onError('Google sign-in is unavailable right now. Try email instead.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={signIn}
+        disabled={busy}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '13px 16px', borderRadius: 12, backgroundColor: '#fff', border: 'none', color: '#1f1f1f', fontSize: 15, fontWeight: 600, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1, fontFamily: "'Barlow', sans-serif" }}
+      >
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+        </svg>
+        {busy ? 'Opening Google…' : 'Continue with Google'}
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+        <div style={{ flex: 1, height: 1, backgroundColor: 'var(--fg-08)' }} />
+        <span style={{ fontSize: 12, color: '#4A5F50' }}>or</span>
+        <div style={{ flex: 1, height: 1, backgroundColor: 'var(--fg-08)' }} />
+      </div>
+    </>
   )
 }
 
@@ -1365,6 +1451,7 @@ function selectAndContinue(tierId: TierId) {
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>Email confirmed! Sign in to finish setting up your account.</p>
                 </div>
               )}
+              <GoogleSignInButton onError={setError} />
               <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Email</label>
@@ -1524,6 +1611,7 @@ function selectAndContinue(tierId: TierId) {
             <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 28, border: '1px solid rgba(201,244,0,0.12)' }}>
               <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Create your account</h2>
               <p style={{ fontSize: 13, color: '#7A8F80', marginBottom: 24 }}>Join the Amped Map community</p>
+              <GoogleSignInButton tier={tier.id} onError={setError} />
               <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', display: 'block', marginBottom: 8, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</label>

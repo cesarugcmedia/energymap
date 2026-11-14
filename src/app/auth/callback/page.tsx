@@ -28,9 +28,18 @@ export default function AuthCallback() {
 
       if (!profile) {
         const pending = localStorage.getItem('pending_profile')
-        const { username, tier } = pending
-          ? JSON.parse(pending)
-          : { username: session.user.email?.split('@')[0] ?? 'user', tier: 'free' }
+        const parsed = pending ? JSON.parse(pending) : null
+
+        // No username chosen yet — a first-time Google sign-in (or an email
+        // confirmation opened on a different device). Hand off to the
+        // pick-a-username screen on /account rather than inventing a public
+        // username from the email address. pending_profile (the chosen plan)
+        // stays in storage for that screen to pick up.
+        if (!parsed?.username) {
+          router.replace('/account')
+          return
+        }
+        const { username, tier } = parsed
 
         if (tier === 'tracker') {
           // Mirror the immediate-session signup path: authoritative server-side

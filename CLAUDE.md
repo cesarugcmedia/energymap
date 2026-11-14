@@ -51,6 +51,8 @@ Key pages:
 
 `src/contexts/AuthContext.tsx` is the source of truth for auth state. It provides `user` (Supabase auth user) and `profile` (app-specific profile row) to the entire app. Profile fetching uses up to 4 retry attempts with exponential backoff.
 
+**Google sign-in**: `GoogleSignInButton` (in `src/app/account/page.tsx`) sits atop both the sign-in and create-account cards, hidden unless `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`. It stashes the chosen plan in `localStorage.pending_profile` (`{ tier }`, no username) and calls `signInWithOAuth` back to `/auth/callback`. The callback, on finding no profile and no pending username, hands off to `/account`, whose `SetupProfile` screen asks for a username, inserts the profile, sends the welcome email and continues a Tracker signup via `/api/upgrade/tracker` — usernames are never derived from the email address.
+
 All pages use `'use client'` — there are no React Server Components rendering auth-dependent UI. Auth sessions are managed entirely client-side via the Supabase JS SDK.
 
 ### Database Schema
@@ -347,5 +349,6 @@ RESEND_API_KEY
 MIDDLEWARE_WAITLIST_ACTIVE     # Optional — set to "true" to enable waitlist gating
 ADMIN_BYPASS_SECRET            # Optional — cookie value for admin bypass
 INVITE_COOKIE_SECRET           # Required when waitlist gating is active — HMAC key signing the invite-accept bypass cookie
+NEXT_PUBLIC_GOOGLE_AUTH_ENABLED # Optional — set to "true" to show "Continue with Google" (requires Google enabled under Supabase Auth → Providers)
 INTERNAL_API_SECRET            # Required — shared secret for server-to-server calls (e.g. Stripe webhook → /api/email/welcome)
 ```
