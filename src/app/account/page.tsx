@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import authStyles from './auth.module.css'
+import CheckEmailModal from '@/components/CheckEmailModal'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -236,6 +237,7 @@ function AccountPageInner() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
+  const [showCheckEmail, setShowCheckEmail] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [betaCount, setBetaCount] = useState<number>(0)
   const [waitlistCount, setWaitlistCount] = useState<number | null>(null)
@@ -422,7 +424,7 @@ function AccountPageInner() {
     if (authError) { localStorage.removeItem('pending_profile'); setError('Could not create account. Please try again.'); setSubmitting(false); return }
     if (data.user) {
       // Email confirmation required — profile will be created in /auth/callback
-      if (!data.session) { setSubmitting(false); setConfirmEmail(true); return }
+      if (!data.session) { setSubmitting(false); setConfirmEmail(true); setShowCheckEmail(true); return }
 
       const accessToken = data.session.access_token
 
@@ -1364,7 +1366,7 @@ function switchMode(m: Mode) {
                 {error && <p className={authStyles.error}>{error}</p>}
                 {confirmEmail ? (
                   <div className={authStyles.notice}>
-                    <p style={{ margin: 0 }}>Check your email and tap the link to activate your account.</p>
+                    <p style={{ margin: 0 }}>Check your email and tap the link to activate your account. It can take up to 24 hours, and it may land in Spam or Junk.</p>
                     <button type="button" className={authStyles.linkBtnAccent} style={{ marginTop: 8 }} onClick={() => { setConfirmEmail(false); switchMode('signin') }}>Already confirmed? Sign in</button>
                   </div>
                 ) : (
@@ -1381,6 +1383,8 @@ function switchMode(m: Mode) {
           )}
         </div>
       </main>
+
+      {showCheckEmail && <CheckEmailModal email={email} kind="confirm" onClose={() => setShowCheckEmail(false)} />}
 
       <footer className={authStyles.footer}>
         <Link href="/">Home</Link>

@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import CheckEmailModal from '@/components/CheckEmailModal'
 
 export default function WaitlistForm() {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'duplicate' | 'error'>('idle')
+  const [showTips, setShowTips] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,7 +20,7 @@ export default function WaitlistForm() {
     })
     const data = await res.json()
 
-    if (data.success) setState('success')
+    if (data.success) { setState('success'); setShowTips(true) }
     else if (data.alreadyJoined) setState('duplicate')
     else setState('error')
   }
@@ -31,8 +33,9 @@ export default function WaitlistForm() {
         <p style={{ fontSize: 24, marginBottom: 8 }}>🎉</p>
         <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>You're on the list!</p>
         <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          We'll email you the moment we launch.
+          We'll email you the moment we launch. Check Spam or Junk if you don't see it.
         </p>
+        {showTips && <CheckEmailModal email={email} kind="waitlist" onClose={() => setShowTips(false)} />}
       </div>
     )
   }
