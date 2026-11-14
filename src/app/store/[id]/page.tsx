@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 import Toast from '@/components/Toast'
+import CountUp from '@/components/ui/CountUp'
 import ui from '@/components/ui/ui.module.css'
 import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
@@ -485,17 +486,17 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           return (
             <div className={`${ui.card} anim-rise`} style={{ margin: '16px 16px 0' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{inStockTotal}</span>
+                <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}><CountUp value={inStockTotal} duration={600} /></span>
                 <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>of {stock.length} flavors in stock</span>
               </div>
               {latestReport && (
                 <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
+                  <span className={Date.now() - new Date(latestReport.reported_at).getTime() < 2 * 3600000 ? 'live-dot' : ''} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
                   {isTracker ? `Last report ${timeAgo(latestReport.reported_at)}` : `${stalenessLabel(latestReport.reported_at)} reports`}
                 </p>
               )}
               {/* Stock-level mix */}
-              <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 2, margin: '14px 0 8px', background: 'var(--fg-06)' }}>
+              <div className="anim-fill" style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 2, margin: '14px 0 8px', background: 'var(--fg-06)' }}>
                 {LEVEL_ORDER.map((lvl) => counts[lvl] > 0 && (
                   <span key={lvl} style={{ flex: counts[lvl], background: LEVEL[lvl].color, opacity: lvl === 'out' ? 0.75 : 1 }} />
                 ))}
@@ -610,7 +611,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                             <span style={{ display: 'block', fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>{brand}</span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
                               <span style={{ flex: 1, height: 5, borderRadius: 999, overflow: 'hidden', background: 'var(--fg-08)' }}>
-                                <span style={{ display: 'block', height: '100%', width: `${pct * 100}%`, borderRadius: 999, background: barColor }} />
+                                <span className="anim-fill" style={{ display: 'block', height: '100%', width: `${pct * 100}%`, borderRadius: 999, background: barColor }} />
                               </span>
                               <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', flexShrink: 0 }}>{inStock} of {all.length} in stock</span>
                             </span>

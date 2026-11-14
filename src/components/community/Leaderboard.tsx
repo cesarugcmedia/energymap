@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CountUp from '@/components/ui/CountUp'
 import ui from '@/components/ui/ui.module.css'
 import SkeletonList from '@/components/ui/SkeletonList'
 import { CheckIcon, LightningIcon, GroceryIcon, DrinkIcon, TrophyIcon, UsersIcon, PinIcon } from '@/components/Icons'
@@ -195,7 +196,7 @@ export default function Leaderboard({ me }: {
               <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.45 }}>{target.text}</p>
               {myEntry && myIndex > 0 && (
                 <div style={{ height: 6, borderRadius: 999, background: 'var(--fg-08)', overflow: 'hidden', marginTop: 10 }}>
-                  <div style={{ height: '100%', width: `${Math.max(4, target.progress * 100)}%`, borderRadius: 999, background: '#C9F400', transition: 'width 0.5s ease' }} />
+                  <div className="anim-fill" style={{ height: '100%', width: `${Math.max(4, target.progress * 100)}%`, borderRadius: 999, background: '#C9F400', transition: 'width 0.5s ease' }} />
                 </div>
               )}
             </div>
@@ -215,8 +216,8 @@ export default function Leaderboard({ me }: {
                     <span style={{ position: 'absolute', bottom: -6, right: -6, fontSize: pos === 0 ? 22 : 18 }}>{MEDAL[pos]}</span>
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: isMe ? '#C9F400' : 'var(--text)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
-                  <div style={{ width: '100%', height, borderRadius: '12px 12px 4px 4px', background: `linear-gradient(180deg, ${PODIUM_COLOR[pos]}2e, ${PODIUM_COLOR[pos]}0d)`, border: `1px solid ${PODIUM_COLOR[pos]}40`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: PODIUM_COLOR[pos] }}>{e.value}</span>
+                  <div className="anim-grow" style={{ animationDelay: `${pos === 2 ? 0.1 : pos === 1 ? 0.25 : 0.4}s`, width: '100%', height, borderRadius: '12px 12px 4px 4px', background: `linear-gradient(180deg, ${PODIUM_COLOR[pos]}2e, ${PODIUM_COLOR[pos]}0d)`, border: `1px solid ${PODIUM_COLOR[pos]}40`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: PODIUM_COLOR[pos] }}><CountUp value={e.value} /></span>
                     <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{unit(e.value)}</span>
                   </div>
                 </Link>

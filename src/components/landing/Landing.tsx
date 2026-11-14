@@ -1,3 +1,4 @@
+import CountUp from '@/components/ui/CountUp'
 import Link from 'next/link'
 import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon } from '@/components/Icons'
 import PhoneMockup from './PhoneMockup'
@@ -83,7 +84,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
             </div>
             {stats && stats.stores > 0 && (
               <p className={styles.statLine}>
-                <strong>{stats.stores.toLocaleString()}</strong> stores and <strong>{stats.drinks.toLocaleString()}</strong> flavors on the map
+                <strong><CountUp value={stats.stores} /></strong> stores and <strong><CountUp value={stats.drinks} /></strong> flavors on the map
               </p>
             )}
           </div>

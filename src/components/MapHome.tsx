@@ -1236,7 +1236,7 @@ export default function MapHome() {
                           <div style={{ marginBottom: 12 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                               <div style={{ flex: 1, height: 6, backgroundColor: 'var(--fg-06)', borderRadius: 3, overflow: 'hidden' }}>
-                                <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
+                                <div className="anim-fill" style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
                               </div>
                               <span style={{ fontSize: 13, fontWeight: 600, color: barColor, flexShrink: 0 }}>
                                 {inStockCount} of {stock.length} in stock
@@ -1245,7 +1245,7 @@ export default function MapHome() {
                             {stockChips(store.id) && <div style={{ marginBottom: 8 }}>{stockChips(store.id)}</div>}
                             {latestReport && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
+                                <span className={stalenessColor(latestReport.reported_at) === '#C9F400' ? 'live-dot' : ''} style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
                                 Reported {timeAgo(latestReport.reported_at)}
                               </div>
                             )}

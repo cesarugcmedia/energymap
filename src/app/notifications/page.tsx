@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -123,6 +123,9 @@ export default function NotificationsPage() {
   const [confirmClear, setConfirmClear] = useState(false)
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  // Rows that arrived live while the page is open get a brief highlight.
+  const knownIds = useRef<Set<string> | null>(null)
+  const [arrivedIds, setArrivedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/account')
@@ -144,6 +147,11 @@ export default function NotificationsPage() {
 
   const refresh = useCallback(async () => {
     const data = await fetchPage()
+    if (knownIds.current) {
+      const fresh = data.filter((n: any) => !knownIds.current!.has(n.id)).map((n: any) => n.id)
+      if (fresh.length) setArrivedIds(new Set(fresh))
+    }
+    knownIds.current = new Set(data.map((n: any) => n.id))
     setNotifications(data)
     setHasMore(data.length === PAGE)
     setLoading(false)
@@ -244,6 +252,7 @@ export default function NotificationsPage() {
     <button
       key={key}
       onClick={onClick}
+      className={arrivedIds.has(key) ? 'anim-new' : undefined}
       style={{
         width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 14px 13px 12px', textAlign: 'left',
         background: unread ? 'rgba(201,244,0,0.035)' : 'none', border: 'none', borderTop: i ? '1px solid var(--fg-06)' : 'none',

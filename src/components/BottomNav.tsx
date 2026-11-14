@@ -49,10 +49,14 @@ export default function BottomNav() {
               style={{ color: isActive ? 'var(--accent)' : 'var(--text-dim)', position: 'relative' }}
             >
               <div style={{ position: 'relative', filter: 'none' }}>
-                <tab.Icon active={isActive} />
+                {/* Keyed on active so the icon pops when you switch to it. */}
+                <span key={isActive ? 'on' : 'off'} className={isActive ? 'anim-pop' : ''} style={{ display: 'flex' }}>
+                  <tab.Icon active={isActive} />
+                </span>
                 {tab.href === '/notifications' && unread > 0 && (
                   <div
-                    className="absolute flex items-center justify-center"
+                    key={unread}
+                    className="absolute flex items-center justify-center anim-pop"
                     style={{
                       top: -4, right: -6, minWidth: 14, height: 14, borderRadius: 999, padding: '0 3px',
                       backgroundColor: '#ff5c5c', border: '2px solid var(--surface)',

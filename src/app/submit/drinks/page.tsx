@@ -343,7 +343,7 @@ function DrinksContent() {
             </span>
           </span>
           {picked > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#C9F400', background: 'rgba(201,244,0,0.12)', borderRadius: 999, padding: '3px 9px' }}>{picked} picked</span>
+            <span key={picked} className="anim-bump" style={{ fontSize: 12, fontWeight: 600, color: '#C9F400', background: 'rgba(201,244,0,0.12)', borderRadius: 999, padding: '3px 9px' }}>{picked} picked</span>
           )}
           {!forceOpen && (
             <span style={{ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
@@ -506,7 +506,7 @@ function DrinksContent() {
               Clear
             </button>
             <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} onClick={handleSubmit} disabled={blocked}>
-              {submitting ? 'Sending…' : `Submit ${selectionCount} report${selectionCount !== 1 ? 's' : ''}`}
+              {submitting ? 'Sending…' : <span key={selectionCount} className="anim-bump" style={{ display: 'inline-block' }}>{`Submit ${selectionCount} report${selectionCount !== 1 ? 's' : ''}`}</span>}
             </button>
           </div>
           </div>

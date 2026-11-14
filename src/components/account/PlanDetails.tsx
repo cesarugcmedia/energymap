@@ -91,7 +91,7 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
       </div>
       {limit && (
         <div style={{ height: 6, borderRadius: 999, background: 'var(--fg-08)', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${Math.min(100, (used / limit) * 100)}%`, borderRadius: 999, background: used >= limit ? '#FF4545' : used / limit > 0.8 ? '#FFB300' : '#C9F400' }} />
+          <div className="anim-fill" style={{ height: '100%', width: `${Math.min(100, (used / limit) * 100)}%`, borderRadius: 999, background: used >= limit ? '#FF4545' : used / limit > 0.8 ? '#FFB300' : '#C9F400' }} />
         </div>
       )}
     </div>

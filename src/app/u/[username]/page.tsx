@@ -10,6 +10,7 @@ import Toast from '@/components/Toast'
 import BackButton from '@/components/BackButton'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
+import CountUp from '@/components/ui/CountUp'
 import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon } from '@/components/Icons'
 import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
@@ -118,7 +119,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const isMe = data?.profile.id === user?.id
   const stat = (n: number, label: string) => (
     <div style={{ flex: 1, textAlign: 'center' }}>
-      <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{n.toLocaleString()}</p>
+      <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}><CountUp value={n} /></p>
       <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>{label}</p>
     </div>
   )
@@ -178,8 +179,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                   <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Report stock to earn your first badge.' : 'No badges yet.'}</p>
                 ) : (
                   <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '0 -16px', padding: '0 16px' }}>
-                    {BADGE_DEFS.filter((b) => data.badges!.includes(b.id)).map((b) => (
-                      <div key={b.id} title={b.desc} className="reveal" style={{ flexShrink: 0, width: 92, borderRadius: 14, padding: '12px 6px', textAlign: 'center', background: 'var(--surface)', border: `1px solid ${b.color}40` }}>
+                    {BADGE_DEFS.filter((b) => data.badges!.includes(b.id)).map((b, i) => (
+                      <div key={b.id} title={b.desc} className="reveal shine" style={{ ['--shine-delay' as string]: `${0.4 + i * 0.12}s`, flexShrink: 0, width: 92, borderRadius: 14, padding: '12px 6px', textAlign: 'center', background: 'var(--surface)', border: `1px solid ${b.color}40` }}>
                         <div style={{ fontSize: 26, lineHeight: 1 }}>{b.icon}</div>
                         <p style={{ fontSize: 12, fontWeight: 600, color: b.color, marginTop: 6, lineHeight: 1.2 }}>{b.name}</p>
                       </div>

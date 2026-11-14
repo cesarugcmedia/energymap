@@ -61,6 +61,7 @@ export default function PhoneMockup() {
           </g>
           {/* user location */}
           <circle cx="142" cy="170" r="16" fill="rgba(96,165,250,0.15)" />
+          <circle cx="142" cy="170" r="10" fill="none" stroke="rgba(96,165,250,0.6)" strokeWidth="1.5" className={styles.youHalo} />
           <circle cx="142" cy="170" r="6" fill="#60a5fa" stroke="#0E110D" strokeWidth="2.5" />
         </svg>
 
@@ -69,7 +70,7 @@ export default function PhoneMockup() {
           <span
             key={i}
             className={styles.pin}
-            style={{ left: px(p.x), top: py(p.y), borderColor: p.color, boxShadow: `0 0 12px ${p.color}55` }}
+            style={{ left: px(p.x), top: py(p.y), borderColor: p.color, boxShadow: `0 0 12px ${p.color}55`, ['--i' as string]: i } as React.CSSProperties}
           >
             <p.Icon size={13} color={p.color} />
           </span>
@@ -90,8 +91,8 @@ export default function PhoneMockup() {
               <p className={styles.phoneMeta}><span className={styles.freshDot} /> Updated 18 min ago · 0.4 mi</p>
             </div>
           </div>
-          {STOCK.map((s) => (
-            <div key={s.flavor} className={styles.phoneRow}>
+          {STOCK.map((s, i) => (
+            <div key={s.flavor} className={styles.phoneRow} style={{ ['--i' as string]: i } as React.CSSProperties}>
               <div style={{ minWidth: 0 }}>
                 <p className={styles.phoneBrand}>{s.brand}</p>
                 <p className={styles.phoneFlavor}>{s.flavor}</p>

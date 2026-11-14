@@ -742,3 +742,29 @@
   .stepIcon { width: 36px; height: 36px; margin-bottom: 12px; }
   .sectionLead { margin-bottom: 24px; }
 }
+
+/* ── Hero motion ── one-time entrance, then a slow float on the phone.
+   Pins drop in one by one and the store card slides up, like the app. */
+@media (prefers-reduced-motion: no-preference) {
+  .heroCopy > * { animation: lpUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .heroCopy > *:nth-child(1) { animation-delay: 0.05s; }
+  .heroCopy > *:nth-child(2) { animation-delay: 0.12s; }
+  .heroCopy > *:nth-child(3) { animation-delay: 0.2s; }
+  .heroCopy > *:nth-child(4) { animation-delay: 0.28s; }
+  .heroCopy > *:nth-child(5) { animation-delay: 0.36s; }
+  .heroVisual { animation: lpIn 0.8s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .phone { animation: lpFloat 6s 1s ease-in-out infinite; }
+  .pin { animation: lpPin 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(0.55s + var(--i, 0) * 0.09s); }
+  .cluster { animation: lpPin 0.45s 1.05s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .phoneCard { animation: lpCard 0.55s 1.15s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .phoneRow { animation: lpUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(1.35s + var(--i, 0) * 0.08s); }
+  .freshDot { animation: lpLive 2s 1.8s ease-out infinite; }
+  .youHalo { transform-box: fill-box; transform-origin: center; animation: lpHalo 2.4s ease-out infinite; }
+}
+@keyframes lpUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes lpIn { from { opacity: 0; transform: translateY(24px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes lpFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes lpPin { 0% { opacity: 0; transform: translateY(-16px) scale(0.8); } 70% { opacity: 1; transform: translateY(2px) scale(1.05); } 100% { opacity: 1; transform: none; } }
+@keyframes lpCard { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+@keyframes lpLive { 0% { box-shadow: 0 0 0 0 rgba(201, 244, 0, 0.6); } 70% { box-shadow: 0 0 0 6px rgba(201, 244, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(201, 244, 0, 0); } }
+@keyframes lpHalo { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.8); opacity: 0; } }

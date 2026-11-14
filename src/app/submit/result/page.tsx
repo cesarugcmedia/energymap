@@ -116,7 +116,13 @@ function ResultContent() {
   return (
     <div style={shell}>
       <div style={center}>
-        <div className="anim-pop" style={circle('rgba(201,244,0,0.12)')}>
+        <div className="anim-pop" style={{ ...circle('rgba(201,244,0,0.12)'), position: 'relative' }}>
+          {/* Little celebratory burst of dots around the check. */}
+          <span className="burst" aria-hidden="true">
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((a, i) => (
+              <span key={a} style={{ ['--a' as string]: `${a}deg`, background: ['#C9F400', '#FFB300', '#C9F400', '#60a5fa'][i % 4] } as React.CSSProperties} />
+            ))}
+          </span>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>

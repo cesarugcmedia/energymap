@@ -21,7 +21,7 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.12s ease;
 }
 .btnPrimary { background: var(--accent); color: #0D1210; border: none; }
 .btnPrimary:hover { background: #D7FF2E; }
@@ -57,7 +57,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
 .chip:hover { color: var(--text); }
 .chipActive {
@@ -195,4 +195,13 @@
 @keyframes skeletonShimmer { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) {
   .skeletonBlock::after { animation: none; }
+}
+
+/* Tactile press on every button-like control (motion-safe only). */
+@media (prefers-reduced-motion: no-preference) {
+  .btnPrimary:not(:disabled):active,
+  .btnSecondary:not(:disabled):active,
+  .btnGhost:not(:disabled):active { transform: scale(0.97); }
+  .chip:active, .segment:active, .iconBtn:active { transform: scale(0.94); }
+  .iconBtn, .segment { transition: transform 0.12s ease, background-color 0.15s ease, color 0.15s ease; }
 }
