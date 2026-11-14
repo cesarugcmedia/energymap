@@ -15,7 +15,7 @@ export default function OfflinePage() {
     >
       <span style={{ fontSize: 52 }}>⚡</span>
       <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>You're Offline</p>
-      <p style={{ fontSize: 14, color: 'var(--fg-40)', lineHeight: 1.6, margin: 0 }}>
+      <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, margin: 0 }}>
         Check your connection and try again.
       </p>
     </div>

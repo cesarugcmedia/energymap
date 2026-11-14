@@ -564,8 +564,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)', position: 'relative' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
       <Toast message={toastMessage} visible={toastVisible} />
       {/* Sticky header */}
       <div
@@ -595,13 +593,13 @@ export default function AdminPage() {
               </svg>
             </button>
           )}
-          <p style={{ flex: 1, margin: 0, fontSize: tab === null ? 20 : 16, fontWeight: 900, color: 'var(--text)' }}>
+          <p style={{ flex: 1, margin: 0, fontSize: tab === null ? 20 : 16, fontWeight: 700, color: 'var(--text)' }}>
             {tab === null ? '🔧 Admin' : SECTION_LABELS[tab]}
           </p>
           {tab !== null && (
             <button
               onClick={refreshCurrentTab}
-              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: 'var(--fg-50)', backgroundColor: 'var(--fg-06)', border: 'none' }}
+              style={{ fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', color: 'var(--text-muted)', backgroundColor: 'var(--fg-06)', border: 'none' }}
             >
               ↻ Refresh
             </button>
@@ -618,7 +616,7 @@ export default function AdminPage() {
       {/* Dashboard home */}
       {tab === null && (
         <div style={{ padding: '24px 16px 32px' }}>
-          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'var(--fg-35)', letterSpacing: '1.5px' }}>NEEDS ATTENTION</p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-dim)' }}>Needs attention</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
             {[
               { key: 'stores', icon: <ClockIcon size={26} color="#8b9284" />, label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
@@ -631,7 +629,7 @@ export default function AdminPage() {
                   borderRadius: 18, padding: '18px 16px', textAlign: 'left', cursor: 'pointer',
                   backgroundColor: 'var(--surface)',
                   border: `1.5px solid ${count > 0 ? `${badgeColor}44` : 'var(--fg-07)'}`,
-                  boxShadow: count > 0 ? `0 0 20px ${badgeColor}18` : 'none',
+                  boxShadow: 'none',
                   position: 'relative',
                 }}
               >
@@ -641,17 +639,17 @@ export default function AdminPage() {
                     minWidth: 22, height: 22, borderRadius: 11, padding: '0 6px',
                     backgroundColor: badgeColor,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 900, color: 'var(--text)',
+                    fontSize: 13, fontWeight: 700, color: 'var(--text)',
                   }}>{count}</div>
                 )}
                 <span style={{ display: 'block', marginBottom: 10 }}>{icon}</span>
                 <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-dim)' }}>{desc}</p>
               </button>
             ))}
           </div>
 
-          <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: 'var(--fg-35)', letterSpacing: '1.5px' }}>MANAGE</p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-dim)' }}>Manage</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { key: 'locations', icon: <PinIcon size={26} color="#8b9284" />, label: 'Locations',  desc: 'Edit & delete stores' },
@@ -670,7 +668,7 @@ export default function AdminPage() {
               >
                 <span style={{ display: 'block', marginBottom: 10 }}>{icon}</span>
                 <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--fg-40)' }}>{desc}</p>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-dim)' }}>{desc}</p>
               </button>
             ))}
           </div>
@@ -686,11 +684,11 @@ export default function AdminPage() {
           <div className="flex flex-col items-center justify-center h-64 gap-3">
             <FlagIcon size={40} color="#8b9284" />
             <p className="text-lg font-bold text-white">No open flags</p>
-            <p className="text-sm text-white/40">All location reports have been resolved.</p>
+            <p className="text-sm text-[var(--text-dim)]">All location reports have been resolved.</p>
           </div>
         ) : (
           <div className="px-4 pb-6">
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
+            <p className="text-xs font-bold mb-3" style={{ color: 'var(--text-dim)' }}>
               {flags.length} OPEN FLAG{flags.length !== 1 ? 'S' : ''}
             </p>
             <div className="flex flex-col gap-3">
@@ -707,19 +705,19 @@ export default function AdminPage() {
                       <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{store?.name ?? 'Unknown store'}</p>
-                        {store?.address && <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>}
+                        {store?.address && <p className="text-xs text-[var(--text-dim)] mt-0.5 truncate">{store.address}</p>}
                       </div>
-                      <span className="text-[10px] font-semibold shrink-0" style={{ color: 'var(--fg-35)' }}>{timeAgo(flag.created_at)}</span>
+                      <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-dim)' }}>{timeAgo(flag.created_at)}</span>
                     </div>
                     <div
                       className="rounded-xl px-3.5 py-2.5 mb-3"
                       style={{ backgroundColor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)' }}
                     >
                       <p className="text-sm font-semibold" style={{ color: '#fca5a5' }}>{flag.reason}</p>
-                      {flag.notes && <p className="text-xs mt-1 text-white/45 leading-relaxed">{flag.notes}</p>}
+                      {flag.notes && <p className="text-xs mt-1 text-[var(--text-muted)] leading-relaxed">{flag.notes}</p>}
                     </div>
                     {reporter?.username && (
-                      <p className="text-xs text-white/30 mb-3">Reported by @{reporter.username}</p>
+                      <p className="text-xs text-[var(--text-dim)] mb-3">Reported by @{reporter.username}</p>
                     )}
                     <div className="flex gap-2">
                       <button
@@ -793,7 +791,7 @@ export default function AdminPage() {
                       className="w-full flex items-center justify-between px-4 py-3.5"
                     >
                       <span className="text-sm font-bold text-white" style={{ letterSpacing: '0.5px' }}>
-                        {abbr} <span style={{ color: 'var(--fg-35)', fontWeight: 600 }}>· {grouped[abbr].length}</span>
+                        {abbr} <span style={{ color: 'var(--text-dim)', fontWeight: 600 }}>· {grouped[abbr].length}</span>
                       </span>
                       <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
                     </button>
@@ -818,7 +816,7 @@ export default function AdminPage() {
                             <StoreTypeIcon type={store.type} size={24} color="var(--text-muted)" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                              <p className="text-xs text-white/40 mt-0.5 truncate">{store.address}</p>
+                              <p className="text-xs text-[var(--text-dim)] mt-0.5 truncate">{store.address}</p>
                               <p className="text-xs mt-0.5" style={{ color: 'var(--fg-25)' }}>
                                 {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
                               </p>
@@ -868,14 +866,14 @@ export default function AdminPage() {
                   placeholder="Search drinks..."
                   value={drinkSearch}
                   onChange={(e) => setDrinkSearch(e.target.value)}
-                  className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+                  className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-[var(--text-dim)]"
                 />
-                {drinkSearch && <button onClick={() => setDrinkSearch('')} className="text-white/30" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.3)" /></button>}
+                {drinkSearch && <button onClick={() => setDrinkSearch('')} className="text-[var(--text-dim)]" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.3)" /></button>}
               </div>
               <button
                 onClick={() => setShowAddForm((v) => !v)}
                 className="px-3.5 rounded-xl text-sm font-bold"
-                style={{ backgroundColor: showAddForm ? 'var(--fg-06)' : '#C9F400', color: showAddForm ? 'var(--fg-50)' : '#0D1210' }}
+                style={{ backgroundColor: showAddForm ? 'var(--fg-06)' : '#C9F400', color: showAddForm ? 'var(--text-muted)' : '#0D1210' }}
               >
                 {showAddForm ? '✕' : '+ Add'}
               </button>
@@ -887,7 +885,7 @@ export default function AdminPage() {
                 className="rounded-2xl p-4 mb-4 flex flex-col gap-3"
                 style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.25)' }}
               >
-                <p className="text-xs font-bold text-white/40" style={{ letterSpacing: '1.5px' }}>NEW DRINK</p>
+                <p className="text-sm font-semibold text-[var(--text-muted)]">New drink</p>
                 <input
                   type="text"
                   placeholder="Brand (e.g. Monster)"
@@ -915,7 +913,7 @@ export default function AdminPage() {
                 <button
                   onClick={addDrink}
                   disabled={addingDrink}
-                  className="w-full rounded-xl p-3 font-bold text-white text-sm flex items-center justify-center"
+                  className="w-full rounded-xl p-3 font-bold text-[#0D1210] text-sm flex items-center justify-center"
                   style={{ backgroundColor: addingDrink ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
                 >
                   {addingDrink ? <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : 'Add Drink'}
@@ -943,10 +941,10 @@ export default function AdminPage() {
               )
 
               return Object.entries(grouped).map(([brand, brandDrinks]) => {
-                const brandColor = BRAND_COLORS[brand] ?? 'var(--fg-40)'
+                const brandColor = BRAND_COLORS[brand] ?? 'var(--text-dim)'
                 return (
                 <div key={brand} className="mb-4">
-                  <p className="text-[10px] font-bold mb-2" style={{ color: brandColor, letterSpacing: '1.5px' }}>
+                  <p className="text-xs font-bold mb-2" style={{ color: brandColor }}>
                     {brand.toUpperCase()} · {brandDrinks.length}
                   </p>
                   <div className="flex flex-col gap-1.5">
@@ -962,7 +960,7 @@ export default function AdminPage() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate">{drink.flavor ?? drink.name}</p>
-                          {drink.flavor && <p className="text-xs text-white/35 mt-0.5">{drink.name}</p>}
+                          {drink.flavor && <p className="text-xs text-[var(--text-dim)] mt-0.5">{drink.name}</p>}
                         </div>
                         <button
                           onClick={() => deleteDrink(drink.id)}
@@ -993,9 +991,9 @@ export default function AdminPage() {
                 placeholder="Search users..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-[var(--text-dim)]"
               />
-              {userSearch && <button onClick={() => setUserSearch('')} className="text-white/30" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.3)" /></button>}
+              {userSearch && <button onClick={() => setUserSearch('')} className="text-[var(--text-dim)]" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.3)" /></button>}
             </div>
             {users.filter((u) => u.username?.toLowerCase().includes(userSearch.toLowerCase())).map((u) => (
               <div
@@ -1005,9 +1003,9 @@ export default function AdminPage() {
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid rgba(201,244,0,0.2)' }}
+                  style={{ backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid var(--border)' }}
                 >
-                  <span className="text-sm font-black" style={{ color: 'var(--accent)' }}>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
                     {u.username?.[0]?.toUpperCase()}
                   </span>
                 </div>
@@ -1015,16 +1013,16 @@ export default function AdminPage() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-sm font-bold text-white">@{u.username}</p>
                     {u.is_admin && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
                     )}
                     {u.is_verified_reporter && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                     )}
                     {u.tier === 'tracker' && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>⚡ TRACKER</span>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>TRACKER</span>
                     )}
                   </div>
-                  <p className="text-xs text-white/30 mt-0.5">Joined {timeAgo(u.created_at)}</p>
+                  <p className="text-xs text-[var(--text-dim)] mt-0.5">Joined {timeAgo(u.created_at)}</p>
                 </div>
                 <button
                   onClick={() => deleteUser(u.id, u.username)}
@@ -1062,13 +1060,13 @@ export default function AdminPage() {
         ) : waitlist.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
             <span style={{ fontSize: 40 }}>📋</span>
-            <p className="text-lg font-black text-white">No signups yet</p>
-            <p className="text-sm text-white/40">People who join the waitlist will appear here.</p>
+            <p className="text-lg font-semibold text-white">No signups yet</p>
+            <p className="text-sm text-[var(--text-dim)]">People who join the waitlist will appear here.</p>
           </div>
         ) : (
           <div className="px-4 pb-6">
-            <p className="text-[10px] font-bold mb-3" style={{ color: 'var(--fg-35)', letterSpacing: '1.5px' }}>
-              {waitlist.length} {waitlist.length === 1 ? 'SIGNUP' : 'SIGNUPS'} · {waitlist.filter((w) => w.invited_at).length} INVITED
+            <p className="text-xs font-bold mb-3" style={{ color: 'var(--text-dim)' }}>
+              {waitlist.length} {waitlist.length === 1 ? 'signup' : 'signups'} · {waitlist.filter((w) => w.invited_at).length} invited
             </p>
             <div className="flex flex-col gap-2.5">
               {waitlist.map((w, i) => (
@@ -1079,17 +1077,17 @@ export default function AdminPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black"
+                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
                       style={{
                         backgroundColor: i < 60 ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)',
-                        color: i < 60 ? '#C9F400' : 'var(--fg-30)',
+                        color: i < 60 ? '#C9F400' : 'var(--text-dim)',
                       }}
                     >
                       {i + 1}
                     </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{w.email}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--fg-35)' }}>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
                       Joined {new Date(w.created_at).toLocaleDateString()}
                       {w.invited_at && (
                         <span style={{ color: 'var(--accent)' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
@@ -1135,7 +1133,7 @@ export default function AdminPage() {
         <div className="flex flex-col items-center justify-center h-64 gap-3">
           <CheckIcon size={40} color="#C9F400" />
           <p className="text-lg font-bold text-white">All caught up!</p>
-          <p className="text-sm text-white/40">No pending stores to review.</p>
+          <p className="text-sm text-[var(--text-dim)]">No pending stores to review.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3 px-4 pb-6">
@@ -1150,7 +1148,7 @@ export default function AdminPage() {
                 <StoreTypeIcon type={store.type} size={28} color="var(--text-muted)" />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-white">{store.name}</p>
-                  <p className="text-xs text-white/40 mt-0.5">{store.address}</p>
+                  <p className="text-xs text-[var(--text-dim)] mt-0.5">{store.address}</p>
                   <p className="text-xs mt-1" style={{ color: 'rgba(255,200,0,0.6)' }}>
                     {store.type.replace('_', ' ')} · Submitted {timeAgo(store.created_at)}
                     {store.submitter?.username && ` · by @${store.submitter.username}`}
@@ -1161,7 +1159,7 @@ export default function AdminPage() {
               {/* Coords */}
               <div className="px-3.5 pb-2 flex items-center gap-1">
                 <PinIcon size={11} color="rgba(255,255,255,0.3)" />
-                <p className="text-xs text-white/30">
+                <p className="text-xs text-[var(--text-dim)]">
                   {store.lat?.toFixed(4)}, {store.lng?.toFixed(4)}
                 </p>
               </div>
@@ -1223,9 +1221,9 @@ export default function AdminPage() {
             <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'var(--fg-20)' }} />
             <div className="flex items-center gap-3 mb-3">
               <span style={{ fontSize: 32 }}>🥤</span>
-              <p className="text-lg font-black text-white">Already in the System</p>
+              <p className="text-lg font-semibold text-white">Already in the System</p>
             </div>
-            <p className="text-sm text-white/50 leading-relaxed mb-6">{drinkDuplicateMsg}</p>
+            <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-6">{drinkDuplicateMsg}</p>
             <button
               className="w-full rounded-2xl p-4 font-bold"
               style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
@@ -1250,9 +1248,9 @@ export default function AdminPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
-            <p className="text-lg font-black text-white mb-5">Edit Store</p>
+            <p className="text-lg font-semibold text-white mb-5">Edit Store</p>
 
-            <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>STORE NAME</p>
+            <p className="text-sm font-semibold text-[var(--text-muted)] mb-2">Store name</p>
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
@@ -1261,7 +1259,7 @@ export default function AdminPage() {
               onChange={(e) => setEditName(e.target.value)}
             />
 
-            <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>ADDRESS</p>
+            <p className="text-sm font-semibold text-[var(--text-muted)] mb-2">Address</p>
             <input
               type="text"
               className="w-full rounded-xl p-3.5 text-sm text-white outline-none mb-4"
@@ -1270,10 +1268,10 @@ export default function AdminPage() {
               onChange={(e) => setEditAddress(e.target.value)}
             />
 
-            <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>COORDINATES</p>
+            <p className="text-sm font-semibold text-[var(--text-muted)] mb-2">Coordinates</p>
             <div className="flex gap-2 mb-4">
               <div className="flex-1">
-                <p className="text-[10px] text-white/25 mb-1">Latitude</p>
+                <p className="text-xs text-[var(--text-dim)] mb-1">Latitude</p>
                 <input
                   type="number"
                   step="any"
@@ -1284,7 +1282,7 @@ export default function AdminPage() {
                 />
               </div>
               <div className="flex-1">
-                <p className="text-[10px] text-white/25 mb-1">Longitude</p>
+                <p className="text-xs text-[var(--text-dim)] mb-1">Longitude</p>
                 <input
                   type="number"
                   step="any"
@@ -1296,7 +1294,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>STORE TYPE</p>
+            <p className="text-sm font-semibold text-[var(--text-muted)] mb-2">Store type</p>
             <div className="flex flex-wrap gap-2 mb-5">
               {TYPE_OPTIONS.map((t) => (
                 <button
@@ -1309,10 +1307,10 @@ export default function AdminPage() {
                   }}
                   onClick={() => setEditType(t.value)}
                 >
-                  <StoreTypeIcon type={t.value} size={16} color={editType === t.value ? '#fff' : 'var(--fg-40)'} />
+                  <StoreTypeIcon type={t.value} size={16} color={editType === t.value ? '#fff' : 'var(--text-dim)'} />
                   <span
                     className="text-sm font-semibold"
-                    style={{ color: editType === t.value ? '#fff' : 'var(--fg-40)' }}
+                    style={{ color: editType === t.value ? '#fff' : 'var(--text-dim)' }}
                   >
                     {t.label}
                   </span>
@@ -1323,7 +1321,7 @@ export default function AdminPage() {
             <div className="flex gap-2.5 mb-2.5">
               <button
                 className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
-                style={{ backgroundColor: 'var(--fg-06)', color: 'var(--fg-50)' }}
+                style={{ backgroundColor: 'var(--fg-06)', color: 'var(--text-muted)' }}
                 onClick={() => setEditStore(null)}
               >
                 Cancel

@@ -814,7 +814,7 @@ export default function CommunityPage() {
                 {TIMEFRAMES.map((tf) => (
                   <button key={tf} className="pill-btn"
                     onClick={() => setLbTimeframe(tf)}
-                    style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 700, backgroundColor: lbTimeframe === tf ? '#C9F400' : 'transparent', color: lbTimeframe === tf ? '#0D1210' : 'var(--text-dim)', boxShadow: lbTimeframe === tf ? '0 0 12px rgba(201,244,0,0.3)' : 'none' }}>
+                    style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 700, backgroundColor: lbTimeframe === tf ? '#C9F400' : 'transparent', color: lbTimeframe === tf ? '#0D1210' : 'var(--text-dim)' }}>
                     {tf}
                   </button>
                 ))}

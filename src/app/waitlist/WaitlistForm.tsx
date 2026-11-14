@@ -29,7 +29,7 @@ export default function WaitlistForm() {
         style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}
       >
         <p style={{ fontSize: 24, marginBottom: 8 }}>🎉</p>
-        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>You're on the list!</p>
+        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>You're on the list!</p>
         <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           We'll email you the moment we launch.
         </p>
@@ -40,10 +40,10 @@ export default function WaitlistForm() {
   if (state === 'duplicate') {
     return (
       <div
-        style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.06)', border: '1px solid rgba(201,244,0,0.2)' }}
+        style={{ width: '100%', borderRadius: 16, padding: 20, textAlign: 'center', backgroundColor: 'rgba(201,244,0,0.06)', border: '1px solid var(--border)' }}
       >
         <p style={{ fontSize: 24, marginBottom: 8 }}>⚡</p>
-        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>Already on the list!</p>
+        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Already on the list!</p>
         <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           We've already got your email — you'll be first to know.
         </p>
@@ -91,11 +91,8 @@ export default function WaitlistForm() {
           justifyContent: 'center',
           border: 'none',
           cursor: state === 'loading' || !email.trim() ? 'not-allowed' : 'pointer',
-          fontFamily: "'Barlow Condensed', sans-serif",
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          backgroundColor: state === 'loading' || !email.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400',
-          boxShadow: state === 'loading' || !email.trim() ? 'none' : '0 0 20px rgba(201,244,0,0.35)',
+                                        backgroundColor: state === 'loading' || !email.trim() ? 'rgba(201,244,0,0.4)' : '#C9F400',
+          boxShadow: 'none',
           transition: 'background-color 0.15s',
         }}
       >

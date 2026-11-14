@@ -94,14 +94,14 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
 
   return (
     <div style={{ height: '100%', backgroundColor: 'var(--bg)', paddingLeft: 20, paddingRight: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: 'calc(70px + env(safe-area-inset-bottom))' }}>
-      <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', marginBottom: 4, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>One more step</p>
+      <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>One more step</p>
       <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 24 }}>Pick a username for your account ({email})</p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 8, letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Username</p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 8 }}>Username</p>
           <input
             type="text"
-            style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: 'var(--text)', outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', fontFamily: "'Barlow', sans-serif" }}
+            style={{ width: '100%', borderRadius: 14, padding: '14px 16px', fontSize: 14, color: 'var(--text)', outline: 'none', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', fontFamily: "'Barlow', sans-serif" }}
             placeholder="yourname"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
@@ -113,7 +113,7 @@ function SetupProfile({ userId, email }: { userId: string; email: string }) {
         <button
           type="submit"
           disabled={submitting}
-          style={{ width: '100%', borderRadius: 14, padding: 16, fontWeight: 800, color: '#0D1210', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase', backgroundColor: submitting ? 'rgba(201,244,0,0.4)' : '#C9F400', boxShadow: submitting ? 'none' : '0 0 20px rgba(201,244,0,0.35)' }}
+          style={{ width: '100%', borderRadius: 14, padding: 16, fontWeight: 800, color: '#0D1210', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', backgroundColor: submitting ? 'rgba(201,244,0,0.4)' : '#C9F400', boxShadow: 'none' }}
         >
           {submitting
             ? <div style={{ width: 20, height: 20, border: '2px solid #0D1210', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -870,7 +870,7 @@ function switchMode(m: Mode) {
       return (
         <div style={{ margin: '0 16px 22px' }}>
           {opts.header && (
-            <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 16px 7px' }}>{opts.header}</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', margin: '0 16px 7px' }}>{opts.header}</p>
           )}
           <div style={{ borderRadius: 12, backgroundColor: 'var(--surface)', overflow: 'hidden' }}>{children}</div>
           {opts.footer && (
@@ -886,7 +886,7 @@ function switchMode(m: Mode) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, minHeight: 50, padding: '9px 16px' }}>
           {icon && iconTile(icon)}
           <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 500, textAlign: center ? 'center' : 'left', color: danger ? '#FF4545' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-          {value !== undefined && <span style={{ fontSize: 15, color: 'var(--fg-45)', flexShrink: 0, maxWidth: '45%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>}
+          {value !== undefined && <span style={{ fontSize: 15, color: 'var(--text-muted)', flexShrink: 0, maxWidth: '45%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>}
           {chevron && !center && <ChevronRightIcon size={15} color="var(--fg-25)" />}
         </div>
       )
@@ -918,7 +918,7 @@ function switchMode(m: Mode) {
 
     const avatar = (size: number) => (
       <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.3), rgba(201,244,0,0.08))', border: `${size > 70 ? 3 : 2}px solid rgba(201,244,0,0.5)` }}>
-        <span style={{ fontSize: size * 0.42, fontWeight: 900, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>{profile.username[0].toUpperCase()}</span>
+        <span style={{ fontSize: size * 0.42, fontWeight: 700, color: '#C9F400' }}>{profile.username[0].toUpperCase()}</span>
       </div>
     )
 
@@ -951,7 +951,7 @@ function switchMode(m: Mode) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 20px 24px' }}>
                 {avatar(90)}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}>@{profile.username}</p>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>@{profile.username}</p>
                   {profile.is_verified_reporter && <CheckIcon size={16} color="#60a5fa" />}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -983,7 +983,7 @@ function switchMode(m: Mode) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <span style={{ fontSize: 22 }}>{tierInfo.icon}</span>
                     <div>
-                      <p style={{ fontSize: 17, fontWeight: 800, color: tierInfo.color, fontFamily: "'Barlow Condensed', sans-serif" }}>{tierInfo.label} <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70' }}>· Current plan</span></p>
+                      <p style={{ fontSize: 17, fontWeight: 800, color: tierInfo.color }}>{tierInfo.label} <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70' }}>· Current plan</span></p>
                       <p style={{ fontSize: 12, color: '#6B7F70' }}>{profile.tier === 'free' ? 'Free' : '$5.00/mo'}</p>
                     </div>
                   </div>
@@ -1015,7 +1015,7 @@ function switchMode(m: Mode) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                       <span style={{ fontSize: 22 }}>⚡</span>
                       <div>
-                        <p style={{ fontSize: 17, fontWeight: 800, color: '#C9F400', fontFamily: "'Barlow Condensed', sans-serif" }}>Tracker</p>
+                        <p style={{ fontSize: 17, fontWeight: 800, color: '#C9F400' }}>Tracker</p>
                         <p style={{ fontSize: 12, color: '#6B7F70' }}>$5.00/mo</p>
                       </div>
                     </div>
@@ -1027,7 +1027,7 @@ function switchMode(m: Mode) {
                         </div>
                       ))}
                     </div>
-                    <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 12px rgba(201,244,0,0.3)' }}>
+                    <button onClick={() => startCheckout('tracker')} disabled={checkoutLoading} style={{ width: '100%', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 800, backgroundColor: '#C9F400', color: '#0D1210', border: 'none', cursor: checkoutLoading ? 'not-allowed' : 'pointer', opacity: checkoutLoading ? 0.6 : 1 }}>
                       {checkoutLoading ? '...' : 'Upgrade ⚡'}
                     </button>
                   </div>
@@ -1040,15 +1040,15 @@ function switchMode(m: Mode) {
           const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
           return (
             <div style={{ padding: '0 16px 22px' }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 16px 7px' }}>{earned.size} of {BADGE_DEFS.length} earned</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', margin: '0 16px 7px' }}>{earned.size} of {BADGE_DEFS.length} earned</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                 {sorted.map((b) => {
                   const isEarned = earned.has(b.id)
                   const hint = progressHint(b.id)
                   return (
-                    <div key={b.id} style={{ borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid transparent', boxShadow: isEarned ? `0 0 16px ${b.glow}` : 'none', opacity: isEarned ? 1 : 0.45 }}>
+                    <div key={b.id} style={{ borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid transparent', boxShadow: 'none', opacity: isEarned ? 1 : 0.45 }}>
                       <span style={{ fontSize: 26, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
-                      <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#6B7F70', fontFamily: "'Barlow Condensed', sans-serif" }}>{b.name}</p>
+                      <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#6B7F70' }}>{b.name}</p>
                       <p style={{ fontSize: 10, lineHeight: 1.3, color: '#6B7F70' }}>{hint ?? b.desc}</p>
                     </div>
                   )
@@ -1098,7 +1098,7 @@ function switchMode(m: Mode) {
                   />
                 </div>
                 {(flavorResults.length > 0 || flavorSearching) && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 12, overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
                     {flavorSearching ? spinner : flavorResults.map((d) => {
                       const already = drinkAlerts.some((a) => a.drink_id === d.id)
                       return (
@@ -1150,7 +1150,7 @@ function switchMode(m: Mode) {
             <>
               {group(
                 <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 16 }}>
-                  <span style={{ fontSize: 16, color: 'var(--fg-45)' }}>@</span>
+                  <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>@</span>
                   <input type="text" style={{ ...inputStyle, paddingLeft: 2 }} placeholder={profile.username} value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoFocus />
                 </div>,
@@ -1216,7 +1216,7 @@ function switchMode(m: Mode) {
                     <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{profile.username}</p>
                     {profile.is_verified_reporter && <CheckIcon size={15} color="#60a5fa" />}
                   </div>
-                  <p style={{ fontSize: 13, color: 'var(--fg-45)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {tierInfo.label}{!statsLoading && rank ? ` · #${rank} All-Time` : ''}{streak > 0 ? ` · 🔥 ${streak}` : ''}
                   </p>
                 </div>

@@ -505,8 +505,6 @@ export default function MapHome() {
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .store-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .store-card:hover { border-color: rgba(201,244,0,0.3) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 20px rgba(201,244,0,0.06) !important; }
         .action-btn { transition: opacity 0.15s ease, transform 0.15s ease; cursor: pointer; }
         .action-btn:hover { opacity: 0.88; transform: translateY(-1px); }
         .action-btn:active { transform: scale(0.97); }

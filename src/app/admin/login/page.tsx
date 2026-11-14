@@ -30,13 +30,13 @@ export default function AdminLoginPage() {
   return (
     <div className="flex flex-col justify-center min-h-[100dvh]  px-6" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="mb-10">
-        <p className="text-2xl font-black text-white">🔧 Admin Login</p>
-        <p className="text-sm text-white/40 mt-1">Sign in to manage store submissions</p>
+        <p className="text-2xl font-semibold text-white">🔧 Admin Login</p>
+        <p className="text-sm text-[var(--text-dim)] mt-1">Sign in to manage store submissions</p>
       </div>
 
       <form onSubmit={handleLogin} className="flex flex-col gap-4">
         <div>
-          <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>
+          <p className="text-[10px] font-bold text-[var(--text-dim)] mb-2" style={{ letterSpacing: '1.5px' }}>
             EMAIL
           </p>
           <input
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
         </div>
 
         <div>
-          <p className="text-[10px] font-bold text-white/35 mb-2" style={{ letterSpacing: '1.5px' }}>
+          <p className="text-[10px] font-bold text-[var(--text-dim)] mb-2" style={{ letterSpacing: '1.5px' }}>
             PASSWORD
           </p>
           <input
@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl p-4 font-bold text-white text-base flex items-center justify-center mt-2"
+          className="w-full rounded-2xl p-4 font-bold text-[#0D1210] text-base flex items-center justify-center mt-2"
           style={{ backgroundColor: loading ? 'rgba(201,244,0,0.4)' : '#C9F400', color: '#0D1210' }}
         >
           {loading ? (
