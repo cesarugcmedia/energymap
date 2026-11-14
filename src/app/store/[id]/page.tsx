@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
 import Toast from '@/components/Toast'
 import ui from '@/components/ui/ui.module.css'
-import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon } from '@/components/Icons'
+import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 
 const BRAND_ALIASES: Record<string, string> = {
@@ -33,11 +33,22 @@ function normalizeBrand(input: string): string {
 }
 
 
-const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string; bg: string; border: string }> = {
-  out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',  border: 'rgba(255,69,69,0.25)'  },
-  low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
-  medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',  border: 'rgba(255,179,0,0.25)'  },
-  full:   { label: 'FULL', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)',  border: 'rgba(201,244,0,0.25)'  },
+// Stock level pill/bar styles for the store page.
+const LEVEL: Record<Quantity, { label: string; color: string }> = {
+  full:   { label: 'Full',   color: '#C9F400' },
+  medium: { label: 'Medium', color: '#FFB300' },
+  low:    { label: 'Low',    color: '#FF8A3D' },
+  out:    { label: 'Out',    color: '#FF4545' },
+}
+const LEVEL_ORDER: Quantity[] = ['full', 'medium', 'low', 'out']
+
+const addLinkStyle: React.CSSProperties = { background: 'none', border: 'none', padding: '6px 4px', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: 'var(--accent)', cursor: 'pointer' }
+
+function openDirections(lat: number, lng: number) {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  window.open(isIOS
+    ? `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
+    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank')
 }
 
 const STOCK_ORDER: Record<string, number> = { full: 0, medium: 1, low: 2, out: 3 }
@@ -105,6 +116,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
   }
   const [search, setSearch] = useState('')
+  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
@@ -418,63 +430,34 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px' }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              width: 36, height: 36, borderRadius: 10, flexShrink: 0, marginTop: 4,
-              backgroundColor: 'var(--fg-07)',
-              border: '1px solid var(--fg-10)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 12L6 8l4-4" stroke="var(--fg-75)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px' }}>
+          <button onClick={() => router.back()} aria-label="Back" className={ui.iconBtn} style={{ width: 38, height: 38, flexShrink: 0 }}>
+            <ChevronLeftIcon size={18} color="var(--text)" />
           </button>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-            background: 'var(--fg-06)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />
-          </div>
+          <span style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <StoreTypeIcon type={store?.type} size={21} color="var(--text-muted)" />
+          </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 17, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {name}
-            </p>
-            {store && (
-              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {store.address}
-              </p>
+            <p style={{ margin: 0, fontSize: 17, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+            {store?.address && (
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 4 }}>
-            <button
-              onClick={toggleFavorite}
-              disabled={favoritingLoading}
-              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-              style={{
-                width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
-                backgroundColor: isFavorited ? 'rgba(239,68,68,0.15)' : 'var(--fg-05)',
-                border: `1px solid ${isFavorited ? 'rgba(239,68,68,0.4)' : 'var(--fg-08)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span key={heartAnim} className={heartAnim > 0 && isFavorited ? 'anim-pop' : ''} style={{ display: 'flex' }}>
-                <HeartIcon size={14} color={isFavorited ? '#FF4545' : '#8b9284'} filled={isFavorited} />
-              </span>
-            </button>
-            <button
-              onClick={() => setShowFlag(true)}
-              title="Flag incorrect location"
-              style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, backgroundColor: 'var(--fg-05)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-            >
-              <FlagIcon size={14} color="#8b9284" />
-            </button>
-          </div>
+          <button
+            onClick={toggleFavorite}
+            disabled={favoritingLoading}
+            aria-label={isFavorited ? 'Remove from saved stores' : 'Save this store'}
+            title={isFavorited ? 'Remove from saved stores' : 'Save this store'}
+            className={ui.iconBtn}
+            style={{ width: 38, height: 38, flexShrink: 0, background: isFavorited ? 'rgba(255,69,69,0.12)' : undefined, borderColor: isFavorited ? 'rgba(255,69,69,0.4)' : undefined }}
+          >
+            <span key={heartAnim} className={heartAnim > 0 && isFavorited ? 'anim-pop' : ''} style={{ display: 'flex' }}>
+              <HeartIcon size={16} color={isFavorited ? '#FF4545' : 'var(--text-muted)'} filled={isFavorited} />
+            </span>
+          </button>
+          <button onClick={() => setShowFlag(true)} aria-label="Report a problem with this store" title="Report a problem with this store" className={ui.iconBtn} style={{ width: 38, height: 38, flexShrink: 0 }}>
+            <FlagIcon size={15} color="var(--text-muted)" />
+          </button>
         </div>
       </div>
 
@@ -482,211 +465,200 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 
-        <div style={{ height: 16 }} />
+        {/* ── Stock overview ── */}
+        {!storeError && !stockError && !loading && stock.length > 0 && (() => {
+          const counts = { full: 0, medium: 0, low: 0, out: 0 } as Record<string, number>
+          stock.forEach((s) => { counts[s.quantity] = (counts[s.quantity] ?? 0) + 1 })
+          return (
+            <div className={`${ui.card} anim-rise`} style={{ margin: '16px 16px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{inStockTotal}</span>
+                <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>of {stock.length} flavors in stock</span>
+              </div>
+              {latestReport && (
+                <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
+                  {isTracker ? `Last report ${timeAgo(latestReport.reported_at)}` : `${stalenessLabel(latestReport.reported_at)} reports`}
+                </p>
+              )}
+              {/* Stock-level mix */}
+              <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 2, margin: '14px 0 8px', background: 'var(--fg-06)' }}>
+                {LEVEL_ORDER.map((lvl) => counts[lvl] > 0 && (
+                  <span key={lvl} style={{ flex: counts[lvl], background: LEVEL[lvl].color, opacity: lvl === 'out' ? 0.75 : 1 }} />
+                ))}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', fontSize: 13, color: 'var(--text-muted)' }}>
+                {LEVEL_ORDER.map((lvl) => counts[lvl] > 0 && (
+                  <span key={lvl} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: LEVEL[lvl].color }} />
+                    {counts[lvl]} {LEVEL[lvl].label.toLowerCase()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
-        {/* ── At-a-glance summary ── */}
-        {!loading && stock.length > 0 && latestReport && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 16px 14px', fontSize: 15, color: 'var(--text-muted)' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
-            <span>
-              <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{inStockTotal} of {stock.length}</strong> flavors in stock · {isTracker ? `last report ${timeAgo(latestReport.reported_at)}` : stalenessLabel(latestReport.reported_at).toLowerCase()}
-            </span>
+        {/* ── Actions ── */}
+        {!storeError && (
+          <div style={{ display: 'flex', gap: 10, margin: '14px 16px 0' }}>
+            <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>
+              Report stock
+            </button>
+            {store?.lat != null && store?.lng != null && (
+              <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(store.lat, store.lng)}>
+                <DirectionsIcon size={16} color="var(--text)" /> Directions
+              </button>
+            )}
           </div>
         )}
 
-        {/* ── Action buttons ────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 10, margin: '0 16px 12px' }}>
-          <button
-            className={ui.btnPrimary}
-            style={{ flex: 1 }}
-            onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
-          >
-            Report stock
-          </button>
-          <button
-            className={ui.btnSecondary}
-            style={{ flex: 1 }}
-            onClick={() => setShowAddDrink(true)}
-          >
-            Add a new flavor
-          </button>
-        </div>
-
-        {/* ── Info chip ─────────────────────────────────────────────── */}
-        <p style={{ margin: '0 16px 20px', fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>
-          Saw what&apos;s in the cooler? Use <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Report stock</span>. Only add a flavor if it isn&apos;t listed at all.
-        </p>
-
         {/* ── Content ───────────────────────────────────────────────── */}
         {storeError ? (
-          <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
+          <div className={ui.emptyState}>
             <GroceryIcon size={36} color="var(--text-dim)" />
             <p className={ui.emptyTitle}>Store not found</p>
             <p className={ui.emptyBody}>This store may have been removed.</p>
             <button onClick={() => router.back()} className={ui.btnSecondary} style={{ marginTop: 6 }}>Go back</button>
           </div>
         ) : stockError ? (
-          <div className="flex flex-col items-center gap-3 mt-20 px-8 text-center">
+          <div className={ui.emptyState}>
             <GroceryIcon size={36} color="var(--text-dim)" />
             <p className={ui.emptyTitle}>Couldn&apos;t load stock</p>
             <p className={ui.emptyBody}>Check your connection and try again.</p>
             <button onClick={() => { setStockError(false); setLoading(true); fetchStock() }} className={ui.btnSecondary} style={{ marginTop: 6 }}>Try again</button>
           </div>
         ) : loading ? (
-          <div style={{ padding: '8px 16px 0' }}><SkeletonList count={4} /></div>
+          <div style={{ padding: '16px 16px 0' }}><SkeletonList count={4} /></div>
         ) : stock.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 mt-16">
+          <div className={ui.emptyState}>
             <DrinkIcon size={36} color="var(--text-dim)" />
             <p className={ui.emptyTitle}>No reports yet</p>
-            <p className={ui.emptyBody}>Be the first to report what&apos;s in stock here.</p>
-            <button className={ui.btnPrimary} style={{ marginTop: 6 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>Report stock</button>
+            <p className={ui.emptyBody}>Be the first to report what&apos;s in the cooler here.</p>
+            <button onClick={() => setShowAddDrink(true)} style={addLinkStyle}>Flavor not in our list? Add it</button>
           </div>
         ) : (
-          <div className="px-4 pb-16">
-            {/* Search */}
-            <div
-              className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 mb-4"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-            >
-              <SearchIcon size={15} color="rgba(255,255,255,0.3)" />
+          <div style={{ padding: '18px 16px 96px' }}>
+            {/* Search + filters */}
+            <div style={{ position: 'relative', marginBottom: 10 }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={16} color="var(--text-dim)" /></span>
               <input
                 type="text"
-                placeholder="Search drinks & flavors..."
+                placeholder="Search flavors or brands"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-[var(--text-dim)]"
+                className={`${ui.input} ${ui.inputWithIcon}`}
+                style={{ paddingRight: 36, fontSize: 15 }}
               />
               {search.length > 0 && (
-                <button onClick={() => setSearch('')} className="text-[var(--text-dim)]" style={{ display: 'flex' }}><CloseIcon size={12} color="rgba(255,255,255,0.3)" /></button>
+                <button onClick={() => setSearch('')} aria-label="Clear search" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}>
+                  <CloseIcon size={12} color="var(--text-dim)" />
+                </button>
               )}
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px', marginBottom: 12 }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: 'var(--accent)' }}>
-                🛒 BRANDS
-              </p>
-              <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>
-                {isSearching
-                  ? `${filteredStock.length} result${filteredStock.length !== 1 ? 's' : ''}`
-                  : `${Object.keys(byBrand).length} found`}
-              </span>
+            <div className={ui.chipRow} style={{ marginBottom: 16 }}>
+              {([['all', 'All'], ['in', 'In stock'], ['out', 'Out of stock']] as const).map(([key, label]) => (
+                <button key={key} className={`${ui.chip} ${stockFilter === key ? ui.chipActive : ''}`} onClick={() => setStockFilter(key)}>{label}</button>
+              ))}
             </div>
-            {isSearching && filteredStock.length === 0 && (
-              <div className="flex flex-col items-center gap-2 mt-8">
-                <SearchIcon size={36} color="#8b9284" />
-                <p className="text-sm font-bold text-white">No drinks found</p>
-                <p className="text-xs text-[var(--text-dim)]">Try a different brand or flavor name</p>
-              </div>
-            )}
 
-            <div className="flex flex-col gap-2.5">
-              {Object.entries(byBrand).map(([brand, items]) => {
-                const inStock = items.filter((i) => i.quantity !== 'out').length
-                const total = items.length
-                const pct = total > 0 ? inStock / total : 0
-                const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
-                const isExpanded = isSearching || expandedBrands.has(brand)
+            {(() => {
+              const brands = Object.entries(byBrand)
+                .map(([brand, items]) => [brand, items.filter((i) => stockFilter === 'all' || (stockFilter === 'in' ? i.quantity !== 'out' : i.quantity === 'out'))] as const)
+                .filter(([, items]) => items.length > 0)
+
+              if (brands.length === 0) {
                 return (
-                  <div
-                    key={brand}
-                    className="rounded-2xl overflow-hidden reveal"
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      
-                    }}
-                  >
-                    <button
-                      className="w-full flex items-center gap-3 p-4 text-left"
-                      onClick={() => toggleBrand(brand)}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-semibold text-white">{brand}</p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--fg-08)' }}>
-                            <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, backgroundColor: total > 0 ? barColor : 'var(--fg-20)' }} />
-                          </div>
-                          <p className="text-xs font-semibold shrink-0" style={{ color: total > 0 ? barColor : 'var(--text-dim)' }}>
-                            {total > 0 ? `${inStock}/${total} in stock` : 'No reports'}
-                          </p>
-                        </div>
-                      </div>
-                      <span
-                        className="text-[var(--text-dim)] text-sm transition-transform"
-                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                      >
-                        ▾
-                      </span>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="px-4 pb-3 flex flex-col gap-2">
-                        <div className="h-px mb-1" style={{ backgroundColor: 'var(--fg-06)' }} />
-                        {[...items].sort((a, b) => ((STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())).map((item) => {
-                          const q = QUANTITY_CONFIG[item.quantity as Quantity]
-                          const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--text-dim)'
-                          // Same simplified lime/amber/gray signal as Report Stock's freshness
-                          // dots (fresh < 12h, else stale, gray if never reported) — a quick
-                          // glance alongside the more precise Fresh/Aging/Stale/Unverified text.
-                          const dotColor = !item.reported_at
-                            ? 'var(--fg-25)'
-                            : (Date.now() - new Date(item.reported_at).getTime()) / 3600000 < 12
-                              ? '#C9F400'
-                              : '#FFB300'
-                          return (
-                            <div key={item.drink_id}>
-                              <div
-                                style={{
-                                  backgroundColor: 'var(--fg-04)',
-                                  border: '1px solid var(--border)',
-                                  boxShadow: `inset 3px 0 0 ${q?.color ?? 'var(--fg-15)'}`,
-                                  borderRadius: 12,
-                                  padding: 10,
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
-                                      <p className="text-sm font-semibold text-white truncate">
-                                        {item.drink?.flavor ?? item.drink?.name}
-                                      </p>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap" style={{ marginLeft: 13 }}>
-                                      <p className="text-xs font-semibold" style={{ color: freshColor }}>{stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}</p>
-                                      {item.drink?.caffeine_mg && (
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.1)', color: 'rgba(201,244,0,0.85)', border: '1px solid rgba(201,244,0,0.25)' }}>
-                                          {item.drink.caffeine_mg}mg
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                                    <div className="px-2.5 py-1.5 rounded-[9px]" style={{ backgroundColor: q?.bg, border: `1px solid ${q?.border}` }}>
-                                      <span className="text-[10px] font-bold" style={{ color: q?.color }}>{q?.label}</span>
-                                    </div>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                                      style={{
-                                        backgroundColor: drinkAlerts.has(item.drink_id) ? 'rgba(201,244,0,0.14)' : 'var(--fg-06)',
-                                        border: `1px solid ${drinkAlerts.has(item.drink_id) ? '#C9F400' : 'var(--fg-08)'}`,
-                                      }}
-                                      title={drinkAlerts.has(item.drink_id) ? 'Stop watching this flavor' : 'Get notified when this restocks'}
-                                    >
-                                      <span key={bellAnim && bellAnim.id === item.drink_id ? bellAnim.n : 0} className={bellAnim?.id === item.drink_id && drinkAlerts.has(item.drink_id) ? 'anim-wiggle' : ''} style={{ display: 'flex' }}><BellIcon size={12} color={drinkAlerts.has(item.drink_id) ? '#C9F400' : '#8b9284'} filled={drinkAlerts.has(item.drink_id)} /></span>
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
+                  <div className={ui.emptyState} style={{ paddingTop: 24 }}>
+                    <SearchIcon size={32} color="var(--text-dim)" />
+                    <p className={ui.emptyTitle}>No matching flavors</p>
+                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'out' ? 'Nothing reported out of stock.' : 'Nothing reported in stock right now.'}</p>
                   </div>
                 )
-              })}
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {brands.map(([brand, items]) => {
+                    const all = byBrand[brand]
+                    const inStock = all.filter((i) => i.quantity !== 'out').length
+                    const pct = all.length > 0 ? inStock / all.length : 0
+                    const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
+                    const isExpanded = isSearching || stockFilter !== 'all' || brands.length <= 2 || expandedBrands.has(brand)
+                    const sorted = [...items].sort((a, b) => ((STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()))
+                    return (
+                      <div key={brand} className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+                        <button
+                          onClick={() => toggleBrand(brand)}
+                          aria-expanded={isExpanded}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                        >
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>{brand}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                              <span style={{ flex: 1, height: 5, borderRadius: 999, overflow: 'hidden', background: 'var(--fg-08)' }}>
+                                <span style={{ display: 'block', height: '100%', width: `${pct * 100}%`, borderRadius: 999, background: barColor }} />
+                              </span>
+                              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', flexShrink: 0 }}>{inStock} of {all.length} in stock</span>
+                            </span>
+                          </span>
+                          <span style={{ display: 'flex', transition: 'transform 0.2s ease', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
+                            <ChevronDownIcon size={18} color="var(--text-dim)" />
+                          </span>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="anim-fade" style={{ borderTop: '1px solid var(--fg-06)' }}>
+                            {sorted.map((item, idx) => {
+                              const lvl = LEVEL[item.quantity as Quantity] ?? LEVEL.out
+                              const isOut = item.quantity === 'out'
+                              const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--text-dim)'
+                              const following = drinkAlerts.has(item.drink_id)
+                              return (
+                                <div
+                                  key={item.drink_id}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderTop: idx === 0 ? 'none' : '1px solid var(--fg-06)' }}
+                                >
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 15, fontWeight: 500, color: isOut ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {item.drink?.flavor ?? item.drink?.name}
+                                    </p>
+                                    <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 13, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: freshColor }}>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: freshColor }} />
+                                        {stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}
+                                      </span>
+                                      {item.drink?.caffeine_mg ? <span>· {item.drink.caffeine_mg} mg caffeine</span> : null}
+                                    </p>
+                                  </div>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 78, padding: '5px 10px', borderRadius: 999, background: `${lvl.color}1a`, color: lvl.color, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: lvl.color }} />
+                                    {lvl.label}
+                                  </span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
+                                    aria-label={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}
+                                    title={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}
+                                    style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: following ? 'rgba(201,244,0,0.14)' : 'transparent', border: `1px solid ${following ? 'rgba(201,244,0,0.5)' : 'var(--fg-10)'}` }}
+                                  >
+                                    <span key={bellAnim && bellAnim.id === item.drink_id ? bellAnim.n : 0} className={bellAnim?.id === item.drink_id && following ? 'anim-wiggle' : ''} style={{ display: 'flex' }}>
+                                      <BellIcon size={14} color={following ? '#C9F400' : 'var(--text-dim)'} filled={following} />
+                                    </span>
+                                  </button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+
+            <div style={{ textAlign: 'center', marginTop: 22 }}>
+              <button onClick={() => setShowAddDrink(true)} style={addLinkStyle}>Don&apos;t see a flavor? Add it</button>
             </div>
           </div>
         )}
