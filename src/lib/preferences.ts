@@ -44,15 +44,25 @@ function fromProfile(p: any): Preferences | null {
 }
 
 export function usePreferences() {
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth()
   const [prefs, setPrefs] = useState<Preferences>(EMPTY)
   const [ready, setReady] = useState(false)
 
+  // Not "ready" until the profile has loaded — deciding from localStorage
+  // alone while the profile was still in flight showed the welcome flow for
+  // a moment to people who had already finished it (new device, cleared
+  // storage, installed app vs. browser). Finished on either side counts as
+  // finished, and the local mirror is refreshed from the profile.
   useEffect(() => {
     if (!user) { setReady(false); return }
-    setPrefs(fromProfile(profile) ?? readLocal(user.id) ?? EMPTY)
+    if (authLoading || !profile) return
+    const fromDb = fromProfile(profile)
+    const local = readLocal(user.id)
+    const merged = { ...(fromDb ?? local ?? EMPTY), done: !!(fromDb?.done || local?.done) }
+    setPrefs(merged)
+    if (fromDb) { try { localStorage.setItem(KEY(user.id), JSON.stringify(merged)) } catch { /* ignore */ } }
     setReady(true)
-  }, [user, profile])
+  }, [user, profile, authLoading])
 
   const save = useCallback(async (next: Preferences) => {
     if (!user) return
