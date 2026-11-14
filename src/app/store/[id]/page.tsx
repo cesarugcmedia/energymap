@@ -10,6 +10,7 @@ import Toast from '@/components/Toast'
 import ui from '@/components/ui/ui.module.css'
 import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
+import { usePreferences } from '@/lib/preferences'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -116,6 +117,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     toastTimer.current = setTimeout(() => setToastVisible(false), 2500)
   }
   const [search, setSearch] = useState('')
+  const { prefs } = usePreferences()
   const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all')
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
@@ -400,7 +402,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   // Freshest reports first: brands appear in order of their most recent
   // report (object insertion order), so the most current info is on top.
   const byBrand = [...filteredStock]
-    .sort((a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())
+    // Favorite brands (from the welcome flow) first, then most recently reported.
+    .sort((a, b) => {
+      const fa = prefs.brands.includes(a.drink?.brand) ? 0 : 1
+      const fb = prefs.brands.includes(b.drink?.brand) ? 0 : 1
+      return (fa - fb) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())
+    })
     .reduce<Record<string, any[]>>((acc, item) => {
     const brand = item.drink?.brand ?? 'Other'
     if (!acc[brand]) acc[brand] = []

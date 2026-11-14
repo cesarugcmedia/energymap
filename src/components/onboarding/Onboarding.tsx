@@ -1,0 +1,298 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { supabase } from '@/lib/supabase'
+import { CloseIcon, DrinkIcon, PinIcon, LightningIcon, SearchIcon, StoreTypeIcon, BellIcon } from '@/components/Icons'
+import ui from '@/components/ui/ui.module.css'
+import type { Preferences } from '@/lib/preferences'
+
+type DrinkLite = { id: string; brand: string; flavor: string }
+
+const STORE_TYPES = [
+  { value: 'gas_station', label: 'Gas stations' },
+  { value: 'convenience', label: 'Convenience stores' },
+  { value: 'grocery', label: 'Grocery stores' },
+  { value: 'other', label: 'Other' },
+]
+
+export type OnboardingSummary = { text: string; reportStore: { id: string; name: string } | null }
+
+// First-time welcome flow (also reopened from Account → Your preferences).
+// Four skippable steps — brands, flavors to follow, where you hunt, whether
+// you'll report — then (first time only) a personalized finish screen.
+export default function Onboarding({ userId, initial, mode, getSummary, onSave, onClose, onReport }: {
+  userId: string
+  initial: Preferences
+  mode: 'first' | 'edit'
+  getSummary?: (brands: string[]) => OnboardingSummary
+  onSave: (prefs: Preferences) => Promise<void> | void
+  onClose: () => void
+  onReport?: (store: { id: string; name: string }) => void
+}) {
+  const [step, setStep] = useState(0)
+  const [brands, setBrands] = useState<string[]>(initial.brands)
+  const [storeTypes, setStoreTypes] = useState<string[]>(initial.storeTypes)
+  const [homeZip, setHomeZip] = useState(initial.homeZip ?? '')
+  const [home, setHome] = useState<{ lat: number; lng: number } | null>(initial.homeLat != null && initial.homeLng != null ? { lat: initial.homeLat, lng: initial.homeLng } : null)
+  const [wantsToReport, setWantsToReport] = useState<boolean | null>(initial.wantsToReport)
+  const [catalog, setCatalog] = useState<DrinkLite[]>([])
+  const [followed, setFollowed] = useState<Map<string, DrinkLite>>(new Map())
+  const [alreadyFollowed, setAlreadyFollowed] = useState<Set<string>>(new Set())
+  const [q, setQ] = useState('')
+  const [zipState, setZipState] = useState<'idle' | 'checking' | 'ok' | 'error'>(initial.homeZip ? 'ok' : 'idle')
+  const [saving, setSaving] = useState(false)
+  const [summary, setSummary] = useState<OnboardingSummary | null>(null)
+
+  useEffect(() => {
+    supabase.from('drinks').select('id, brand, name, flavor').then(({ data }) => {
+      setCatalog((data ?? []).map((d: any) => ({ id: d.id, brand: d.brand, flavor: d.flavor || d.name })))
+    })
+    supabase.from('drink_alerts').select('drink_id').eq('user_id', userId).then(({ data, error }) => {
+      if (!error && data) setAlreadyFollowed(new Set(data.map((a: any) => a.drink_id)))
+    })
+  }, [userId])
+
+  // Brands ranked by how many flavors we track for them.
+  const brandOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    catalog.forEach((d) => counts.set(d.brand, (counts.get(d.brand) ?? 0) + 1))
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([b]) => b)
+  }, [catalog])
+
+  const flavorResults = useMemo(() => {
+    const term = q.trim().toLowerCase()
+    if (term.length >= 2) return catalog.filter((d) => `${d.brand} ${d.flavor}`.toLowerCase().includes(term)).slice(0, 8)
+    // Suggestions from the brands they picked.
+    return brands.length ? catalog.filter((d) => brands.includes(d.brand)).slice(0, 10) : catalog.slice(0, 10)
+  }, [q, catalog, brands])
+
+  const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
+
+  async function lookupZip() {
+    if (!/^\d{5}$/.test(homeZip)) { setZipState('error'); return }
+    setZipState('checking')
+    try {
+      const res = await fetch(`/api/geocode?q=${homeZip}`)
+      if (!res.ok) { setZipState('error'); return }
+      const { lat, lng } = await res.json()
+      setHome({ lat, lng })
+      setZipState('ok')
+    } catch { setZipState('error') }
+  }
+
+  function useCurrentLocation() {
+    navigator.geolocation?.getCurrentPosition(
+      (p) => { setHome({ lat: p.coords.latitude, lng: p.coords.longitude }); setHomeZip(''); setZipState('ok') },
+      () => setZipState('error'),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    )
+  }
+
+  async function finish() {
+    setSaving(true)
+    // Follow picked flavors (restock alerts, anywhere) — same table and
+    // upsert as the store-page bell and Account's "Follow a flavor" search.
+    const toFollow = [...followed.keys()].filter((id) => !alreadyFollowed.has(id))
+    if (toFollow.length) {
+      await supabase.from('drink_alerts').upsert(toFollow.map((drink_id) => ({ user_id: userId, drink_id, scope: 'anywhere' })), { onConflict: 'user_id,drink_id' })
+    }
+    const prefs: Preferences = {
+      brands, storeTypes,
+      homeZip: homeZip || null,
+      homeLat: home?.lat ?? null,
+      homeLng: home?.lng ?? null,
+      wantsToReport,
+      done: true,
+    }
+    await onSave(prefs)
+    setSaving(false)
+    if (mode === 'first' && getSummary) { setSummary(getSummary(brands)); setStep(4) }
+    else onClose()
+  }
+
+  async function skipAll() {
+    await onSave({ ...initial, done: true })
+    onClose()
+  }
+
+  const steps = [
+    {
+      title: 'What do you drink?',
+      sub: 'Pick your brands. We’ll show them first everywhere.',
+      body: (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {brandOptions.length === 0 && <p style={{ color: 'var(--text-dim)', fontSize: 15 }}>Loading brands…</p>}
+          {brandOptions.map((b) => (
+            <button key={b} className={`${ui.chip} ${brands.includes(b) ? ui.chipActive : ''}`} style={{ padding: '10px 16px', fontSize: 15 }} onClick={() => setBrands(toggle(brands, b))}>{b}</button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: 'Any flavor you’re hunting?',
+      sub: 'Follow a few. We’ll tell you when they restock, even rare or discontinued ones.',
+      body: (
+        <>
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={16} color="var(--text-dim)" /></span>
+            <input className={`${ui.input} ${ui.inputWithIcon}`} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search flavors or brands" />
+          </div>
+          {followed.size > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              {[...followed.values()].map((d) => (
+                <span key={d.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(201,244,0,0.12)', color: 'var(--text)', fontSize: 14 }}>
+                  <BellIcon size={12} color="#C9F400" filled />{d.brand} {d.flavor}
+                  <button aria-label="Remove" onClick={() => { const m = new Map(followed); m.delete(d.id); setFollowed(m) }} style={{ background: 'none', border: 'none', display: 'flex', padding: 0, cursor: 'pointer' }}><CloseIcon size={10} color="var(--text-dim)" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className={ui.card} style={{ padding: 0, overflow: 'hidden' }}>
+            {flavorResults.map((d, i) => {
+              const on = followed.has(d.id) || alreadyFollowed.has(d.id)
+              return (
+                <button key={d.id} disabled={alreadyFollowed.has(d.id)} onClick={() => { const m = new Map(followed); if (m.has(d.id)) m.delete(d.id); else m.set(d.id, d); setFollowed(m) }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', borderTop: i ? '1px solid var(--fg-06)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                  <DrinkIcon size={16} color="var(--text-muted)" />
+                  <span style={{ flex: 1, fontSize: 15, color: 'var(--text)' }}>{d.brand} {d.flavor}</span>
+                  <BellIcon size={15} color={on ? '#C9F400' : 'var(--text-dim)'} filled={on} />
+                </button>
+              )
+            })}
+            {flavorResults.length === 0 && <p style={{ padding: 14, fontSize: 15, color: 'var(--text-dim)' }}>No matches.</p>}
+          </div>
+        </>
+      ),
+    },
+    {
+      title: 'Where do you usually look?',
+      sub: 'We’ll start your map with these. Your home ZIP powers “Near me” when location is off.',
+      body: (
+        <>
+          <p className={ui.sectionLabel}>Stores you shop at</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 22 }}>
+            {STORE_TYPES.map((t) => {
+              const on = storeTypes.includes(t.value)
+              return (
+                <button key={t.value} onClick={() => setStoreTypes(toggle(storeTypes, t.value))} className={ui.card}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', borderColor: on ? 'rgba(201,244,0,0.5)' : undefined, background: on ? 'rgba(201,244,0,0.06)' : undefined }}>
+                  <StoreTypeIcon type={t.value} size={18} color={on ? '#C9F400' : 'var(--text-muted)'} />
+                  <span style={{ flex: 1, fontSize: 15, color: 'var(--text)' }}>{t.label}</span>
+                  <span style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${on ? '#C9F400' : 'var(--fg-20)'}`, background: on ? '#C9F400' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0D1210" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <p className={ui.sectionLabel}>Home area (optional)</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className={ui.input} inputMode="numeric" maxLength={5} autoComplete="postal-code" placeholder="ZIP code" value={homeZip}
+              onChange={(e) => { setHomeZip(e.target.value.replace(/\D/g, '').slice(0, 5)); setZipState('idle') }} style={{ flex: 1 }} />
+            <button className={ui.btnSecondary} onClick={lookupZip} disabled={zipState === 'checking'}>{zipState === 'checking' ? 'Checking…' : 'Set'}</button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 14 }}>
+            <span style={{ color: zipState === 'error' ? '#FF6B6B' : zipState === 'ok' ? '#C9F400' : 'var(--text-dim)' }}>
+              {zipState === 'error' ? 'Couldn’t find that. Check the ZIP.' : zipState === 'ok' ? (homeZip ? `Home set to ${homeZip}` : 'Home set to your current location') : ' '}
+            </span>
+            <button onClick={useCurrentLocation} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <PinIcon size={13} color="var(--accent)" /> Use my location
+            </button>
+          </div>
+        </>
+      ),
+    },
+    {
+      title: 'Want to help others find drinks?',
+      sub: 'AmpedMap runs on people reporting what they see. Even one report helps.',
+      body: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {([
+            [true, 'Yes, show me how', 'We’ll walk you through your first report at the nearest store. It takes about 20 seconds.'],
+            [false, 'Just browsing for now', 'No problem. You can report anytime from a store page.'],
+          ] as const).map(([value, title, body]) => {
+            const on = wantsToReport === value
+            return (
+              <button key={String(value)} onClick={() => setWantsToReport(value)} className={ui.card}
+                style={{ display: 'flex', gap: 12, padding: 16, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', borderColor: on ? 'rgba(201,244,0,0.5)' : undefined, background: on ? 'rgba(201,244,0,0.06)' : undefined }}>
+                <span style={{ width: 36, height: 36, borderRadius: 10, background: on ? 'rgba(201,244,0,0.16)' : 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {value ? <LightningIcon size={17} color={on ? '#C9F400' : 'var(--text-muted)'} /> : <SearchIcon size={16} color={on ? '#C9F400' : 'var(--text-muted)'} />}
+                </span>
+                <span>
+                  <span style={{ display: 'block', fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{title}</span>
+                  <span style={{ display: 'block', fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>{body}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      ),
+    },
+  ]
+
+  const isFinish = step === 4
+  const last = step === steps.length - 1
+
+  return createPortal(
+    <div className="anim-fade" role="dialog" aria-modal="true" aria-label="Welcome to AmpedMap"
+      style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* Top bar: progress + skip */}
+      {!isFinish && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px 6px', maxWidth: 560, width: '100%', margin: '0 auto' }}>
+          <div style={{ flex: 1, display: 'flex', gap: 6 }}>
+            {steps.map((_, i) => <span key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= step ? '#C9F400' : 'var(--fg-10)', transition: 'background 0.2s ease' }} />)}
+          </div>
+          <button onClick={mode === 'first' ? skipAll : onClose} className={ui.btnGhost} style={{ minHeight: 36 }}>{mode === 'first' ? 'Skip' : 'Close'}</button>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div key={step} className="anim-rise" style={{ maxWidth: 560, margin: '0 auto', padding: '18px 20px 24px' }}>
+          {isFinish ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingTop: '12vh' }}>
+              <span className="anim-pop" style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+              </span>
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>You&apos;re all set</h1>
+              <p style={{ fontSize: 17, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 360 }}>{summary?.text}</p>
+              {followed.size > 0 && <p style={{ fontSize: 15, color: 'var(--text-dim)', marginTop: 10 }}>Following {followed.size} flavor{followed.size === 1 ? '' : 's'} for restock alerts.</p>}
+            </div>
+          ) : (
+            <>
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.15, marginBottom: 6 }}>{steps[step].title}</h1>
+              <p style={{ fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 22 }}>{steps[step].sub}</p>
+              {steps[step].body}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom actions */}
+      <div style={{ borderTop: '1px solid var(--fg-06)', padding: '12px 20px calc(env(safe-area-inset-bottom) + 14px)' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {isFinish ? (
+            <>
+              {wantsToReport && summary?.reportStore && onReport && (
+                <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => { onReport(summary.reportStore!); onClose() }}>
+                  Report at {summary.reportStore.name}
+                </button>
+              )}
+              <button className={`${wantsToReport && summary?.reportStore ? ui.btnSecondary : ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={onClose}>
+                Show me the map
+              </button>
+            </>
+          ) : (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {step > 0 && <button className={ui.btnSecondary} style={{ minHeight: 50 }} onClick={() => setStep(step - 1)}>Back</button>}
+              <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} disabled={saving} onClick={() => (last ? finish() : setStep(step + 1))}>
+                {saving ? 'Saving…' : last ? (mode === 'first' ? 'Finish' : 'Save') : 'Next'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}

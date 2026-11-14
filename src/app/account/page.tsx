@@ -8,6 +8,8 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
+import Onboarding from '@/components/onboarding/Onboarding'
+import { usePreferences } from '@/lib/preferences'
 import { StoreTypeIcon, CheckIcon, BellIcon, HeartIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, LightningIcon, TrophyIcon, DrinkIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
 
 type Mode = 'signin' | 'signup'
@@ -189,6 +191,13 @@ type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts
 
 // Small line icons used only by the Account settings list (no equivalent in
 // the shared Icons set). Same 24×24 / rounded-stroke language as Icons.tsx.
+function SlidersIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" />
+    </svg>
+  )
+}
 function KeyIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -277,6 +286,8 @@ function AccountPageInner() {
   // else is a drill-down page. Each drill-down pushes a history entry so the
   // phone's back gesture/button returns to the list instead of leaving /account.
   const [accountPage, setAccountPage] = useState<AccountSubpage>('root')
+  const { prefs, save: savePrefs } = usePreferences()
+  const [editingPrefs, setEditingPrefs] = useState(false)
 
   useEffect(() => {
     function onPop(e: PopStateEvent) {
@@ -1174,6 +1185,10 @@ function switchMode(m: Mode) {
 
         <Toast message={toastMessage} visible={toastVisible} />
 
+        {editingPrefs && user && (
+          <Onboarding userId={user.id} initial={prefs} mode="edit" onSave={async (p) => { await savePrefs(p); fetchDrinkAlerts(user.id); showToast('Preferences saved') }} onClose={() => setEditingPrefs(false)} />
+        )}
+
         {accountPage === 'root' ? (
           /* ── ROOT LIST ── */
           <div key="root" style={{ animation: 'acctFadeIn 0.18s ease' }}>
@@ -1204,6 +1219,8 @@ function switchMode(m: Mode) {
               {row({ icon: <HeartIcon size={17} color={ICON} />, label: 'Saved Stores', value: isTracker ? favorites.length : 'Tracker', onPress: () => openAccountPage('saved') })}
               {ROW_SEP}
               {row({ icon: <DrinkIcon size={17} color={ICON} />, label: 'Flavor Alerts', value: drinkAlerts.length, onPress: () => openAccountPage('alerts') })}
+              {ROW_SEP}
+              {row({ icon: <SlidersIcon />, label: 'Your preferences', value: prefs.brands.length ? prefs.brands.slice(0, 2).join(', ') + (prefs.brands.length > 2 ? '…' : '') : 'Not set', onPress: () => setEditingPrefs(true) })}
             </>)}
 
             {group(<>

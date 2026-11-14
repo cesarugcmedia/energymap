@@ -7,6 +7,7 @@ import Toast from '@/components/Toast'
 import Feed from '@/components/community/Feed'
 import Leaderboard from '@/components/community/Leaderboard'
 import { ClipboardIcon, TrophyIcon } from '@/components/Icons'
+import { usePreferences } from '@/lib/preferences'
 
 type MainView = 'feed' | 'leaderboard'
 
@@ -17,6 +18,7 @@ export default function CommunityPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
   const [mainView, setMainView] = useState<MainView>('feed')
+  const { prefs } = usePreferences()
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
 
@@ -46,8 +48,9 @@ export default function CommunityPage() {
   const me = {
     id: user.id,
     username: profile?.username ?? 'you',
-    lat: typeof p?.last_lat === 'number' ? p.last_lat : null,
-    lng: typeof p?.last_lng === 'number' ? p.last_lng : null,
+    // Last map location, else the home area from the welcome flow.
+    lat: typeof p?.last_lat === 'number' ? p.last_lat : prefs.homeLat,
+    lng: typeof p?.last_lng === 'number' ? p.last_lng : prefs.homeLng,
   }
 
   return (

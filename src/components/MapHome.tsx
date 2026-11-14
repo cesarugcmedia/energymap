@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase'
 import type { Drink, Quantity, Store } from '@/lib/types'
 import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon, ChevronRightIcon, HeartIcon } from '@/components/Icons'
 import ui from '@/components/ui/ui.module.css'
+import { usePreferences } from '@/lib/preferences'
+import Onboarding, { type OnboardingSummary } from '@/components/onboarding/Onboarding'
 import SkeletonList from '@/components/ui/SkeletonList'
 
 type View = 'map' | 'list'
@@ -129,14 +131,15 @@ export default function MapHome() {
 
   // Map-view state
   const [selected, setSelected] = useState<Store | null>(null)
-  // One-time welcome tips, shown the first time the map opens on this device.
-  const [showWelcome, setShowWelcome] = useState(() => {
-    try { return typeof window !== 'undefined' && !localStorage.getItem('welcome_seen_v1') } catch { return false }
-  })
-  function dismissWelcome() {
-    setShowWelcome(false)
-    try { localStorage.setItem('welcome_seen_v1', '1') } catch {}
-  }
+  // First-time welcome flow (src/components/onboarding/Onboarding.tsx) —
+  // replaces the old one-screen tips sheet. Shown once, until prefs.done.
+  const { prefs, ready: prefsReady, save: savePrefs } = usePreferences()
+  const [onboardingClosed, setOnboardingClosed] = useState(false)
+  const showOnboarding = prefsReady && !prefs.done && !onboardingClosed
+  const showWelcome = showOnboarding
+  // Highlight stores carrying the user's favorite brands (map chip).
+  const [myBrandsOn, setMyBrandsOn] = useState(false)
+  const appliedTypePref = useRef(false)
   // At-store report prompt: dismissed per store for the rest of the session.
   const [dismissedAtStore, setDismissedAtStore] = useState<string | null>(() => {
     try { return typeof window !== 'undefined' ? sessionStorage.getItem('at_store_dismissed') : null } catch { return null }
@@ -196,6 +199,19 @@ export default function MapHome() {
       setFavoriteIds((prev) => { const m = new Map(prev); if (error || !data) m.delete(storeId); else m.set(storeId, data.id); return m })
     }
   }
+
+  // Welcome-flow answers: a saved home area stands in for GPS when there is
+  // no location yet, and a single preferred store type becomes the default filter.
+  useEffect(() => {
+    if (!location && !manualLocation && prefs.homeLat != null && prefs.homeLng != null) {
+      setManualLocation({ lat: prefs.homeLat, lng: prefs.homeLng })
+    }
+  }, [location, manualLocation, prefs.homeLat, prefs.homeLng])
+  useEffect(() => {
+    if (!prefsReady || appliedTypePref.current) return
+    appliedTypePref.current = true
+    if (prefs.storeTypes.length === 1) setTypeFilter(prefs.storeTypes[0])
+  }, [prefsReady, prefs.storeTypes])
 
   // Fetched once — powers the drink half of the search-bar suggestions.
   useEffect(() => {
@@ -372,6 +388,14 @@ export default function MapHome() {
 
   const sorted = useMemo(() => (drinkStoreIds ? sortedBase.filter((s) => drinkStoreIds.has(s.id)) : sortedBase), [sortedBase, drinkStoreIds])
 
+  // Stores with any of the user's favorite brands in stock ("My brands" chip).
+  const brandStoreIds = useMemo(() => {
+    if (!prefs.brands.length) return null
+    const ids = new Set<string>()
+    for (const [storeId, brandsHere] of Object.entries(storeBrands)) if (brandsHere.some((b) => prefs.brands.includes(b))) ids.add(storeId)
+    return ids
+  }, [prefs.brands, storeBrands])
+
   // Per-store at-a-glance stock: counts + the top 3 in-stock flavors
   // (fullest first, then freshest) for the map popup and list cards.
   const drinkById = useMemo(() => new Map(allDrinks.map((d) => [d.id, d])), [allDrinks])
@@ -381,13 +405,17 @@ export default function MapHome() {
     for (const [storeId, rows] of Object.entries(storeStock)) {
       const inStock = rows.filter((r) => r.quantity !== 'out')
       const top = [...inStock]
-        .sort((a, b) => (order[a.quantity] - order[b.quantity]) || b.reported_at.localeCompare(a.reported_at))
+        .sort((a, b) => {
+          const fa = prefs.brands.includes(drinkById.get(a.drink_id)?.brand ?? '') ? 0 : 1
+          const fb = prefs.brands.includes(drinkById.get(b.drink_id)?.brand ?? '') ? 0 : 1
+          return (fa - fb) || (order[a.quantity] - order[b.quantity]) || b.reported_at.localeCompare(a.reported_at)
+        })
         .slice(0, 3)
         .map((r) => { const d = drinkById.get(r.drink_id); return { label: d ? `${d.brand} ${d.flavor || d.name}` : 'Drink', quantity: r.quantity as Quantity } })
       out[storeId] = { inStock: inStock.length, total: rows.length, top }
     }
     return out
-  }, [storeStock, drinkById])
+  }, [storeStock, drinkById, prefs.brands])
 
   // List sort order
   const listStores = useMemo(() => {
@@ -614,6 +642,21 @@ export default function MapHome() {
   const showMapSheet = view === 'map' && !selected && !showWelcome && !storesLoading && mapStores.length > 0
   const sheetStores = (drinkStoreIds ? mapStores.filter((s) => drinkStoreIds.has(s.id)) : mapStores).slice(0, 25)
 
+  // Personalized line for the welcome flow's finish screen, from real data.
+  function onboardingSummary(brands: string[]): OnboardingSummary {
+    const nearby = byDistance.filter((s) => getDistance(lat, lng, s.lat, s.lng) <= 5)
+    const reportStore = byDistance[0] ? { id: byDistance[0].id, name: byDistance[0].name } : null
+    if (brands.length > 0) {
+      const withBrand = nearby.filter((s) => (storeBrands[s.id] ?? []).some((b) => brands.includes(b)))
+      const label = brands.length === 1 ? brands[0] : brands.length === 2 ? `${brands[0]} or ${brands[1]}` : 'your brands'
+      if (withBrand.length > 0) {
+        return { text: `${withBrand.length} store${withBrand.length === 1 ? '' : 's'} within 5 miles ${withBrand.length === 1 ? 'has' : 'have'} ${label} in stock right now.`, reportStore }
+      }
+      return { text: `No recent ${label} reports nearby yet. Tap “My brands” on the map anytime to spot them, or be the first to report.`, reportStore }
+    }
+    return { text: `${nearby.length} store${nearby.length === 1 ? '' : 's'} within 5 miles. Tap any pin to see what’s in the cooler.`, reportStore }
+  }
+
   function stockChips(storeId: string, max = 3) {
     const sum = storeSummary[storeId]
     if (!sum || sum.top.length === 0) return null
@@ -644,6 +687,22 @@ export default function MapHome() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+      {showOnboarding && user && (
+        <Onboarding
+          userId={user.id}
+          initial={prefs}
+          mode="first"
+          getSummary={onboardingSummary}
+          onSave={async (p) => {
+            await savePrefs(p)
+            if (p.storeTypes.length === 1) setTypeFilter(p.storeTypes[0])
+            if (p.brands.length > 0) setMyBrandsOn(true)
+          }}
+          onClose={() => setOnboardingClosed(true)}
+          onReport={(s) => router.push(`/submit/drinks?storeId=${s.id}&storeName=${encodeURIComponent(s.name)}`)}
+        />
+      )}
 
       {/* Shared header + view toggle */}
       <div
@@ -699,6 +758,11 @@ export default function MapHome() {
               <button onClick={() => setFreshOnly((v) => !v)} className={`${ui.chip} ${freshOnly ? ui.chipActive : ''}`} aria-pressed={freshOnly}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: freshOnly ? '#0D1210' : '#C9F400' }} />Fresh only
               </button>
+              {prefs.brands.length > 0 && (
+                <button onClick={() => setMyBrandsOn((v) => !v)} className={`${ui.chip} ${myBrandsOn ? ui.chipActive : ''}`} aria-pressed={myBrandsOn} title={prefs.brands.join(', ')}>
+                  <DrinkIcon size={14} color={myBrandsOn ? '#0D1210' : 'var(--text-muted)'} />My brands
+                </button>
+              )}
               {TYPE_FILTERS.map((f) => {
                 const active = typeFilter === f.value
                 return (
@@ -748,7 +812,7 @@ export default function MapHome() {
                 lat={lat}
                 lng={lng}
                 stores={mapStores}
-                highlightIds={drinkStoreIds}
+                highlightIds={drinkStoreIds ?? (myBrandsOn ? brandStoreIds : null)}
                 selected={selected}
                 onSelectStore={setSelected}
                 onMapReady={setLeafletMap}
@@ -778,32 +842,6 @@ export default function MapHome() {
                     <circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
                   </svg>
                 </button>
-              </div>
-            )}
-
-            {/* First-run welcome tips */}
-            {showWelcome && (
-              <div className="absolute inset-0 z-30 flex items-end anim-fade" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} onClick={dismissWelcome}>
-                <div className="w-full rounded-t-3xl anim-sheet" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', padding: '20px 20px calc(70px + env(safe-area-inset-bottom) + 20px)' }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Welcome to AmpedMap">
-                  <div className="w-9 h-1 rounded-sm mx-auto" style={{ backgroundColor: 'var(--fg-20)', marginBottom: 18 }} />
-                  <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Welcome to AmpedMap</p>
-                  <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 18 }}>Three things to know:</p>
-                  <ul style={{ listStyle: 'none', margin: '0 0 22px', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ display: 'flex', gap: 3, paddingTop: 5, flexShrink: 0 }}>{FRESHNESS_LEGEND.map((l) => <span key={l.label} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: l.color }} />)}</span>
-                      <span style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>Pin colors show freshness.</strong> Lime means someone reported in the last 12 hours.</span>
-                    </li>
-                    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ paddingTop: 2, flexShrink: 0, width: 30, display: 'flex', justifyContent: 'center' }}><DrinkIcon size={18} color="#C9F400" /></span>
-                      <span style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>Tap a store to see its cooler.</strong> Every flavor shows how full it was and when.</span>
-                    </li>
-                    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ paddingTop: 2, flexShrink: 0, width: 30, display: 'flex', justifyContent: 'center' }}><PinIcon size={18} color="#C9F400" /></span>
-                      <span style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>At a store? Report what you see.</strong> It takes seconds and saves the next person a trip.</span>
-                    </li>
-                  </ul>
-                  <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={dismissWelcome}>Got it</button>
-                </div>
               </div>
             )}
 
