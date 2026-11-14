@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { BRAND_COLORS } from '@/components/BrandLogo'
 import Toast from '@/components/Toast'
 import BackButton from '@/components/BackButton'
+import CommunityModeration from '@/components/admin/CommunityModeration'
 import { StoreTypeIcon, SearchIcon, CheckIcon, FlagIcon, PinIcon, ClockIcon, DrinkIcon, UserIcon, ClipboardIcon, CloseIcon } from '@/components/Icons'
 
 const TYPE_OPTIONS = [
@@ -68,7 +69,8 @@ export default function AdminPage() {
   const router = useRouter()
   const [authed, setAuthed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<null | 'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags'>(null)
+  const [moderationKey, setModerationKey] = useState(0)
+  const [tab, setTab] = useState<null | 'stores' | 'locations' | 'drinks' | 'users' | 'waitlist' | 'flags' | 'reports'>(null)
   const [pendingCount, setPendingCount] = useState(0)
   const [flagsCount, setFlagsCount] = useState(0)
   const [stores, setStores] = useState<any[]>([])
@@ -541,6 +543,7 @@ export default function AdminPage() {
     users: 'Users',
     waitlist: 'Waitlist',
     flags: 'Location Flags',
+    reports: 'Community Reports',
   }
 
   function navigate(section: typeof tab) {
@@ -560,6 +563,7 @@ export default function AdminPage() {
     else if (tab === 'users') fetchUsers()
     else if (tab === 'waitlist') fetchWaitlist()
     else if (tab === 'flags') fetchFlags()
+    else if (tab === 'reports') setModerationKey((k) => k + 1)
   }
 
   return (
@@ -656,6 +660,7 @@ export default function AdminPage() {
               { key: 'drinks',    icon: <DrinkIcon size={26} color="#8b9284" />, label: 'Drinks',     desc: 'Add & remove drinks' },
               { key: 'users',     icon: <UserIcon size={26} color="#8b9284" />, label: 'Users',      desc: 'Verify & manage users' },
               { key: 'waitlist',  icon: <ClipboardIcon size={26} color="#8b9284" />, label: 'Waitlist',   desc: 'Invite signups' },
+              { key: 'reports',   icon: <FlagIcon size={26} color="#8b9284" />, label: 'Community Reports', desc: 'Review reported posts' },
             ].map(({ key, icon, label, desc }) => (
               <button
                 key={key}
@@ -675,7 +680,9 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab !== null && (tab === 'flags' ? (
+      {tab === 'reports' && <CommunityModeration key={moderationKey} />}
+
+      {tab !== null && tab !== 'reports' && (tab === 'flags' ? (
         flagsLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />

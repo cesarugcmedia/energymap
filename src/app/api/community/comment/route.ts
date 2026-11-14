@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { isMissingSchema, notify, notifyMentions } from '@/lib/community'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,50 +25,65 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many comments — try again later.' }, { status: 429 })
   }
 
-  const { post_id, body } = await req.json().catch(() => ({}))
+  const { post_id, body, parent_id, store_id } = await req.json().catch(() => ({}))
   const trimmed = typeof body === 'string' ? body.trim() : ''
   if (!post_id || !trimmed || trimmed.length > MAX_BODY_LENGTH) {
     return NextResponse.json({ error: `Comment must be 1–${MAX_BODY_LENGTH} characters.` }, { status: 400 })
   }
 
+  // Replies attach to a top-level comment on the same post (one level deep).
+  let parentAuthor: string | null = null
+  let parentId: string | null = null
+  if (typeof parent_id === 'string') {
+    const { data: parent } = await supabaseAdmin.from('community_post_comments').select('id, post_id, user_id').eq('id', parent_id).single()
+    if (parent && parent.post_id === post_id) { parentId = parent.id; parentAuthor = parent.user_id }
+  }
+  const storeId = typeof store_id === 'string' ? store_id : null
+
+  const row: Record<string, unknown> = { post_id, user_id: user.id, body: trimmed }
+  if (parentId || storeId) Object.assign(row, { parent_id: parentId, store_id: storeId })
+
   const { data: comment, error } = await supabaseAdmin
     .from('community_post_comments')
-    .insert({ post_id, user_id: user.id, body: trimmed })
+    .insert(row)
     .select('id, post_id, user_id, body, created_at')
     .single()
 
   if (error) {
+    if (isMissingSchema(error)) return NextResponse.json({ error: 'Replies aren’t available yet.' }, { status: 400 })
     return NextResponse.json({ error: 'Failed to add comment' }, { status: 500 })
   }
 
-  // Notify the post's author — but not when someone comments on their own post
-  const { data: post } = await supabaseAdmin
-    .from('community_posts')
-    .select('user_id')
-    .eq('id', post_id)
-    .single()
+  const [{ data: post }, { data: me }] = await Promise.all([
+    supabaseAdmin.from('community_posts').select('user_id').eq('id', post_id).single(),
+    supabaseAdmin.from('profiles').select('username').eq('id', user.id).single(),
+  ])
+  const myName = me?.username ?? 'Someone'
+  const preview = trimmed.length > 80 ? `${trimmed.slice(0, 80)}…` : trimmed
 
+  // post_type is a v3 column — read it separately so a missing column can't
+  // break notifications.
+  let isLooking = false
+  const { data: typeRow, error: typeErr } = await supabaseAdmin.from('community_posts').select('post_type').eq('id', post_id).single()
+  if (!typeErr) isLooking = typeRow?.post_type === 'looking'
+
+  const notified: string[] = []
   if (post && post.user_id !== user.id) {
-    const { data: commenterProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('username')
-      .eq('id', user.id)
-      .single()
-    const commenterName = commenterProfile?.username ?? 'Someone'
-    const preview = trimmed.length > 80 ? `${trimmed.slice(0, 80)}…` : trimmed
-
-    try {
-      await supabaseAdmin.from('notifications').insert({
-        user_id: post.user_id,
-        message: `💬 @${commenterName} commented on your post: "${preview}"`,
-        type: 'comment',
-        read: false,
-        visible_after: new Date().toISOString(),
-      })
-    } catch {
-      // Notification failure shouldn't fail the comment itself
-    }
+    await notify(supabaseAdmin, {
+      user_id: post.user_id,
+      type: 'comment',
+      post_id,
+      message: isLooking
+        ? `@${myName} answered your "looking for" post${storeId ? ' with a store' : ''}: "${preview}"`
+        : `@${myName} commented on your post: "${preview}"`,
+    })
+    notified.push(post.user_id)
   }
+  if (parentAuthor && parentAuthor !== user.id && !notified.includes(parentAuthor)) {
+    await notify(supabaseAdmin, { user_id: parentAuthor, type: 'reply', post_id, message: `@${myName} replied to your comment: "${preview}"` })
+    notified.push(parentAuthor)
+  }
+  await notifyMentions(supabaseAdmin, { text: trimmed, authorId: user.id, authorName: myName, postId: post_id, where: 'comment', skip: notified })
 
-  return NextResponse.json({ comment })
+  return NextResponse.json({ comment: { ...comment, parent_id: parentId, store_id: storeId } })
 }

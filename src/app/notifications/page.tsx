@@ -272,6 +272,15 @@ export default function NotificationsPage() {
                             {item.n.store.name} → View Stock
                           </a>
                         )}
+                        {item.n.post_id && (
+                          <a
+                            href={`/community?post=${item.n.post_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontSize: 13, fontWeight: 600, marginTop: 4, display: 'inline-block', color: 'var(--accent)', textDecoration: 'none' }}
+                          >
+                            View post →
+                          </a>
+                        )}
                         <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.n.created_at)}</p>
                       </div>
                     </div>
