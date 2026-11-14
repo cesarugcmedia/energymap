@@ -40,10 +40,10 @@ function dateLabel(dateStr: string) {
   const now = new Date()
   const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
   const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000)
-  if (diffDays === 0) return 'TODAY'
-  if (diffDays === 1) return 'YESTERDAY'
-  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' })
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function sameDay(a: string, b: string) {
@@ -153,10 +153,8 @@ export default function NotificationsPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px 16px', gap: 10 }}>
           <div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--text)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BellIcon size={26} color="var(--text)" filled /> Notifi<span style={{ color: 'var(--accent)' }}>cations</span>
-            </h1>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+            <h1 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>Notifications</h1>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>
               {unreadCount > 0 ? `${unreadCount} unread` : 'Updates on your stores and reports'}
             </p>
           </div>
@@ -165,13 +163,13 @@ export default function NotificationsPage() {
               <>
                 <button
                   onClick={() => setConfirmClear(false)}
-                  style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--text-muted)', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
+                  style={{ fontSize: 13, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--text-muted)', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={clearAll}
-                  style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#FF4545', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
+                  style={{ fontSize: 13, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: '#FF4545', backgroundColor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.2)', cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   Clear All
                 </button>
@@ -181,7 +179,7 @@ export default function NotificationsPage() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
+                    style={{ fontSize: 13, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--accent)', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid var(--fg-13)', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Mark all read
                   </button>
@@ -189,7 +187,7 @@ export default function NotificationsPage() {
                 {notifications.length > 0 && (
                   <button
                     onClick={() => setConfirmClear(true)}
-                    style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--text-muted)', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: 'nowrap' }}
+                    style={{ fontSize: 13, fontWeight: 700, padding: '6px 12px', borderRadius: 99, color: 'var(--text-muted)', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Clear All
                   </button>
@@ -208,7 +206,7 @@ export default function NotificationsPage() {
               return (
                 <button key={mode}
                   onClick={() => setFilterMode(mode)}
-                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color, fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
                   {icon?.(color)}
                   {label}
                 </button>
@@ -224,13 +222,13 @@ export default function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
             <BellIcon size={48} color="#8b9284" />
-            <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No notifications yet</p>
+            <p style={{ fontSize: 18, fontWeight: 800 }}>No notifications yet</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>You'll be notified about stock updates, new stores, and new drinks.</p>
           </div>
         ) : items.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 80, padding: '0 20px' }}>
             <SearchIcon size={40} color="#8b9284" />
-            <p style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Nothing here</p>
+            <p style={{ fontSize: 16, fontWeight: 800 }}>Nothing here</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No notifications match this filter.</p>
           </div>
         ) : (
@@ -244,7 +242,7 @@ export default function NotificationsPage() {
               return (
                 <div key={item.kind === 'single' ? item.n.id : item.ns[0].id}>
                   {showDate && (
-                    <p style={{ fontSize: 10.5, color: 'var(--text-dim)', letterSpacing: '0.1em', fontWeight: 800, padding: '2px 2px', marginTop: i === 0 ? 0 : 6, marginBottom: 2 }}>
+                    <p style={{ fontSize: 12, color: 'var(--text-dim)', fontWeight: 800, padding: '2px 2px', marginTop: i === 0 ? 0 : 6, marginBottom: 2 }}>
                       {dateLabel(firstN.created_at)}
                     </p>
                   )}
@@ -260,7 +258,7 @@ export default function NotificationsPage() {
                     >
                       {!item.n.read && <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#C9F400', flexShrink: 0, marginTop: 7 }} />}
                       <div
-                        style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: '#191B16', border: '1px solid rgba(201,244,0,0.12)' }}
+                        style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: '#191B16', border: '1px solid var(--border)' }}
                       >
                         {notificationIcon(item.n.type)}
                       </div>
@@ -270,22 +268,22 @@ export default function NotificationsPage() {
                           <a
                             href={`/store/${item.n.store.id}?name=${encodeURIComponent(item.n.store.name)}`}
                             onClick={(e) => e.stopPropagation()}
-                            style={{ fontSize: 12, fontWeight: 700, marginTop: 4, display: 'inline-block', color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}
+                            style={{ fontSize: 12, fontWeight: 700, marginTop: 4, display: 'inline-block', color: 'var(--accent)', textDecoration: 'none' }}
                           >
                             {item.n.store.name} → View Stock
                           </a>
                         )}
-                        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.n.created_at)}</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.n.created_at)}</p>
                       </div>
                     </div>
                   ) : (
                     <div
                       onClick={() => markRead(item.ns.map((n) => n.id))}
-                      style={{ borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 8, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.3)', cursor: 'pointer' }}
+                      style={{ borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 8, backgroundColor: 'var(--surface)', border: '1px solid var(--fg-13)', cursor: 'pointer' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                         {item.ns.some((n) => !n.read) && <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#C9F400', flexShrink: 0, marginTop: 7 }} />}
-                        <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid var(--fg-13)' }}>
                           {notificationIcon('stock_update')}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -293,12 +291,12 @@ export default function NotificationsPage() {
                           {item.ns[0].store && (
                             <p style={{ fontSize: 12, fontWeight: 700, marginTop: 3, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}><PinIcon size={11} color="var(--accent)" /> {item.ns[0].store.name}</p>
                           )}
-                          <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.ns[0].created_at)}</p>
+                          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(item.ns[0].created_at)}</p>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 48 }}>
                         {item.ns.map((n) => (
-                          <p key={n.id} style={{ fontSize: 11.5, color: '#9AA69A', display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                          <p key={n.id} style={{ fontSize: 13, color: '#9AA69A', display: 'flex', alignItems: 'baseline', gap: 5 }}>
                             <span style={{ color: 'var(--accent)' }}>•</span> {n.message}
                           </p>
                         ))}
@@ -307,7 +305,7 @@ export default function NotificationsPage() {
                         <a
                           href={`/store/${item.ns[0].store.id}?name=${encodeURIComponent(item.ns[0].store.name)}`}
                           onClick={(e) => e.stopPropagation()}
-                          style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', paddingLeft: 48 }}
+                          style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', textDecoration: 'none', paddingLeft: 48 }}
                         >
                           View Stock →
                         </a>

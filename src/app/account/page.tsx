@@ -1205,7 +1205,7 @@ function switchMode(m: Mode) {
         {accountPage === 'root' ? (
           /* ── ROOT LIST ── */
           <div key="root" style={{ animation: 'acctFadeIn 0.18s ease' }}>
-            <h1 style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', padding: '4px 20px 14px', letterSpacing: '-0.01em' }}>Account</h1>
+            <h1 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text)', padding: '4px 20px 14px', lineHeight: 1.1 }}>Account</h1>
 
             {/* Profile card */}
             <div style={{ margin: '0 16px 22px' }}>

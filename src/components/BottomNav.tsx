@@ -48,7 +48,7 @@ export default function BottomNav() {
               className="flex flex-col items-center justify-center flex-1 gap-1 no-underline"
               style={{ color: isActive ? 'var(--accent)' : 'var(--text-dim)', position: 'relative' }}
             >
-              <div style={{ position: 'relative', filter: isActive ? 'drop-shadow(0 0 6px rgba(201,244,0,0.6))' : 'none' }}>
+              <div style={{ position: 'relative', filter: 'none' }}>
                 <tab.Icon active={isActive} />
                 {tab.href === '/notifications' && unread > 0 && (
                   <div
@@ -63,7 +63,7 @@ export default function BottomNav() {
                   </div>
                 )}
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tab.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>{tab.label}</span>
             </Link>
           )
         })}

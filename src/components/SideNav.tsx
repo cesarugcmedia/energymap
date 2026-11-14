@@ -39,7 +39,7 @@ export default function SideNav() {
         width: 220,
         height: '100dvh',
         backgroundColor: 'var(--surface)',
-        borderRight: '1px solid rgba(201,244,0,0.12)',
+        borderRight: '1px solid var(--border)',
         position: 'fixed',
         top: 0,
         left: 0,
@@ -48,10 +48,12 @@ export default function SideNav() {
     >
       {/* Logo */}
       <div style={{ padding: '28px 20px 24px' }}>
-        <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: 2, color: 'var(--accent)', lineHeight: 1, textTransform: 'uppercase' }}>
-          Amped Map
-        </p>
-        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>Find drinks near you</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 8, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
+          </span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>AmpedMap</span>
+        </div>
       </div>
 
       {/* Nav links */}
@@ -68,7 +70,7 @@ export default function SideNav() {
                 color: isActive ? '#C9F400' : 'var(--text-muted)',
               }}
             >
-              <div style={{ position: 'relative', filter: isActive ? 'drop-shadow(0 0 5px rgba(201,244,0,0.5))' : 'none' }}>
+              <div style={{ position: 'relative', filter: 'none' }}>
                 <tab.Icon active={isActive} />
                 {tab.href === '/notifications' && unread > 0 && (
                   <div
@@ -83,7 +85,7 @@ export default function SideNav() {
                   </div>
                 )}
               </div>
-              <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}>{tab.label}</span>
+              <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500 }}>{tab.label}</span>
             </Link>
           )
         })}
@@ -91,10 +93,10 @@ export default function SideNav() {
 
       {/* User footer */}
       <div style={{ padding: '16px 20px', borderTop: '1px solid var(--fg-07)' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {profile?.username ?? user.email?.split('@')[0] ?? 'User'}
         </p>
-        <p style={{ fontSize: 11, color: tierColor, fontWeight: 700, marginTop: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tierLabel}</p>
+        <p style={{ fontSize: 13, color: tierColor, fontWeight: 600, marginTop: 2 }}>{tierLabel}</p>
       </div>
     </aside>
   )

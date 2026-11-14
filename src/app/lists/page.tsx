@@ -52,17 +52,17 @@ export default function FavoritesPage() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <div style={{ marginBottom: 20 }}><HeartIcon size={48} color="#8b9284" /></div>
-        <p style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>Tracker Feature</p>
-        <p style={{ fontSize: 14, color: 'var(--fg-40)', lineHeight: 1.6, marginBottom: 28 }}>
+        <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Tracker Feature</p>
+        <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 28 }}>
           Save and organize your favorite stores with the Tracker plan.
         </p>
         <button
           onClick={() => router.push('/account')}
-          style={{ padding: '13px 28px', borderRadius: 14, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(201,244,0,0.35)' }}
+          style={{ padding: '13px 28px', borderRadius: 14, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
         >
-          Upgrade to Tracker 🔥
+          Upgrade to Tracker
         </button>
-        <button onClick={() => router.back()} style={{ marginTop: 14, background: 'none', border: 'none', color: 'var(--fg-30)', fontSize: 13, cursor: 'pointer' }}>
+        <button onClick={() => router.back()} style={{ marginTop: 14, background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}>
           Go back
         </button>
       </div>
@@ -71,13 +71,11 @@ export default function FavoritesPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,244,0,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(201,244,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,244,0,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div className="px-5 pb-4">
-          <p className="text-2xl font-black text-white flex items-center gap-2"><HeartIcon size={22} color="#f3f5ee" filled /> Favorites</p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--fg-40)' }}>
+          <h1 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>Saved stores</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
             {loading ? '' : `${favorites.length} saved store${favorites.length !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -90,7 +88,7 @@ export default function FavoritesPage() {
           <div className="flex flex-col items-center gap-3 mt-20 px-5 text-center">
             <HeartIcon size={52} color="#8b9284" />
             <p className="text-lg font-bold text-white">No favorites yet</p>
-            <p className="text-sm" style={{ color: 'var(--fg-40)' }}>
+            <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
               Tap the heart on any store to save it here.
             </p>
             <button
@@ -117,14 +115,14 @@ export default function FavoritesPage() {
                       className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
                     >
-                      <p className="text-sm font-black text-white truncate">{store?.name}</p>
-                      <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--fg-40)' }}>{store?.address}</p>
+                      <p className="text-sm font-semibold text-white truncate">{store?.name}</p>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-dim)' }}>{store?.address}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
                         className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent)' }}
+                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid var(--fg-13)', color: 'var(--accent)' }}
                       >
                         View
                       </button>
