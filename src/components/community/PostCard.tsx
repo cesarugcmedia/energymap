@@ -22,7 +22,6 @@ export interface PostCardProps {
   topWeekly?: boolean
   isFollowing: boolean
   drinkFollowed: boolean
-  animationDelay?: number
   onToggleLike: (post: FeedPost) => void
   onToggleFollow: (userId: string) => void
   onFollowDrink: (drinkId: string) => void
@@ -96,9 +95,8 @@ export default function PostCard(p: PostCardProps) {
   return (
     <article
       id={`post-${post.id}`}
-      className={`${ui.card} anim-rise`}
+      className={`${ui.card} reveal`}
       style={{
-        animationDelay: `${p.animationDelay ?? 0}ms`,
         borderColor: p.highlighted ? '#C9F400' : undefined,
         boxShadow: p.highlighted ? '0 0 0 2px rgba(201,244,0,0.25)' : undefined,
         transition: 'border-color 0.3s ease, box-shadow 0.3s ease',

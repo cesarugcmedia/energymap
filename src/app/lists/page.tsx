@@ -100,13 +100,13 @@ export default function FavoritesPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2.5 px-5 pb-32">
-            {favorites.map((fav, favIdx) => {
+            {favorites.map((fav) => {
               const store = fav.store
               return (
                 <div
                   key={fav.id}
-                  className="rounded-2xl p-4 anim-rise"
-                  style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)', animationDelay: `${Math.min(favIdx, 8) * 40}ms` }}
+                  className="rounded-2xl p-4 reveal"
+                  style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
                 >
                   <div className="flex items-center gap-3">
                     <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />

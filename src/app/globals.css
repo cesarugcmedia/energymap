@@ -171,3 +171,17 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
   .anim-draw { animation: none; stroke-dashoffset: 0; }
   .press:active { transform: none; }
 }
+
+/* ── Scroll reveal ── Elements with .reveal fade/slide in as they scroll into
+   view (src/components/ScrollReveal.tsx). Only hidden once that script is
+   running (html.js-reveal), so content is never lost if JS fails. Revealed
+   state is a data attribute (not a class) so React re-renders can't undo it. */
+.js-reveal .reveal:not([data-revealed]) { opacity: 0; transform: translateY(14px); }
+.js-reveal .reveal {
+  transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .js-reveal .reveal:not([data-revealed]) { opacity: 1; transform: none; }
+  .js-reveal .reveal { transition: none; }
+}

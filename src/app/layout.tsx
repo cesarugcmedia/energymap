@@ -5,6 +5,7 @@ import BottomNav from '@/components/BottomNav'
 import SideNav from '@/components/SideNav'
 import MainWrapper from '@/components/MainWrapper'
 import ContentShell from '@/components/ContentShell'
+import ScrollReveal from '@/components/ScrollReveal'
 import { Analytics } from '@vercel/analytics/next'
 import AppStartGuard from '@/components/AppStartGuard'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
@@ -61,6 +62,7 @@ export default function RootLayout({
           <ThemeProvider>
           <AppStartGuard />
           <ServiceWorkerRegister />
+          <ScrollReveal />
           {/* Desktop sidebar */}
           <SideNav />
           {/* Main content — offset by sidebar on desktop */}

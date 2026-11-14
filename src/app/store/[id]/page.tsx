@@ -580,7 +580,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             )}
 
             <div className="flex flex-col gap-2.5">
-              {Object.entries(byBrand).map(([brand, items], brandIdx) => {
+              {Object.entries(byBrand).map(([brand, items]) => {
                 const inStock = items.filter((i) => i.quantity !== 'out').length
                 const total = items.length
                 const pct = total > 0 ? inStock / total : 0
@@ -589,9 +589,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 return (
                   <div
                     key={brand}
-                    className="rounded-2xl overflow-hidden anim-rise"
+                    className="rounded-2xl overflow-hidden reveal"
                     style={{
-                      animationDelay: `${Math.min(brandIdx, 8) * 40}ms`,
                       backgroundColor: 'var(--surface)',
                       border: '1px solid var(--border)',
                       

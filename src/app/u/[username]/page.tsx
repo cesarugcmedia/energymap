@@ -168,8 +168,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'You haven’t posted yet.' : 'No posts yet.'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {posts.map((post, i) => (
-                  <Link key={post.id} href={`/community?post=${post.id}`} className={`${ui.card} anim-rise`} style={{ display: 'flex', gap: 12, textDecoration: 'none', color: 'inherit', animationDelay: `${Math.min(i, 8) * 40}ms` }}>
+                {posts.map((post) => (
+                  <Link key={post.id} href={`/community?post=${post.id}`} className={`${ui.card} reveal`} style={{ display: 'flex', gap: 12, textDecoration: 'none', color: 'inherit' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {post.type !== 'post' && <span style={{ fontSize: 12, fontWeight: 700, color: post.type === 'found' ? '#C9F400' : '#FFB300' }}>{post.type === 'found' ? 'Found it' : 'Looking for'}</span>}
                       <RichText text={post.body.length > 160 ? `${post.body.slice(0, 160)}…` : post.body} style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.45 }} />

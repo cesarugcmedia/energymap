@@ -382,6 +382,7 @@ function DrinksContent() {
               return (
                 <div
                   key={brand}
+                  className="reveal"
                   style={{
                     borderRadius: 16, overflow: 'hidden',
                     backgroundColor: 'var(--surface)',
@@ -536,6 +537,7 @@ function DrinksContent() {
                   return (
                     <div
                       key={brand}
+                      className="reveal"
                       style={{
                         borderRadius: 16, overflow: 'hidden',
                         backgroundColor: 'var(--surface)',
@@ -631,6 +633,7 @@ function DrinksContent() {
               return (
                 <div
                   key={brand}
+                  className="reveal"
                   style={{
                     borderRadius: 16, overflow: 'hidden',
                     backgroundColor: 'var(--surface)',

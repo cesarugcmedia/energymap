@@ -7,7 +7,7 @@ import { QUANTITY_STYLE, timeAgo, type ActivityItem } from './types'
 
 // Compact, auto-generated feed cards (reports, new stores, restocks of
 // followed flavors). Lighter than posts so real posts still stand out.
-export default function ActivityCard({ item, animationDelay = 0 }: { item: ActivityItem; animationDelay?: number }) {
+export default function ActivityCard({ item }: { item: ActivityItem }) {
   const router = useRouter()
   const goStore = () => router.push(`/store/${item.store.id}?name=${encodeURIComponent(item.store.name)}`)
 
@@ -22,8 +22,8 @@ export default function ActivityCard({ item, animationDelay = 0 }: { item: Activ
       tabIndex={0}
       onClick={goStore}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goStore() } }}
-      className="anim-rise"
-      style={{ animationDelay: `${animationDelay}ms`, width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 14, background: 'var(--fg-03)', border: '1px solid var(--fg-06)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+      className="reveal"
+      style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 14, background: 'var(--fg-03)', border: '1px solid var(--fg-06)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
     >
       <span style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>
       <span style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.45, color: 'var(--text-muted)' }}>

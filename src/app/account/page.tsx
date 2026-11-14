@@ -1023,7 +1023,7 @@ function switchMode(m: Mode) {
                   const isEarned = earned.has(b.id)
                   const hint = progressHint(b.id)
                   return (
-                    <div key={b.id} style={{ borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid transparent', boxShadow: 'none', opacity: isEarned ? 1 : 0.45 }}>
+                    <div key={b.id} className="reveal" style={{ borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid transparent', boxShadow: 'none', opacity: isEarned ? 1 : 0.45 }}>
                       <span style={{ fontSize: 26, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
                       <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#6B7F70' }}>{b.name}</p>
                       <p style={{ fontSize: 10, lineHeight: 1.3, color: '#6B7F70' }}>{hint ?? b.desc}</p>

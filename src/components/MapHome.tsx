@@ -918,7 +918,7 @@ export default function MapHome() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {sorted.map((store, idx) => {
+                  {sorted.map((store) => {
                     const stock = storeStock[store.id] ?? []
                     const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
                     const latestReport = getLatestReport(stock)
@@ -931,7 +931,7 @@ export default function MapHome() {
                     const storeHref = `/store/${store.id}?name=${encodeURIComponent(store.name)}`
 
                     return (
-                      <div key={store.id} className={`${ui.card} anim-rise`} style={{ animationDelay: `${Math.min(idx, 8) * 40}ms` }}>
+                      <div key={store.id} className={`${ui.card} reveal`}>
                         <button
                           onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
                           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit' }}

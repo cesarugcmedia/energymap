@@ -457,8 +457,8 @@ export default function Feed({ me, toast }: {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {entries.map((e, i) => e.kind === 'activity'
-            ? <ActivityCard key={e.item.id} item={e.item} animationDelay={Math.min(i, 8) * 40} />
+          {entries.map((e) => e.kind === 'activity'
+            ? <ActivityCard key={e.item.id} item={e.item} />
             : (
               <PostCard
                 key={e.post.id}
@@ -471,7 +471,6 @@ export default function Feed({ me, toast }: {
                 topWeekly={topWeeklyIds.has(e.post.user_id)}
                 isFollowing={followingIds.has(e.post.user_id)}
                 drinkFollowed={!!e.post.drink && followedDrinks.has(e.post.drink.id)}
-                animationDelay={Math.min(i, 8) * 40}
                 onToggleLike={toggleLike}
                 onToggleFollow={toggleFollow}
                 onFollowDrink={followDrink}

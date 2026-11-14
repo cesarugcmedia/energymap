@@ -95,7 +95,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         {/* Try it — no account needed */}
         <section className={styles.section} aria-labelledby="near">
           <div className={styles.container}>
-            <h2 id="near" className={styles.h2}>See what&apos;s near you</h2>
+            <h2 id="near" className={`${styles.h2} reveal`}>See what&apos;s near you</h2>
             <p className={styles.sectionLead} style={{ marginBottom: 0 }}>Check the stores around any ZIP code. No account needed.</p>
             <ZipPreview />
           </div>
@@ -104,10 +104,10 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         {/* How it works */}
         <section className={styles.section} aria-labelledby="how">
           <div className={styles.container}>
-            <h2 id="how" className={styles.h2}>How it works</h2>
+            <h2 id="how" className={`${styles.h2} reveal`}>How it works</h2>
             <div className={styles.steps}>
               {STEPS.map(({ Icon, title, body }, i) => (
-                <div key={title} className={styles.step}>
+                <div key={title} className={`${styles.step} reveal`}>
                   <span className={styles.stepIcon}><Icon size={20} color="#C9F400" /></span>
                   <p className={styles.stepNum}>Step {i + 1}</p>
                   <h3 className={styles.h3}>{title}</h3>
@@ -126,10 +126,10 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         {/* Pricing */}
         <section className={styles.section} aria-labelledby="pricing">
           <div className={styles.container}>
-            <h2 id="pricing" className={styles.h2}>Simple pricing</h2>
+            <h2 id="pricing" className={`${styles.h2} reveal`}>Simple pricing</h2>
             <p className={styles.sectionLead}>Start free. Upgrade if you want the whole map.</p>
             <div className={styles.plans}>
-              <div className={styles.plan}>
+              <div className={`${styles.plan} reveal`}>
                 <h3 className={styles.planName}>Free</h3>
                 <p className={styles.planPrice}>$0</p>
                 <ul className={styles.planList}>
@@ -137,7 +137,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
                 </ul>
                 <Link href="/account?mode=signup&plan=free" className={styles.btnGhost}>Create free account</Link>
               </div>
-              <div className={`${styles.plan} ${styles.planFeatured}`}>
+              <div className={`${styles.plan} ${styles.planFeatured} reveal`}>
                 <h3 className={styles.planName}>Tracker</h3>
                 <p className={styles.planPrice}>$5<span>/month</span></p>
                 <ul className={styles.planList}>
@@ -159,10 +159,10 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         {/* FAQ */}
         <section className={styles.section} aria-labelledby="faq">
           <div className={`${styles.container} ${styles.narrow}`}>
-            <h2 id="faq" className={styles.h2}>Questions</h2>
+            <h2 id="faq" className={`${styles.h2} reveal`}>Questions</h2>
             <div className={styles.faq}>
               {FAQ.map(({ q, a }) => (
-                <details key={q} className={styles.faqItem}>
+                <details key={q} className={`${styles.faqItem} reveal`}>
                   <summary>{q}</summary>
                   <p>{a}</p>
                 </details>
@@ -172,7 +172,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         </section>
 
         {/* Closing CTA */}
-        <section className={`${styles.container} ${styles.closing}`}>
+        <section className={`${styles.container} ${styles.closing} reveal`}>
           <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
           <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
         </section>
