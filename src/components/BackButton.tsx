@@ -21,9 +21,9 @@ export default function BackButton({ label = 'Account', fallbackHref = '/account
   return (
     <button
       onClick={goBack}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px 6px 0', color: '#C9F400', fontSize: 16, fontWeight: 500 }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px 6px 0', color: 'var(--accent-text)', fontSize: 16, fontWeight: 500 }}
     >
-      <ChevronLeftIcon size={20} color="#C9F400" /> {label}
+      <ChevronLeftIcon size={20} color="var(--accent-text)" /> {label}
     </button>
   )
 }

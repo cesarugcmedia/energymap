@@ -15,7 +15,7 @@ export interface IconProps {
   strokeWidth?: number
 }
 
-const DEFAULT_COLOR = '#8b9284'
+const DEFAULT_COLOR = 'var(--text-dim)'
 
 export function HeartIcon({ size = 20, color = DEFAULT_COLOR, filled = false }: IconProps & { filled?: boolean }) {
   return (

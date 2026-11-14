@@ -64,7 +64,7 @@ export default function CheckEmailModal({ email, kind, onClose }: {
         style={{ width: '100%', maxWidth: 400, background: 'var(--surface)', border: '1px solid var(--fg-10)', borderRadius: 20, padding: '24px 22px 20px', boxShadow: '0 20px 60px rgba(0,0,0,0.55)' }}
       >
         <span style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-          <MailIcon size={24} color="#C9F400" />
+          <MailIcon size={24} color="var(--accent-text)" />
         </span>
         <h2 id="check-email-title" style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', textAlign: 'center', marginBottom: 6 }}>
           {kind === 'confirm' ? 'Check your email' : "You're on the list!"}
@@ -78,7 +78,7 @@ export default function CheckEmailModal({ email, kind, onClose }: {
         <ul style={{ listStyle: 'none', margin: '0 0 20px', padding: '14px 16px', borderRadius: 14, background: 'var(--fg-04)', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {tips.map((tip, i) => (
             <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>
-              <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,244,0,0.14)', color: '#C9F400', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+              <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,244,0,0.14)', color: 'var(--accent-text)', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
               <span style={{ color: 'var(--text-muted)' }}>{tip}</span>
             </li>
           ))}
@@ -92,7 +92,7 @@ export default function CheckEmailModal({ email, kind, onClose }: {
               : resendState === 'error' ? 'Couldn’t resend right now. Try again in a minute.'
               : <>Still nothing after a while?{' '}</>}
             {(resendState === 'idle' || (cooldown === 0 && resendState !== 'sending')) && (
-              <button onClick={resend} style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer' }}>Resend email</button>
+              <button onClick={resend} style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', cursor: 'pointer' }}>Resend email</button>
             )}
             {resendState === 'sending' && 'Sending…'}
           </p>

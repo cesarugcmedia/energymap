@@ -308,7 +308,7 @@ export default function NotificationsPage() {
                   e.stopPropagation()
                   setExpandedGroups((prev) => { const next = new Set(prev); if (next.has(first.id)) next.delete(first.id); else next.add(first.id); return next })
                 }}
-                style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', marginTop: 2, alignSelf: 'flex-start' }}
+                style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', marginTop: 2, alignSelf: 'flex-start' }}
               >
                 {expanded ? 'Show less' : `+${ns.length - 3} more`}
               </span>
@@ -332,7 +332,7 @@ export default function NotificationsPage() {
             </p>
           </div>
           {unreadCount > 0 && (
-            <button className={ui.btnGhost} onClick={markAllRead} style={{ color: 'var(--accent)', fontSize: 14, fontWeight: 600, minHeight: 36 }}>
+            <button className={ui.btnGhost} onClick={markAllRead} style={{ color: 'var(--accent-text)', fontSize: 14, fontWeight: 600, minHeight: 36 }}>
               Mark all read
             </button>
           )}

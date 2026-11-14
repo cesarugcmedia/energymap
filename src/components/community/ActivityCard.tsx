@@ -12,9 +12,9 @@ export default function ActivityCard({ item }: { item: ActivityItem }) {
   const goStore = () => router.push(`/store/${item.store.id}?name=${encodeURIComponent(item.store.name)}`)
 
   const icon =
-    item.kind === 'report' ? <LightningIcon size={15} color="#C9F400" /> :
+    item.kind === 'report' ? <LightningIcon size={15} color="var(--accent-text)" /> :
     item.kind === 'store' ? <GroceryIcon size={15} color="#60a5fa" /> :
-    <BellIcon size={15} color="#C9F400" filled />
+    <BellIcon size={15} color="var(--accent-text)" filled />
 
   return (
     <div

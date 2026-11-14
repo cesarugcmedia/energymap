@@ -95,13 +95,13 @@
   font-family: inherit;
   font-size: 16px;
   color: var(--text);
-  background: #0C0E0B;
+  background: var(--input-bg);
   border: 1px solid var(--fg-13);
   border-radius: 12px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.input::placeholder { color: #66716A; }
+.input::placeholder { color: var(--placeholder); }
 .input:focus {
   border-color: rgba(201, 244, 0, 0.6);
   box-shadow: 0 0 0 3px rgba(201, 244, 0, 0.12);

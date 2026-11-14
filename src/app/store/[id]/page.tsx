@@ -37,14 +37,14 @@ function normalizeBrand(input: string): string {
 
 // Stock level pill/bar styles for the store page.
 const LEVEL: Record<Quantity, { label: string; color: string }> = {
-  full:   { label: 'Full',   color: '#C9F400' },
+  full:   { label: 'Full',   color: 'var(--accent-text)' },
   medium: { label: 'Medium', color: '#FFB300' },
   low:    { label: 'Low',    color: '#FF8A3D' },
   out:    { label: 'Out',    color: '#FF4545' },
 }
 const LEVEL_ORDER: Quantity[] = ['full', 'medium', 'low', 'out']
 
-const addLinkStyle: React.CSSProperties = { background: 'none', border: 'none', padding: '6px 4px', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: 'var(--accent)', cursor: 'pointer' }
+const addLinkStyle: React.CSSProperties = { background: 'none', border: 'none', padding: '6px 4px', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: 'var(--accent-text)', cursor: 'pointer' }
 
 function openDirections(lat: number, lng: number) {
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
@@ -67,10 +67,10 @@ function timeAgo(dateStr: string) {
 
 function stalenessColor(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
-  if (hrs < 2) return '#C9F400'
+  if (hrs < 2) return 'var(--accent-text)'
   if (hrs < 12) return '#FFB300'
   if (hrs < 24) return '#FF4545'
-  return '#888888'
+  return 'var(--text-dim)'
 }
 
 function stalenessLabel(dateStr: string) {
@@ -656,7 +656,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: following ? 'rgba(201,244,0,0.14)' : 'transparent', border: `1px solid ${following ? 'rgba(201,244,0,0.5)' : 'var(--fg-10)'}` }}
                                   >
                                     <span key={bellAnim && bellAnim.id === item.drink_id ? bellAnim.n : 0} className={bellAnim?.id === item.drink_id && following ? 'anim-wiggle' : ''} style={{ display: 'flex' }}>
-                                      <BellIcon size={14} color={following ? '#C9F400' : 'var(--text-dim)'} filled={following} />
+                                      <BellIcon size={14} color={following ? 'var(--accent-text)' : 'var(--text-dim)'} filled={following} />
                                     </span>
                                   </button>
                                 </div>
@@ -693,7 +693,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
               {drinkResults ? (
                 <div className="flex flex-col items-center text-center gap-3 py-4">
-                  <DrinkIcon size={48} color="#8b9284" />
+                  <DrinkIcon size={48} color="var(--text-dim)" />
                   <p className="text-xl font-semibold text-white">
                     {drinkResults.added > 0 ? `${drinkResults.added} Drink${drinkResults.added !== 1 ? 's' : ''} Added!` : 'Nothing Added'}
                   </p>
@@ -702,7 +702,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       {drinkResults.names.map((name) => (
                         <div key={name} className="rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/80 text-left flex items-center gap-2"
                           style={{ backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid var(--border)' }}>
-                          <CheckIcon size={13} color="#C9F400" /> {name}
+                          <CheckIcon size={13} color="var(--accent-text)" /> {name}
                         </div>
                       ))}
                     </div>
@@ -834,7 +834,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             >
               <div className="w-9 h-1 rounded-sm mx-auto mb-5" style={{ backgroundColor: 'var(--fg-20)' }} />
               <div className="flex items-center gap-3 mb-3">
-                <DrinkIcon size={32} color="#8b9284" />
+                <DrinkIcon size={32} color="var(--text-dim)" />
                 <p className="text-lg font-semibold text-white">
                   {drinkDuplicatePopup.length === 1 ? 'Already in the System' : 'Drinks Already Exist'}
                 </p>
@@ -881,7 +881,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
               {flagDone ? (
                 <div className="flex flex-col items-center text-center gap-3 py-4">
-                  <CheckIcon size={40} color="#C9F400" />
+                  <CheckIcon size={40} color="var(--accent-text)" />
                   <p className="text-xl font-semibold text-white">Thanks for the report!</p>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>We'll review this location and correct any issues.</p>
                   <button
@@ -895,7 +895,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               ) : (
                 <>
                   <div className="flex items-center gap-2.5 mb-1">
-                    <FlagIcon size={18} color="#8b9284" />
+                    <FlagIcon size={18} color="var(--text-dim)" />
                     <p className="text-lg font-semibold text-white">Flag Location</p>
                   </div>
                   <p className="text-xs mb-5" style={{ color: 'var(--text-dim)' }}>Something wrong with this location? Let us know so we can fix it.</p>
@@ -973,7 +973,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
 
               <div className="flex items-center gap-2.5 mb-1">
-                <BellIcon size={18} color="#C9F400" filled />
+                <BellIcon size={18} color="var(--accent-text)" filled />
                 <p className="text-lg font-semibold text-white">
                   Alert me for {(() => {
                     const d = stock.find((i) => i.drink_id === alertSheetDrinkId)?.drink

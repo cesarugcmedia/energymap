@@ -215,7 +215,7 @@ export default function Leaderboard({ me }: {
                     <Avatar name={e.username} size={pos === 0 ? 60 : 50} />
                     <span style={{ position: 'absolute', bottom: -6, right: -6, fontSize: pos === 0 ? 22 : 18 }}>{MEDAL[pos]}</span>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: isMe ? '#C9F400' : 'var(--text)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: isMe ? 'var(--accent-text)' : 'var(--text)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
                   <div className="anim-grow" style={{ animationDelay: `${pos === 2 ? 0.1 : pos === 1 ? 0.25 : 0.4}s`, width: '100%', height, borderRadius: '12px 12px 4px 4px', background: `linear-gradient(180deg, ${PODIUM_COLOR[pos]}2e, ${PODIUM_COLOR[pos]}0d)`, border: `1px solid ${PODIUM_COLOR[pos]}40`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 18, fontWeight: 700, color: PODIUM_COLOR[pos] }}><CountUp value={e.value} /></span>
                     <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{unit(e.value)}</span>
@@ -241,10 +241,10 @@ export default function Leaderboard({ me }: {
                     <span style={{ width: 26, fontSize: 14, fontWeight: 600, color: 'var(--text-dim)', textAlign: 'center', flexShrink: 0 }}>{rank}</span>
                     <Avatar name={e.username} size={34} />
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 500, color: isMe ? '#C9F400' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
+                      <span style={{ fontSize: 15, fontWeight: 500, color: isMe ? 'var(--accent-text)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
                       {isMe && <span style={{ fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '1px 6px' }}>You</span>}
                       {e.is_verified_reporter && <span title="Verified reporter" style={{ display: 'flex' }}><CheckIcon size={13} color="#60a5fa" /></span>}
-                      {e.tier === 'tracker' && <span title="Tracker" style={{ display: 'flex' }}><LightningIcon size={13} color="#C9F400" /></span>}
+                      {e.tier === 'tracker' && <span title="Tracker" style={{ display: 'flex' }}><LightningIcon size={13} color="var(--accent-text)" /></span>}
                       {e.badges.includes('weekly_champion') && <span title="Weekly champion" style={{ fontSize: 13 }}>👑</span>}
                     </span>
                     <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', flexShrink: 0 }}>{e.value} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-dim)' }}>{unit(e.value)}</span></span>
@@ -262,7 +262,7 @@ export default function Leaderboard({ me }: {
           <p className={ui.sectionLabel}>How points work</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { Icon: LightningIcon, label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2', color: '#C9F400' },
+              { Icon: LightningIcon, label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2', color: 'var(--accent-text)' },
               { Icon: GroceryIcon, label: 'Add a store', desc: 'Once an admin approves it', pts: '+5', color: '#FFB300' },
               { Icon: DrinkIcon, label: 'Add a drink', desc: 'Each new flavor you add', pts: '+3', color: '#22d3ee' },
             ].map(({ Icon, label, desc, pts, color }) => (

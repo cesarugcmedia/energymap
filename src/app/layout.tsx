@@ -38,6 +38,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: '#0A0B0A',
 }
 
 export default function RootLayout({
@@ -51,10 +52,11 @@ export default function RootLayout({
         {/* Before first paint: if a saved Supabase session exists, mark <html>
             so the server-rendered landing page at / is hidden behind a spinner
             while the map loads (see HomeGate + globals.css). Signed-in users
-            never see a flash of the marketing page. */}
+            never see a flash of the marketing page. Also applies the saved
+            appearance (Account → Appearance) so light mode never flashes dark. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{for(var i=0;i<localStorage.length;i++){if(/^sb-.+-auth-token$/.test(localStorage.key(i)||'')){document.documentElement.setAttribute('data-authed','1');break}}}catch(e){}",
+            __html: "try{var d=document.documentElement,a=0;for(var i=0;i<localStorage.length;i++){if(/^sb-.+-auth-token$/.test(localStorage.key(i)||'')){d.setAttribute('data-authed','1');a=1;break}}var t=localStorage.getItem('ampedmap_theme');if(a&&(t==='light'||(t==='system'&&matchMedia('(prefers-color-scheme: light)').matches)))d.setAttribute('data-theme','light')}catch(e){}",
           }}
         />
       </head>

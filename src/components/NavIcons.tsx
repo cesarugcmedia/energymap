@@ -8,8 +8,10 @@ interface IconProps {
   active: boolean
 }
 
-const INACTIVE = '#8b9284'
-const ACTIVE = '#C9F400'
+const INACTIVE = 'var(--text-dim)'
+// --accent-text: lime in dark mode, a darker olive in light mode.
+const ACTIVE = 'var(--accent-text)'
+const CUTOUT = 'var(--surface)'
 
 export function MapIcon({ active }: IconProps) {
   return (
@@ -17,7 +19,7 @@ export function MapIcon({ active }: IconProps) {
       {active ? (
         <>
           <path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8z" fill={ACTIVE} />
-          <circle cx="12" cy="10" r="3" fill="#0a0b0a" />
+          <circle cx="12" cy="10" r="3" fill={CUTOUT} />
         </>
       ) : (
         <>

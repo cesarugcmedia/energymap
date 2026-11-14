@@ -103,11 +103,11 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
       <div className={`${ui.card} anim-rise`} style={{ marginBottom: 22, borderColor: isTracker ? 'rgba(201,244,0,0.4)' : undefined, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ width: 46, height: 46, borderRadius: 14, background: isTracker ? 'rgba(201,244,0,0.14)' : 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LightningIcon size={22} color={isTracker ? '#C9F400' : 'var(--text-muted)'} />
+            <LightningIcon size={22} color={isTracker ? 'var(--accent-text)' : 'var(--text-muted)'} />
           </span>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>Your plan</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: isTracker ? '#C9F400' : 'var(--text)', lineHeight: 1.15 }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: isTracker ? 'var(--accent-text)' : 'var(--text)', lineHeight: 1.15 }}>
               {tier === 'admin' ? 'Admin' : tier === 'tracker' ? 'Tracker' : 'Free'}
             </p>
           </div>
@@ -159,15 +159,15 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
         <div className={ui.card} style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', padding: '10px 14px', borderBottom: '1px solid var(--fg-06)', fontSize: 13, fontWeight: 600 }}>
             <span style={{ color: 'var(--text-dim)' }}>Feature</span>
-            <span style={{ textAlign: 'center', color: !isTracker ? '#C9F400' : 'var(--text-muted)' }}>Free{!isTracker ? ' · You' : ''}</span>
-            <span style={{ textAlign: 'center', color: isTracker ? '#C9F400' : 'var(--text-muted)' }}>Tracker{isTracker ? ' · You' : ''}</span>
+            <span style={{ textAlign: 'center', color: !isTracker ? 'var(--accent-text)' : 'var(--text-muted)' }}>Free{!isTracker ? ' · You' : ''}</span>
+            <span style={{ textAlign: 'center', color: isTracker ? 'var(--accent-text)' : 'var(--text-muted)' }}>Tracker{isTracker ? ' · You' : ''}</span>
           </div>
           {COMPARE.map((row, i) => (
             <div key={row.label} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', alignItems: 'center', padding: '11px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', fontSize: 14 }}>
               <span style={{ color: 'var(--text)' }}>{row.label}</span>
               {[row.free, row.tracker].map((v, j) => (
                 <span key={j} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, background: (j === 1) === isTracker ? 'rgba(201,244,0,0.04)' : 'transparent', borderRadius: 6, padding: '2px 0' }}>
-                  {v === true ? <span style={{ display: 'inline-flex' }}><CheckIcon size={15} color="#C9F400" /></span> : v === false ? <span style={{ color: 'var(--text-dim)' }}>—</span> : v}
+                  {v === true ? <span style={{ display: 'inline-flex' }}><CheckIcon size={15} color="var(--accent-text)" /></span> : v === false ? <span style={{ color: 'var(--text-dim)' }}>—</span> : v}
                 </span>
               ))}
             </div>

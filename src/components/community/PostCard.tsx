@@ -34,7 +34,7 @@ export interface PostCardProps {
 }
 
 const TYPE_LABEL: Record<string, { text: string; color: string }> = {
-  found: { text: 'Found it', color: '#C9F400' },
+  found: { text: 'Found it', color: 'var(--accent-text)' },
   looking: { text: 'Looking for', color: '#FFB300' },
 }
 
@@ -77,7 +77,7 @@ export default function PostCard(p: PostCardProps) {
             <RichText text={c.body} style={{ display: 'inline', fontSize: 14, color: 'var(--text-muted)' }} />
           </div>
           {c.store && (
-            <button onClick={() => router.push(`/store/${c.store!.id}?name=${encodeURIComponent(c.store!.name)}`)} style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 8, background: 'var(--fg-06)', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={() => router.push(`/store/${c.store!.id}?name=${encodeURIComponent(c.store!.name)}`)} style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 8, background: 'var(--fg-06)', border: 'none', color: 'var(--accent-text)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
               <PinIcon size={11} color="var(--accent)" /> {c.store.name}
             </button>
           )}
@@ -153,7 +153,7 @@ export default function PostCard(p: PostCardProps) {
                 title={p.drinkFollowed ? 'You’ll be alerted when it restocks' : 'Get alerted when it restocks'}
                 style={{ width: 26, height: 26, borderRadius: 7, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: p.drinkFollowed ? 'rgba(201,244,0,0.14)' : 'transparent', cursor: p.drinkFollowed ? 'default' : 'pointer' }}
               >
-                <span className={p.drinkFollowed ? 'anim-wiggle' : ''} style={{ display: 'flex' }}><BellIcon size={13} color={p.drinkFollowed ? '#C9F400' : 'var(--text-dim)'} filled={p.drinkFollowed} /></span>
+                <span className={p.drinkFollowed ? 'anim-wiggle' : ''} style={{ display: 'flex' }}><BellIcon size={13} color={p.drinkFollowed ? 'var(--accent-text)' : 'var(--text-dim)'} filled={p.drinkFollowed} /></span>
               </button>
             </span>
           )}
@@ -199,12 +199,12 @@ export default function PostCard(p: PostCardProps) {
         <button
           onClick={() => { if (!post.likedByMe) setLikeAnim((n) => n + 1); p.onToggleLike(post) }}
           aria-label={post.likedByMe ? 'Unlike' : 'Like'}
-          style={{ ...actionBtn, color: post.likedByMe ? 'var(--accent)' : 'var(--text-muted)' }}
+          style={{ ...actionBtn, color: post.likedByMe ? 'var(--accent-text)' : 'var(--text-muted)' }}
         >
           <span key={likeAnim} className={likeAnim > 0 && post.likedByMe ? 'anim-pop' : ''} style={{ display: 'flex', fontSize: 15 }}>{post.likedByMe ? '▲' : '△'}</span>
           <span>{post.likeCount}</span>
         </button>
-        <button onClick={() => setCommentsOpen((o) => !o)} style={{ ...actionBtn, color: commentsOpen ? 'var(--accent)' : 'var(--text-muted)' }}>
+        <button onClick={() => setCommentsOpen((o) => !o)} style={{ ...actionBtn, color: commentsOpen ? 'var(--accent-text)' : 'var(--text-muted)' }}>
           <CommentIcon size={14} color={commentsOpen ? 'var(--accent)' : 'var(--text-muted)'} />
           <span>{p.comments.length}{post.post_type === 'looking' && p.comments.length === 0 ? ' · Help out' : ''}</span>
         </button>

@@ -123,7 +123,7 @@ function ResultContent() {
               <span key={a} style={{ ['--a' as string]: `${a}deg`, background: ['#C9F400', '#FFB300', '#C9F400', '#60a5fa'][i % 4] } as React.CSSProperties} />
             ))}
           </span>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
           {count !== null ? `${shownCount} report${count !== 1 ? 's' : ''} sent` : 'Report sent'}

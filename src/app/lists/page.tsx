@@ -52,7 +52,7 @@ export default function FavoritesPage() {
   if (!isTracker) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
-        <div style={{ marginBottom: 20 }}><HeartIcon size={48} color="#8b9284" /></div>
+        <div style={{ marginBottom: 20 }}><HeartIcon size={48} color="var(--text-dim)" /></div>
         <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Tracker Feature</p>
         <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 28 }}>
           Save and organize your favorite stores with the Tracker plan.
@@ -85,7 +85,7 @@ export default function FavoritesPage() {
           <div style={{ padding: '4px 20px' }}><SkeletonList count={3} /></div>
         ) : favorites.length === 0 ? (
           <div className="flex flex-col items-center gap-3 mt-20 px-5 text-center">
-            <HeartIcon size={52} color="#8b9284" />
+            <HeartIcon size={52} color="var(--text-dim)" />
             <p className="text-lg font-bold text-white">No favorites yet</p>
             <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
               Tap the heart on any store to save it here.
@@ -121,7 +121,7 @@ export default function FavoritesPage() {
                       <button
                         onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
                         className="text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid var(--fg-13)', color: 'var(--accent)' }}
+                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid var(--fg-13)', color: 'var(--accent-text)' }}
                       >
                         View
                       </button>

@@ -6,6 +6,26 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import Supercluster from 'supercluster'
 import type { Store } from '@/lib/types'
 import { storeTypeIconSvg } from '@/components/Icons'
+import { useTheme } from '@/contexts/ThemeContext'
+
+// Map palettes matching the app theme (Account → Appearance). Lime stays
+// reserved for pins and actions; everything else is neutral.
+const MAP_THEME = {
+  dark: {
+    style: 'mapbox://styles/mapbox/dark-v11',
+    fog: { color: '#0A0B0A', 'high-color': '#141610', 'horizon-blend': 0.06, 'space-color': '#000000', 'star-intensity': 0.4 },
+    background: '#0A0B0A', water: '#0E1214', park: '#10140F', building: '#131511',
+    roads: ['#3A3F36', '#2C3029', '#21251F', '#1A1D18'], label: '#7E8A80', halo: '#0A0B0A',
+    extrusion: ['#121410', '#161813', '#1B1E18'],
+  },
+  light: {
+    style: 'mapbox://styles/mapbox/light-v11',
+    fog: { color: '#F3F5EF', 'high-color': '#DDE3D6', 'horizon-blend': 0.08, 'space-color': '#C9D2C2', 'star-intensity': 0 },
+    background: '#F3F5EF', water: '#D3E1E6', park: '#E3EBDA', building: '#E7EAE2',
+    roads: ['#C4CABD', '#D2D7CB', '#DFE3D9', '#E6E9E1'], label: '#5F6A61', halo: '#F3F5EF',
+    extrusion: ['#E2E6DD', '#DADFD4', '#D1D7CA'],
+  },
+} as const
 
 // Simplified 2-state freshness per store (mirrors the 4-bucket Fresh/Aging/
 // Stale/Unverified staleness on store pages, collapsed to a binary signal
@@ -17,7 +37,7 @@ type MarkerFreshness = StoreFreshness | 'mixed'
 const FRESHNESS_COLOR: Record<MarkerFreshness, { hex: string; rgb: string }> = {
   fresh: { hex: '#C9F400', rgb: '201,244,0' },
   mixed: { hex: '#FFB300', rgb: '255,179,0' },
-  stale: { hex: '#8A8F86', rgb: '138,143,134' },
+  stale: { hex: 'var(--text-dim)', rgb: '138,143,134' },
 }
 
 // A cluster's color reflects the mix of its members: all-fresh reads as
@@ -114,6 +134,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   highlightRef.current = highlightIds ?? null
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const { theme } = useTheme()
+  const themeRef = useRef(theme)
+  themeRef.current = theme
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
@@ -275,6 +298,15 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     updateMarkers()
   }, [storeFreshness, highlightIds]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Switching Appearance swaps the base style; style.load re-applies the palette.
+  const appliedThemeRef = useRef(theme)
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || appliedThemeRef.current === theme) return
+    appliedThemeRef.current = theme
+    map.setStyle(MAP_THEME[theme].style)
+  }, [theme])
+
   // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -283,7 +315,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: MAP_THEME[themeRef.current].style,
       center: [lng, lat],
       zoom: 11,
       minZoom: 4,
@@ -317,47 +349,40 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     }
 
     map.on('style.load', () => {
-      map.setFog({
-        color: '#0A0B0A',
-        'high-color': '#141610',
-        'horizon-blend': 0.06,
-        'space-color': '#000000',
-        'star-intensity': 0.4,
-      })
+      const t = MAP_THEME[themeRef.current]
+      map.setFog({ ...t.fog })
 
       const style = map.getStyle()
       style?.layers?.forEach((layer) => {
         try {
           if (layer.type === 'background') {
-            map.setPaintProperty(layer.id, 'background-color', '#0A0B0A')
+            map.setPaintProperty(layer.id, 'background-color', t.background)
           }
-          // Neutral palette matching the app (dark surfaces, gray roads,
-          // muted labels) so lime stays reserved for pins and actions.
           const id = layer.id.toLowerCase()
           if (layer.type === 'fill' && id.includes('water')) {
-            map.setPaintProperty(layer.id, 'fill-color', '#0E1214')
+            map.setPaintProperty(layer.id, 'fill-color', t.water)
           }
           if (layer.type === 'line' && id.includes('water')) {
-            map.setPaintProperty(layer.id, 'line-color', '#0E1214')
+            map.setPaintProperty(layer.id, 'line-color', t.water)
           }
           if (layer.type === 'fill' && (id.includes('park') || id.includes('landuse') || id.includes('national-park'))) {
-            map.setPaintProperty(layer.id, 'fill-color', '#10140F')
+            map.setPaintProperty(layer.id, 'fill-color', t.park)
           }
           if (layer.type === 'line' && /^road/.test(layer.id)) {
             map.setPaintProperty(layer.id, 'line-color', [
               'match', ['get', 'class'],
-              ['motorway', 'trunk'],    '#3A3F36',
-              ['primary', 'secondary'], '#2C3029',
-              ['tertiary', 'street'],   '#21251F',
-              '#1A1D18',
+              ['motorway', 'trunk'],    t.roads[0],
+              ['primary', 'secondary'], t.roads[1],
+              ['tertiary', 'street'],   t.roads[2],
+              t.roads[3],
             ])
           }
           if (layer.id === 'building') {
-            map.setPaintProperty(layer.id, 'fill-color', '#131511')
+            map.setPaintProperty(layer.id, 'fill-color', t.building)
           }
           if (layer.type === 'symbol' && (id.includes('label') || id.includes('place') || id.includes('poi'))) {
-            map.setPaintProperty(layer.id, 'text-color', '#7E8A80')
-            map.setPaintProperty(layer.id, 'text-halo-color', '#0A0B0A')
+            map.setPaintProperty(layer.id, 'text-color', t.label)
+            map.setPaintProperty(layer.id, 'text-halo-color', t.halo)
           }
         } catch {}
       })
@@ -373,9 +398,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           paint: {
             'fill-extrusion-color': [
               'interpolate', ['linear'], ['get', 'height'],
-              0,   '#121410',
-              50,  '#161813',
-              200, '#1B1E18',
+              0,   t.extrusion[0],
+              50,  t.extrusion[1],
+              200, t.extrusion[2],
             ],
             'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15, ['get', 'height']],
             'fill-extrusion-base':   ['interpolate', ['linear'], ['zoom'], 14, 0, 15, ['get', 'min_height']],

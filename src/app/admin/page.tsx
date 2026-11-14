@@ -623,8 +623,8 @@ export default function AdminPage() {
           <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-dim)' }}>Needs attention</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
             {[
-              { key: 'stores', icon: <ClockIcon size={26} color="#8b9284" />, label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
-              { key: 'flags',  icon: <FlagIcon size={26} color="#8b9284" />, label: 'Location Flags',  count: flagsCount,   badgeColor: '#FF4545', desc: 'Fix reported issues' },
+              { key: 'stores', icon: <ClockIcon size={26} color="var(--text-dim)" />, label: 'Pending Stores', count: pendingCount, badgeColor: '#FFB300', desc: 'Review submissions' },
+              { key: 'flags',  icon: <FlagIcon size={26} color="var(--text-dim)" />, label: 'Location Flags',  count: flagsCount,   badgeColor: '#FF4545', desc: 'Fix reported issues' },
             ].map(({ key, icon, label, count, badgeColor, desc }) => (
               <button
                 key={key}
@@ -656,11 +656,11 @@ export default function AdminPage() {
           <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-dim)' }}>Manage</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              { key: 'locations', icon: <PinIcon size={26} color="#8b9284" />, label: 'Locations',  desc: 'Edit & delete stores' },
-              { key: 'drinks',    icon: <DrinkIcon size={26} color="#8b9284" />, label: 'Drinks',     desc: 'Add & remove drinks' },
-              { key: 'users',     icon: <UserIcon size={26} color="#8b9284" />, label: 'Users',      desc: 'Verify & manage users' },
-              { key: 'waitlist',  icon: <ClipboardIcon size={26} color="#8b9284" />, label: 'Waitlist',   desc: 'Invite signups' },
-              { key: 'reports',   icon: <FlagIcon size={26} color="#8b9284" />, label: 'Community Reports', desc: 'Review reported posts' },
+              { key: 'locations', icon: <PinIcon size={26} color="var(--text-dim)" />, label: 'Locations',  desc: 'Edit & delete stores' },
+              { key: 'drinks',    icon: <DrinkIcon size={26} color="var(--text-dim)" />, label: 'Drinks',     desc: 'Add & remove drinks' },
+              { key: 'users',     icon: <UserIcon size={26} color="var(--text-dim)" />, label: 'Users',      desc: 'Verify & manage users' },
+              { key: 'waitlist',  icon: <ClipboardIcon size={26} color="var(--text-dim)" />, label: 'Waitlist',   desc: 'Invite signups' },
+              { key: 'reports',   icon: <FlagIcon size={26} color="var(--text-dim)" />, label: 'Community Reports', desc: 'Review reported posts' },
             ].map(({ key, icon, label, desc }) => (
               <button
                 key={key}
@@ -689,7 +689,7 @@ export default function AdminPage() {
           </div>
         ) : flags.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <FlagIcon size={40} color="#8b9284" />
+            <FlagIcon size={40} color="var(--text-dim)" />
             <p className="text-lg font-bold text-white">No open flags</p>
             <p className="text-sm text-[var(--text-dim)]">All location reports have been resolved.</p>
           </div>
@@ -736,7 +736,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         className="flex-1 rounded-xl p-2.5 text-xs font-bold flex items-center justify-center"
-                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent)', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
+                        style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent-text)', opacity: resolvingFlag.has(flag.id) ? 0.5 : 1 }}
                         disabled={resolvingFlag.has(flag.id)}
                         onClick={() => resolveFlag(flag.id)}
                       >
@@ -770,7 +770,7 @@ export default function AdminPage() {
               )
               if (filtered.length === 0) return (
                 <div className="flex flex-col items-center gap-2 mt-10">
-                  <SearchIcon size={36} color="#8b9284" />
+                  <SearchIcon size={36} color="var(--text-dim)" />
                   <p className="text-sm font-bold text-white">No locations found</p>
                 </div>
               )
@@ -800,7 +800,7 @@ export default function AdminPage() {
                       <span className="text-sm font-bold text-white" style={{ letterSpacing: '0.5px' }}>
                         {abbr} <span style={{ color: 'var(--text-dim)', fontWeight: 600 }}>· {grouped[abbr].length}</span>
                       </span>
-                      <span style={{ color: 'var(--accent)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                      <span style={{ color: 'var(--accent-text)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
                     </button>
                     {isOpen && (
                       <div className="flex flex-col gap-2.5 px-4 pb-4">
@@ -1012,7 +1012,7 @@ export default function AdminPage() {
                   className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: 'rgba(201,244,0,0.12)', border: '1px solid var(--border)' }}
                 >
-                  <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>
                     {u.username?.[0]?.toUpperCase()}
                   </span>
                 </div>
@@ -1020,13 +1020,13 @@ export default function AdminPage() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-sm font-bold text-white">@{u.username}</p>
                     {u.is_admin && (
-                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent-text)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>
                     )}
                     {u.is_verified_reporter && (
                       <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>✓ VERIFIED</span>
                     )}
                     {u.tier === 'tracker' && (
-                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.3)' }}>TRACKER</span>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(201,244,0,0.12)', color: 'var(--accent-text)', border: '1px solid rgba(201,244,0,0.3)' }}>TRACKER</span>
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-dim)] mt-0.5">Joined {timeAgo(u.created_at)}</p>
@@ -1053,7 +1053,7 @@ export default function AdminPage() {
             ))}
             {users.filter((u) => u.username?.toLowerCase().includes(userSearch.toLowerCase())).length === 0 && (
               <div className="flex flex-col items-center gap-2 mt-8">
-                <SearchIcon size={36} color="#8b9284" />
+                <SearchIcon size={36} color="var(--text-dim)" />
                 <p className="text-sm font-bold text-white">No users found</p>
               </div>
             )}
@@ -1087,7 +1087,7 @@ export default function AdminPage() {
                       className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
                       style={{
                         backgroundColor: i < 60 ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)',
-                        color: i < 60 ? '#C9F400' : 'var(--text-dim)',
+                        color: i < 60 ? 'var(--accent-text)' : 'var(--text-dim)',
                       }}
                     >
                       {i + 1}
@@ -1097,7 +1097,7 @@ export default function AdminPage() {
                     <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
                       Joined {new Date(w.created_at).toLocaleDateString()}
                       {w.invited_at && (
-                        <span style={{ color: 'var(--accent)' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
+                        <span style={{ color: 'var(--accent-text)' }}> · Invited {new Date(w.invited_at).toLocaleDateString()}</span>
                       )}
                     </p>
                   </div>
@@ -1109,7 +1109,7 @@ export default function AdminPage() {
                       className="rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5"
                       style={{
                         backgroundColor: w.invited_at ? 'rgba(201,244,0,0.1)' : '#C9F400',
-                        color: w.invited_at ? '#C9F400' : '#0D1210',
+                        color: w.invited_at ? 'var(--accent-text)' : '#0D1210',
                         border: w.invited_at ? '1px solid rgba(201,244,0,0.3)' : 'none',
                         opacity: inviting.has(w.email) ? 0.5 : 1,
                       }}
@@ -1138,7 +1138,7 @@ export default function AdminPage() {
         </div>
       ) : stores.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <CheckIcon size={40} color="#C9F400" />
+          <CheckIcon size={40} color="var(--accent-text)" />
           <p className="text-lg font-bold text-white">All caught up!</p>
           <p className="text-sm text-[var(--text-dim)]">No pending stores to review.</p>
         </div>
@@ -1200,7 +1200,7 @@ export default function AdminPage() {
                   style={{
                     backgroundColor: 'rgba(201,244,0,0.12)',
                     border: '1px solid rgba(201,244,0,0.3)',
-                    color: 'var(--accent)',
+                    color: 'var(--accent-text)',
                   }}
                   onClick={() => approveStore(store.id)}
                 >
@@ -1361,7 +1361,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   className="flex-1 rounded-xl p-3.5 font-bold text-sm"
-                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent)' }}
+                  style={{ backgroundColor: 'rgba(201,244,0,0.1)', border: '1px solid rgba(201,244,0,0.3)', color: 'var(--accent-text)' }}
                   onClick={() => {
                     approveStore(editStore?.id)
                     setEditStore(null)

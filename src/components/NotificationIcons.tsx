@@ -3,7 +3,8 @@
 
 import type { JSX } from 'react'
 
-const LIME = '#cdfa3f'
+// Lime in dark mode, darker olive in light mode.
+const LIME = 'var(--accent-text)'
 
 export function DrinkIcon() {
   return (

@@ -51,7 +51,7 @@ function stalenessColor(dateStr: string) {
   if (hrs < 2) return '#C9F400'
   if (hrs < 12) return '#FFB300'
   if (hrs < 24) return '#FF4545'
-  return '#888888'
+  return 'var(--text-dim)'
 }
 
 function getLatestReport(stock: any[]) {
@@ -62,16 +62,16 @@ function getLatestReport(stock: any[]) {
 }
 
 const FRESHNESS_LEGEND = [
-  { color: '#C9F400', label: 'Mostly fresh' },
+  { color: '#C9F400', label: 'Mostly fresh' }, // must match the lime pins in both themes
   { color: '#FFB300', label: 'Mixed' },
-  { color: '#8A8F86', label: 'Mostly stale' },
+  { color: 'var(--text-dim)', label: 'Mostly stale' },
 ]
 
 const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
   out:    { label: 'OUT',  color: '#FF4545' },
   low:    { label: 'LOW',  color: '#FFB300' },
   medium: { label: 'MED',  color: '#FFB300' },
-  full:   { label: 'FULL', color: 'var(--accent)' },
+  full:   { label: 'FULL', color: 'var(--accent-text)' },
 }
 
 const FREE_RADIUS_OPTIONS = [5]
@@ -586,7 +586,7 @@ export default function MapHome() {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-6 text-center gap-4" style={{ maxWidth: 420, margin: '0 auto' }}>
         <span style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <PinIcon size={26} color="#C9F400" />
+          <PinIcon size={26} color="var(--accent-text)" />
         </span>
         <div>
           <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Find stores near you</p>
@@ -607,7 +607,7 @@ export default function MapHome() {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-6 text-center gap-4" style={{ maxWidth: 420, margin: '0 auto' }}>
         <span style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <PinIcon size={26} color="#C9F400" />
+          <PinIcon size={26} color="var(--accent-text)" />
         </span>
         <div>
           <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
@@ -847,7 +847,7 @@ export default function MapHome() {
                   title="Re-center on my location"
                   aria-label="Re-center on my location"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
                   </svg>
                 </button>
@@ -877,7 +877,7 @@ export default function MapHome() {
               className="absolute z-10 rounded-xl p-2.5 flex flex-col gap-1.5"
               style={{
                 bottom: `calc(${showMapSheet ? 154 : 90}px + env(safe-area-inset-bottom))`, left: 16, transition: 'bottom 0.2s ease',
-                backgroundColor: 'rgba(19,21,17,0.92)',
+                backgroundColor: 'var(--header-bg)',
                 border: '1px solid var(--fg-10)',
                 backdropFilter: 'blur(12px)',
               }}
@@ -939,7 +939,7 @@ export default function MapHome() {
                           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 4px', background: 'none', border: 'none', borderTop: '1px solid var(--fg-06)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
                         >
                           <span style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <StoreTypeIcon type={s.type} size={18} color={fresh ? '#C9F400' : 'var(--text-muted)'} />
+                            <StoreTypeIcon type={s.type} size={18} color={fresh ? 'var(--accent-text)' : 'var(--text-muted)'} />
                           </span>
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ display: 'block', fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
@@ -1154,7 +1154,7 @@ export default function MapHome() {
                         <span style={{ display: 'block', fontSize: 17, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.name}</span>
                         <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</span>
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: isAtStore ? 'var(--accent)' : 'var(--text-muted)', flexShrink: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: isAtStore ? 'var(--accent-text)' : 'var(--text-muted)', flexShrink: 0 }}>
                         {isAtStore ? 'Here' : `${nearestDist!.toFixed(1)} mi`}
                       </span>
                       <ChevronRightIcon size={16} color="var(--text-dim)" />

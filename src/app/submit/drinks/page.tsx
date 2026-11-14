@@ -24,7 +24,7 @@ function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 // Left to right the way people read a cooler: full → out.
 const LEVELS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
-  { value: 'full',   label: 'Full', color: '#C9F400', bg: 'rgba(201,244,0,0.14)', border: 'rgba(201,244,0,0.5)' },
+  { value: 'full',   label: 'Full', color: 'var(--accent-text)', bg: 'rgba(201,244,0,0.14)', border: 'rgba(201,244,0,0.5)' },
   { value: 'medium', label: 'Med',  color: '#FFB300', bg: 'rgba(255,179,0,0.12)', border: 'rgba(255,179,0,0.45)' },
   { value: 'low',    label: 'Low',  color: '#FF8A3D', bg: 'rgba(255,138,61,0.12)', border: 'rgba(255,138,61,0.45)' },
   { value: 'out',    label: 'Out',  color: '#FF4545', bg: 'rgba(255,69,69,0.12)', border: 'rgba(255,69,69,0.45)' },
@@ -343,7 +343,7 @@ function DrinksContent() {
             </span>
           </span>
           {picked > 0 && (
-            <span key={picked} className="anim-bump" style={{ fontSize: 12, fontWeight: 600, color: '#C9F400', background: 'rgba(201,244,0,0.12)', borderRadius: 999, padding: '3px 9px' }}>{picked} picked</span>
+            <span key={picked} className="anim-bump" style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 999, padding: '3px 9px' }}>{picked} picked</span>
           )}
           {!forceOpen && (
             <span style={{ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
@@ -489,11 +489,11 @@ function DrinksContent() {
           ) : tooFar ? (
             <p style={statusStyle('#FF6B6B')}><PinIcon size={13} color="#FF6B6B" /> You need to be at the store to report stock.</p>
           ) : distanceM !== null && !profile?.is_admin ? (
-            <p style={statusStyle('#C9F400')}><PinIcon size={13} color="#C9F400" /> You&apos;re at the store</p>
+            <p style={statusStyle('var(--accent-text)')}><PinIcon size={13} color="var(--accent-text)" /> You&apos;re at the store</p>
           ) : locationSkipped && !profile?.is_admin ? (
             <p style={statusStyle('var(--text-dim)')}>
               Reporting without location is okay.
-              <button onClick={checkLocation} style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <button onClick={checkLocation} style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 Verify location
               </button>
             </p>

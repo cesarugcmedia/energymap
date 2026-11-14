@@ -2,6 +2,7 @@
 
 import { BADGE_DEFS } from '@/lib/badges'
 import PlanDetails from '@/components/account/PlanDetails'
+import { useTheme, type ThemePref } from '@/contexts/ThemeContext'
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import authStyles from './auth.module.css'
@@ -166,10 +167,10 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
   out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',   border: 'rgba(255,69,69,0.25)'   },
   low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
   medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
-  full:   { label: 'FULL', color: 'var(--accent)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
+  full:   { label: 'FULL', color: 'var(--accent-text)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
-type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password'
+type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'appearance'
 
 // Small line icons used only by the Account settings list (no equivalent in
 // the shared Icons set). Same 24×24 / rounded-stroke language as Icons.tsx.
@@ -177,6 +178,13 @@ function SlidersIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: 
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" aria-hidden="true">
       <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" />
+    </svg>
+  )
+}
+function ThemeIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" /><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill={color} />
     </svg>
   )
 }
@@ -269,6 +277,7 @@ function AccountPageInner() {
   // phone's back gesture/button returns to the list instead of leaving /account.
   const [accountPage, setAccountPage] = useState<AccountSubpage>('root')
   const { prefs, save: savePrefs } = usePreferences()
+  const { pref: themePref, setPref: setThemePref } = useTheme()
   const [editingPrefs, setEditingPrefs] = useState(false)
 
   useEffect(() => {
@@ -283,7 +292,7 @@ function AccountPageInner() {
   // drill-down directly, with Back returning to the Account list.
   useEffect(() => {
     const p = searchParams.get('page')
-    if (p !== 'badges' && p !== 'alerts' && p !== 'plan') return
+    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance') return
     window.history.replaceState({ accountPage: 'root' }, '', '/account')
     window.history.pushState({ accountPage: p }, '')
     setAccountPage(p)
@@ -849,7 +858,7 @@ function switchMode(m: Mode) {
 
     const TIER_LABEL: Record<string, { label: string; color: string; icon: string }> = {
       free:    { label: 'Free',    color: '#6b7280', icon: '🗺️' },
-      tracker: { label: 'Tracker', color: 'var(--accent)', icon: '⚡' },
+      tracker: { label: 'Tracker', color: 'var(--accent-text)', icon: '⚡' },
     }
     const tierInfo = TIER_LABEL[profile.tier ?? 'free']
 
@@ -870,11 +879,11 @@ function switchMode(m: Mode) {
       return (
         <div style={{ margin: '0 16px 22px' }}>
           {opts.header && (
-            <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', margin: '0 16px 7px' }}>{opts.header}</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', margin: '0 16px 7px' }}>{opts.header}</p>
           )}
           <div style={{ borderRadius: 12, backgroundColor: 'var(--surface)', overflow: 'hidden' }}>{children}</div>
           {opts.footer && (
-            <p style={{ fontSize: 12, color: '#6B7F70', lineHeight: 1.45, margin: '7px 16px 0' }}>{opts.footer}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.45, margin: '7px 16px 0' }}>{opts.footer}</p>
           )}
         </div>
       )
@@ -899,12 +908,12 @@ function switchMode(m: Mode) {
     const ICON = '#0D1210'
     const PAGE_TITLES: Record<AccountSubpage, string> = {
       root: 'Account', profile: 'Profile', plan: 'Plan', badges: 'Badges', saved: 'Saved Stores',
-      alerts: 'Flavor Alerts', username: 'Username', password: 'Password',
+      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', appearance: 'Appearance',
     }
 
     const avatar = (size: number) => (
       <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.3), rgba(201,244,0,0.08))', border: `${size > 70 ? 3 : 2}px solid rgba(201,244,0,0.5)` }}>
-        <span style={{ fontSize: size * 0.42, fontWeight: 700, color: '#C9F400' }}>{profile.username[0].toUpperCase()}</span>
+        <span style={{ fontSize: size * 0.42, fontWeight: 700, color: 'var(--accent-text)' }}>{profile.username[0].toUpperCase()}</span>
       </div>
     )
 
@@ -919,7 +928,7 @@ function switchMode(m: Mode) {
         <div style={{ margin: '0 16px 22px', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', backgroundColor: 'var(--surface)' }}>
           {icon}
           <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{title}</p>
-          <p style={{ fontSize: 13, color: '#6B7F70' }}>{body}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>{body}</p>
           {action && (
             <button onClick={action.onPress} style={{ marginTop: 6, padding: '10px 20px', borderRadius: 10, backgroundColor: '#C9F400', border: 'none', color: '#0D1210', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
               {action.label}
@@ -941,7 +950,7 @@ function switchMode(m: Mode) {
                   {profile.is_verified_reporter && <CheckIcon size={16} color="#60a5fa" />}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  {profile.is_admin && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: '#C9F400', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>}
+                  {profile.is_admin && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent-text)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>}
                   <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40` }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
                   {!statsLoading && rank && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.25)' }}>#{rank} All-Time</span>}
                 </div>
@@ -968,7 +977,7 @@ function switchMode(m: Mode) {
           const sorted = [...BADGE_DEFS].sort((a, b) => (earned.has(a.id) ? 0 : 1) - (earned.has(b.id) ? 0 : 1))
           return (
             <div style={{ padding: '0 16px 22px' }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: '#6B7F70', margin: '0 16px 7px' }}>{earned.size} of {BADGE_DEFS.length} earned</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', margin: '0 16px 7px' }}>{earned.size} of {BADGE_DEFS.length} earned</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                 {sorted.map((b) => {
                   const isEarned = earned.has(b.id)
@@ -976,8 +985,8 @@ function switchMode(m: Mode) {
                   return (
                     <div key={b.id} className={isEarned ? 'reveal shine' : 'reveal'} style={{ ['--shine-delay' as string]: '0.5s', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', backgroundColor: isEarned ? 'var(--fg-04)' : 'var(--surface)', border: isEarned ? `1px solid ${b.color}40` : '1px solid transparent', boxShadow: 'none', opacity: isEarned ? 1 : 0.45 }}>
                       <span style={{ fontSize: 26, filter: isEarned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
-                      <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : '#6B7F70' }}>{b.name}</p>
-                      <p style={{ fontSize: 10, lineHeight: 1.3, color: '#6B7F70' }}>{hint ?? b.desc}</p>
+                      <p style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, color: isEarned ? b.color : 'var(--text-dim)' }}>{b.name}</p>
+                      <p style={{ fontSize: 10, lineHeight: 1.3, color: 'var(--text-dim)' }}>{hint ?? b.desc}</p>
                     </div>
                   )
                 })}
@@ -987,9 +996,9 @@ function switchMode(m: Mode) {
         }
 
         case 'saved':
-          if (!isTracker) return emptyState(<HeartIcon size={32} color="#8b9284" />, 'Tracker Feature', 'Save and organize your favorite stores with the Tracker plan.', { label: 'See Plans', onPress: () => openAccountPage('plan') })
+          if (!isTracker) return emptyState(<HeartIcon size={32} color="var(--text-dim)" />, 'Tracker Feature', 'Save and organize your favorite stores with the Tracker plan.', { label: 'See Plans', onPress: () => openAccountPage('plan') })
           if (favoritesLoading) return spinner
-          if (favorites.length === 0) return emptyState(<HeartIcon size={32} color="#8b9284" />, 'No favorites yet', 'Tap the heart on any store page to save it here.')
+          if (favorites.length === 0) return emptyState(<HeartIcon size={32} color="var(--text-dim)" />, 'No favorites yet', 'Tap the heart on any store page to save it here.')
           return group(favorites.map((fav, i) => {
             const store = fav.store
             return (
@@ -999,7 +1008,7 @@ function switchMode(m: Mode) {
                   <StoreTypeIcon type={store?.type} size={22} color="var(--text-muted)" />
                   <a href={`/store/${store.id}?name=${encodeURIComponent(store.name)}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
                     <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.name}</p>
-                    <p style={{ fontSize: 12, color: '#6B7F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.address}</p>
                   </a>
                   <button onClick={() => removeFavorite(fav.id)} disabled={removingFavoriteId === fav.id} aria-label="Remove from saved" style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: 'none', opacity: removingFavoriteId === fav.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
                     {removingFavoriteId === fav.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={11} color="#FF4545" />}
@@ -1040,7 +1049,7 @@ function switchMode(m: Mode) {
                           {followingDrinkId === d.id ? (
                             <div style={{ width: 14, height: 14, flexShrink: 0, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                           ) : (
-                            <BellIcon size={15} color={already ? '#C9F400' : '#8b9284'} filled={already} />
+                            <BellIcon size={15} color={already ? 'var(--accent-text)' : 'var(--text-dim)'} filled={already} />
                           )}
                         </button>
                       )
@@ -1049,7 +1058,7 @@ function switchMode(m: Mode) {
                 )}
               </div>
               {drinkAlertsLoading ? spinner : drinkAlerts.length === 0
-                ? emptyState(<BellIcon size={32} color="#8b9284" />, 'No flavor alerts yet', 'Tap the bell on any drink card to get notified when it restocks.')
+                ? emptyState(<BellIcon size={32} color="var(--text-dim)" />, 'No flavor alerts yet', 'Tap the bell on any drink card to get notified when it restocks.')
                 : group(drinkAlerts.map((a, i) => {
                     const scopeLabel = a.scope === 'store' ? (a.store?.name ?? 'This store only')
                       : a.scope === 'radius' ? `Within ${a.radius_miles} miles`
@@ -1058,10 +1067,10 @@ function switchMode(m: Mode) {
                       <div key={a.id}>
                         {i > 0 && <div style={{ height: 1, backgroundColor: 'var(--fg-06)', marginLeft: 50 }} />}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px' }}>
-                          <BellIcon size={22} color="#C9F400" filled />
+                          <BellIcon size={22} color="var(--accent-text)" filled />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.drink?.flavor ?? a.drink?.name}</p>
-                            <p style={{ fontSize: 12, color: '#6B7F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scopeLabel}</p>
+                            <p style={{ fontSize: 12, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scopeLabel}</p>
                           </div>
                           <button onClick={() => removeDrinkAlert(a.id)} disabled={removingAlertId === a.id} aria-label="Remove alert" style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,69,69,0.1)', border: 'none', opacity: removingAlertId === a.id ? 0.4 : 1, cursor: 'pointer', flexShrink: 0 }}>
                             {removingAlertId === a.id ? <div style={{ width: 12, height: 12, border: '1.5px solid #FF4545', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <CloseIcon size={11} color="#FF4545" />}
@@ -1091,6 +1100,33 @@ function switchMode(m: Mode) {
               </div>
             </>
           )
+
+        case 'appearance': {
+          const OPTIONS: { value: ThemePref; label: string; hint: string }[] = [
+            { value: 'dark', label: 'Dark', hint: 'The original AmpedMap look' },
+            { value: 'light', label: 'Light', hint: 'Bright backgrounds, easier in sunlight' },
+            { value: 'system', label: 'Match my phone', hint: 'Follows your device’s light/dark setting' },
+          ]
+          return (
+            <>
+              {group(OPTIONS.map((o, i) => (
+                <div key={o.value}>
+                  {i > 0 && ROW_SEP}
+                  <button
+                    onClick={() => setThemePref(o.value)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                  >
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: 16, color: 'var(--text)' }}>{o.label}</span>
+                      <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1 }}>{o.hint}</span>
+                    </span>
+                    {themePref === o.value && <span className="anim-pop" style={{ display: 'flex' }}><CheckIcon size={18} color="var(--accent-text)" /></span>}
+                  </button>
+                </div>
+              )), { footer: 'Saved on this device. The sign-in and welcome pages always stay dark.' })}
+            </>
+          )
+        }
 
         case 'password':
           return (
@@ -1158,6 +1194,8 @@ function switchMode(m: Mode) {
               {ROW_SEP}
               {row({ icon: <DrinkIcon size={17} color={ICON} />, label: 'Flavor Alerts', value: drinkAlerts.length, onPress: () => openAccountPage('alerts') })}
               {ROW_SEP}
+              {row({ icon: <ThemeIcon />, label: 'Appearance', value: themePref === 'system' ? 'Match phone' : themePref === 'light' ? 'Light' : 'Dark', onPress: () => openAccountPage('appearance') })}
+              {ROW_SEP}
               {row({ icon: <SlidersIcon />, label: 'Your preferences', value: prefs.brands.length ? prefs.brands.slice(0, 2).join(', ') + (prefs.brands.length > 2 ? '…' : '') : 'Not set', onPress: () => setEditingPrefs(true) })}
             </>)}
 
@@ -1182,8 +1220,8 @@ function switchMode(m: Mode) {
           /* ── SUBPAGE ── */
           <div key={accountPage} style={{ animation: 'acctSlideIn 0.22s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', padding: '2px 8px 16px', position: 'relative', minHeight: 40 }}>
-              <button onClick={closeAccountPage} style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', color: '#C9F400', fontSize: 16, fontWeight: 500, position: 'relative', zIndex: 1 }}>
-                <ChevronLeftIcon size={20} color="#C9F400" /> Account
+              <button onClick={closeAccountPage} style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', color: 'var(--accent-text)', fontSize: 16, fontWeight: 500, position: 'relative', zIndex: 1 }}>
+                <ChevronLeftIcon size={20} color="var(--accent-text)" /> Account
               </button>
               <p style={{ position: 'absolute', left: 0, right: 0, textAlign: 'center', fontSize: 17, fontWeight: 700, color: 'var(--text)', pointerEvents: 'none' }}>{PAGE_TITLES[accountPage]}</p>
             </div>

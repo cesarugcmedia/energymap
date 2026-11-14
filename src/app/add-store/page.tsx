@@ -138,7 +138,7 @@ export default function AddStorePage() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' }}>
         <span style={{ width: 64, height: 64, borderRadius: '50%', marginBottom: 16, background: 'rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </span>
         <p style={{ fontSize: 24, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Store sent for review</p>
         <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 32, lineHeight: 1.6 }}>
@@ -238,7 +238,7 @@ export default function AddStorePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, borderRadius: 12, padding: 12, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.25)' }}>
             <PinIcon size={20} color="var(--accent)" />
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Location found!</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-text)' }}>Location found!</p>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
@@ -299,7 +299,7 @@ export default function AddStorePage() {
               }}
               onClick={() => setType(t.value)}
             >
-              <StoreTypeIcon type={t.value} size={18} color={type === t.value ? '#C9F400' : 'var(--text-muted)'} />
+              <StoreTypeIcon type={t.value} size={18} color={type === t.value ? 'var(--accent-text)' : 'var(--text-muted)'} />
               <span
                 style={{ fontSize: 14, fontWeight: 700, color: type === t.value ? '#F0F4E8' : 'var(--text-muted)' }}
               >

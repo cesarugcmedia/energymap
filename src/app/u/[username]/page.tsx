@@ -241,7 +241,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 {posts.map((post) => (
                   <Link key={post.id} href={`/community?post=${post.id}`} className={`${ui.card} reveal`} style={{ display: 'flex', gap: 12, textDecoration: 'none', color: 'inherit' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      {post.type !== 'post' && <span style={{ fontSize: 12, fontWeight: 700, color: post.type === 'found' ? '#C9F400' : '#FFB300' }}>{post.type === 'found' ? 'Found it' : 'Looking for'}</span>}
+                      {post.type !== 'post' && <span style={{ fontSize: 12, fontWeight: 700, color: post.type === 'found' ? 'var(--accent-text)' : '#FFB300' }}>{post.type === 'found' ? 'Found it' : 'Looking for'}</span>}
                       <RichText text={post.body.length > 160 ? `${post.body.slice(0, 160)}…` : post.body} style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.45 }} />
                       <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         {post.storeName && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><PinIcon size={11} color="var(--text-dim)" />{post.storeName} ·</span>}

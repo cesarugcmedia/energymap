@@ -30,7 +30,7 @@ export default function SideNav() {
   })
 
   const tierLabel = profile?.is_admin ? 'Admin' : profile?.tier === 'tracker' ? 'Tracker' : 'Free'
-  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? '#C9F400' : 'var(--text-dim)'
+  const tierColor = profile?.is_admin ? '#f59e0b' : profile?.tier === 'tracker' ? 'var(--accent-text)' : 'var(--text-dim)'
 
   return (
     <aside
@@ -67,7 +67,7 @@ export default function SideNav() {
               className="flex items-center gap-3 rounded-xl px-3 py-3 no-underline transition-colors"
               style={{
                 backgroundColor: isActive ? 'rgba(201,244,0,0.08)' : 'transparent',
-                color: isActive ? '#C9F400' : 'var(--text-muted)',
+                color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
               }}
             >
               <div style={{ position: 'relative', filter: 'none' }}>

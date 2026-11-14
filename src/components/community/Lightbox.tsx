@@ -48,7 +48,7 @@ export default function Lightbox({ photos, start, onClose }: { photos: string[];
           <button aria-label="Previous photo" onClick={(e) => { e.stopPropagation(); go(-1) }} style={{ ...navBtn, left: 12 }}>‹</button>
           <button aria-label="Next photo" onClick={(e) => { e.stopPropagation(); go(1) }} style={{ ...navBtn, right: 12 }}>›</button>
           <div style={{ position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom) + 18px)', display: 'flex', gap: 6 }}>
-            {photos.map((_, n) => <span key={n} style={{ width: 7, height: 7, borderRadius: '50%', background: n === i ? '#fff' : 'rgba(255,255,255,0.35)' }} />)}
+            {photos.map((_, n) => <span key={n} style={{ width: 7, height: 7, borderRadius: '50%', background: n === i ? '#fff' : 'var(--fg-35)' }} />)}
           </div>
         </>
       )}

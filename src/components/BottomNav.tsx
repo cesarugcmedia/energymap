@@ -46,7 +46,7 @@ export default function BottomNav() {
               key={tab.href}
               href={tab.href}
               className="flex flex-col items-center justify-center flex-1 gap-1 no-underline"
-              style={{ color: isActive ? 'var(--accent)' : 'var(--text-dim)', position: 'relative' }}
+              style={{ color: isActive ? 'var(--accent-text)' : 'var(--text-dim)', position: 'relative' }}
             >
               <div style={{ position: 'relative', filter: 'none' }}>
                 {/* Keyed on active so the icon pops when you switch to it. */}

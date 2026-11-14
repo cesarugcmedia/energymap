@@ -14,8 +14,13 @@
   --surface2: #191B16;
   --surface3: #20231C;
   --header-bg: rgba(10,11,10,0.92);
-  /* Accent (volt used as text/border color) */
+  /* Accent: --accent is the lime FILL (buttons, active chips); --accent-text
+     is lime used as text/icon color, which needs to be darker in light mode. */
   --accent: #C9F400;
+  --accent-text: #C9F400;
+  --input-bg: #0C0E0B;
+  --placeholder: #66716A;
+  color-scheme: dark;
   /* Borders */
   --border: rgba(255,255,255,0.08);
   --border-dash: rgba(201,244,0,0.35);
@@ -49,6 +54,53 @@
   --fg-03: rgba(255,255,255,0.03);
   --fg-02: rgba(255,255,255,0.02);
 }
+
+/* ── Light mode ── Set on <html data-theme="light"> (Account → Appearance;
+   applied before first paint by the inline script in layout.tsx). Only for
+   signed-in screens — the landing and auth pages keep their own dark look.
+   The fg-* series flips to black alphas so borders/tints still read. */
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F3F5EF;
+  --surface: #FFFFFF;
+  --surface2: #F2F4EE;
+  --surface3: #E9ECE4;
+  --header-bg: rgba(243,245,239,0.92);
+  --accent-text: #4E6600;
+  --volt-dim: #6E8C00;
+  --input-bg: #FFFFFF;
+  --placeholder: #8A948B;
+  --border: rgba(0,0,0,0.09);
+  --border-dash: rgba(78,102,0,0.4);
+  --text: #141A13;
+  --text-muted: #4D584F;
+  --text-dim: #687369;
+  --fg-90: rgba(0,0,0,0.85);
+  --fg-75: rgba(0,0,0,0.7);
+  --fg-60: rgba(0,0,0,0.58);
+  --fg-55: rgba(0,0,0,0.54);
+  --fg-50: rgba(0,0,0,0.5);
+  --fg-45: rgba(0,0,0,0.45);
+  --fg-40: rgba(0,0,0,0.4);
+  --fg-35: rgba(0,0,0,0.35);
+  --fg-30: rgba(0,0,0,0.3);
+  --fg-25: rgba(0,0,0,0.25);
+  --fg-20: rgba(0,0,0,0.2);
+  --fg-15: rgba(0,0,0,0.15);
+  --fg-13: rgba(0,0,0,0.13);
+  --fg-10: rgba(0,0,0,0.1);
+  --fg-08: rgba(0,0,0,0.08);
+  --fg-07: rgba(0,0,0,0.07);
+  --fg-06: rgba(0,0,0,0.06);
+  --fg-05: rgba(0,0,0,0.05);
+  --fg-04: rgba(0,0,0,0.04);
+  --fg-03: rgba(0,0,0,0.03);
+  --fg-02: rgba(0,0,0,0.02);
+}
+/* Tailwind's text-white is used for body text on a few older screens. */
+html[data-theme="light"] .text-white { color: var(--text); }
+html[data-theme="light"] .text-white\/80 { color: var(--fg-75); }
+html[data-theme="light"] .text-white\/70 { color: var(--fg-60); }
 
 
 html,

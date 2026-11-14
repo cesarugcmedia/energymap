@@ -8,7 +8,7 @@ export function RichText({ text, style }: { text: string; style?: React.CSSPrope
     <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0, ...style }}>
       {parts.map((part, i) =>
         /^@[a-z0-9_]{3,30}$/i.test(part)
-          ? <Link key={i} href={`/u/${part.slice(1).toLowerCase()}`} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>{part}</Link>
+          ? <Link key={i} href={`/u/${part.slice(1).toLowerCase()}`} style={{ color: 'var(--accent-text)', fontWeight: 600, textDecoration: 'none' }}>{part}</Link>
           : <span key={i}>{part}</span>
       )}
     </p>

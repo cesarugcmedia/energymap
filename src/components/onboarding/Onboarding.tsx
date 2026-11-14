@@ -142,7 +142,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {[...followed.values()].map((d) => (
                 <span key={d.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(201,244,0,0.12)', color: 'var(--text)', fontSize: 14 }}>
-                  <BellIcon size={12} color="#C9F400" filled />{d.brand} {d.flavor}
+                  <BellIcon size={12} color="var(--accent-text)" filled />{d.brand} {d.flavor}
                   <button aria-label="Remove" onClick={() => { const m = new Map(followed); m.delete(d.id); setFollowed(m) }} style={{ background: 'none', border: 'none', display: 'flex', padding: 0, cursor: 'pointer' }}><CloseIcon size={10} color="var(--text-dim)" /></button>
                 </span>
               ))}
@@ -156,7 +156,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', borderTop: i ? '1px solid var(--fg-06)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
                   <DrinkIcon size={16} color="var(--text-muted)" />
                   <span style={{ flex: 1, fontSize: 15, color: 'var(--text)' }}>{d.brand} {d.flavor}</span>
-                  <BellIcon size={15} color={on ? '#C9F400' : 'var(--text-dim)'} filled={on} />
+                  <BellIcon size={15} color={on ? 'var(--accent-text)' : 'var(--text-dim)'} filled={on} />
                 </button>
               )
             })}
@@ -177,7 +177,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
               return (
                 <button key={t.value} onClick={() => setStoreTypes(toggle(storeTypes, t.value))} className={ui.card}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', borderColor: on ? 'rgba(201,244,0,0.5)' : undefined, background: on ? 'rgba(201,244,0,0.06)' : undefined }}>
-                  <StoreTypeIcon type={t.value} size={18} color={on ? '#C9F400' : 'var(--text-muted)'} />
+                  <StoreTypeIcon type={t.value} size={18} color={on ? 'var(--accent-text)' : 'var(--text-muted)'} />
                   <span style={{ flex: 1, fontSize: 15, color: 'var(--text)' }}>{t.label}</span>
                   <span style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${on ? '#C9F400' : 'var(--fg-20)'}`, background: on ? '#C9F400' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0D1210" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
@@ -193,10 +193,10 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
             <button className={ui.btnSecondary} onClick={lookupZip} disabled={zipState === 'checking'}>{zipState === 'checking' ? 'Checking…' : 'Set'}</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 14 }}>
-            <span style={{ color: zipState === 'error' ? '#FF6B6B' : zipState === 'ok' ? '#C9F400' : 'var(--text-dim)' }}>
+            <span style={{ color: zipState === 'error' ? '#FF6B6B' : zipState === 'ok' ? 'var(--accent-text)' : 'var(--text-dim)' }}>
               {zipState === 'error' ? 'Couldn’t find that. Check the ZIP.' : zipState === 'ok' ? (homeZip ? `Home set to ${homeZip}` : 'Home set to your current location') : ' '}
             </span>
-            <button onClick={useCurrentLocation} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={useCurrentLocation} style={{ background: 'none', border: 'none', color: 'var(--accent-text)', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <PinIcon size={13} color="var(--accent)" /> Use my location
             </button>
           </div>
@@ -217,7 +217,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
               <button key={String(value)} onClick={() => setWantsToReport(value)} className={ui.card}
                 style={{ display: 'flex', gap: 12, padding: 16, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', borderColor: on ? 'rgba(201,244,0,0.5)' : undefined, background: on ? 'rgba(201,244,0,0.06)' : undefined }}>
                 <span style={{ width: 36, height: 36, borderRadius: 10, background: on ? 'rgba(201,244,0,0.16)' : 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {value ? <LightningIcon size={17} color={on ? '#C9F400' : 'var(--text-muted)'} /> : <SearchIcon size={16} color={on ? '#C9F400' : 'var(--text-muted)'} />}
+                  {value ? <LightningIcon size={17} color={on ? 'var(--accent-text)' : 'var(--text-muted)'} /> : <SearchIcon size={16} color={on ? 'var(--accent-text)' : 'var(--text-muted)'} />}
                 </span>
                 <span>
                   <span style={{ display: 'block', fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{title}</span>
@@ -239,14 +239,14 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
     body: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[
-          { icon: <PinIcon size={18} color="#C9F400" />, title: 'Every store near you', body: 'Gas stations, convenience and grocery stores on one map.' },
+          { icon: <PinIcon size={18} color="var(--accent-text)" />, title: 'Every store near you', body: 'Gas stations, convenience and grocery stores on one map.' },
           {
-            icon: <span style={{ display: 'flex', gap: 3 }}>{['#C9F400', '#FFB300', '#8A8F86'].map((c) => <span key={c} style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />)}</span>,
+            icon: <span style={{ display: 'flex', gap: 3 }}>{['#C9F400', '#FFB300', 'var(--text-dim)'].map((c) => <span key={c} style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />)}</span>,
             title: 'See what’s in stock',
             body: 'Pins turn lime when someone reported in the last 12 hours. Tap one to see flavors and stock levels.',
           },
-          { icon: <BellIcon size={18} color="#C9F400" />, title: 'Never miss a restock', body: 'Follow a flavor and we’ll tell you when it’s back.' },
-          { icon: <LightningIcon size={18} color="#C9F400" />, title: 'Powered by hunters like you', body: 'Report what you see in seconds, earn badges and climb the leaderboard.' },
+          { icon: <BellIcon size={18} color="var(--accent-text)" />, title: 'Never miss a restock', body: 'Follow a flavor and we’ll tell you when it’s back.' },
+          { icon: <LightningIcon size={18} color="var(--accent-text)" />, title: 'Powered by hunters like you', body: 'Report what you see in seconds, earn badges and climb the leaderboard.' },
         ].map((f) => (
           <div key={f.title} className={ui.card} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: 16 }}>
             <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{f.icon}</span>
@@ -305,10 +305,10 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
             demo: (
               <div style={{ ...mock, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(201,244,0,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
                 </span>
                 <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>3 reports sent</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#C9F400' }}>+6 pts</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-text)' }}>+6 pts</span>
               </div>
             ),
           },
@@ -355,14 +355,14 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
           {isFinish ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingTop: '12vh' }}>
               <span className="anim-pop" style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
               </span>
               <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>You&apos;re all set</h1>
               <p style={{ fontSize: 17, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 360 }}>{summary?.text}</p>
               {followed.size > 0 && <p style={{ fontSize: 15, color: 'var(--text-dim)', marginTop: 10 }}>Following {followed.size} flavor{followed.size === 1 ? '' : 's'} for restock alerts.</p>}
               {wantsToReport && !summary?.reportStore && (
                 <div className={ui.card} style={{ marginTop: 18, maxWidth: 380, textAlign: 'left', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <LightningIcon size={18} color="#C9F400" />
+                  <LightningIcon size={18} color="var(--accent-text)" />
                   <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>Next time you&apos;re in a store, a <strong style={{ color: 'var(--text)', fontWeight: 600 }}>“You&apos;re at…”</strong> banner will pop up on the map. Tap <strong style={{ color: 'var(--text)', fontWeight: 600 }}>Report stock</strong> and you&apos;re off.</p>
                 </div>
               )}
