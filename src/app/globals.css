@@ -148,3 +148,26 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
 @media (prefers-reduced-motion: reduce) {
   .anim-fade, .anim-rise, .anim-sheet { animation: none; }
 }
+
+/* Tap feedback */
+@keyframes animPop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 70% { transform: scale(0.92); } 100% { transform: scale(1); } }
+@keyframes animWiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-16deg); } 40% { transform: rotate(13deg); } 60% { transform: rotate(-8deg); } 80% { transform: rotate(4deg); } }
+.anim-pop { animation: animPop 0.38s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.anim-wiggle { animation: animWiggle 0.5s ease-in-out; transform-origin: 50% 15%; }
+.press { transition: transform 0.12s ease; }
+.press:active { transform: scale(0.94); }
+
+/* Success checkmark that draws itself (stroke-dasharray on the path) */
+@keyframes animDraw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+.anim-draw { stroke-dasharray: 24; stroke-dashoffset: 24; animation: animDraw 0.45s 0.15s ease-out forwards; }
+
+/* Map pins: drop in on first load (inner wrapper of Mapbox markers); the selected pin pops via .anim-pop */
+@keyframes animPinDrop { 0% { opacity: 0; transform: translateY(-14px) scale(0.85); } 70% { opacity: 1; transform: translateY(2px) scale(1.04); } 100% { transform: none; } }
+.pin-drop { animation: animPinDrop 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-pop, .anim-wiggle, .pin-drop { animation: none; }
+  .anim-draw { animation: none; stroke-dashoffset: 0; }
+  .press:active { transform: none; }
+}

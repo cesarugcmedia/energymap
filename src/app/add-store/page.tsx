@@ -345,10 +345,12 @@ export default function AddStorePage() {
       {/* Duplicate store modal */}
       {duplicate && (
         <div
+          className="anim-fade"
           style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={() => setDuplicate(null)}
         >
           <div
+            className="anim-sheet"
             style={{ width: '100%', maxWidth: 480, borderRadius: '24px 24px 0 0', padding: '24px 24px 40px', backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
             onClick={(e) => e.stopPropagation()}
           >

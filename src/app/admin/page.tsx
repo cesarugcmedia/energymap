@@ -1209,7 +1209,7 @@ export default function AdminPage() {
            the MainWrapper scroll container and iOS touch events can't leak through */}
       {drinkDuplicateMsg && createPortal(
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center"
+          className="anim-fade fixed inset-0 z-[60] flex items-end justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={() => setDrinkDuplicateMsg(null)}
         >
@@ -1238,12 +1238,12 @@ export default function AdminPage() {
 
       {editStore && createPortal(
         <div
-          className="fixed inset-0 flex flex-col justify-end z-50"
+          className="anim-fade fixed inset-0 flex flex-col justify-end z-50"
           style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setEditStore(null) }}
         >
           <div
-            className="rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto"
+            className="anim-sheet rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto"
             style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', paddingBottom: 40 }}
             onClick={(e) => e.stopPropagation()}
           >

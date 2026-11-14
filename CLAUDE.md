@@ -165,7 +165,7 @@ The logo mark is a dark bolt on a lime (`#C9F400`) rounded square, used in the l
 - **First-run welcome sheet** on the map (pin colors, tap a store, report at a store), shown once per device (`localStorage.welcome_seen_v1`).
 - **Store page** shows an at-a-glance line ("8 of 12 flavors in stock · last report 2h ago", exact time for Tracker, freshness label for Free) and orders brands by most recent report, drinks by stock level then freshness.
 - **Skeleton loaders** (`src/components/ui/SkeletonList.tsx`) replace spinners on the main content lists; full-screen auth-check spinners remain.
-- **Motion**: shared `anim-fade` / `anim-rise` / `anim-sheet` classes in `globals.css` (≤ 280ms, disabled under `prefers-reduced-motion`).
+- **Motion** (all in `globals.css`, short, and disabled under `prefers-reduced-motion`): `anim-fade` (backdrops), `anim-sheet` (bottom sheets slide up — map store popup keyed by store id so it replays, store-page Add flavor / Flag / alert sheets, add-store and admin sheets, welcome sheet), `anim-rise` + per-item `animationDelay` (staggered list cards: map list, store brands, Community posts, Notifications, Saved; live-update rows; at-store banner), `anim-pop` (heart on save, success ✓ circle, selected map pin), `anim-wiggle` (bell on follow), `press` (scale-down on FULL/MED/LOW/OUT), `anim-draw` (success checkmark stroke). Heart/bell animations are driven by counters (`heartAnim`, `bellAnim`) so they replay only on the action, not on page load. Map pins get `pin-drop` on an INNER wrapper (Mapbox owns the outer element's transform) and only during the first 2s after stores load (`dropInUntilRef`), not on every pan. The success screen ticks its report count up with requestAnimationFrame.
 
 ### Analytics
 

@@ -44,21 +44,24 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-function createClusterEl(count: number, freshness: MarkerFreshness): HTMLElement {
+// `animate` adds a one-time drop-in on an INNER wrapper — Mapbox positions
+// markers by setting a transform on the outer element, so animating that
+// element itself would fight the positioning.
+function createClusterEl(count: number, freshness: MarkerFreshness, animate = false): HTMLElement {
   const size = count >= 100 ? 54 : count >= 10 ? 46 : 40
   const fontSize = count >= 100 ? 13 : 14
   const { hex, rgb } = FRESHNESS_COLOR[freshness]
   const el = document.createElement('div')
   el.style.cssText = 'cursor:pointer;pointer-events:auto;display:flex;align-items:center;justify-content:center;'
   el.innerHTML = `
-    <div style="width:${size}px;height:${size}px;background:rgba(${rgb},0.15);border:1.5px solid rgba(${rgb},0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(${rgb},0.07),0 0 20px rgba(${rgb},0.4);pointer-events:none;">
+    <div class="${animate ? 'pin-drop' : ''}" style="width:${size}px;height:${size}px;background:rgba(${rgb},0.15);border:1.5px solid rgba(${rgb},0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(${rgb},0.07),0 0 20px rgba(${rgb},0.4);pointer-events:none;">
       <span style="font-size:${fontSize}px;font-weight:900;color:${hex};font-family:system-ui,sans-serif;pointer-events:none;">${count}</span>
     </div>
   `
   return el
 }
 
-function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshness): HTMLElement {
+function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshness, animate = false): HTMLElement {
   const { hex, rgb } = FRESHNESS_COLOR[freshness]
   const iconSvg = storeTypeIconSvg(store.type, isSelected ? hex : '#f3f5ee', isSelected ? 20 : 16)
   const orbSize = isSelected ? 46 : 36
@@ -77,7 +80,8 @@ function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshn
   const el = document.createElement('div')
   el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;pointer-events:auto;'
   el.innerHTML = `
-    <div style="position:relative;width:${orbSize}px;height:${orbSize}px;">
+    <div class="${animate ? 'pin-drop' : ''}" style="display:flex;flex-direction:column;align-items:center;">
+    <div class="${isSelected ? 'anim-pop' : ''}" style="position:relative;width:${orbSize}px;height:${orbSize}px;">
       ${pulseRings}
       <div style="width:${orbSize}px;height:${orbSize}px;background:${orbBg};border:1.5px solid ${orbBorder};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:${orbGlow};">
         <span style="display:flex;line-height:1;pointer-events:none;">${iconSvg}</span>
@@ -87,6 +91,7 @@ function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshn
       ? `<div style="margin-top:5px;background:rgba(10,10,18,0.9);border:1px solid rgba(${rgb},0.45);border-radius:7px;padding:5px 9px;white-space:normal;word-break:break-word;max-width:120px;text-align:center;font-family:system-ui,sans-serif;font-size:10px;font-weight:700;line-height:1.3;color:#fff;letter-spacing:0.02em;box-shadow:0 0 10px rgba(${rgb},0.25);pointer-events:none;">${store.name}</div>`
       : ''}
     <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${tipColor};margin-top:2px;filter:drop-shadow(0 2px 4px rgba(${rgb},0.5));pointer-events:none;"></div>
+    </div>
   `
   return el
 }
@@ -121,6 +126,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   lngRef.current = lng
   const storeFreshnessRef = useRef<Record<string, StoreFreshness>>(storeFreshness ?? {})
   storeFreshnessRef.current = storeFreshness ?? {}
+  // Pins drop in only during the first moment after stores load, not on every
+  // pan/zoom (markers are recreated as they scroll into view).
+  const dropInUntilRef = useRef(0)
 
   function updateMarkers() {
     const map = mapRef.current
@@ -163,7 +171,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         if (!markersRef.current.has(key)) {
           const leaves = sc!.getLeaves(cp.cluster_id, Infinity)
           const freshness = aggregateFreshness(leaves.map((l) => storeFreshnessRef.current[(l.properties as Store).id]))
-          const el = createClusterEl(cp.point_count, freshness)
+          const el = createClusterEl(cp.point_count, freshness, Date.now() < dropInUntilRef.current)
           el.addEventListener('click', () => {
             const expansionZoom = Math.min(sc!.getClusterExpansionZoom(cp.cluster_id), 20)
             map.easeTo({ center: coords, zoom: expansionZoom, duration: 400 })
@@ -180,7 +188,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         if (!markersRef.current.has(key)) {
           const isSelected = selectedRef.current?.id === store.id
           const freshness = storeFreshnessRef.current[store.id] ?? 'stale'
-          const el = createStoreEl(store, isSelected, freshness)
+          const el = createStoreEl(store, isSelected, freshness, Date.now() < dropInUntilRef.current)
           el.addEventListener('click', (e) => { e.stopPropagation(); onSelectStoreRef.current(store) })
           el.addEventListener('touchend', (e) => { e.stopPropagation(); onSelectStoreRef.current(store) })
           const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
@@ -224,6 +232,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     if (map) {
       if (!fittedRef.current) {
         fittedRef.current = true
+        dropInUntilRef.current = Date.now() + 2000
         const nearby = stores.filter((s) => haversine(latRef.current, lngRef.current, s.lat, s.lng) <= 25)
         const pts = nearby.length > 0 ? nearby : stores
         const lngs = pts.map((s) => s.lng)

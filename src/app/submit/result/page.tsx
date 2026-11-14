@@ -20,6 +20,24 @@ function ResultContent() {
   const storeName = params.get('storeName') ?? ''
   const count = params.get('count') ? parseInt(params.get('count')!) : null
 
+  // Tick the headline count up from 0 for a little celebration (instant when
+  // the OS asks for reduced motion).
+  const [shownCount, setShownCount] = useState(0)
+  useEffect(() => {
+    if (!count) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShownCount(count); return }
+    const start = performance.now()
+    const duration = Math.min(700, 200 + count * 60)
+    let frame = 0
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      setShownCount(Math.round(count * (1 - Math.pow(1 - t, 3))))
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [count])
+
   const [stock, setStock] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -66,15 +84,15 @@ function ResultContent() {
 
         {/* ── Success hero ──────────────────────────────────────────── */}
         <div style={{ padding: 'calc(env(safe-area-inset-top) + 48px) 16px 24px', textAlign: 'center' }}>
-          <div style={{
+          <div className="anim-pop" style={{
             width: 72, height: 72, borderRadius: '50%', margin: '0 auto 16px',
             background: 'rgba(201,244,0,0.12)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
           </div>
           <p style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 600, color: 'var(--text)' }}>
-            {count !== null ? `${count} report${count !== 1 ? 's' : ''} sent` : 'Report sent'}
+            {count !== null ? `${shownCount} report${count !== 1 ? 's' : ''} sent` : 'Report sent'}
           </p>
           <p style={{ margin: 0, fontSize: 15, color: 'var(--text-muted)' }}>
             Thanks for updating <span style={{ color: 'var(--text)', fontWeight: 600 }}>{storeName}</span>

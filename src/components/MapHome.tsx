@@ -723,7 +723,8 @@ export default function MapHome() {
             {/* Bottom sheet when store selected */}
             {selected && (
               <div
-                className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-5"
+                key={selected.id}
+                className="anim-sheet absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-5"
                 style={{
                   backgroundColor: 'var(--surface)',
                   border: '1px solid var(--fg-08)',
@@ -917,7 +918,7 @@ export default function MapHome() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {sorted.map((store) => {
+                  {sorted.map((store, idx) => {
                     const stock = storeStock[store.id] ?? []
                     const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
                     const latestReport = getLatestReport(stock)
@@ -930,7 +931,7 @@ export default function MapHome() {
                     const storeHref = `/store/${store.id}?name=${encodeURIComponent(store.name)}`
 
                     return (
-                      <div key={store.id} className={ui.card}>
+                      <div key={store.id} className={`${ui.card} anim-rise`} style={{ animationDelay: `${Math.min(idx, 8) * 40}ms` }}>
                         <button
                           onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}
                           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit' }}
@@ -976,7 +977,7 @@ export default function MapHome() {
                           const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : '#FFB300'
                           const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
                           return (
-                            <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: 'var(--fg-04)' }}>
+                            <div key={update.id} className="anim-rise" style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: 'var(--fg-04)' }}>
                               <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
                               <p style={{ fontSize: 13, color: 'var(--text-muted)', flex: 1 }}>
                                 <span style={{ fontWeight: 600, color: 'var(--text)' }}>@{update.username}</span> reported{' '}

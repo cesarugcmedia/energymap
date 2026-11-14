@@ -148,6 +148,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     if (data) { setIsFavorited(true); setFavoriteId(data.id) }
   }
 
+  // Bumped when a store is saved / a flavor is followed, to replay the
+  // heart-pop and bell-wiggle animations only on those actions (not on load).
+  const [heartAnim, setHeartAnim] = useState(0)
+  const [bellAnim, setBellAnim] = useState<{ id: string; n: number } | null>(null)
+
   async function toggleFavorite() {
     if (!user || favoritingLoading) return
     setFavoritingLoading(true)
@@ -158,7 +163,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       showToast('Removed from favorites')
     } else {
       const { data } = await supabase.from('favorites').insert({ user_id: user.id, store_id: id }).select('id').single()
-      if (data) { setIsFavorited(true); setFavoriteId(data.id); showToast('Added to favorites') }
+      if (data) { setIsFavorited(true); setFavoriteId(data.id); setHeartAnim((n) => n + 1); showToast('Added to favorites') }
     }
     setFavoritingLoading(false)
   }
@@ -207,6 +212,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     setAlertSubmitting(false)
     if (!error) {
       setDrinkAlerts((prev) => new Set(prev).add(alertSheetDrinkId))
+      setBellAnim((b) => ({ id: alertSheetDrinkId, n: (b?.n ?? 0) + 1 }))
       setAlertSheetDrinkId(null)
       showToast("You'll be notified when it's back")
     } else {
@@ -457,7 +463,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 transition: 'all 0.2s ease',
               }}
             >
-              <HeartIcon size={14} color={isFavorited ? '#FF4545' : '#8b9284'} filled={isFavorited} />
+              <span key={heartAnim} className={heartAnim > 0 && isFavorited ? 'anim-pop' : ''} style={{ display: 'flex' }}>
+                <HeartIcon size={14} color={isFavorited ? '#FF4545' : '#8b9284'} filled={isFavorited} />
+              </span>
             </button>
             <button
               onClick={() => setShowFlag(true)}
@@ -572,7 +580,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             )}
 
             <div className="flex flex-col gap-2.5">
-              {Object.entries(byBrand).map(([brand, items]) => {
+              {Object.entries(byBrand).map(([brand, items], brandIdx) => {
                 const inStock = items.filter((i) => i.quantity !== 'out').length
                 const total = items.length
                 const pct = total > 0 ? inStock / total : 0
@@ -581,8 +589,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 return (
                   <div
                     key={brand}
-                    className="rounded-2xl overflow-hidden"
+                    className="rounded-2xl overflow-hidden anim-rise"
                     style={{
+                      animationDelay: `${Math.min(brandIdx, 8) * 40}ms`,
                       backgroundColor: 'var(--surface)',
                       border: '1px solid var(--border)',
                       
@@ -666,7 +675,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       }}
                                       title={drinkAlerts.has(item.drink_id) ? 'Stop watching this flavor' : 'Get notified when this restocks'}
                                     >
-                                      <BellIcon size={12} color={drinkAlerts.has(item.drink_id) ? '#C9F400' : '#8b9284'} filled={drinkAlerts.has(item.drink_id)} />
+                                      <span key={bellAnim && bellAnim.id === item.drink_id ? bellAnim.n : 0} className={bellAnim?.id === item.drink_id && drinkAlerts.has(item.drink_id) ? 'anim-wiggle' : ''} style={{ display: 'flex' }}><BellIcon size={12} color={drinkAlerts.has(item.drink_id) ? '#C9F400' : '#8b9284'} filled={drinkAlerts.has(item.drink_id)} /></span>
                                     </button>
                                   </div>
                                 </div>
@@ -686,12 +695,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         {/* ── Add Drink modal ───────────────────────────────────────── */}
         {showAddDrink && createPortal(
           <div
-            className="fixed inset-0 flex flex-col justify-end z-50"
+            className="anim-fade fixed inset-0 flex flex-col justify-end z-50"
             style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
             onClick={(e) => { if (e.target === e.currentTarget) closeAddDrink() }}
           >
             <div
-              className="rounded-t-3xl p-5"
+              className="anim-sheet rounded-t-3xl p-5"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -829,12 +838,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         {/* ── Duplicate drink popup ─────────────────────────────────── */}
         {drinkDuplicatePopup && createPortal(
           <div
-            className="fixed inset-0 z-[60] flex items-end justify-center"
+            className="anim-fade fixed inset-0 z-[60] flex items-end justify-center"
             style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
             onClick={() => setDrinkDuplicatePopup(null)}
           >
             <div
-              className="w-full max-w-md rounded-t-3xl p-6 pb-10"
+              className="anim-sheet w-full max-w-md rounded-t-3xl p-6 pb-10"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -874,12 +883,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         {/* ── Flag location modal ──────────────────────────────────── */}
         {showFlag && createPortal(
           <div
-            className="fixed inset-0 flex flex-col justify-end z-50"
+            className="anim-fade fixed inset-0 flex flex-col justify-end z-50"
             style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
             onClick={(e) => { if (e.target === e.currentTarget) closeFlag() }}
           >
             <div
-              className="rounded-t-3xl p-5"
+              className="anim-sheet rounded-t-3xl p-5"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -967,12 +976,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
         {alertSheetDrinkId && createPortal(
           <div
-            className="fixed inset-0 flex flex-col justify-end z-50"
+            className="anim-fade fixed inset-0 flex flex-col justify-end z-50"
             style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
             onClick={(e) => { if (e.target === e.currentTarget) setAlertSheetDrinkId(null) }}
           >
             <div
-              className="rounded-t-3xl p-5"
+              className="anim-sheet rounded-t-3xl p-5"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
               onClick={(e) => e.stopPropagation()}
             >

@@ -647,7 +647,7 @@ export default function CommunityPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease 0.1s both' }}>
-            {filtered.map((post) => {
+            {filtered.map((post, postIdx) => {
               const postComments = comments[post.id] ?? []
               const commentsOpen = expandedComments.has(post.id)
               const isMe = post.user_id === user.id
@@ -657,7 +657,9 @@ export default function CommunityPage() {
                 <div
                   key={post.id}
                   id={`post-${post.id}`}
+                  className="anim-rise"
                   style={{
+                    animationDelay: `${Math.min(postIdx, 8) * 40}ms`,
                     backgroundColor: 'var(--surface)',
                     border: `1px solid ${post.id === highlightPostId ? '#C9F400' : 'var(--border)'}`,
                     boxShadow: post.id === highlightPostId ? '0 0 0 2px rgba(201,244,0,0.25)' : 'none',

@@ -239,7 +239,7 @@ export default function NotificationsPage() {
               const showDate = !prevFirstN || dateLabel(prevFirstN.created_at) !== dateLabel(firstN.created_at)
 
               return (
-                <div key={item.kind === 'single' ? item.n.id : item.ns[0].id}>
+                <div key={item.kind === 'single' ? item.n.id : item.ns[0].id} className="anim-rise" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                   {showDate && (
                     <p style={{ fontSize: 12, color: 'var(--text-dim)', fontWeight: 800, padding: '2px 2px', marginTop: i === 0 ? 0 : 6, marginBottom: 2 }}>
                       {dateLabel(firstN.created_at)}

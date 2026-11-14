@@ -484,6 +484,7 @@ function DrinksContent() {
                                 {QUANTITY_OPTIONS.map((opt) => (
                                   <button
                                     key={opt.value}
+                                    className="press"
                                     style={{
                                       flex: 1, padding: '14px 0',
                                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
@@ -590,6 +591,7 @@ function DrinksContent() {
                                   {QUANTITY_OPTIONS.slice().reverse().map((opt) => (
                                     <button
                                       key={opt.value}
+                                      className="press"
                                       onClick={() => selectQuantityDirect(drink.id, opt.value)}
                                       style={{
                                         flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 9, fontSize: 10, fontWeight: 800,
@@ -731,6 +733,7 @@ function DrinksContent() {
                                 {QUANTITY_OPTIONS.map((opt) => (
                                   <button
                                     key={opt.value}
+                                    className="press"
                                     style={{
                                       flex: 1, padding: '14px 0',
                                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
