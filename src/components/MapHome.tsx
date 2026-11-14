@@ -105,7 +105,7 @@ export default function MapHome() {
   const lat = manualLocation?.lat ?? location?.coords.latitude ?? 0
   const lng = manualLocation?.lng ?? location?.coords.longitude ?? 0
   const tierKey = !user ? 'anon' : isTracker ? 'tracker' : 'free'
-  const { stores, nearbyCount, loading: storesLoading, error: storesError, refetch } = useNearbyStores(lat, lng, tierKey)
+  const { stores, nearbyCount, loading: storesLoading, error: storesError, refetch } = useNearbyStores(lat, lng, tierKey, !authLoading)
 
   async function searchByZip() {
     const zip = zipInput.trim()
@@ -156,8 +156,6 @@ export default function MapHome() {
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
-  const [storeBrands, setStoreBrands] = useState<Record<string, string[]>>({})
-  const [availableBrands, setAvailableBrands] = useState<string[]>([])
   const [brandFilter, setBrandFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [allDrinks, setAllDrinks] = useState<Drink[]>([])
@@ -258,51 +256,58 @@ export default function MapHome() {
     }
   }, [authLoading, isTracker, radiusInitialized])
 
+  // Latest stock for every loaded store. Store ids go in chunks (a long
+  // .in() list can exceed URL limits) and each chunk is paged, because
+  // Supabase caps a response at 1,000 rows — a single query silently dropped
+  // stock in busy areas and for Tracker's unlimited radius.
   useEffect(() => {
     if (stores.length === 0) return
-    supabase
-      .from('latest_stock')
-      .select('store_id, drink_id, quantity, reported_at')
-      .in('store_id', stores.map((s) => s.id))
-      .then(async ({ data }) => {
-        if (!data) return
-
-        const grouped: Record<string, any[]> = {}
-        data.forEach((row) => {
-          if (!grouped[row.store_id]) grouped[row.store_id] = []
-          grouped[row.store_id].push(row)
-        })
-        setStoreStock(grouped)
-
-        const drinkIds = [...new Set(data.map((d) => d.drink_id).filter(Boolean))]
-        if (drinkIds.length === 0) return
-
-        const { data: drinksData } = await supabase
-          .from('drinks')
-          .select('id, brand')
-          .in('id', drinkIds)
-        if (!drinksData) return
-
-        const drinkBrandMap: Record<string, string> = {}
-        drinksData.forEach((d) => { drinkBrandMap[d.id] = d.brand })
-
-        const brandsByStore: Record<string, Set<string>> = {}
-        const allBrands = new Set<string>()
-        data.forEach((row) => {
-          const brand = drinkBrandMap[row.drink_id]
-          if (brand && row.quantity !== 'out') {
-            if (!brandsByStore[row.store_id]) brandsByStore[row.store_id] = new Set()
-            brandsByStore[row.store_id].add(brand)
-            allBrands.add(brand)
-          }
-        })
-
-        setStoreBrands(Object.fromEntries(
-          Object.entries(brandsByStore).map(([k, v]) => [k, Array.from(v)])
-        ))
-        setAvailableBrands(Array.from(allBrands).sort())
-      })
+    let cancelled = false
+    const ids = stores.map((s) => s.id)
+    const CHUNK = 150
+    const PAGE = 1000
+    const loadChunk = async (chunk: string[]) => {
+      const rows: any[] = []
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from('latest_stock')
+          .select('store_id, drink_id, quantity, reported_at')
+          .in('store_id', chunk)
+          .range(from, from + PAGE - 1)
+        if (error || !data) break
+        rows.push(...data)
+        if (data.length < PAGE) break
+      }
+      return rows
+    }
+    ;(async () => {
+      const chunks: string[][] = []
+      for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK))
+      const results = await Promise.all(chunks.map(loadChunk))
+      if (cancelled) return
+      const grouped: Record<string, any[]> = {}
+      for (const row of results.flat()) (grouped[row.store_id] ??= []).push(row)
+      setStoreStock(grouped)
+    })()
+    return () => { cancelled = true }
   }, [stores])
+
+  // Brands in stock per store, from the drinks catalog already loaded for
+  // search (no second round-trip).
+  const { storeBrands, availableBrands } = useMemo(() => {
+    const brandOf = new Map(allDrinks.map((d) => [d.id, d.brand]))
+    const byStore: Record<string, string[]> = {}
+    const all = new Set<string>()
+    for (const [storeId, rows] of Object.entries(storeStock)) {
+      const set = new Set<string>()
+      for (const r of rows) {
+        const brand = brandOf.get(r.drink_id)
+        if (brand && r.quantity !== 'out') { set.add(brand); all.add(brand) }
+      }
+      if (set.size) byStore[storeId] = [...set]
+    }
+    return { storeBrands: byStore, availableBrands: [...all].sort() }
+  }, [storeStock, allDrinks])
 
   useEffect(() => {
     if (stores.length === 0) return

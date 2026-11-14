@@ -131,11 +131,17 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     if (params.get('flag') === '1') setShowFlag(true)
   }, [params])
 
+  // Saved-store heart and flavor bells need the signed-in user, which can
+  // arrive after the first render — so they re-run when it does.
+  useEffect(() => {
+    fetchFavorite()
+    fetchDrinkAlerts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.id])
+
   useEffect(() => {
     fetchStore()
     fetchStock()
-    fetchFavorite()
-    fetchDrinkAlerts()
 
     const channel = supabase
       .channel(`store-detail:${id}`)

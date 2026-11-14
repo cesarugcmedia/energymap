@@ -20,14 +20,20 @@ function cacheKey(lat: number, lng: number, tierKey: string): string {
 // 'free' | 'tracker') so the cache and refetch correctly react to
 // login/logout/tier changes — the hook itself has no reactive way to know
 // when a signed-in user's tier changes without this being passed in.
-export function useNearbyStores(lat: number, lng: number, tierKey: string) {
+// `enabled` lets the caller hold off until it knows both the location and
+// the tier — otherwise the first render fires a wasted request (at 0,0, or
+// as anon before the profile loads) and then fetches again.
+export function useNearbyStores(lat: number, lng: number, tierKey: string, enabled = true) {
   const key = cacheKey(lat, lng, tierKey)
   const [stores, setStores] = useState<Store[]>(cache.get(key)?.stores ?? [])
   const [nearbyCount, setNearbyCount] = useState<number>(cache.get(key)?.nearbyCount ?? 0)
   const [loading, setLoading] = useState(!cache.has(key))
   const [error, setError] = useState(false)
 
+  const ready = enabled && !(lat === 0 && lng === 0)
+
   const fetchStores = useCallback(async (force = false) => {
+    if (!ready) return
     const now = Date.now()
     const cached = cache.get(key)
     if (!force && cached && now - cached.time < CACHE_TTL) {
@@ -58,7 +64,7 @@ export function useNearbyStores(lat: number, lng: number, tierKey: string) {
       setError(true)
     }
     setLoading(false)
-  }, [lat, lng, key])
+  }, [lat, lng, key, ready])
 
   useEffect(() => {
     fetchStores()

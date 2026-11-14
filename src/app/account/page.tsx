@@ -565,13 +565,15 @@ function AccountPageInner() {
 
   async function fetchStats(userId: string) {
     setStatsLoading(true)
-    const [{ count: rCount }, { count: sCount }, { data: flavors }, { data: dates }, { data: lb }] = await Promise.all([
+    // One read of the report history serves both unique flavors and dates.
+    const [{ count: rCount }, { count: sCount }, { data: history }, { data: lb }] = await Promise.all([
       supabase.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', userId).eq('status', 'approved'),
-      supabase.from('stock_reports').select('drink_id').eq('user_id', userId),
-      supabase.from('stock_reports').select('reported_at').eq('user_id', userId).order('reported_at', { ascending: false }),
+      supabase.from('stock_reports').select('drink_id, reported_at').eq('user_id', userId).order('reported_at', { ascending: false }),
       supabase.rpc('get_leaderboard', { p_timeframe: 'All Time' }),
     ])
+    const flavors = history
+    const dates = history
     setReportCount(rCount ?? 0)
     setStoreCount(sCount ?? 0)
     if (flavors) setUniqueFlavors(new Set(flavors.map((r: any) => r.drink_id)).size)
