@@ -219,11 +219,13 @@ Notifications have their own bottom-nav tab (**Alerts**, `/notifications`) rathe
 
 Nav icons are custom inline SVGs (`src/components/NavIcons.tsx`) instead of system emoji — emoji rendered with mismatched weights across devices (some bold/colorful like 👥🔔, some thin/monochrome like 🗺️). Each icon takes an `active` boolean: active renders a solid lime fill, inactive a gray outline, matching the lime-for-active convention used elsewhere (toggle buttons, active filter chips). The Alerts icon carries the unread-count badge as a small red circle positioned over the bell SVG. Notification cards use a sibling set, `src/components/NotificationIcons.tsx` — same lime line-icon language, no active/inactive state needed — via a `notificationIcon(type)` lookup with a bell fallback for unmapped types.
 
-The `/notifications` page:
-- **Explicit read state** — visiting the page no longer auto-marks everything read. Tapping a card marks just that notification (or its whole group) read; a lime border/tint/dot marks unread cards. A "Mark all read" button sits next to "Clear all" in the header (only shown when there's something to act on).
-- **Grouped cards** — consecutive `stock_update` notifications sharing the same `store_id` and calendar day collapse into one card ("N stock updates" + a bulleted list of each notification's raw `message` text + a single "View Stock →" link), instead of repeating the store name per flavor. Bullets reuse each notification's existing `message` text rather than re-parsing drink names out of it, since the `notify_stock_update` Postgres RPC that generates these (`supabaseAdmin.rpc('notify_stock_update', ...)` in `/api/stock/report`) isn't defined in any SQL script in this repo — it was created directly in the Supabase dashboard, so its exact message format isn't something this code can safely assume.
-- **Date section headers** — "TODAY" / "YESTERDAY" / weekday name / "Mon D", computed per-item and only rendered when it changes from the previous item.
-- **Filter chips** — All / Reports / Stores / New Drinks (line icons, not emoji — see below), filtering before grouping.
+The  page (redesigned 2026-11-14):
+- **iOS-style rows grouped by day** (Today / Yesterday / weekday / "Month D") inside one card per day. Each row: unread dot, icon tile (lime-tinted when unread), message (bold when unread; the leading emoji some DB triggers prepend is stripped since the icon carries the type), "Store · 2h" meta, chevron when it links somewhere.
+- **Tap = mark read + go there** (): store page when  is set,  for ,  for badges,  for drink alerts.  honors  as a deep link (Back returns to the Account list).
+- **Explicit read state** — visiting doesn't mark anything read; "Mark all read" in the header marks every unread row for the user server-side.
+- **Grouped stock updates** — consecutive same-store, same-day  rows collapse into one ("N stock updates at Store", first 3 sub-lines + "+N more"). Sub-lines reuse each notification's raw , since the  RPC (called from ) was created in the Supabase dashboard and its wording isn't defined in this repo.
+- **Filters**: All / Unread (with count) / Stock (, ) / Community (, , , ) / Stores & drinks / Badges — the  map. Add new notification types there and in .
+- Pages 40 at a time ("Load older notifications" by  cursor), refreshes live on realtime INSERTs, and "Clear all" sits at the bottom behind a confirmation sheet.
 
 ### App-Wide Icon System
 

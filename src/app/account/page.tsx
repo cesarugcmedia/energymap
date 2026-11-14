@@ -298,6 +298,17 @@ function AccountPageInner() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
+  // Deep links like /account?page=badges (used by notifications) open that
+  // drill-down directly, with Back returning to the Account list.
+  useEffect(() => {
+    const p = searchParams.get('page')
+    if (p !== 'badges' && p !== 'alerts' && p !== 'plan') return
+    window.history.replaceState({ accountPage: 'root' }, '', '/account')
+    window.history.pushState({ accountPage: p }, '')
+    setAccountPage(p)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function openAccountPage(p: AccountSubpage) {
     setAccountPage(p)
     window.history.pushState({ accountPage: p }, '')

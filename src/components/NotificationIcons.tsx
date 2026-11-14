@@ -57,6 +57,16 @@ export function CommentIconSvg() {
   )
 }
 
+export function FollowIconSvg() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="17" height="17" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="10" cy="8" r="3.5" stroke={LIME} strokeWidth="1.6" />
+      <path d="M3.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5" stroke={LIME} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M19 8v6M16 11h6" stroke={LIME} strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 const TYPE_ICON: Record<string, () => JSX.Element> = {
   stock_update: ReportIcon,
   store_approved: StoreIcon,
@@ -65,6 +75,8 @@ const TYPE_ICON: Record<string, () => JSX.Element> = {
   new_drink: DrinkIcon,
   mention: CommentIconSvg,
   comment: CommentIconSvg,
+  reply: CommentIconSvg,
+  follow: FollowIconSvg,
   badge: BadgeIconSvg,
   drink_alert: BellIconSvg,
 }
