@@ -26,15 +26,18 @@ ALTER TABLE community_post_likes ENABLE ROW LEVEL SECURITY;
 
 -- Posts are visible to any signed-in user (matches the rest of the app,
 -- which is entirely behind login)
+DROP POLICY IF EXISTS "Authenticated read posts" ON community_posts;
 CREATE POLICY "Authenticated read posts"
   ON community_posts FOR SELECT
   TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Users insert own posts" ON community_posts;
 CREATE POLICY "Users insert own posts"
   ON community_posts FOR INSERT
   TO authenticated WITH CHECK (auth.uid() = user_id);
 
 -- Authors can delete their own posts; admins can moderate any post
+DROP POLICY IF EXISTS "Users or admins delete posts" ON community_posts;
 CREATE POLICY "Users or admins delete posts"
   ON community_posts FOR DELETE
   TO authenticated USING (
@@ -42,14 +45,17 @@ CREATE POLICY "Users or admins delete posts"
     OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
   );
 
+DROP POLICY IF EXISTS "Authenticated read likes" ON community_post_likes;
 CREATE POLICY "Authenticated read likes"
   ON community_post_likes FOR SELECT
   TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Users insert own likes" ON community_post_likes;
 CREATE POLICY "Users insert own likes"
   ON community_post_likes FOR INSERT
   TO authenticated WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users delete own likes" ON community_post_likes;
 CREATE POLICY "Users delete own likes"
   ON community_post_likes FOR DELETE
   TO authenticated USING (auth.uid() = user_id);
