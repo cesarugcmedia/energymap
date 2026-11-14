@@ -41,7 +41,11 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!profile?.stripe_customer_id) {
-      return NextResponse.json({ error: 'No active subscription found' }, { status: 400 })
+      // Beta Tracker (free spot, never billed) — nothing to cancel in Stripe,
+      // just move them to Free now.
+      if (resume) return NextResponse.json({ error: 'No active subscription found' }, { status: 400 })
+      await supabaseAdmin.from('profiles').update({ tier: 'free' }).eq('id', userId)
+      return NextResponse.json({ success: true })
     }
 
     // Find active subscription

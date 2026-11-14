@@ -51,7 +51,7 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
   onUpgrade: () => void
   cancelLoading: boolean
   cancelError: string | null
-  onCancel: () => void
+  onCancel: (isBeta: boolean) => void
 }) {
   const [data, setData] = useState<PlanData | null>(null)
   const [error, setError] = useState(false)
@@ -206,14 +206,23 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
         </div>
       ))}
 
-      {tier === 'tracker' && sub && sub.status !== 'canceled' && !sub.cancelAtPeriodEnd && (
-        <div style={{ textAlign: 'center' }}>
-          {cancelError && <p style={{ fontSize: 13, color: '#FF6B6B', marginBottom: 6 }}>{cancelError}</p>}
-          <button onClick={onCancel} disabled={cancelLoading} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 14, color: '#FF6B6B', cursor: 'pointer', padding: 8 }}>
+      {/* Every Tracker member can cancel: paying members keep access until the
+          period ends; beta members (no Stripe subscription) move to Free now. */}
+      {tier === 'tracker' && !sub?.cancelAtPeriodEnd && section('Manage plan', (
+        <div className={ui.card}>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 12 }}>
+            {isBeta
+              ? 'Cancelling moves you to Free right away and gives up your free beta spot. Getting Tracker back later may cost $5/month.'
+              : sub?.status === 'active' || sub?.status === 'trialing'
+                ? `You won’t be charged again, and you keep Tracker until ${fmtDate(sub.renewsAt) ?? 'the end of this billing period'}.`
+                : 'Cancelling moves you to Free.'}
+          </p>
+          {cancelError && <p style={{ fontSize: 13, color: '#FF6B6B', marginBottom: 8 }}>{cancelError}</p>}
+          <button onClick={() => onCancel(isBeta)} disabled={cancelLoading} className={`${ui.btnSecondary} ${ui.btnBlock}`} style={{ color: '#FF6B6B', borderColor: 'rgba(255,107,107,0.3)' }}>
             {cancelLoading ? 'Cancelling…' : 'Cancel Tracker'}
           </button>
         </div>
-      )}
+      ))}
     </div>
   )
 }

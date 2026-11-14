@@ -655,9 +655,11 @@ function AccountPageInner() {
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [resetSent, setResetSent] = useState(false)
 
-  async function cancelSubscription(resume = false) {
+  async function cancelSubscription(resume = false, isBeta = false) {
     if (cancelLoading || !user) return
-    if (!resume && !window.confirm('Cancel Tracker? You keep every Tracker feature until the end of your current billing period, then move to Free. You won’t be charged again.')) return
+    if (!resume && !window.confirm(isBeta
+      ? 'Cancel Tracker? You’ll move to Free right away and give up your free beta spot. Getting Tracker back later may cost $5/month.'
+      : 'Cancel Tracker? You keep every Tracker feature until the end of your current billing period, then move to Free. You won’t be charged again.')) return
     setCancelLoading(true)
     setCancelError(null)
     const { data: { session } } = await supabase.auth.getSession()
@@ -965,7 +967,7 @@ function switchMode(m: Mode) {
 
         case 'plan':
           return (
-            <PlanDetails betaSpotsLeft={Math.max(0, 60 - betaCount)} checkoutLoading={checkoutLoading} checkoutError={checkoutError} onUpgrade={() => startCheckout('tracker')} cancelLoading={cancelLoading} cancelError={cancelError} onCancel={() => cancelSubscription()} onResume={() => cancelSubscription(true)} />
+            <PlanDetails betaSpotsLeft={Math.max(0, 60 - betaCount)} checkoutLoading={checkoutLoading} checkoutError={checkoutError} onUpgrade={() => startCheckout('tracker')} cancelLoading={cancelLoading} cancelError={cancelError} onCancel={(isBeta) => cancelSubscription(false, isBeta)} onResume={() => cancelSubscription(true)} />
           )
 
         case 'badges': {
