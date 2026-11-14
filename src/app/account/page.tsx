@@ -655,10 +655,9 @@ function AccountPageInner() {
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [resetSent, setResetSent] = useState(false)
 
-  async function cancelSubscription() {
+  async function cancelSubscription(resume = false) {
     if (cancelLoading || !user) return
-    const confirmed = window.confirm('Are you sure you want to cancel your subscription? You will be moved to the free tier immediately.')
-    if (!confirmed) return
+    if (!resume && !window.confirm('Cancel Tracker? You keep every Tracker feature until the end of your current billing period, then move to Free. You won’t be charged again.')) return
     setCancelLoading(true)
     setCancelError(null)
     const { data: { session } } = await supabase.auth.getSession()
@@ -667,7 +666,7 @@ function AccountPageInner() {
       const res = await fetch('/api/stripe/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId: user.id, resume }),
       })
       const json = await res.json()
       if (json.success) {
@@ -966,7 +965,7 @@ function switchMode(m: Mode) {
 
         case 'plan':
           return (
-            <PlanDetails betaSpotsLeft={Math.max(0, 60 - betaCount)} checkoutLoading={checkoutLoading} checkoutError={checkoutError} onUpgrade={() => startCheckout('tracker')} cancelLoading={cancelLoading} cancelError={cancelError} onCancel={cancelSubscription} />
+            <PlanDetails betaSpotsLeft={Math.max(0, 60 - betaCount)} checkoutLoading={checkoutLoading} checkoutError={checkoutError} onUpgrade={() => startCheckout('tracker')} cancelLoading={cancelLoading} cancelError={cancelError} onCancel={() => cancelSubscription()} onResume={() => cancelSubscription(true)} />
           )
 
         case 'badges': {

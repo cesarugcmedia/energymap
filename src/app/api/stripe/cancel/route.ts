@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await req.json()
+    const { userId, resume } = await req.json()
 
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
@@ -51,17 +51,25 @@ export async function POST(req: NextRequest) {
       limit: 1,
     })
 
+    // Undo a scheduled cancellation ("Keep Tracker").
+    if (resume) {
+      if (subscriptions.data.length === 0) {
+        return NextResponse.json({ error: 'No active subscription found' }, { status: 400 })
+      }
+      await stripe.subscriptions.update(subscriptions.data[0].id, { cancel_at_period_end: false })
+      return NextResponse.json({ success: true })
+    }
+
     if (subscriptions.data.length === 0) {
       // No active subscription — just downgrade in DB
       await supabaseAdmin.from('profiles').update({ tier: 'free' }).eq('id', userId)
       return NextResponse.json({ success: true })
     }
 
-    // Cancel immediately
-    await stripe.subscriptions.cancel(subscriptions.data[0].id)
-
-    // Downgrade tier
-    await supabaseAdmin.from('profiles').update({ tier: 'free' }).eq('id', userId)
+    // Cancel at the end of the paid period, as the Terms promise. The member
+    // keeps Tracker until then; Stripe fires customer.subscription.deleted at
+    // period end and the webhook drops the tier to free.
+    await stripe.subscriptions.update(subscriptions.data[0].id, { cancel_at_period_end: true })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

@@ -43,7 +43,8 @@ function untilReset(iso: string) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutError, onUpgrade, cancelLoading, cancelError, onCancel }: {
+export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutError, onUpgrade, cancelLoading, cancelError, onCancel, onResume }: {
+  onResume: () => void
   betaSpotsLeft: number
   checkoutLoading: boolean
   checkoutError: string | null
@@ -131,6 +132,14 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
           )}
           {tier === 'free' && <p>See stock within 5 miles, report, add stores and follow flavors, all free.</p>}
         </div>
+        {sub?.cancelAtPeriodEnd && sub.status !== 'canceled' && (
+          <div style={{ marginTop: 14 }}>
+            {cancelError && <p style={{ fontSize: 13, color: '#FF6B6B', marginBottom: 6 }}>{cancelError}</p>}
+            <button className={`${ui.btnPrimary} ${ui.btnBlock}`} onClick={onResume} disabled={cancelLoading}>
+              {cancelLoading ? 'Saving…' : 'Keep Tracker'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Today's usage */}
@@ -185,7 +194,7 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
         <div className={ui.card} style={{ padding: '2px 16px' }}>
           {[
             { q: 'How does billing work?', a: 'Tracker is $5 a month, billed through Stripe on the same day each month. We never see or store your full card number.' },
-            { q: 'What happens if I cancel?', a: 'Your plan switches back to Free. You keep your account, reports, badges and flavor alerts; only Tracker features like the unlimited radius and saved stores turn off.' },
+            { q: 'What happens if I cancel?', a: 'You keep Tracker until the end of the month you’ve paid for and won’t be charged again. Then your plan switches to Free. You keep your account, reports, badges and flavor alerts; only Tracker features like the unlimited radius and saved stores turn off. Changed your mind? Tap Keep Tracker any time before then.' },
             { q: 'Why is there a daily report limit?', a: 'Up to 25 reports a day keeps the map accurate and stops spam. It’s the same on every plan, and resets at midnight (UTC).' },
             { q: 'Need help with your plan?', a: 'Email support@ampedmap.com and we’ll sort it out.' },
           ].map(({ q, a }, i) => (
