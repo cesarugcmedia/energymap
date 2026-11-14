@@ -122,14 +122,14 @@ export async function POST(req: NextRequest) {
     .in('id', toSubmit.map((r) => r.drink_id))
   const drinkNameById = Object.fromEntries((drinks ?? []).map((d) => [d.id, d.name]))
 
-  const { error: insertError } = await supabaseAdmin.from('stock_reports').insert(
+  const { data: inserted, error: insertError } = await supabaseAdmin.from('stock_reports').insert(
     toSubmit.map((r) => ({
       store_id,
       drink_id: r.drink_id,
       quantity: r.quantity,
       user_id: user.id,
     }))
-  )
+  ).select('id')
   if (insertError) {
     return NextResponse.json({ error: 'Failed to submit reports' }, { status: 500 })
   }
@@ -149,5 +149,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ submitted: toSubmit.length })
+  // ids let the success screen offer a short-lived Undo (/api/stock/undo).
+  return NextResponse.json({ submitted: toSubmit.length, ids: (inserted ?? []).map((r) => r.id) })
 }

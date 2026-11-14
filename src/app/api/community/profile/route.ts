@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { computeBadges, streakFrom } from '@/lib/badges'
 
 // Public profile summary for /u/[username]: identity, counts, and whether the
 // caller follows them. Posts are fetched client-side (RLS allows reading).
@@ -30,21 +31,58 @@ export async function GET(req: NextRequest) {
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const count = async (q: any) => { const { count } = await q; return count ?? 0 }
-  const [reports, storesAdded, followers, following, iFollow] = await Promise.all([
+  const [reports, storesAdded, followers, following, iFollow, { data: rows }] = await Promise.all([
     count(supabaseAdmin.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', profile.id)),
     count(supabaseAdmin.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', profile.id).eq('status', 'approved')),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('followed_id', profile.id)),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', profile.id)),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id).eq('followed_id', profile.id)),
+    supabaseAdmin.from('stock_reports').select('drink_id, store_id, quantity, reported_at').eq('user_id', profile.id).order('reported_at', { ascending: false }).limit(1000),
   ])
+  const reportRows: { drink_id: string; store_id: string; quantity: string; reported_at: string }[] = rows ?? []
+
+  // Night owl / early bird use the viewer's UTC offset (minutes, from
+  // Date#getTimezoneOffset) as a stand-in for the owner's local time.
+  const tz = Number(req.nextUrl.searchParams.get('tz') ?? 0) || 0
+  const localHour = (iso: string) => new Date(new Date(iso).getTime() - tz * 60000).getUTCHours()
+  const hours = reportRows.map((r) => localHour(r.reported_at))
+  const streak = streakFrom(reportRows.map((r) => r.reported_at))
+  const uniqueFlavors = new Set(reportRows.map((r) => r.drink_id)).size
+  const weeklyChampion = Array.isArray(profile.badges) && profile.badges.includes('weekly_champion')
+  const badges = [...computeBadges({
+    memberSince: profile.created_at, reports, storesAdded, uniqueFlavors, streak,
+    nightOwl: hours.some((h) => h >= 0 && h < 4), earlyBird: hours.some((h) => h >= 5 && h < 7),
+    verified: !!profile.is_verified_reporter, weeklyChampion,
+  })]
+
+  // Favorite stores (most reports) and recent in-stock finds.
+  const perStore: Record<string, number> = {}
+  for (const r of reportRows) perStore[r.store_id] = (perStore[r.store_id] ?? 0) + 1
+  const topStoreIds = Object.entries(perStore).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id]) => id)
+  const finds = reportRows.filter((r) => r.quantity !== 'out').slice(0, 6)
+  const storeIds = [...new Set([...topStoreIds, ...finds.map((f) => f.store_id)])]
+  const drinkIds = [...new Set(finds.map((f) => f.drink_id))]
+  const [{ data: stores }, { data: drinks }] = await Promise.all([
+    storeIds.length ? supabaseAdmin.from('stores').select('id, name, type').in('id', storeIds) : Promise.resolve({ data: [] as any[] }),
+    drinkIds.length ? supabaseAdmin.from('drinks').select('id, brand, name, flavor').in('id', drinkIds) : Promise.resolve({ data: [] as any[] }),
+  ])
+  const storeById = new Map((stores ?? []).map((s: any) => [s.id, s]))
+  const drinkById = new Map((drinks ?? []).map((d: any) => [d.id, d]))
 
   return NextResponse.json({
+    stats: { uniqueFlavors, streak },
+    badges,
+    topStores: topStoreIds.filter((id) => storeById.has(id)).map((id) => ({ id, name: storeById.get(id).name, type: storeById.get(id).type, reports: perStore[id] })),
+    recentFinds: finds.filter((f) => storeById.has(f.store_id) && drinkById.has(f.drink_id)).map((f) => {
+      const d = drinkById.get(f.drink_id)
+      return { drink: `${d.brand} ${d.flavor ?? d.name}`, quantity: f.quantity, storeId: f.store_id, storeName: storeById.get(f.store_id).name, at: f.reported_at }
+    }),
     profile: {
       id: profile.id,
       username: profile.username,
       joined: profile.created_at,
       verified: !!profile.is_verified_reporter,
-      weeklyChampion: Array.isArray(profile.badges) && profile.badges.includes('weekly_champion'),
+      weeklyChampion,
     },
     counts: { reports, storesAdded, followers, following },
     following: iFollow > 0,

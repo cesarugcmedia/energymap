@@ -8,6 +8,8 @@ import type { Drink, Quantity } from '@/lib/types'
 import { SearchIcon, PinIcon, CloseIcon, ChevronDownIcon, ChevronLeftIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
+import { addToQueue, removeFromQueue, isNetworkFailure, type QueuedReport } from '@/lib/reportQueue'
+import { haptic } from '@/lib/haptics'
 
 const MAX_DISTANCE_M = 500
 
@@ -69,6 +71,10 @@ function DrinksContent() {
   const [selections, setSelections] = useState<Record<string, Quantity>>({})
   const [submitting, setSubmitting] = useState(false)
   const [limitError, setLimitError] = useState<string | null>(null)
+  // Set when the phone had no signal: the reports are saved on the device
+  // and ReportQueueSync sends them once it's back online.
+  const [savedOffline, setSavedOffline] = useState<QueuedReport | null>(null)
+  const [offlineUndone, setOfflineUndone] = useState(false)
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [storeCoords, setStoreCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationChecking, setLocationChecking] = useState(true)
@@ -167,6 +173,7 @@ function DrinksContent() {
 
   // Tapping the already-selected level clears it.
   function pick(drinkId: string, qty: Quantity) {
+    haptic(8)
     setLimitError(null)
     setSelections((prev) => {
       if (prev[drinkId] === qty) {
@@ -178,11 +185,23 @@ function DrinksContent() {
     })
   }
 
+  function saveOffline(entries: [string, Quantity][]) {
+    const q = addToQueue({
+      storeId, storeName,
+      reports: entries.map(([drinkId, quantity]) => ({ drink_id: drinkId, quantity })),
+      lat: gpsCoords?.lat, lng: gpsCoords?.lng,
+    })
+    haptic([12, 40, 12])
+    setSubmitting(false)
+    setSavedOffline(q)
+  }
+
   async function handleSubmit() {
-    const entries = Object.entries(selections)
+    const entries = Object.entries(selections) as [string, Quantity][]
     if (entries.length === 0 || submitting) return
     setSubmitting(true)
     setLimitError(null)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) { saveOffline(entries); return }
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -220,10 +239,14 @@ function DrinksContent() {
         return
       }
 
+      // Remembered for the success screen's Undo (5 minutes).
+      try { sessionStorage.setItem('last_report', JSON.stringify({ ids: body.ids ?? [], storeId, at: Date.now() })) } catch { /* ignore */ }
+      haptic([12, 40, 12])
       router.replace(
         `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${body.submitted}`
       )
-    } catch {
+    } catch (err) {
+      if (isNetworkFailure(err)) { saveOffline(entries); return }
       setLimitError('Could not submit reports. Please try again.')
       setSubmitting(false)
     }
@@ -329,6 +352,39 @@ function DrinksContent() {
           )}
         </button>
         {open && <div style={{ padding: '0 16px 4px', borderTop: '1px solid var(--fg-06)' }}>{list.map(flavorRow)}</div>}
+      </div>
+    )
+  }
+
+  if (savedOffline) {
+    const n = savedOffline.reports.length
+    return (
+      <div style={{ minHeight: '100dvh', background: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px)' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', maxWidth: 360, width: '100%', margin: '0 auto' }}>
+          <div className="anim-pop" style={{ width: 80, height: 80, borderRadius: '50%', marginBottom: 22, background: offlineUndone ? 'var(--fg-06)' : 'rgba(255,179,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={offlineUndone ? 'var(--text-muted)' : '#FFB300'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {offlineUndone
+                ? <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+                : <><path d="M7 18a4.5 4.5 0 0 1-.5-8.97A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 7.97" /><path d="M12 12v8M9 17l3 3 3-3" /></>}
+            </svg>
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>{offlineUndone ? 'Report undone' : `${n} report${n === 1 ? '' : 's'} saved`}</h1>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            {offlineUndone
+              ? 'Nothing was sent.'
+              : n === 1
+                ? 'No signal right now, so it’s saved on your phone. We’ll send it automatically as soon as you’re back online.'
+                : 'No signal right now, so they’re saved on your phone. We’ll send them automatically as soon as you’re back online.'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 360, width: '100%', margin: '0 auto' }}>
+          <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => router.replace('/')}>Done</button>
+          {offlineUndone ? (
+            <button className={`${ui.btnSecondary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => { setSavedOffline(null); setOfflineUndone(false) }}>Report again</button>
+          ) : (
+            <button className={ui.btnGhost} onClick={() => { removeFromQueue(savedOffline.id); setOfflineUndone(true) }}>Undo</button>
+          )}
+        </div>
       </div>
     )
   }

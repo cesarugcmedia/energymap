@@ -10,7 +10,8 @@ import Toast from '@/components/Toast'
 import BackButton from '@/components/BackButton'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
-import { CheckIcon, PinIcon, UsersIcon } from '@/components/Icons'
+import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon } from '@/components/Icons'
+import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
 
@@ -18,6 +19,10 @@ type ProfileData = {
   profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean }
   counts: { reports: number; storesAdded: number; followers: number; following: number }
   following: boolean
+  stats?: { uniqueFlavors: number; streak: number }
+  badges?: string[]
+  topStores?: { id: string; name: string; type: string; reports: number }[]
+  recentFinds?: { drink: string; quantity: string; storeId: string; storeName: string; at: string }[]
 }
 type MiniPost = { id: string; body: string; created_at: string; photo: string | null; storeName: string | null; likes: number; type: string }
 
@@ -43,7 +48,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const res = await fetch(`/api/community/profile?username=${encodeURIComponent(username)}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
+      const res = await fetch(`/api/community/profile?username=${encodeURIComponent(username)}&tz=${new Date().getTimezoneOffset()}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
       if (!res.ok) { setNotFound(true); return }
       const json: ProfileData = await res.json()
       setData(json)
@@ -142,8 +147,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
-                {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>}
+                {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}>🔥 {data.stats!.streak}-day streak</span>}
               </div>
+              {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>}
               {!isMe && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                   <button className={following ? ui.btnSecondary : ui.btnPrimary} onClick={toggleFollow} disabled={blocked}>{following ? 'Following' : 'Follow'}</button>
@@ -152,12 +158,75 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               )}
             </div>
 
-            <div className={ui.card} style={{ display: 'flex', marginBottom: 22 }}>
+            <div className={`${ui.card} anim-rise`} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', rowGap: 16, padding: '16px 8px', marginBottom: 22 }}>
               {stat(data.counts.reports, 'Reports')}
+              {stat(data.stats?.uniqueFlavors ?? 0, 'Flavors found')}
               {stat(data.counts.storesAdded, 'Stores added')}
               {stat(data.counts.followers, 'Followers')}
               {stat(data.counts.following, 'Following')}
+              {stat(data.badges?.length ?? 0, 'Badges')}
             </div>
+
+            {/* Badges */}
+            {data.badges && (
+              <div style={{ marginBottom: 22 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '0 2px 10px' }}>
+                  <p className={ui.sectionLabel} style={{ margin: 0 }}>Badges</p>
+                  <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{data.badges.length} of {BADGE_DEFS.length}</span>
+                </div>
+                {data.badges.length === 0 ? (
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Report stock to earn your first badge.' : 'No badges yet.'}</p>
+                ) : (
+                  <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '0 -16px', padding: '0 16px' }}>
+                    {BADGE_DEFS.filter((b) => data.badges!.includes(b.id)).map((b) => (
+                      <div key={b.id} title={b.desc} className="reveal" style={{ flexShrink: 0, width: 92, borderRadius: 14, padding: '12px 6px', textAlign: 'center', background: 'var(--surface)', border: `1px solid ${b.color}40` }}>
+                        <div style={{ fontSize: 26, lineHeight: 1 }}>{b.icon}</div>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: b.color, marginTop: 6, lineHeight: 1.2 }}>{b.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Recent finds */}
+            {!blocked && data.recentFinds && data.recentFinds.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Recent finds</p>
+                <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+                  {data.recentFinds.map((f, i) => (
+                    <Link key={`${f.storeId}-${f.at}-${i}`} href={`/store/${f.storeId}?name=${encodeURIComponent(f.storeName)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: f.quantity === 'full' ? '#C9F400' : f.quantity === 'medium' ? '#FFB300' : '#FF8A3D' }} />
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.drink}</span>
+                        <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.quantity === 'full' ? 'Full' : f.quantity === 'medium' ? 'Medium' : 'Low'} · {f.storeName} · {timeAgo(f.at)}
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Favorite stores */}
+            {!blocked && data.topStores && data.topStores.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Reports most at</p>
+                <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+                  {data.topStores.map((s, i) => (
+                    <Link key={s.id} href={`/store/${s.id}?name=${encodeURIComponent(s.name)}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
+                      <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <StoreTypeIcon type={s.type} size={18} color="var(--text-muted)" />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                      <span style={{ fontSize: 13, color: 'var(--text-dim)', flexShrink: 0 }}>{s.reports} report{s.reports === 1 ? '' : 's'}</span>
+                      <ChevronRightIcon size={16} color="var(--text-dim)" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className={ui.sectionLabel}>Posts</p>
             {blocked ? (
