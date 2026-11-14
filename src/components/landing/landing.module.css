@@ -16,7 +16,7 @@
   background: var(--bg);
   color: var(--lp-text);
   font-family: var(--font-barlow), system-ui, sans-serif;
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.6;
 }
 
@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 56px;
 }
 
 .brand {
@@ -55,7 +55,7 @@
   color: var(--lp-text);
   text-decoration: none;
   font-weight: 600;
-  font-size: 19px;
+  font-size: 17px;
   letter-spacing: -0.01em;
 }
 
@@ -99,39 +99,39 @@
 .btnPrimary {
   background: var(--lp-lime);
   color: #0D1210;
-  padding: 14px 24px;
-  font-size: 16px;
+  padding: 12px 20px;
+  font-size: 15px;
 }
 .btnPrimary:hover { background: #D7FF2E; }
 
 .btnGhost {
   color: var(--lp-text);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  padding: 13px 22px;
-  font-size: 16px;
+  padding: 11px 18px;
+  font-size: 15px;
 }
 .btnGhost:hover { border-color: rgba(255, 255, 255, 0.32); }
 
 .btnSmall {
   background: var(--lp-lime);
   color: #0D1210;
-  padding: 9px 16px;
-  font-size: 14px;
+  padding: 8px 14px;
+  font-size: 13px;
   border-radius: 10px;
 }
 
 /* ── Hero ── */
 .hero {
   display: grid;
-  gap: 48px;
-  padding-top: 56px;
-  padding-bottom: 72px;
+  gap: 36px;
+  padding-top: 36px;
+  padding-bottom: 48px;
   align-items: center;
 }
 
 .eyebrow {
   color: var(--lp-lime);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin: 0 0 14px;
 }
@@ -139,17 +139,17 @@
 .h1 {
   font-family: var(--font-barlow-condensed), var(--font-barlow), sans-serif;
   font-weight: 700;
-  font-size: clamp(40px, 7vw, 64px);
+  font-size: clamp(32px, 6vw, 54px);
   line-height: 1.02;
   letter-spacing: -0.01em;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 
 .lead {
   color: var(--lp-muted);
-  font-size: 19px;
+  font-size: 17px;
   max-width: 30em;
-  margin: 0 0 28px;
+  margin: 0 0 22px;
 }
 
 .heroCtas {
@@ -161,7 +161,7 @@
 .statLine {
   margin: 22px 0 0;
   color: var(--lp-subtle);
-  font-size: 15px;
+  font-size: 14px;
 }
 .statLine strong { color: var(--lp-text); font-weight: 600; }
 
@@ -173,8 +173,8 @@
 @media (min-width: 900px) {
   .hero {
     grid-template-columns: 1.1fr 0.9fr;
-    padding-top: 88px;
-    padding-bottom: 104px;
+    padding-top: 72px;
+    padding-bottom: 88px;
   }
 }
 
@@ -330,14 +330,14 @@
 
 /* ── Sections ── */
 .section {
-  padding: 72px 0;
+  padding: 52px 0;
   border-top: 1px solid var(--lp-line);
 }
 
 .h2 {
   font-family: var(--font-barlow-condensed), var(--font-barlow), sans-serif;
   font-weight: 700;
-  font-size: clamp(30px, 4.5vw, 40px);
+  font-size: clamp(26px, 4vw, 36px);
   line-height: 1.1;
   margin: 0 0 12px;
 }
@@ -348,14 +348,14 @@
 }
 
 .h3 {
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 600;
   margin: 0 0 6px;
 }
 
 .body {
   color: var(--lp-muted);
-  font-size: 16px;
+  font-size: 15px;
   margin: 0;
 }
 
@@ -373,7 +373,7 @@
   background: var(--lp-card);
   border: 1px solid var(--lp-line);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
 }
 
 .stepIcon {
@@ -421,21 +421,21 @@
   background: var(--lp-card);
   border: 1px solid var(--lp-line);
   border-radius: 18px;
-  padding: 28px;
+  padding: 22px;
 }
 
 .planFeatured { border-color: rgba(201, 244, 0, 0.45); }
 
 .planName {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
 }
 
 .planPrice {
   margin: 6px 0 20px;
   font-family: var(--font-barlow-condensed), var(--font-barlow), sans-serif;
-  font-size: 44px;
+  font-size: 38px;
   font-weight: 700;
   line-height: 1;
 }
@@ -461,7 +461,7 @@
   align-items: flex-start;
   gap: 10px;
   color: var(--lp-muted);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.4;
 }
 .planList li svg { flex-shrink: 0; margin-top: 3px; }
@@ -497,8 +497,8 @@
 .faqItem summary {
   cursor: pointer;
   list-style: none;
-  padding: 20px 32px 20px 0;
-  font-size: 18px;
+  padding: 16px 32px 16px 0;
+  font-size: 16px;
   font-weight: 500;
   position: relative;
 }
@@ -517,9 +517,9 @@
 
 .faqItem p {
   margin: 0;
-  padding: 0 0 20px;
+  padding: 0 0 16px;
   color: var(--lp-muted);
-  font-size: 16px;
+  font-size: 15px;
 }
 
 /* ── Closing CTA ── */
@@ -529,8 +529,8 @@
   align-items: center;
   text-align: center;
   gap: 20px;
-  padding-top: 80px;
-  padding-bottom: 88px;
+  padding-top: 56px;
+  padding-bottom: 64px;
   border-top: 1px solid var(--lp-line);
 }
 
@@ -613,13 +613,13 @@
 .previewInput {
   flex: 1;
   min-width: 0;
-  padding: 14px 0;
+  padding: 12px 0;
   background: transparent;
   border: none;
   outline: none;
   color: var(--lp-text);
   font-family: inherit;
-  font-size: 17px;
+  font-size: 16px;
   letter-spacing: 0.04em;
 }
 .previewInput::placeholder { color: #66716A; letter-spacing: 0; }
@@ -732,3 +732,13 @@
 }
 .previewEmpty .h3 { margin: 0; }
 .previewCta { margin-top: 18px; }
+
+/* Phones: a slightly smaller phone mockup and tighter section spacing. */
+@media (max-width: 599px) {
+  .phone { width: 252px; border-radius: 40px; padding: 8px; }
+  .phoneScreen { border-radius: 33px; }
+  .section { padding: 44px 0; }
+  .steps { margin-top: 22px; gap: 12px; }
+  .stepIcon { width: 36px; height: 36px; margin-bottom: 12px; }
+  .sectionLead { margin-bottom: 24px; }
+}
