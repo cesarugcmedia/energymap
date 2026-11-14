@@ -130,3 +130,9 @@ select:focus {
 .leaflet-control-attribution a {
   color: rgba(255, 255, 255, 0.5) !important;
 }
+
+/* Home (/) — see HomeGate. A saved session hides the landing page and shows a
+   spinner until the map mounts; otherwise the landing page shows. */
+.home-auth-spinner { display: none; }
+html[data-authed="1"] .landing-root { display: none; }
+html[data-authed="1"] .home-auth-spinner { display: block; }

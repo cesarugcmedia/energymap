@@ -4,6 +4,7 @@ import './globals.css'
 import BottomNav from '@/components/BottomNav'
 import SideNav from '@/components/SideNav'
 import MainWrapper from '@/components/MainWrapper'
+import ContentShell from '@/components/ContentShell'
 import AppStartGuard from '@/components/AppStartGuard'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -40,8 +41,18 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
-
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Before first paint: if a saved Supabase session exists, mark <html>
+            so the server-rendered landing page at / is hidden behind a spinner
+            while the map loads (see HomeGate + globals.css). Signed-in users
+            never see a flash of the marketing page. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{for(var i=0;i<localStorage.length;i++){if(/^sb-.+-auth-token$/.test(localStorage.key(i)||'')){document.documentElement.setAttribute('data-authed','1');break}}}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         <AuthProvider>
           <ThemeProvider>
@@ -66,10 +77,10 @@ export default function RootLayout({
           {/* Desktop sidebar */}
           <SideNav />
           {/* Main content — offset by sidebar on desktop */}
-          <div className="relative flex flex-col h-[100dvh] overflow-hidden md:ml-[220px]" style={{ zIndex: 1 }}>
+          <ContentShell>
             <MainWrapper>{children}</MainWrapper>
             <BottomNav />
-          </div>
+          </ContentShell>
           </ThemeProvider>
         </AuthProvider>
       </body>

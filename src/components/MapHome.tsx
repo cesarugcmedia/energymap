@@ -1,0 +1,1135 @@
+'use client'
+
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useLocation } from '@/hooks/useLocation'
+import { useNearbyStores } from '@/hooks/useNearbyStores'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
+import type { Drink, Quantity, Store } from '@/lib/types'
+import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon } from '@/components/Icons'
+
+type View = 'map' | 'list'
+
+function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 3958.8
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+function openDirections(destLat: number, destLng: number) {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  if (isIOS) {
+    window.open(`https://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=d`, '_blank')
+  } else {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`, '_blank')
+  }
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
+function stalenessColor(dateStr: string) {
+  const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
+  if (hrs < 2) return '#C9F400'
+  if (hrs < 12) return '#FFB300'
+  if (hrs < 24) return '#FF4545'
+  return '#888888'
+}
+
+function getLatestReport(stock: any[]) {
+  return stock.reduce<any>((latest, item) => {
+    if (!latest) return item
+    return new Date(item.reported_at) > new Date(latest.reported_at) ? item : latest
+  }, null)
+}
+
+const FRESHNESS_LEGEND = [
+  { color: '#C9F400', label: 'Mostly fresh' },
+  { color: '#FFB300', label: 'Mixed' },
+  { color: '#8A8F86', label: 'Mostly stale' },
+]
+
+const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
+  out:    { label: 'OUT',  color: '#FF4545' },
+  low:    { label: 'LOW',  color: '#FFB300' },
+  medium: { label: 'MED',  color: '#FFB300' },
+  full:   { label: 'FULL', color: 'var(--accent)' },
+}
+
+const FREE_RADIUS_OPTIONS = [5]
+const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, null]
+
+const TYPE_FILTERS = [
+  { value: null,          label: 'All'     },
+  { value: 'gas_station', label: 'Gas'     },
+  { value: 'convenience', label: 'Conv.'   },
+  { value: 'grocery',     label: 'Grocery' },
+  { value: 'other',       label: 'Other'   },
+]
+
+const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
+
+// Rendered by HomeGate (src/app/page.tsx) for signed-in users only; logged-out
+// visitors get the marketing landing page at / instead.
+export default function MapHome() {
+  const router = useRouter()
+  const { user, profile, loading: authLoading } = useAuth()
+  const isTracker = profile?.is_admin || profile?.tier === 'tracker'
+
+  const { location, loading: locLoading, error: locError, retry } = useLocation()
+  // Fallback for users who don't want to grant live GPS access — search by
+  // ZIP code instead. Once set, this takes over as the effective location
+  // everywhere on this page; live GPS (if later granted) is not needed.
+  const [manualLocation, setManualLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [zipInput, setZipInput] = useState('')
+  const [zipLoading, setZipLoading] = useState(false)
+  const [zipError, setZipError] = useState<string | null>(null)
+  const lat = manualLocation?.lat ?? location?.coords.latitude ?? 0
+  const lng = manualLocation?.lng ?? location?.coords.longitude ?? 0
+  const tierKey = !user ? 'anon' : isTracker ? 'tracker' : 'free'
+  const { stores, nearbyCount, loading: storesLoading, error: storesError, refetch } = useNearbyStores(lat, lng, tierKey)
+
+  async function searchByZip() {
+    const zip = zipInput.trim()
+    if (!/^\d{5}$/.test(zip)) { setZipError('Enter a 5-digit ZIP code.'); return }
+    setZipError(null)
+    setZipLoading(true)
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(zip)}`)
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setZipError('ZIP code not found. Double-check it and try again.')
+        setZipLoading(false)
+        return
+      }
+      setManualLocation({ lat: data.lat, lng: data.lng })
+    } catch {
+      setZipError('Could not look up that ZIP code. Try again.')
+    }
+    setZipLoading(false)
+  }
+
+  const [view, setView] = useState<View>('map')
+
+  // Map-view state
+  const [selected, setSelected] = useState<Store | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [leafletMap, setLeafletMap] = useState<any>(null)
+  const swipeStartY = useRef<number | null>(null)
+  const lastFetchRef = useRef<number>(Date.now())
+
+  // List-view state
+  const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
+  const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
+  const [radius, setRadius] = useState<number | null>(10)
+  const [radiusInitialized, setRadiusInitialized] = useState(false)
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [storeBrands, setStoreBrands] = useState<Record<string, string[]>>({})
+  const [availableBrands, setAvailableBrands] = useState<string[]>([])
+  const [brandFilter, setBrandFilter] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [allDrinks, setAllDrinks] = useState<Drink[]>([])
+  const [drinkFilter, setDrinkFilter] = useState<{ id: string; label: string } | null>(null)
+  const [searchFocused, setSearchFocused] = useState(false)
+
+  // Fetched once — powers the drink half of the search-bar suggestions.
+  useEffect(() => {
+    supabase.from('drinks').select('id, name, brand, flavor, caffeine_mg').then(({ data }) => {
+      if (data) setAllDrinks(data)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!selected) { setLastUpdated(null); return }
+    supabase
+      .from('latest_stock')
+      .select('reported_at')
+      .eq('store_id', selected.id)
+      .order('reported_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => setLastUpdated(data?.[0]?.reported_at ?? null))
+  }, [selected])
+
+  useEffect(() => {
+    if (!user || !lat || !lng) return
+    supabase
+      .from('profiles')
+      .update({ last_lat: lat, last_lng: lng })
+      .eq('id', user.id)
+      .then(() => {})
+  }, [user?.id, lat, lng])
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastFetchRef.current > 5 * 60 * 1000) {
+        lastFetchRef.current = Date.now()
+        refetch()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [refetch])
+
+  useEffect(() => {
+    if (!authLoading && !radiusInitialized) {
+      setRadius(isTracker ? 25 : 5)
+      setRadiusInitialized(true)
+    }
+  }, [authLoading, isTracker, radiusInitialized])
+
+  useEffect(() => {
+    if (stores.length === 0) return
+    supabase
+      .from('latest_stock')
+      .select('store_id, drink_id, quantity, reported_at')
+      .in('store_id', stores.map((s) => s.id))
+      .then(async ({ data }) => {
+        if (!data) return
+
+        const grouped: Record<string, any[]> = {}
+        data.forEach((row) => {
+          if (!grouped[row.store_id]) grouped[row.store_id] = []
+          grouped[row.store_id].push(row)
+        })
+        setStoreStock(grouped)
+
+        const drinkIds = [...new Set(data.map((d) => d.drink_id).filter(Boolean))]
+        if (drinkIds.length === 0) return
+
+        const { data: drinksData } = await supabase
+          .from('drinks')
+          .select('id, brand')
+          .in('id', drinkIds)
+        if (!drinksData) return
+
+        const drinkBrandMap: Record<string, string> = {}
+        drinksData.forEach((d) => { drinkBrandMap[d.id] = d.brand })
+
+        const brandsByStore: Record<string, Set<string>> = {}
+        const allBrands = new Set<string>()
+        data.forEach((row) => {
+          const brand = drinkBrandMap[row.drink_id]
+          if (brand && row.quantity !== 'out') {
+            if (!brandsByStore[row.store_id]) brandsByStore[row.store_id] = new Set()
+            brandsByStore[row.store_id].add(brand)
+            allBrands.add(brand)
+          }
+        })
+
+        setStoreBrands(Object.fromEntries(
+          Object.entries(brandsByStore).map(([k, v]) => [k, Array.from(v)])
+        ))
+        setAvailableBrands(Array.from(allBrands).sort())
+      })
+  }, [stores])
+
+  useEffect(() => {
+    if (stores.length === 0) return
+    const storeIds = new Set(stores.map((s) => s.id))
+
+    const channel = supabase
+      .channel('stores-live-updates')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stock_reports' }, async (payload) => {
+        const report = payload.new as any
+        if (!storeIds.has(report.store_id)) return
+
+        const [{ data: drinkData }, { data: profileData }] = await Promise.all([
+          supabase.from('drinks').select('name, flavor').eq('id', report.drink_id).single(),
+          report.user_id
+            ? supabase.from('profiles').select('username').eq('id', report.user_id).single()
+            : Promise.resolve({ data: null }),
+        ])
+
+        const drinkName = drinkData?.flavor ?? drinkData?.name ?? 'a drink'
+        const username = profileData?.username ?? 'Someone'
+        const updateId = `${report.store_id}-${Date.now()}`
+
+        setLiveUpdates((prev) => ({
+          ...prev,
+          [report.store_id]: [
+            { id: updateId, username, drinkName, quantity: report.quantity },
+            ...(prev[report.store_id] ?? []),
+          ].slice(0, 3),
+        }))
+
+        const timer = setTimeout(() => {
+          setLiveUpdates((prev) => ({
+            ...prev,
+            [report.store_id]: (prev[report.store_id] ?? []).filter((u) => u.id !== updateId),
+          }))
+        }, 8000)
+        liveUpdateTimersRef.current.push(timer)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      liveUpdateTimersRef.current.forEach(clearTimeout)
+      liveUpdateTimersRef.current = []
+    }
+  }, [stores])
+
+  // Must run before any early return below (Rules of Hooks)
+  const byDistance = useMemo(() =>
+    [...stores].sort((a, b) => getDistance(lat, lng, a.lat, a.lng) - getDistance(lat, lng, b.lat, b.lng)),
+    [stores, lat, lng]
+  )
+
+  // drink_id -> lowercased "brand name flavor" for free-text search matching
+  // against what's actually in stock, not just store name/address.
+  const drinkLookup = useMemo(() => {
+    const map: Record<string, string> = {}
+    allDrinks.forEach((d) => { map[d.id] = `${d.brand} ${d.name} ${d.flavor ?? ''}`.toLowerCase() })
+    return map
+  }, [allDrinks])
+
+  const sorted = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return byDistance
+      .filter((s) => radius === null || getDistance(lat, lng, s.lat, s.lng) <= radius)
+      .filter((s) => typeFilter === null || s.type === typeFilter)
+      .filter((s) => brandFilter === null || (storeBrands[s.id] ?? []).includes(brandFilter))
+      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q) ||
+        (storeStock[s.id] ?? []).some((r) => drinkLookup[r.drink_id]?.includes(q)))
+      .filter((s) => !drinkFilter || (storeStock[s.id] ?? []).some((r) => r.drink_id === drinkFilter.id && r.quantity !== 'out'))
+  }, [byDistance, radius, typeFilter, brandFilter, storeBrands, search, lat, lng, storeStock, drinkLookup, drinkFilter])
+
+  // Search-bar typeahead — drink suggestions are limited to drinks actually
+  // in stock (non-'out') at a currently loaded nearby store, so picking one
+  // never filters down to zero results.
+  const inStockDrinkIds = useMemo(() => {
+    const set = new Set<string>()
+    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.quantity !== 'out') set.add(r.drink_id) }))
+    return set
+  }, [storeStock])
+
+  const drinkSuggestions = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+    return allDrinks
+      .filter((d) => inStockDrinkIds.has(d.id))
+      .filter((d) => d.brand.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) || d.flavor?.toLowerCase().includes(q))
+      .slice(0, 5)
+  }, [allDrinks, inStockDrinkIds, search])
+
+  const storeSuggestions = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+    return byDistance
+      .filter((s) => s.name.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
+      .slice(0, 5)
+  }, [byDistance, search])
+
+  function selectStoreSuggestion(store: Store) {
+    setSearchFocused(false)
+    router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
+  }
+
+  function selectDrinkSuggestion(drink: Drink) {
+    const label = `${drink.brand} ${drink.flavor || drink.name}`
+    setDrinkFilter({ id: drink.id, label })
+    setSearch(label)
+    setSearchFocused(false)
+  }
+
+  const showSuggestions = searchFocused && search.trim().length > 0 && (drinkSuggestions.length > 0 || storeSuggestions.length > 0)
+  const suggestionSectionLabelStyle = { fontSize: 10, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' as const, padding: '6px 10px 4px' }
+  const suggestionRowStyle = { width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }
+
+  const searchSuggestions = showSuggestions && (
+    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 30, backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.15)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.45)', maxHeight: 320, overflowY: 'auto', padding: 6 }}>
+      {drinkSuggestions.length > 0 && (
+        <>
+          <p style={suggestionSectionLabelStyle}>Drinks</p>
+          {drinkSuggestions.map((d) => (
+            <button key={d.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectDrinkSuggestion(d)} style={suggestionRowStyle}>
+              <DrinkIcon size={16} color="#8b9284" />
+              <p style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.brand} {d.flavor || d.name}</p>
+            </button>
+          ))}
+        </>
+      )}
+      {storeSuggestions.length > 0 && (
+        <>
+          <p style={suggestionSectionLabelStyle}>Stores</p>
+          {storeSuggestions.map((s) => (
+            <button key={s.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectStoreSuggestion(s)} style={suggestionRowStyle}>
+              <StoreTypeIcon type={s.type} size={16} color="#7A8F80" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
+                {s.address && <p style={{ fontSize: 11, color: '#4A5F50', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.address}</p>}
+              </div>
+            </button>
+          ))}
+        </>
+      )}
+    </div>
+  )
+
+  // Collapsed to a binary signal for map coloring — 'fresh' covers the
+  // store page's Fresh+Aging buckets (< 12h), everything else (including no
+  // reports at all) reads as 'stale' so a cold pin can't look misleadingly fresh.
+  const storeFreshness = useMemo(() => {
+    const map: Record<string, 'fresh' | 'stale'> = {}
+    for (const store of stores) {
+      const latest = getLatestReport(storeStock[store.id] ?? [])
+      const hrs = latest ? (Date.now() - new Date(latest.reported_at).getTime()) / 3600000 : Infinity
+      map[store.id] = hrs < 12 ? 'fresh' : 'stale'
+    }
+    return map
+  }, [stores, storeStock])
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen ">
+        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (locLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-3 ">
+        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
+        <p className="text-white/40 text-sm">Finding your location…</p>
+      </div>
+    )
+  }
+
+  const zipFallback = (
+    <div className="w-full" style={{ marginTop: 4 }}>
+      <div className="flex items-center gap-2.5" style={{ margin: '18px 0 10px' }}>
+        <span style={{ flex: 1, height: 1, background: 'var(--fg-10)' }} />
+        <span className="text-xs font-semibold text-white/35">OR</span>
+        <span style={{ flex: 1, height: 1, background: 'var(--fg-10)' }} />
+      </div>
+      <p className="text-xs text-white/40 mb-2.5">Don't want to share your location? Search by ZIP code instead.</p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          placeholder="ZIP code"
+          value={zipInput}
+          onChange={(e) => { setZipInput(e.target.value.replace(/\D/g, '')); setZipError(null) }}
+          onKeyDown={(e) => { if (e.key === 'Enter') searchByZip() }}
+          className="flex-1 rounded-xl px-4 py-3 text-sm text-white outline-none"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-10)' }}
+        />
+        <button
+          onClick={searchByZip}
+          disabled={zipLoading}
+          className="rounded-xl px-5 font-bold text-sm"
+          style={{ backgroundColor: 'var(--fg-08)', color: 'var(--fg-75)', border: '1px solid var(--fg-15)' }}
+        >
+          {zipLoading ? '…' : 'Search'}
+        </button>
+      </div>
+      {zipError && <p className="text-xs mt-2" style={{ color: '#f87171' }}>{zipError}</p>}
+    </div>
+  )
+
+  if (!location && !locError && !manualLocation) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen px-8 text-center gap-5">
+        <PinIcon size={48} color="#8b9284" />
+        <div>
+          <p className="text-xl font-black text-white mb-2">Find Stores Near You</p>
+          <p className="text-sm text-white/45 leading-relaxed">
+            Share your location for instant results — or search by ZIP code below if you'd rather not.
+          </p>
+        </div>
+        <button
+          onClick={retry}
+          className="w-full rounded-2xl p-4 font-bold"
+          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
+        >
+          Enable Location →
+        </button>
+        {zipFallback}
+      </div>
+    )
+  }
+
+  if (locError && !manualLocation) {
+    const isPermissionDenied = locError === 'denied'
+    return (
+      <div className="flex flex-col items-center justify-center h-screen  px-8 text-center gap-5">
+        <PinIcon size={48} color="#8b9284" />
+        <div>
+          <p className="text-xl font-black text-white mb-2">
+            {isPermissionDenied ? 'No Location? No Problem' : 'Unable to Get Location'}
+          </p>
+          <p className="text-sm text-white/45 leading-relaxed">
+            {isPermissionDenied
+              ? "That's okay — search by ZIP code below, or enable location anytime for automatic results."
+              : 'Your location permission is set to allow, but we couldn\'t get a fix. Make sure your device\'s location services are on, then try again.'}
+          </p>
+        </div>
+
+        <button
+          onClick={retry}
+          className="w-full rounded-2xl p-4 font-bold"
+          style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
+        >
+          Try Again →
+        </button>
+
+        {isPermissionDenied && (
+          <div
+            className="w-full rounded-2xl p-4 text-left"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+          >
+            <p className="text-xs font-bold text-white/40 mb-3" style={{ letterSpacing: '1px' }}>
+              HOW TO ENABLE IN YOUR BROWSER
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm mt-0.5">🔒</span>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-semibold">Chrome / Edge:</span> Click the lock icon in the address bar → Site settings → Location → Allow
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm mt-0.5">🧭</span>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-semibold">iPhone Safari:</span> Tap the <span className="text-white/70 font-semibold">aA</span> icon in the address bar → Website Settings → Location → Allow. Also check Settings → Privacy &amp; Security → Location Services → Safari Websites → While Using
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm mt-0.5">🦊</span>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-semibold">Firefox:</span> Click the shield icon → Permissions → Access Your Location → Allow
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {zipFallback}
+      </div>
+    )
+  }
+
+  const nearest = byDistance[0] ?? null
+  const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
+  const isAtStore = nearestDist !== null && nearestDist < 0.15
+
+  return (
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
+      <style>{`
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .store-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .store-card:hover { border-color: rgba(201,244,0,0.3) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 20px rgba(201,244,0,0.06) !important; }
+        .action-btn { transition: opacity 0.15s ease, transform 0.15s ease; cursor: pointer; }
+        .action-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .action-btn:active { transform: scale(0.97); }
+        .pill-btn { transition: all 0.15s ease; cursor: pointer; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
+      {/* Shared header + view toggle */}
+      <div
+        style={{
+          flexShrink: 0,
+          position: 'relative',
+          zIndex: 40,
+          paddingTop: 'env(safe-area-inset-top)',
+          backgroundColor: 'var(--header-bg)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(201,244,0,0.12)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 10px' }}>
+          <div>
+            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#C9F400', lineHeight: 1 }}>
+              ⚡ Amped Map
+            </p>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--fg-40)', marginTop: 2 }}>
+              {storesLoading ? '— stores' : `${nearbyCount} stores nearby`}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flexShrink: 0, display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 14, padding: 3, boxShadow: '0 0 16px rgba(201,244,0,0.12)' }}>
+              <button
+                onClick={() => setView('map')}
+                className="pill-btn"
+                style={{
+                  padding: '11px 18px', borderRadius: 11, border: 'none',
+                  backgroundColor: view === 'map' ? '#C9F400' : 'transparent',
+                  color: view === 'map' ? '#0D1210' : '#7A8F80',
+                  fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+                  boxShadow: view === 'map' ? '0 0 14px rgba(201,244,0,0.4)' : 'none',
+                }}
+              >
+                Map
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className="pill-btn"
+                style={{
+                  padding: '11px 18px', borderRadius: 11, border: 'none',
+                  backgroundColor: view === 'list' ? '#C9F400' : 'transparent',
+                  color: view === 'list' ? '#0D1210' : '#7A8F80',
+                  fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase',
+                  boxShadow: view === 'list' ? '0 0 14px rgba(201,244,0,0.4)' : 'none',
+                }}
+              >
+                List
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {view === 'map' && (
+          <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
+              <input
+                type="text"
+                placeholder="Search stores"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '11px 14px 11px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+              />
+              {search && (
+                <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
+              )}
+              {searchSuggestions}
+            </div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+              {TYPE_FILTERS.map((f) => {
+                const active = typeFilter === f.value
+                return (
+                  <button key={f.value ?? 'all'} className="pill-btn"
+                    onClick={() => setTypeFilter(f.value)}
+                    style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                    {f.value && <StoreTypeIcon type={f.value} size={13} color={active ? '#0D1210' : '#7A8F80'} />}
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Content area — cross-fades between map canvas and store list; both
+          stay mounted so the map keeps its zoom/pan state and Mapbox instance
+          alive when List View is showing. */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+
+        {/* Dismiss backdrop for the search-suggestions dropdown — sits above
+            the map/list (which have no explicit z-index above 1) but below
+            the header (z-index 40, set above), so the search box + chips
+            stay interactive while this dims and captures taps on the map/
+            list underneath, closing the dropdown on the first tap instead
+            of the dropdown just silently overlapping unreachable content. */}
+        {showSuggestions && (
+          <div
+            onMouseDown={() => setSearchFocused(false)}
+            style={{ position: 'absolute', inset: 0, zIndex: 24, backgroundColor: 'rgba(5,6,4,0.55)' }}
+          />
+        )}
+
+        {/* Map layer */}
+        <div
+          className="absolute inset-0"
+          style={{
+            zIndex: view === 'map' ? 1 : 0,
+            opacity: view === 'map' ? 1 : 0,
+            transform: view === 'map' ? 'translateY(0)' : 'translateY(-8px)',
+            pointerEvents: view === 'map' ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease, transform 0.2s ease',
+          }}
+        >
+          <>
+            <div className="absolute inset-0" style={{ zIndex: 0 }}>
+              <MapView
+                lat={lat}
+                lng={lng}
+                stores={sorted}
+                selected={selected}
+                onSelectStore={setSelected}
+                onMapReady={setLeafletMap}
+                storeFreshness={storeFreshness}
+              />
+            </div>
+
+            {/* Zoom + locate controls */}
+            {leafletMap && (
+              <div
+                className="absolute z-10 flex flex-col gap-2"
+                style={{ bottom: 'calc(160px + env(safe-area-inset-bottom))', right: 16 }}
+              >
+                {[{ label: '+', fn: () => leafletMap.zoomIn() }, { label: '−', fn: () => leafletMap.zoomOut() }].map(({ label, fn }) => (
+                  <button
+                    key={label}
+                    onClick={fn}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-light"
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--fg-15)',
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                      color: 'var(--text)',
+                      fontSize: 22,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => leafletMap.flyTo({ center: [lng, lat], zoom: 15 })}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid rgba(201,244,0,0.4)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    fontSize: 18,
+                    color: '#C9F400',
+                  }}
+                  title="Re-center on my location"
+                >
+                  ◎
+                </button>
+              </div>
+            )}
+
+            {/* Freshness legend — always visible, no toggle needed now that
+                markers themselves are colored by freshness */}
+            <div
+              className="absolute z-10 rounded-xl p-2.5 flex flex-col gap-1.5"
+              style={{
+                bottom: 'calc(90px + env(safe-area-inset-bottom))', left: 16,
+                backgroundColor: 'rgba(19,21,17,0.92)',
+                border: '1px solid var(--fg-10)',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              {FRESHNESS_LEGEND.map((item) => (
+                <div key={item.label} className="flex items-center gap-1.5">
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--fg-50)' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom sheet when store selected */}
+            {selected && (
+              <div
+                className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-5"
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--fg-08)',
+                  paddingBottom: 'calc(70px + env(safe-area-inset-bottom) + 12px)',
+                }}
+                onTouchStart={(e) => { swipeStartY.current = e.touches[0].clientY }}
+                onTouchEnd={(e) => {
+                  if (swipeStartY.current === null) return
+                  const delta = e.changedTouches[0].clientY - swipeStartY.current
+                  if (delta > 60) setSelected(null)
+                  swipeStartY.current = null
+                }}
+              >
+                <div className="w-9 h-1 rounded-sm mx-auto mb-4" style={{ backgroundColor: 'var(--fg-20)' }} />
+
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <StoreTypeIcon type={selected.type} size={28} color="#7A8F80" />
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold text-white truncate">{selected.name}</p>
+                      <p className="text-xs text-white/40 mt-0.5 truncate">{selected.address}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-2"
+                    style={{ backgroundColor: 'var(--fg-07)' }}
+                  >
+                    <CloseIcon size={13} color="rgba(255,255,255,0.5)" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
+                  >
+                    <PinIcon size={11} color="#8b9284" />
+                    <span className="text-xs font-semibold text-white/60">
+                      {getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away
+                    </span>
+                  </div>
+                  {lastUpdated && isTracker && (
+                    <div
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)' }}
+                    >
+                      <ClockIcon size={11} color="#8b9284" />
+                      <span className="text-xs font-semibold text-white/60">
+                        Updated {timeAgo(lastUpdated)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 12, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                  <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                  <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
+                  <button
+                    onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}&flag=1`)}
+                    style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
+                  >
+                    Report it
+                  </button>
+                </div>
+
+                <div className="flex gap-2.5">
+                  <button
+                    className="flex-1 rounded-xl py-3 font-semibold text-sm"
+                    style={{
+                      backgroundColor: 'var(--fg-06)',
+                      border: '1.5px solid var(--fg-50)',
+                      color: 'var(--fg-90)',
+                      boxShadow: '0 0 12px var(--fg-15), 0 0 24px var(--fg-07)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                    onClick={() => openDirections(selected.lat, selected.lng)}
+                  >
+                    Directions
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button
+                    className="flex-1 rounded-xl py-3 font-bold text-sm"
+                    style={{
+                      backgroundColor: '#C9F400',
+                      border: '1.5px solid rgba(201,244,0,0.8)',
+                      color: '#0D1210',
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      boxShadow: '0 0 12px rgba(201,244,0,0.4), 0 0 24px rgba(201,244,0,0.15)',
+                    }}
+                    onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}
+                  >
+                    View Stock
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        </div>
+
+        {/* List layer */}
+        <div
+          style={{
+            position: 'absolute', inset: 0, overflowY: 'auto',
+            zIndex: view === 'list' ? 1 : 0,
+            opacity: view === 'list' ? 1 : 0,
+            transform: view === 'list' ? 'translateY(0)' : 'translateY(8px)',
+            pointerEvents: view === 'list' ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease, transform 0.2s ease',
+          }}
+        >
+            <div style={{ padding: '16px 16px 100px' }}>
+
+              {/* Search + Add Store */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, animation: 'fadeUp 0.5s ease' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}><SearchIcon size={15} color="#7A8F80" /></span>
+                  <input
+                    type="text"
+                    placeholder="Search stores or flavors..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); if (drinkFilter) setDrinkFilter(null) }}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                    style={{ width: '100%', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.12)', borderRadius: 14, padding: '13px 14px 13px 42px', color: 'var(--text)', fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: 'none' }}
+                  />
+                  {search && (
+                    <button onClick={() => { setSearch(''); setDrinkFilter(null) }} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', display: 'flex', cursor: 'pointer' }}><CloseIcon size={13} color="#4A5F50" /></button>
+                  )}
+                  {searchSuggestions}
+                </div>
+                <button
+                  className="action-btn"
+                  onClick={() => router.push('/add-store')}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#C9F400', border: 'none', borderRadius: 14, padding: '13px 14px', color: '#0D1210', fontSize: 12, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase', boxShadow: '0 0 16px rgba(201,244,0,0.3)' }}
+                >
+                  + Add Store
+                </button>
+              </div>
+
+              {/* Radius filter */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+                {(isTracker ? HUNTER_RADIUS_OPTIONS : FREE_RADIUS_OPTIONS).map((r) => {
+                  const active = radius === r
+                  return (
+                    <button key={r ?? 'all'} className="pill-btn"
+                      onClick={() => setRadius(r)}
+                      style={{ flexShrink: 0, padding: '7px 16px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                      {r === null ? 'ALL' : `${r} MI`}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Type filter */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+                {TYPE_FILTERS.map((f) => {
+                  const active = typeFilter === f.value
+                  return (
+                    <button key={f.value ?? 'all'} className="pill-btn"
+                      onClick={() => setTypeFilter(f.value)}
+                      style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                      {f.value && <StoreTypeIcon type={f.value} size={13} color={active ? '#0D1210' : '#7A8F80'} />}
+                      {f.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Brand filter */}
+              {availableBrands.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }} className="no-scrollbar">
+                  <button className="pill-btn"
+                    onClick={() => setBrandFilter(null)}
+                    style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: brandFilter === null ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: brandFilter === null ? '#C9F400' : 'var(--surface)', color: brandFilter === null ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: brandFilter === null ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                    ALL BRANDS
+                  </button>
+                  {availableBrands.map((brand) => {
+                    const active = brandFilter === brand
+                    return (
+                      <button key={brand} className="pill-btn"
+                        onClick={() => setBrandFilter(active ? null : brand)}
+                        style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: '1px solid', borderColor: active ? '#C9F400' : 'rgba(201,244,0,0.12)', backgroundColor: active ? '#C9F400' : 'var(--surface)', color: active ? '#0D1210' : '#7A8F80', fontSize: 14, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', boxShadow: active ? '0 0 14px rgba(201,244,0,0.4)' : 'none' }}>
+                        {brand}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Nearest / You're At card */}
+              {storesLoading ? (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ height: 10, width: 80, borderRadius: 6, backgroundColor: 'rgba(201,244,0,0.07)', marginBottom: 8 }} />
+                  <div style={{ borderRadius: 16, height: 96, backgroundColor: 'var(--surface)' }} className="animate-pulse" />
+                </div>
+              ) : nearest && (
+                <div style={{ marginBottom: 20, animation: 'fadeUp 0.5s ease 0.08s both' }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    ⚡ {isAtStore ? "You're At" : 'Nearest to You'}
+                    <span style={{ flex: 1, height: 1, background: 'rgba(201,244,0,0.12)', display: 'block' }} />
+                  </p>
+                  <div className="store-card" style={{ backgroundColor: 'var(--surface)', borderRadius: 16, padding: 14, border: `1px solid ${isAtStore ? 'rgba(201,244,0,0.4)' : 'rgba(201,244,0,0.25)'}`, boxShadow: '0 0 24px rgba(201,244,0,0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}
+                      onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}
+                      className="cursor-pointer"
+                    >
+                      <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <StoreTypeIcon type={nearest.type} size={22} color="#7A8F80" />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nearest.name}</p>
+                        <p style={{ fontSize: 12, color: 'var(--fg-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearest.address}</p>
+                      </div>
+                      <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>
+                        {isAtStore ? '● HERE' : `${nearestDist!.toFixed(1)} mi`}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                      <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                      <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
+                      <button
+                        onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}&flag=1`)}
+                        style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
+                      >
+                        Report it
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '11px 0', color: '#0D1210', fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
+                        onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
+                        ⚡ Report
+                      </button>
+                      <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
+                        onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
+                        View
+                      </button>
+                      {!isAtStore && (
+                        <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '11px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
+                          onClick={() => openDirections(nearest.lat, nearest.lng)}>
+                          Directions
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* All stores */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#4A5F50', letterSpacing: '0.14em', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {search ? `Results (${sorted.length})` : 'All Stores'}
+                <span style={{ flex: 1, height: 1, background: 'rgba(201,244,0,0.12)', display: 'block' }} />
+              </p>
+
+              {storesLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+                  <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                </div>
+              ) : storesError && stores.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
+                  <span style={{ fontSize: 40 }}>⚠️</span>
+                  <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>Couldn't load stores</p>
+                  <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>Check your connection and try again.</p>
+                  <button onClick={() => refetch()} style={{ marginTop: 6, fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 12, backgroundColor: 'rgba(201,244,0,0.1)', color: 'var(--accent)', border: '1px solid rgba(201,244,0,0.25)', cursor: 'pointer' }}>Retry</button>
+                </div>
+              ) : sorted.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '56px 0' }}>
+                  <GroceryIcon size={40} color="#8b9284" />
+                  <p style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>No stores found</p>
+                  <p style={{ fontSize: 13, color: '#7A8F80', textAlign: 'center', paddingInline: 24 }}>
+                    {brandFilter ? `No stores with ${brandFilter} in stock nearby` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area` : search ? `No stores matching "${search}"` : 'No stores in range — try a wider radius'}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease 0.12s both' }}>
+                  {sorted.map((store) => {
+                    const stock = storeStock[store.id] ?? []
+                    const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
+                    const latestReport = getLatestReport(stock)
+                    const inStockCount = stock.filter((s) => s.quantity !== 'out').length
+                    const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
+                    const hasReports = stock.length > 0
+                    const barColor = !hasReports ? 'rgba(201,244,0,0.12)' : pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
+                    const daysSinceReport = latestReport ? (Date.now() - new Date(latestReport.reported_at).getTime()) / 86400000 : null
+                    const isDormant = hasReports && daysSinceReport !== null && daysSinceReport > 7
+
+                    return (
+                      <div key={store.id} className="store-card"
+                        style={{ backgroundColor: 'var(--surface)', borderRadius: 16, padding: 14, border: `1px solid rgba(201,244,0,0.12)` }}>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, cursor: 'pointer' }}
+                          onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
+                          <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: 'var(--fg-06)', border: '1px solid var(--fg-08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <StoreTypeIcon type={store.type} size={22} color="#7A8F80" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em', textTransform: 'uppercase' }}>{store.name}</p>
+                            <p style={{ fontSize: 12, color: 'var(--fg-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.address}</p>
+                          </div>
+                          <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}>{dist} mi</p>
+                        </div>
+
+                        {hasReports ? (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                              <div style={{ flex: 1, height: 6, backgroundColor: 'rgba(201,244,0,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: barColor, flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                                {inStockCount}/{stock.length} IN STOCK
+                              </span>
+                            </div>
+                            {latestReport && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isDormant ? 8 : 12 }}>
+                                <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
+                                <span style={{ fontSize: 12, fontWeight: 600, color: stalenessColor(latestReport.reported_at), fontFamily: "'Barlow Condensed', sans-serif" }}>
+                                  {timeAgo(latestReport.reported_at)}
+                                </span>
+                              </div>
+                            )}
+                            {isDormant && (
+                              <button
+                                className="action-btn"
+                                style={{ width: '100%', textAlign: 'center', marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(255,179,0,0.05)', border: '1.5px dashed rgba(255,179,0,0.4)', cursor: 'pointer' }}
+                                onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
+                              >
+                                <span style={{ display: 'block', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: '#FFB300' }}>⚡ Be the one to confirm this store</span>
+                                <span style={{ display: 'block', fontSize: 11, color: 'var(--fg-40)', marginTop: 2 }}>
+                                  No one's checked in over {Math.floor(daysSinceReport!)} days
+                                </span>
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            className="action-btn"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, padding: '10px 14px', borderRadius: 10, backgroundColor: 'rgba(201,244,0,0.03)', border: '1.5px dashed rgba(201,244,0,0.35)', cursor: 'pointer' }}
+                            onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}
+                          >
+                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--accent)' }}>⚡ Be the first to report here →</span>
+                          </button>
+                        )}
+
+                        {(liveUpdates[store.id] ?? []).map((update) => {
+                          const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : update.quantity === 'low' ? '#FFB300' : '#FFB300'
+                          const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
+                          return (
+                            <div key={update.id} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: `${qColor}10`, border: `1px solid ${qColor}33` }}>
+                              <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
+                              <p style={{ fontSize: 12, color: '#7A8F80', flex: 1 }}>
+                                <span style={{ fontWeight: 700, color: 'var(--text)' }}>@{update.username}</span> reported{' '}
+                                <span style={{ fontWeight: 600 }}>{update.drinkName}</span> as{' '}
+                                <span style={{ fontWeight: 700, color: qColor }}>{qLabel}</span>
+                              </p>
+                            </div>
+                          )
+                        })}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 10, backgroundColor: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                          <span style={{ fontSize: 13, flexShrink: 0 }}>⚠️</span>
+                          <p style={{ fontSize: 11, color: '#FFB300', lineHeight: 1.4, flex: 1 }}>Pin location may be off.</p>
+                          <button
+                            onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}&flag=1`)}
+                            style={{ fontSize: 10, fontWeight: 800, color: '#FFB300', textDecoration: 'underline', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer' }}
+                          >
+                            Report it
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#C9F400', border: 'none', borderRadius: 10, padding: '10px 0', color: '#0D1210', fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase', boxShadow: '0 0 14px rgba(201,244,0,0.3)' }}
+                            onClick={() => router.push(`/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)}>
+                            ⚡ Report
+                          </button>
+                          <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
+                            onClick={() => router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)}>
+                            View
+                          </button>
+                          <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--fg-06)', border: '1.5px solid var(--fg-50)', borderRadius: 10, padding: '10px 0', color: 'var(--fg-90)', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em', textTransform: 'uppercase' }}
+                            onClick={() => openDirections(store.lat, store.lng)}>
+                            Directions
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+      </div>
+    </div>
+  )
+}

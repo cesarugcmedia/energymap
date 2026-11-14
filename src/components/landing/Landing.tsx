@@ -1,0 +1,177 @@
+import Link from 'next/link'
+import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon } from '@/components/Icons'
+import PhoneMockup from './PhoneMockup'
+import styles from './landing.module.css'
+
+export type LandingStats = { stores: number; drinks: number; trackers: number | null }
+
+const BETA_LIMIT = 60
+
+// Server-rendered marketing page shown at / to logged-out visitors (see
+// HomeGate). Sign-in/sign-up live on /account; every CTA links there.
+
+function LogoMark({ size = 30 }: { size?: number }) {
+  return (
+    <span className={styles.logoMark} style={{ width: size, height: size, borderRadius: size * 0.28 }}>
+      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" />
+      </svg>
+    </span>
+  )
+}
+
+const STEPS = [
+  { Icon: PinIcon, title: 'Find a store', body: 'Open the map to see gas stations, convenience stores and grocery stores around you.' },
+  { Icon: DrinkIcon, title: "See what's in stock", body: 'Each store lists the flavors people have reported, how full the cooler was, and how long ago.' },
+  { Icon: LightningIcon, title: 'Report what you see', body: 'Standing at a cooler? Tap what is there in a few seconds and save the next person a wasted trip.' },
+]
+
+const FREE_FEATURES = ['See stock within 5 miles', 'Report stock and add missing stores', 'Flavor restock alerts', 'Community feed and leaderboard']
+const TRACKER_FEATURES = ['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait']
+
+const FAQ = [
+  { q: 'Is AmpedMap free?', a: 'Yes. Seeing stock, reporting it and adding stores are all free. Tracker ($5/month) adds an unlimited map radius, exact report times and saved store lists.' },
+  { q: 'Where does the stock information come from?', a: 'From people. When someone sees a store’s cooler, they report which flavors are there and how full it looks. Every report shows how old it is, so you can judge how fresh it is.' },
+  { q: 'Which areas are covered?', a: 'Anywhere people report. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
+  { q: 'Do I have to share my location?', a: 'No. You can search by ZIP code instead. Sharing your location just makes it quicker to see what is closest.' },
+]
+
+export default function Landing({ stats }: { stats: LandingStats | null }) {
+  const spotsLeft = stats?.trackers != null ? Math.max(0, BETA_LIMIT - stats.trackers) : null
+
+  return (
+    <div className={styles.page}>
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={`${styles.container} ${styles.headerInner}`}>
+          <Link href="/" className={styles.brand}>
+            <LogoMark />
+            <span>AmpedMap</span>
+          </Link>
+          <nav className={styles.headerNav}>
+            <Link href="/account?mode=signin" className={styles.headerLink}>Sign in</Link>
+            <Link href="/account?mode=signup" className={styles.btnSmall}>Get started</Link>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        {/* Hero */}
+        <section className={`${styles.container} ${styles.hero}`}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>For energy drink hunters</p>
+            <h1 className={styles.h1}>Never hunt for your favorite energy drink again.</h1>
+            <p className={styles.lead}>
+              See which stores near you have it in stock, reported by people who just saw the shelf.
+            </p>
+            <div className={styles.heroCtas}>
+              <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
+              <Link href="/account?mode=signin" className={styles.btnGhost}>Sign in</Link>
+            </div>
+            {stats && stats.stores > 0 && (
+              <p className={styles.statLine}>
+                <strong>{stats.stores.toLocaleString()}</strong> stores and <strong>{stats.drinks.toLocaleString()}</strong> flavors on the map
+              </p>
+            )}
+          </div>
+          <div className={styles.heroVisual}>
+            <PhoneMockup />
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className={styles.section} aria-labelledby="how">
+          <div className={styles.container}>
+            <h2 id="how" className={styles.h2}>How it works</h2>
+            <div className={styles.steps}>
+              {STEPS.map(({ Icon, title, body }, i) => (
+                <div key={title} className={styles.step}>
+                  <span className={styles.stepIcon}><Icon size={20} color="#C9F400" /></span>
+                  <p className={styles.stepNum}>Step {i + 1}</p>
+                  <h3 className={styles.h3}>{title}</h3>
+                  <p className={styles.body}>{body}</p>
+                </div>
+              ))}
+            </div>
+            <div className={styles.legend}>
+              <span><i style={{ background: '#C9F400' }} /> Reported in the last 12 hours</span>
+              <span><i style={{ background: '#FFB300' }} /> Mixed</span>
+              <span><i style={{ background: '#6B7468' }} /> Older or no reports</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section className={styles.section} aria-labelledby="pricing">
+          <div className={styles.container}>
+            <h2 id="pricing" className={styles.h2}>Simple pricing</h2>
+            <p className={styles.sectionLead}>Start free. Upgrade if you want the whole map.</p>
+            <div className={styles.plans}>
+              <div className={styles.plan}>
+                <h3 className={styles.planName}>Free</h3>
+                <p className={styles.planPrice}>$0</p>
+                <ul className={styles.planList}>
+                  {FREE_FEATURES.map((f) => <li key={f}><CheckIcon size={15} color="#C9F400" />{f}</li>)}
+                </ul>
+                <Link href="/account?mode=signup&plan=free" className={styles.btnGhost}>Create free account</Link>
+              </div>
+              <div className={`${styles.plan} ${styles.planFeatured}`}>
+                <h3 className={styles.planName}>Tracker</h3>
+                <p className={styles.planPrice}>$5<span>/month</span></p>
+                <ul className={styles.planList}>
+                  <li className={styles.planInherit}>Everything in Free, plus:</li>
+                  {TRACKER_FEATURES.map((f) => <li key={f}><CheckIcon size={15} color="#C9F400" />{f}</li>)}
+                </ul>
+                {spotsLeft != null && spotsLeft > 0 && (
+                  <p className={styles.betaNote}>The first {BETA_LIMIT} members get Tracker free. {spotsLeft} spot{spotsLeft === 1 ? '' : 's'} left.</p>
+                )}
+                <Link href="/account?mode=signup&plan=tracker" className={styles.btnPrimary}>
+                  {spotsLeft != null && spotsLeft > 0 ? 'Claim a free spot' : 'Get Tracker'}
+                </Link>
+                <p className={styles.planFine}>Cancel anytime.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className={styles.section} aria-labelledby="faq">
+          <div className={`${styles.container} ${styles.narrow}`}>
+            <h2 id="faq" className={styles.h2}>Questions</h2>
+            <div className={styles.faq}>
+              {FAQ.map(({ q, a }) => (
+                <details key={q} className={styles.faqItem}>
+                  <summary>{q}</summary>
+                  <p>{a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Closing CTA */}
+        <section className={`${styles.container} ${styles.closing}`}>
+          <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
+          <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <div className={`${styles.container} ${styles.footerInner}`}>
+          <Link href="/" className={styles.brand}>
+            <LogoMark size={24} />
+            <span>AmpedMap</span>
+          </Link>
+          <nav className={styles.footerNav}>
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+            <a href="mailto:support@ampedmap.com"><MailIcon size={14} color="currentColor" /> Contact</a>
+            <a href="https://www.tiktok.com/@ampedmap" target="_blank" rel="noopener noreferrer"><TiktokIcon size={14} color="currentColor" /> TikTok</a>
+          </nav>
+          <p className={styles.copyright}>© {new Date().getFullYear()} AmpedMap</p>
+        </div>
+      </footer>
+    </div>
+  )
+}

@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
+import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
-import { StoreTypeIcon, CheckIcon, BellIcon, HeartIcon, CloseIcon, MailIcon, TiktokIcon, ChevronLeftIcon, ChevronRightIcon, LightningIcon, TrophyIcon, DrinkIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
+import { StoreTypeIcon, CheckIcon, BellIcon, HeartIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, LightningIcon, TrophyIcon, DrinkIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -256,25 +257,17 @@ function ShieldIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: s
   )
 }
 
-const HOW_IT_WORKS = [
-  { icon: '📍', title: 'Find Nearby Stores', desc: 'See gas stations and convenience stores around you on a live map, sorted by distance.' },
-  { icon: '⚡', title: 'Check Stock Instantly', desc: 'Community members report what\'s in stock in real time — Celsius, Ghost, Alani, Red Bull and more.' },
-  { icon: '🔔', title: 'Get Notified', desc: 'Set alerts for your favorite flavors and get notified the moment they\'re spotted near you.' },
-  { icon: '🤝', title: 'Help the Community', desc: 'Report what you see on shelves. Every report helps thousands of fans find their favorite drinks faster.' },
-]
-
-const STATIC_STATS = [
-  { value: 'Real-time', label: 'Stock Updates' },
-  { value: 'Free', label: 'To Get Started' },
-]
-
 function AccountPageInner() {
   const { user, profile, loading, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>('signup')
-  const [selectedTier, setSelectedTier] = useState<TierId | null>(null)
-  const [step, setStep] = useState(1)
+  // The landing page (/) links here with ?mode=signin|signup and, from its
+  // pricing cards, ?plan=free|tracker to skip straight to the account form.
+  const initialPlan = searchParams.get('plan')
+  const planParam: TierId | null = initialPlan === 'free' || initialPlan === 'tracker' ? initialPlan : null
+  const [mode, setMode] = useState<Mode>(searchParams.get('mode') === 'signin' ? 'signin' : 'signup')
+  const [selectedTier, setSelectedTier] = useState<TierId | null>(planParam)
+  const [step, setStep] = useState(planParam ? 2 : 1)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -304,8 +297,6 @@ function AccountPageInner() {
   const [earlyBird, setEarlyBird] = useState(false)
   const [rank, setRank] = useState<number | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
-  const [platformStores, setPlatformStores] = useState<number>(0)
-  const [platformDrinks, setPlatformDrinks] = useState<number>(0)
 
   // Profile management
   const [newUsername, setNewUsername] = useState('')
@@ -379,13 +370,6 @@ function AccountPageInner() {
     if (process.env.NEXT_PUBLIC_WAITLIST_ACTIVE === '1') {
       fetch('/api/waitlist').then((r) => r.json()).then((d) => setWaitlistCount(d.count ?? 0))
     }
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/stats')
-      .then((r) => r.json())
-      .then((d) => { setPlatformStores(d.stores ?? 0); setPlatformDrinks(d.drinks ?? 0) })
-      .catch(() => {})
   }, [])
 
   // Refresh profile after successful Stripe payment
@@ -1371,63 +1355,15 @@ function selectAndContinue(tierId: TierId) {
 
       <div style={{ position: 'relative', zIndex: 1, fontFamily: "'Barlow', system-ui, sans-serif" }}>
 
-        {/* ── HERO ── */}
-        <div style={{ textAlign: 'center', padding: '36px 24px 28px', animation: 'fadeUp 0.6s ease' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 40, display: 'inline-block', animation: 'float 3s ease-in-out infinite' }}>⚡</span>
-            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 48, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent)' }}>Amped Map</span>
-          </div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(26px, 5vw, 44px)', fontWeight: 800, lineHeight: 1.1, marginBottom: 14, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-            Never Hunt for Your<br />
-            <span style={{ color: 'var(--accent)' }}>Favorite Energy Drink</span> Again
-          </h1>
-          <p style={{ fontSize: 15, color: '#7A8F80', maxWidth: 480, margin: '0 auto 20px', lineHeight: 1.7 }}>
-            The crowdsourced platform that tracks real-time energy drink stock at stores near you. Find Celsius, Ghost, Alani Nu, Red Bull and more — before you leave the house.
-          </p>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '6px 16px', marginBottom: 24 }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#C9F400', animation: 'pulse 2s ease-in-out infinite' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.1em', fontFamily: "'Barlow Condensed', sans-serif" }}>LIVE STOCK UPDATES</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10, maxWidth: 560, margin: '0 auto' }}>
-            {[
-              { value: platformStores > 0 ? `${platformStores.toLocaleString()}+` : '1,000+', label: 'Stores Tracked' },
-              { value: platformDrinks > 0 ? `${platformDrinks.toLocaleString()}+` : '274+', label: 'Drink Flavors' },
-              ...STATIC_STATS,
-            ].map((s, i) => (
-              <div key={i} style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 20px', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: '#4A5F50', marginTop: 2, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
+        {/* Brand bar — the marketing landing page now lives at /. */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '28px 24px 24px' }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text)' }}>
+            <span style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
+            </span>
+            <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.01em' }}>AmpedMap</span>
+          </Link>
         </div>
-
-        {/* ── HOW IT WORKS ── */}
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 32px', animation: 'fadeUp 0.6s ease 0.2s both' }}>
-          <div style={{ textAlign: 'center', marginBottom: 18 }}>
-            <div style={{ display: 'inline-block', backgroundColor: 'rgba(201,244,0,0.08)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 20, padding: '4px 14px', marginBottom: 10 }}>
-              <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.14em', fontFamily: "'Barlow Condensed', sans-serif" }}>HOW IT WORKS</span>
-            </div>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6 }}>Built by Energy Drink Fans, for Energy Drink Fans</h2>
-            <p style={{ fontSize: 13, color: '#7A8F80', maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
-              We know the frustration of driving to three stores for one flavor. Amped Map solves that — powered by a community just like you.
-            </p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
-            {HOW_IT_WORKS.map((item, i) => (
-              <div key={i} className="how-card" style={{ backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.1)', borderRadius: 14, padding: '12px 10px', textAlign: 'center', animation: `fadeUp 0.5s ease ${i * 0.1}s both` }}>
-                <div style={{ fontSize: 20, marginBottom: 6 }}>{item.icon}</div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase', letterSpacing: '0.02em' }}>{item.title}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── DIVIDER ── */}
-        <div style={{ maxWidth: 900, margin: '8px auto 24px', padding: '0 24px' }}>
-          <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,244,0,0.1), transparent)' }} />
-        </div>
-
         {/* ── MODE TABS ── */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
           <div style={{ display: 'flex', backgroundColor: 'rgba(201,244,0,0.06)', borderRadius: 14, padding: 4, border: '1px solid rgba(201,244,0,0.1)' }}>
@@ -1673,43 +1609,12 @@ function selectAndContinue(tierId: TierId) {
           </div>
         )}
 
-        {/* ── DIVIDER ── */}
-        <div style={{ maxWidth: 900, margin: '0 auto 24px', padding: '0 24px' }}>
-          <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,244,0,0.1), transparent)' }} />
-        </div>
-
-        {/* ── CONTACT ── */}
-        <div style={{ maxWidth: 420, margin: '0 auto', padding: '0 24px 28px' }}>
-          <div style={{ backgroundColor: 'rgba(201,244,0,0.04)', border: '1px solid rgba(201,244,0,0.18)', borderRadius: 20, padding: '22px 20px', textAlign: 'center' }}>
-            <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', letterSpacing: '0.14em', marginBottom: 14, fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Get In Touch</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a
-                href="mailto:support@ampedmap.com"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '12px 16px', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 14, textDecoration: 'none' }}
-              >
-                <MailIcon size={16} color="var(--accent)" />
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>support@ampedmap.com</span>
-              </a>
-              <a
-                href="https://www.tiktok.com/@ampedmap"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '12px 16px', backgroundColor: 'var(--surface)', border: '1px solid rgba(201,244,0,0.2)', borderRadius: 14, textDecoration: 'none' }}
-              >
-                <TiktokIcon size={16} color="var(--accent)" />
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>@ampedmap on TikTok</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* ── FOOTER ── */}
-        <div style={{ textAlign: 'center', padding: '0 24px 48px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 16 }}>⚡</span>
-            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#4A5F50' }}>Amped Map</span>
-          </div>
-          <p style={{ fontSize: 11, color: '#4A5F50' }}>Built for the community · Powered by real-time reports</p>
+        {/* Footer links */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 20px', padding: '8px 24px 48px', fontSize: 14 }}>
+          <Link href="/" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Home</Link>
+          <a href="/terms" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Terms</a>
+          <a href="/privacy" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Privacy</a>
+          <a href="mailto:support@ampedmap.com" style={{ color: '#A4B0A6', textDecoration: 'none' }}>Contact</a>
         </div>
       </div>
     </div>
