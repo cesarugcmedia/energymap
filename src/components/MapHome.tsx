@@ -818,8 +818,8 @@ export default function MapHome() {
                       <ChevronRightIcon size={16} color="var(--text-dim)" />
                     </button>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
-                        Report stock
+                      <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
+                        View stock
                       </button>
                       {!isAtStore && (
                         <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(nearest.lat, nearest.lng)}>
@@ -869,7 +869,7 @@ export default function MapHome() {
                     const barColor = pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
                     const daysSinceReport = latestReport ? (Date.now() - new Date(latestReport.reported_at).getTime()) / 86400000 : null
                     const isDormant = hasReports && daysSinceReport !== null && daysSinceReport > 7
-                    const reportHref = `/submit/drinks?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`
+                    const storeHref = `/store/${store.id}?name=${encodeURIComponent(store.name)}`
 
                     return (
                       <div key={store.id} className={ui.card}>
@@ -930,8 +930,8 @@ export default function MapHome() {
                         })}
 
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(reportHref)}>
-                            Report stock
+                          <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(storeHref)}>
+                            View stock
                           </button>
                           <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(store.lat, store.lng)}>
                             Directions
