@@ -219,13 +219,13 @@ Notifications have their own bottom-nav tab (**Alerts**, `/notifications`) rathe
 
 Nav icons are custom inline SVGs (`src/components/NavIcons.tsx`) instead of system emoji — emoji rendered with mismatched weights across devices (some bold/colorful like 👥🔔, some thin/monochrome like 🗺️). Each icon takes an `active` boolean: active renders a solid lime fill, inactive a gray outline, matching the lime-for-active convention used elsewhere (toggle buttons, active filter chips). The Alerts icon carries the unread-count badge as a small red circle positioned over the bell SVG. Notification cards use a sibling set, `src/components/NotificationIcons.tsx` — same lime line-icon language, no active/inactive state needed — via a `notificationIcon(type)` lookup with a bell fallback for unmapped types.
 
-The  page (redesigned 2026-11-14):
+The `/notifications` page (redesigned 2026-11-14):
 - **iOS-style rows grouped by day** (Today / Yesterday / weekday / "Month D") inside one card per day. Each row: unread dot, icon tile (lime-tinted when unread), message (bold when unread; the leading emoji some DB triggers prepend is stripped since the icon carries the type), "Store · 2h" meta, chevron when it links somewhere.
-- **Tap = mark read + go there** (): store page when  is set,  for ,  for badges,  for drink alerts.  honors  as a deep link (Back returns to the Account list).
+- **Tap = mark read + go there** (`hrefFor()`): store page when `store_id` is set, `/community?post=` for `post_id`, `/account?page=badges` for badges, `/account?page=alerts` for drink alerts. `/account` honors `?page=badges|alerts|plan` as a deep link (Back returns to the Account list).
 - **Explicit read state** — visiting doesn't mark anything read; "Mark all read" in the header marks every unread row for the user server-side.
-- **Grouped stock updates** — consecutive same-store, same-day  rows collapse into one ("N stock updates at Store", first 3 sub-lines + "+N more"). Sub-lines reuse each notification's raw , since the  RPC (called from ) was created in the Supabase dashboard and its wording isn't defined in this repo.
-- **Filters**: All / Unread (with count) / Stock (, ) / Community (, , , ) / Stores & drinks / Badges — the  map. Add new notification types there and in .
-- Pages 40 at a time ("Load older notifications" by  cursor), refreshes live on realtime INSERTs, and "Clear all" sits at the bottom behind a confirmation sheet.
+- **Grouped stock updates** — consecutive same-store, same-day `stock_update` rows collapse into one ("N stock updates at Store", first 3 sub-lines + "+N more"). Sub-lines reuse each notification's raw `message`, since the `notify_stock_update` RPC (called from `/api/stock/report`) was created in the Supabase dashboard and its wording isn't defined in this repo.
+- **Filters**: All / Unread (with count) / Stock (`stock_update`, `drink_alert`) / Community (`comment`, `reply`, `mention`, `follow`) / Stores & drinks / Badges — the `CATEGORY` map in `src/app/notifications/page.tsx`. Add new notification types there and in `NotificationIcons.tsx`.
+- Pages 40 at a time ("Load older notifications" by `created_at` cursor), refreshes live on realtime INSERTs, and "Clear all" sits at the bottom behind a confirmation sheet.
 
 ### App-Wide Icon System
 
