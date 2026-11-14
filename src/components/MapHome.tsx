@@ -645,7 +645,11 @@ export default function MapHome() {
   // Personalized line for the welcome flow's finish screen, from real data.
   function onboardingSummary(brands: string[]): OnboardingSummary {
     const nearby = byDistance.filter((s) => getDistance(lat, lng, s.lat, s.lng) <= 5)
-    const reportStore = byDistance[0] ? { id: byDistance[0].id, name: byDistance[0].name } : null
+    // Only offer "Report at X" when they're actually there (reports are
+    // geofenced to ~500m server-side); otherwise the finish screen points them
+    // at the "You're at…" banner for next time.
+    const closest = byDistance[0]
+    const reportStore = closest && getDistance(lat, lng, closest.lat, closest.lng) < 0.3 ? { id: closest.id, name: closest.name } : null
     if (brands.length > 0) {
       const withBrand = nearby.filter((s) => (storeBrands[s.id] ?? []).some((b) => brands.includes(b)))
       const label = brands.length === 1 ? brands[0] : brands.length === 2 ? `${brands[0]} or ${brands[1]}` : 'your brands'

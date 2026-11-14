@@ -107,7 +107,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
     }
     await onSave(prefs)
     setSaving(false)
-    if (mode === 'first' && getSummary) { setSummary(getSummary(brands)); setStep(4) }
+    if (mode === 'first' && getSummary) { setSummary(getSummary(brands)); setStep(steps.length) }
     else onClose()
   }
 
@@ -116,7 +116,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
     onClose()
   }
 
-  const steps = [
+  const coreSteps = [
     {
       title: 'What do you drink?',
       sub: 'Pick your brands. We’ll show them first everywhere.',
@@ -231,8 +231,111 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
     },
   ]
 
-  const isFinish = step === 4
+  // First sign-in only: a short intro to what AmpedMap is before any questions.
+  const welcomeStep = {
+    key: 'welcome',
+    title: 'Welcome to AmpedMap',
+    sub: 'The live map of what’s in the cooler, built by energy drink hunters.',
+    body: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {[
+          { icon: <PinIcon size={18} color="#C9F400" />, title: 'Every store near you', body: 'Gas stations, convenience and grocery stores on one map.' },
+          {
+            icon: <span style={{ display: 'flex', gap: 3 }}>{['#C9F400', '#FFB300', '#8A8F86'].map((c) => <span key={c} style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />)}</span>,
+            title: 'See what’s in stock',
+            body: 'Pins turn lime when someone reported in the last 12 hours. Tap one to see flavors and stock levels.',
+          },
+          { icon: <BellIcon size={18} color="#C9F400" />, title: 'Never miss a restock', body: 'Follow a flavor and we’ll tell you when it’s back.' },
+          { icon: <LightningIcon size={18} color="#C9F400" />, title: 'Powered by hunters like you', body: 'Report what you see in seconds, earn badges and climb the leaderboard.' },
+        ].map((f) => (
+          <div key={f.title} className={ui.card} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: 16 }}>
+            <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{f.icon}</span>
+            <span>
+              <span style={{ display: 'block', fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{f.title}</span>
+              <span style={{ display: 'block', fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>{f.body}</span>
+            </span>
+          </div>
+        ))}
+        <p style={{ fontSize: 14, color: 'var(--text-dim)', textAlign: 'center', marginTop: 6 }}>A few quick questions to set things up. About a minute.</p>
+      </div>
+    ),
+  }
+
+  // "Yes, show me how": a three-step walkthrough of reporting, each with a
+  // small drawing of the real screen.
+  const mock: React.CSSProperties = { borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--fg-08)', padding: 10, marginTop: 10 }
+  const tutorialStep = {
+    key: 'tutorial',
+    title: 'How reporting works',
+    sub: 'Three taps at the cooler. Here’s the whole thing.',
+    body: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {[
+          {
+            title: 'Open the store you’re at',
+            body: 'Tap its pin or card. When you’re standing inside a store, a “You’re at…” banner pops up on the map so you can jump straight in.',
+            demo: (
+              <div style={{ ...mock, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><StoreTypeIcon type="convenience" size={15} color="var(--text-muted)" /></span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>You&apos;re at Quick Stop #12</span>
+                  <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)' }}>Seen the cooler?</span>
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#0D1210', background: '#C9F400', borderRadius: 8, padding: '6px 10px' }}>Report stock</span>
+              </div>
+            ),
+          },
+          {
+            title: 'Tap what you see',
+            body: 'For each flavor in the cooler, pick how full it looks. Out of stock counts too, it saves people a trip.',
+            demo: (
+              <div style={mock}>
+                <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Celsius Sparkling Kiwi Guava</span>
+                <span style={{ display: 'flex', gap: 6 }}>
+                  {[['FULL', '#C9F400', true], ['MED', '#FFB300', false], ['LOW', '#FF8A3D', false], ['OUT', '#FF4545', false]].map(([label, color, on]) => (
+                    <span key={label as string} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 700, padding: '7px 0', borderRadius: 8, color: on ? '#0D1210' : (color as string), background: on ? (color as string) : 'transparent', border: `1px solid ${on ? (color as string) : 'var(--fg-10)'}` }}>{label as string}</span>
+                  ))}
+                </span>
+              </div>
+            ),
+          },
+          {
+            title: 'Submit, and you’re done',
+            body: 'Everyone nearby sees it right away. You earn 2 points per drink toward badges and the leaderboard.',
+            demo: (
+              <div style={{ ...mock, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(201,244,0,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9F400" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                </span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>3 reports sent</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#C9F400' }}>+6 pts</span>
+              </div>
+            ),
+          },
+        ].map((s, i) => (
+          <div key={s.title} className={ui.card} style={{ padding: 16 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{ width: 26, height: 26, borderRadius: '50%', background: '#C9F400', color: '#0D1210', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+              <span>
+                <span style={{ display: 'block', fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{s.title}</span>
+                <span style={{ display: 'block', fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>{s.body}</span>
+              </span>
+            </div>
+            {s.demo}
+          </div>
+        ))}
+      </div>
+    ),
+  }
+
+  const steps = [
+    ...(mode === 'first' ? [welcomeStep] : []),
+    ...coreSteps,
+    ...(wantsToReport ? [tutorialStep] : []),
+  ]
+  const isFinish = step === steps.length
   const last = step === steps.length - 1
+  const isWelcome = mode === 'first' && step === 0
 
   return createPortal(
     <div className="anim-fade" role="dialog" aria-modal="true" aria-label="Welcome to AmpedMap"
@@ -257,6 +360,12 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
               <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>You&apos;re all set</h1>
               <p style={{ fontSize: 17, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 360 }}>{summary?.text}</p>
               {followed.size > 0 && <p style={{ fontSize: 15, color: 'var(--text-dim)', marginTop: 10 }}>Following {followed.size} flavor{followed.size === 1 ? '' : 's'} for restock alerts.</p>}
+              {wantsToReport && !summary?.reportStore && (
+                <div className={ui.card} style={{ marginTop: 18, maxWidth: 380, textAlign: 'left', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <LightningIcon size={18} color="#C9F400" />
+                  <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>Next time you&apos;re in a store, a <strong style={{ color: 'var(--text)', fontWeight: 600 }}>“You&apos;re at…”</strong> banner will pop up on the map. Tap <strong style={{ color: 'var(--text)', fontWeight: 600 }}>Report stock</strong> and you&apos;re off.</p>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -286,7 +395,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
             <div style={{ display: 'flex', gap: 8 }}>
               {step > 0 && <button className={ui.btnSecondary} style={{ minHeight: 50 }} onClick={() => setStep(step - 1)}>Back</button>}
               <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} disabled={saving} onClick={() => (last ? finish() : setStep(step + 1))}>
-                {saving ? 'Saving…' : last ? (mode === 'first' ? 'Finish' : 'Save') : 'Next'}
+                {saving ? 'Saving…' : isWelcome ? 'Let’s go' : last ? (mode === 'first' ? 'Finish' : 'Save') : 'Next'}
               </button>
             </div>
           )}
