@@ -489,8 +489,15 @@ function AccountPageInner() {
     setSubmitting(false)
   }
 
+  // Log out → back to the home page (landing with Sign in / Get started).
+  // A full page load clears every bit of signed-in state, and the attributes
+  // the pre-paint script set (signed-in spinner, light theme) are removed
+  // first so the landing never flashes the wrong look.
   async function handleSignOut() {
     await supabase.auth.signOut()
+    document.documentElement.removeAttribute('data-authed')
+    document.documentElement.removeAttribute('data-theme')
+    window.location.replace('/')
   }
 
   useEffect(() => {

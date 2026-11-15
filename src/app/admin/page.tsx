@@ -148,7 +148,9 @@ export default function AdminPage() {
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.replace('/account')
+    document.documentElement.removeAttribute('data-authed')
+    document.documentElement.removeAttribute('data-theme')
+    window.location.replace('/')
   }
 
   if (authLoading) {
