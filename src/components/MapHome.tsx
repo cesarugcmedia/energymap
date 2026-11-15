@@ -14,6 +14,9 @@ import ui from '@/components/ui/ui.module.css'
 import { usePreferences } from '@/lib/preferences'
 import Onboarding, { type OnboardingSummary } from '@/components/onboarding/Onboarding'
 import SkeletonList from '@/components/ui/SkeletonList'
+import SlideHighlight from '@/components/ui/SlideHighlight'
+import BoltLoader from '@/components/ui/BoltLoader'
+import Burst from '@/components/ui/Burst'
 
 type View = 'map' | 'list'
 
@@ -181,8 +184,10 @@ export default function MapHome() {
     })
   }, [user, isTracker])
 
+  const [heartBurst, setHeartBurst] = useState<{ id: string; n: number } | null>(null)
   async function toggleFavorite(storeId: string) {
     if (!user) return
+    if (!favoriteIds.has(storeId)) setHeartBurst((b) => ({ id: storeId, n: (b?.n ?? 0) + 1 }))
     const existing = favoriteIds.get(storeId)
     const next = new Map(favoriteIds)
     if (existing) {
@@ -539,7 +544,7 @@ export default function MapHome() {
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen ">
-        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
+        <BoltLoader fullScreen={false} />
       </div>
     )
   }
@@ -547,7 +552,7 @@ export default function MapHome() {
   if (locLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3 ">
-        <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
+        <BoltLoader fullScreen={false} />
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Finding your location…</p>
       </div>
     )
@@ -738,7 +743,8 @@ export default function MapHome() {
               </p>
             </div>
           </div>
-          <div className={ui.segmented} role="tablist" aria-label="View">
+          <div className={`${ui.segmented} ${ui.segSlide}`} role="tablist" aria-label="View">
+            <SlideHighlight activeKey={view} />
             <button role="tab" aria-selected={view === 'map'} onClick={() => setView('map')} className={`${ui.segment} ${view === 'map' ? ui.segmentActive : ''}`}>Map</button>
             <button role="tab" aria-selected={view === 'list'} onClick={() => setView('list')} className={`${ui.segment} ${view === 'list' ? ui.segmentActive : ''}`}>List</button>
           </div>
@@ -1287,8 +1293,9 @@ export default function MapHome() {
                               aria-label={favoriteIds.has(store.id) ? 'Remove from saved stores' : 'Save this store'}
                               title={favoriteIds.has(store.id) ? 'Saved' : 'Save this store'}
                               className={ui.btnSecondary}
-                              style={{ width: 44, padding: 0, flexShrink: 0, borderColor: favoriteIds.has(store.id) ? 'rgba(255,69,69,0.45)' : undefined }}
+                              style={{ position: 'relative', overflow: 'visible', width: 44, padding: 0, flexShrink: 0, borderColor: favoriteIds.has(store.id) ? 'rgba(255,69,69,0.45)' : undefined }}
                             >
+                              <Burst trigger={heartBurst?.id === store.id && favoriteIds.has(store.id) ? heartBurst.n : 0} colors={['#FF4545', '#FF8A3D', '#F472B6', '#FF4545']} />
                               <span key={favoriteIds.has(store.id) ? 'on' : 'off'} className={favoriteIds.has(store.id) ? 'anim-pop' : ''} style={{ display: 'flex' }}>
                                 <HeartIcon size={16} color={favoriteIds.has(store.id) ? '#FF4545' : 'var(--text-muted)'} filled={favoriteIds.has(store.id)} />
                               </span>

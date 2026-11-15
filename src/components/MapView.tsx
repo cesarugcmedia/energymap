@@ -204,7 +204,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           if (hl && !leaves.some((l) => hl.has((l.properties as Store).id))) el.style.opacity = '0.3'
           el.addEventListener('click', () => {
             const expansionZoom = Math.min(sc!.getClusterExpansionZoom(cp.cluster_id), 20)
-            map.easeTo({ center: coords, zoom: expansionZoom, duration: 400 })
+            // Smooth zoom in, and let the pins it splits into drop into place.
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            dropInUntilRef.current = Date.now() + 1400
+            map.easeTo({ center: coords, zoom: expansionZoom, duration: reduce ? 0 : 700, easing: (t) => 1 - Math.pow(1 - t, 3) })
           })
           const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat(coords)

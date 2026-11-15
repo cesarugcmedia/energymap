@@ -8,6 +8,7 @@ import { notificationIcon } from '@/components/NotificationIcons'
 import { BellIcon, ChevronRightIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
+import BoltLoader from '@/components/ui/BoltLoader'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -237,7 +238,7 @@ export default function NotificationsPage() {
   if (authLoading || !user) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: 'var(--bg)' }}>
-        <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <BoltLoader fullScreen={false} />
       </div>
     )
   }

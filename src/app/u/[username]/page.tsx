@@ -148,7 +148,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
-                {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}>🔥 {data.stats!.streak}-day streak</span>}
+                {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="flame">🔥</span> {data.stats!.streak}-day streak</span>}
               </div>
               {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>}
               {!isMe && (

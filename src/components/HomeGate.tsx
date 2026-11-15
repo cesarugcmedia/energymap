@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/contexts/AuthContext'
+import BoltLoader from '@/components/ui/BoltLoader'
 
 // Loaded only for signed-in users, so landing-page visitors never download
 // the map bundle (Mapbox, Supercluster, etc.).
@@ -14,7 +15,7 @@ const MapHome = dynamic(() => import('@/components/MapHome'), {
 function HomeSpinner() {
   return (
     <div className="flex items-center justify-center h-screen">
-      <div className="w-8 h-8 border-2 border-[#C9F400] border-t-transparent rounded-full animate-spin" />
+      <BoltLoader fullScreen={false} />
     </div>
   )
 }

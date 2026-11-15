@@ -12,6 +12,7 @@ import ui from '@/components/ui/ui.module.css'
 import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import { usePreferences } from '@/lib/preferences'
+import Burst from '@/components/ui/Burst'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -241,6 +242,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     }
   }
 
+  // Flavors whose level changed in a live update (someone reported while
+  // this page is open) — their rows flash and the level pill pops.
+  const prevLevels = useRef<Map<string, string> | null>(null)
+  const [changedIds, setChangedIds] = useState<Set<string>>(new Set())
+  const changedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
   async function fetchStock() {
     const { data: stockData, error } = await supabase
       .from('latest_stock')
@@ -258,6 +265,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       const drinksMap: Record<string, any> = {}
       drinksData?.forEach((d) => { drinksMap[d.id] = d })
       setStock((stockData ?? []).map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null })))
+      const next = new Map((stockData ?? []).map((r) => [r.drink_id, `${r.quantity}|${r.reported_at}`]))
+      if (prevLevels.current) {
+        const changed = new Set([...next].filter(([id, v]) => prevLevels.current!.get(id) !== v).map(([id]) => id))
+        if (changed.size) {
+          setChangedIds(changed)
+          clearTimeout(changedTimer.current)
+          changedTimer.current = setTimeout(() => setChangedIds(new Set()), 2000)
+        }
+      }
+      prevLevels.current = next
     } else {
       setStock([])
     }
@@ -463,8 +480,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             aria-label={isFavorited ? 'Remove from saved stores' : 'Save this store'}
             title={isFavorited ? 'Remove from saved stores' : 'Save this store'}
             className={ui.iconBtn}
-            style={{ width: 38, height: 38, flexShrink: 0, background: isFavorited ? 'rgba(255,69,69,0.12)' : undefined, borderColor: isFavorited ? 'rgba(255,69,69,0.4)' : undefined }}
+            style={{ position: 'relative', width: 38, height: 38, flexShrink: 0, background: isFavorited ? 'rgba(255,69,69,0.12)' : undefined, borderColor: isFavorited ? 'rgba(255,69,69,0.4)' : undefined }}
           >
+            <Burst trigger={isFavorited ? heartAnim : 0} colors={['#FF4545', '#FF8A3D', '#F472B6', '#FF4545']} />
             <span key={heartAnim} className={heartAnim > 0 && isFavorited ? 'anim-pop' : ''} style={{ display: 'flex' }}>
               <HeartIcon size={16} color={isFavorited ? '#FF4545' : 'var(--text-muted)'} filled={isFavorited} />
             </span>
@@ -631,6 +649,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                               return (
                                 <div
                                   key={item.drink_id}
+                                  className={changedIds.has(item.drink_id) ? 'anim-new' : undefined}
                                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderTop: idx === 0 ? 'none' : '1px solid var(--fg-06)' }}
                                 >
                                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -645,7 +664,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                       {item.drink?.caffeine_mg ? <span>· {item.drink.caffeine_mg} mg caffeine</span> : null}
                                     </p>
                                   </div>
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 78, padding: '5px 10px', borderRadius: 999, background: `${lvl.color}1a`, color: lvl.color, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+                                  <span key={item.quantity} className={changedIds.has(item.drink_id) ? 'anim-pop' : undefined} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 78, padding: '5px 10px', borderRadius: 999, background: `color-mix(in srgb, ${lvl.color} 10%, transparent)`, color: lvl.color, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
                                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: lvl.color }} />
                                     {lvl.label}
                                   </span>

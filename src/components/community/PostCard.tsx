@@ -9,6 +9,7 @@ import { Avatar, RichText } from './RichText'
 import Lightbox from './Lightbox'
 import { StorePicker } from './Pickers'
 import { QUANTITY_STYLE, timeAgo, type FeedComment, type FeedPost, type StoreSummary } from './types'
+import Burst from '@/components/ui/Burst'
 
 const MAX_COMMENT = 300
 
@@ -141,7 +142,7 @@ export default function PostCard(p: PostCardProps) {
       {/* Type label + drink tag */}
       {(typeLabel || post.drink) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-          {typeLabel && <span style={{ fontSize: 12, fontWeight: 700, color: typeLabel.color, background: `${typeLabel.color}1a`, borderRadius: 6, padding: '3px 8px' }}>{typeLabel.text}</span>}
+          {typeLabel && <span style={{ fontSize: 12, fontWeight: 700, color: typeLabel.color, background: `color-mix(in srgb, ${typeLabel.color} 10%, transparent)`, borderRadius: 6, padding: '3px 8px' }}>{typeLabel.text}</span>}
           {post.drink && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 4px 3px 9px', borderRadius: 8, background: 'var(--fg-06)', fontSize: 14, color: 'var(--text)' }}>
               <DrinkIcon size={13} color="var(--text-muted)" />
@@ -201,7 +202,8 @@ export default function PostCard(p: PostCardProps) {
           aria-label={post.likedByMe ? 'Unlike' : 'Like'}
           style={{ ...actionBtn, color: post.likedByMe ? 'var(--accent-text)' : 'var(--text-muted)' }}
         >
-          <span key={likeAnim} className={likeAnim > 0 && post.likedByMe ? 'anim-pop' : ''} style={{ display: 'flex', fontSize: 15 }}>{post.likedByMe ? '▲' : '△'}</span>
+          <span style={{ position: 'relative', display: 'flex' }}><Burst trigger={post.likedByMe ? likeAnim : 0} />
+          <span key={likeAnim} className={likeAnim > 0 && post.likedByMe ? 'anim-pop' : ''} style={{ display: 'flex', fontSize: 15 }}>{post.likedByMe ? '▲' : '△'}</span></span>
           <span>{post.likeCount}</span>
         </button>
         <button onClick={() => setCommentsOpen((o) => !o)} style={{ ...actionBtn, color: commentsOpen ? 'var(--accent-text)' : 'var(--text-muted)' }}>

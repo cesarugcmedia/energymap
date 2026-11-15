@@ -70,6 +70,8 @@ function DrinksContent() {
   const [showOther, setShowOther] = useState(false)
   const [selections, setSelections] = useState<Record<string, Quantity>>({})
   const [submitting, setSubmitting] = useState(false)
+  // Brief checkmark on the button before moving to the success screen.
+  const [sent, setSent] = useState(false)
   const [limitError, setLimitError] = useState<string | null>(null)
   // Set when the phone had no signal: the reports are saved on the device
   // and ReportQueueSync sends them once it's back online.
@@ -242,9 +244,11 @@ function DrinksContent() {
       // Remembered for the success screen's Undo (5 minutes).
       try { sessionStorage.setItem('last_report', JSON.stringify({ ids: body.ids ?? [], storeId, at: Date.now() })) } catch { /* ignore */ }
       haptic([12, 40, 12])
-      router.replace(
+      setSent(true)
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      setTimeout(() => router.replace(
         `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${body.submitted}`
-      )
+      ), reduce ? 0 : 480)
     } catch (err) {
       if (isNetworkFailure(err)) { saveOffline(entries); return }
       setLimitError('Could not submit reports. Please try again.')
@@ -505,8 +509,15 @@ function DrinksContent() {
             <button className={ui.btnSecondary} onClick={() => { setSelections({}); setLimitError(null) }} disabled={submitting} style={{ flexShrink: 0 }}>
               Clear
             </button>
-            <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} onClick={handleSubmit} disabled={blocked}>
-              {submitting ? 'Sending…' : <span key={selectionCount} className="anim-bump" style={{ display: 'inline-block' }}>{`Submit ${selectionCount} report${selectionCount !== 1 ? 's' : ''}`}</span>}
+            <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} onClick={handleSubmit} disabled={blocked && !sent}>
+              {sent ? (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1210" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-label="Sent"><path className="anim-draw" style={{ animationDelay: '0s' }} d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+              ) : submitting ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 16, height: 16, border: '2px solid rgba(13,18,16,0.35)', borderTopColor: '#0D1210', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                  Sending…
+                </span>
+              ) : <span key={selectionCount} className="anim-bump" style={{ display: 'inline-block' }}>{`Submit ${selectionCount} report${selectionCount !== 1 ? 's' : ''}`}</span>}
             </button>
           </div>
           </div>

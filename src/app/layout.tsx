@@ -7,6 +7,7 @@ import MainWrapper from '@/components/MainWrapper'
 import ContentShell from '@/components/ContentShell'
 import ScrollReveal from '@/components/ScrollReveal'
 import ReportQueueSync from '@/components/ReportQueueSync'
+import BadgeCelebration from '@/components/BadgeCelebration'
 import { Analytics } from '@vercel/analytics/next'
 import AppStartGuard from '@/components/AppStartGuard'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
@@ -67,6 +68,7 @@ export default function RootLayout({
           <ServiceWorkerRegister />
           <ScrollReveal />
           <ReportQueueSync />
+          <BadgeCelebration />
           {/* Desktop sidebar */}
           <SideNav />
           {/* Main content — offset by sidebar on desktop */}

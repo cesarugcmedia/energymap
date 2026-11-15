@@ -14,6 +14,7 @@ import Toast from '@/components/Toast'
 import Onboarding from '@/components/onboarding/Onboarding'
 import { usePreferences } from '@/lib/preferences'
 import { StoreTypeIcon, CheckIcon, BellIcon, HeartIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, LightningIcon, TrophyIcon, DrinkIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
+import BoltLoader from '@/components/ui/BoltLoader'
 
 type Mode = 'signin' | 'signup'
 type TierId = 'free' | 'tracker'
@@ -789,7 +790,7 @@ function switchMode(m: Mode) {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)' }}>
-        <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <BoltLoader fullScreen={false} />
       </div>
     )
   }
@@ -800,7 +801,7 @@ function switchMode(m: Mode) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)', gap: 16 }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <BoltLoader fullScreen={false} />
         <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-muted)' }}>Redirecting to payment...</p>
       </div>
     )
@@ -810,7 +811,7 @@ function switchMode(m: Mode) {
   if (user && !profile) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)' }}>
-        <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <BoltLoader fullScreen={false} />
       </div>
     )
   }
@@ -951,7 +952,7 @@ function switchMode(m: Mode) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
                   {profile.is_admin && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent-text)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>}
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: `${tierInfo.color}18`, color: tierInfo.color, border: `1px solid ${tierInfo.color}40` }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: `color-mix(in srgb, ${tierInfo.color} 9%, transparent)`, color: tierInfo.color, border: `1px solid color-mix(in srgb, ${tierInfo.color} 25%, transparent)` }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
                   {!statsLoading && rank && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.25)' }}>#{rank} All-Time</span>}
                 </div>
               </div>

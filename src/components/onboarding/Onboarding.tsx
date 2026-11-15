@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { CloseIcon, DrinkIcon, PinIcon, LightningIcon, SearchIcon, StoreTypeIcon, BellIcon } from '@/components/Icons'
@@ -31,6 +31,8 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
   onReport?: (store: { id: string; name: string }) => void
 }) {
   const [step, setStep] = useState(0)
+  const prevStepRef = useRef(0)
+  useEffect(() => { prevStepRef.current = step }, [step])
   const [brands, setBrands] = useState<string[]>(initial.brands)
   const [storeTypes, setStoreTypes] = useState<string[]>(initial.storeTypes)
   const [homeZip, setHomeZip] = useState(initial.homeZip ?? '')
@@ -336,6 +338,8 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
   const isFinish = step === steps.length
   const last = step === steps.length - 1
   const isWelcome = mode === 'first' && step === 0
+  // Steps slide in from the right going forward, from the left going back.
+  const dir = step >= prevStepRef.current ? 'slide-next' : 'slide-back'
 
   return createPortal(
     <div className="anim-fade" role="dialog" aria-modal="true" aria-label="Welcome to AmpedMap"
@@ -344,14 +348,18 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
       {!isFinish && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px 6px', maxWidth: 560, width: '100%', margin: '0 auto' }}>
           <div style={{ flex: 1, display: 'flex', gap: 6 }}>
-            {steps.map((_, i) => <span key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= step ? '#C9F400' : 'var(--fg-10)', transition: 'background 0.2s ease' }} />)}
+            {steps.map((_, i) => (
+              <span key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: 'var(--fg-10)', overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', background: '#C9F400', borderRadius: 999, transformOrigin: 'left center', transform: `scaleX(${i <= step ? 1 : 0})`, transition: 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)' }} />
+              </span>
+            ))}
           </div>
           <button onClick={mode === 'first' ? skipAll : onClose} className={ui.btnGhost} style={{ minHeight: 36 }}>{mode === 'first' ? 'Skip' : 'Close'}</button>
         </div>
       )}
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div key={step} className="anim-rise" style={{ maxWidth: 560, margin: '0 auto', padding: '18px 20px 24px' }}>
+        <div key={step} className={isFinish ? 'anim-rise' : dir} style={{ maxWidth: 560, margin: '0 auto', padding: '18px 20px 24px' }}>
           {isFinish ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingTop: '12vh' }}>
               <span className="anim-pop" style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(201,244,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>

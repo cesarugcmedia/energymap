@@ -7,6 +7,7 @@ import ui from '@/components/ui/ui.module.css'
 import { Avatar } from './RichText'
 import { DrinkPicker, StorePicker } from './Pickers'
 import { QUANTITY_STYLE, type PostType, type Quantity } from './types'
+import SlideHighlight from '@/components/ui/SlideHighlight'
 
 const MAX_BODY = 500
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
@@ -122,9 +123,10 @@ export default function Composer({ username, v3, onPosted, toast }: {
   return (
     <div className={`${ui.card} anim-rise`} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {v3 && (
-        <div className={ui.segmented} style={{ alignSelf: 'flex-start' }}>
+        <div className={`${ui.segmented} ${ui.segSlide}`} style={{ alignSelf: 'flex-start' }}>
+          <SlideHighlight activeKey={type} />
           {([['post', 'Post'], ['found', 'Found it'], ['looking', 'Looking for']] as const).map(([t, label]) => (
-            <button key={t} className={`${ui.segment} ${type === t ? ui.segmentActive : ''}`} style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setType(t)}>{label}</button>
+            <button key={t} data-active={type === t} className={`${ui.segment} ${type === t ? ui.segmentActive : ''}`} style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setType(t)}>{label}</button>
           ))}
         </div>
       )}

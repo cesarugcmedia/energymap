@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import BoltLoader from '@/components/ui/BoltLoader'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -96,7 +97,7 @@ export default function AuthCallback() {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh' }}>
-      <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <BoltLoader fullScreen={false} />
     </div>
   )
 }

@@ -25,6 +25,12 @@ function ResultContent() {
   const storeName = params.get('storeName') ?? ''
   const count = params.get('count') ? parseInt(params.get('count')!) : null
   const storeHref = `/store/${storeId}?name=${encodeURIComponent(storeName)}`
+
+  // A report can cross a badge milestone — ask BadgeCelebration to check.
+  useEffect(() => {
+    const t = setTimeout(() => window.dispatchEvent(new Event('check-badges')), 1600)
+    return () => clearTimeout(t)
+  }, [])
   const reportHref = `/submit/drinks?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}`
 
   // Tick the headline count up from 0 for a little celebration (instant when

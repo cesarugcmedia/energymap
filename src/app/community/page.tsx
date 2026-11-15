@@ -8,6 +8,9 @@ import Feed from '@/components/community/Feed'
 import Leaderboard from '@/components/community/Leaderboard'
 import { ClipboardIcon, TrophyIcon } from '@/components/Icons'
 import { usePreferences } from '@/lib/preferences'
+import ui from '@/components/ui/ui.module.css'
+import SlideHighlight from '@/components/ui/SlideHighlight'
+import BoltLoader from '@/components/ui/BoltLoader'
 
 type MainView = 'feed' | 'leaderboard'
 
@@ -39,7 +42,7 @@ export default function CommunityPage() {
   if (authLoading || !user) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: 'var(--bg)' }}>
-        <div style={{ width: 32, height: 32, border: '2px solid #C9F400', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <BoltLoader fullScreen={false} />
       </div>
     )
   }
@@ -63,7 +66,8 @@ export default function CommunityPage() {
           <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Finds, questions and live reports from hunters near you</p>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 4, gap: 4, marginBottom: 14 }}>
+        <div className={ui.segSlide} style={{ display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 4, gap: 4, marginBottom: 14 }}>
+          <SlideHighlight activeKey={mainView} radius={12} />
           {([
             { view: 'feed' as MainView, label: 'Feed', icon: ClipboardIcon },
             { view: 'leaderboard' as MainView, label: 'Leaderboard', icon: TrophyIcon },
@@ -73,8 +77,9 @@ export default function CommunityPage() {
             return (
               <button
                 key={view}
+                data-active={active}
                 onClick={() => setMainView(view)}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 14, fontWeight: 600, backgroundColor: active ? '#C9F400' : 'transparent', color, fontFamily: 'inherit', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 14, fontWeight: 600, backgroundColor: 'transparent', color, fontFamily: 'inherit', cursor: 'pointer' }}
               >
                 <Icon size={14} color={color} />
                 {label}

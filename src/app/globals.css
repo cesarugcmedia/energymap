@@ -20,6 +20,7 @@
   --accent-text: #C9F400;
   --input-bg: #0C0E0B;
   --placeholder: #66716A;
+  --shimmer: rgba(255,255,255,0.09);
   color-scheme: dark;
   /* Borders */
   --border: rgba(255,255,255,0.08);
@@ -70,6 +71,7 @@ html[data-theme="light"] {
   --volt-dim: #6E8C00;
   --input-bg: #FFFFFF;
   --placeholder: #8A948B;
+  --shimmer: rgba(255,255,255,0.75);
   --border: rgba(0,0,0,0.09);
   --border-dash: rgba(78,102,0,0.4);
   --text: #141A13;
@@ -274,14 +276,14 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
 /* Success burst: dots fly out from the checkmark. */
 .burst { position: absolute; inset: 0; pointer-events: none; }
 .burst span {
-  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+  position: absolute; left: 50%; top: 50%; width: var(--burst-dot, 8px); height: var(--burst-dot, 8px); margin: calc(var(--burst-dot, 8px) / -2) 0 0 calc(var(--burst-dot, 8px) / -2); border-radius: 50%;
   opacity: 0; transform: rotate(var(--a)) translateY(0);
   animation: burstOut 0.8s 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @keyframes burstOut {
-  0% { opacity: 1; transform: rotate(var(--a)) translateY(-30px) scale(1.1); }
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(var(--burst-from, -30px)) scale(1.1); }
   65% { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--a)) translateY(-70px) scale(0.5); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(var(--burst-to, -70px)) scale(0.5); }
 }
 
 /* Bars that rise from the bottom (leaderboard podium). */
@@ -293,3 +295,51 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
   .page-enter, .anim-fill, .anim-bump, .live-dot, .anim-new { animation: none; }
   .shine::after, .burst { display: none; }
 }
+
+/* ── Motion, round 3 (2026-11-14) ── */
+
+/* Branded loader (BoltLoader): bolt fills bottom → top, glows, repeats. */
+.bolt-loader { position: relative; display: inline-block; }
+.bolt-loader > svg, .bolt-loader-fill { position: absolute; inset: 0; }
+.bolt-loader-fill { clip-path: inset(100% 0 0 0); animation: boltCharge 1.3s cubic-bezier(0.5, 0, 0.3, 1) infinite; }
+@keyframes boltCharge {
+  0% { clip-path: inset(100% 0 0 0); filter: none; }
+  60% { clip-path: inset(0 0 0 0); filter: none; }
+  75% { clip-path: inset(0 0 0 0); filter: drop-shadow(0 0 8px rgba(201, 244, 0, 0.7)); }
+  100% { clip-path: inset(0 0 0 0); filter: none; opacity: 0; }
+}
+
+/* Streak flame flicker. */
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.08, 0.94) rotate(-3deg); }
+  50% { transform: scale(0.95, 1.07) rotate(2deg); }
+  75% { transform: scale(1.05, 0.97) rotate(-1deg); }
+}
+.flame { display: inline-block; transform-origin: 50% 90%; animation: flameFlicker 1.6s ease-in-out infinite; }
+
+/* Onboarding steps slide in from the side you're heading. */
+@keyframes slideFromRight { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes slideFromLeft { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.slide-next { animation: slideFromRight 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.slide-back { animation: slideFromLeft 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Confetti for the badge-unlock celebration. */
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confetti span {
+  position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; opacity: 0;
+  animation: confettiFall var(--dur, 2.4s) var(--delay, 0s) cubic-bezier(0.3, 0.6, 0.5, 1) both;
+}
+@keyframes confettiFall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  100% { opacity: 0.9; transform: translate(var(--dx, 0px), 105vh) rotate(var(--rot, 540deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bolt-loader-fill { animation: none; clip-path: none; }
+  .flame, .slide-next, .slide-back { animation: none; }
+  .confetti { display: none; }
+}
+
+/* Theme switch crossfade (ThemeContext uses document.startViewTransition). */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.35s; animation-timing-function: ease; }

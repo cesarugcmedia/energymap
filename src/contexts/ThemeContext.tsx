@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 // Appearance: 'dark' (the original look), 'light', or 'system' (follow the
@@ -42,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const theme: 'dark' | 'light' = user && (pref === 'light' || (pref === 'system' && systemLight)) ? 'light' : 'dark'
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
     if (theme === 'light') root.setAttribute('data-theme', 'light')
     else root.removeAttribute('data-theme')
@@ -50,9 +51,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (meta) meta.setAttribute('content', theme === 'light' ? '#F3F5EF' : '#0A0B0A')
   }, [theme])
 
+  // Crossfade the whole screen when switching (View Transitions API where
+  // supported; otherwise an instant switch). flushSync makes React apply the
+  // new theme inside the transition's snapshot window.
   const setPref = useCallback((p: ThemePref) => {
-    setPrefState(p)
     try { localStorage.setItem(THEME_KEY, p) } catch { /* ignore */ }
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown }
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (doc.startViewTransition && !reduce) doc.startViewTransition(() => flushSync(() => setPrefState(p)))
+    else setPrefState(p)
   }, [])
 
   return <ThemeContext.Provider value={{ pref, theme, setPref }}>{children}</ThemeContext.Provider>

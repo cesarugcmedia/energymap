@@ -9,6 +9,7 @@ import ui from '@/components/ui/ui.module.css'
 import SkeletonList from '@/components/ui/SkeletonList'
 import { CheckIcon, LightningIcon, GroceryIcon, DrinkIcon, TrophyIcon, UsersIcon, PinIcon } from '@/components/Icons'
 import { Avatar } from './RichText'
+import SlideHighlight from '@/components/ui/SlideHighlight'
 
 type Scope = 'everyone' | 'following' | 'near'
 type Metric = 'points' | 'stores' | 'flavors'
@@ -141,9 +142,10 @@ export default function Leaderboard({ me }: {
       </div>
 
       {/* What */}
-      <div className={ui.segmented} style={{ display: 'flex', marginBottom: 10 }}>
+      <div className={`${ui.segmented} ${ui.segSlide}`} style={{ display: 'flex', marginBottom: 10 }}>
+        <SlideHighlight activeKey={metric} />
         {([['points', scope === 'near' ? 'Reports' : 'Points'], ['stores', 'Stores added'], ['flavors', 'Flavors found']] as const).map(([key, label]) => (
-          <button key={key} className={`${ui.segment} ${metric === key ? ui.segmentActive : ''}`} style={{ flex: 1, padding: '8px 6px', fontSize: 13 }} onClick={() => setMetric(key)}>{label}</button>
+          <button key={key} data-active={metric === key} className={`${ui.segment} ${metric === key ? ui.segmentActive : ''}`} style={{ flex: 1, padding: '8px 6px', fontSize: 13 }} onClick={() => setMetric(key)}>{label}</button>
         ))}
       </div>
 
@@ -267,7 +269,7 @@ export default function Leaderboard({ me }: {
               { Icon: DrinkIcon, label: 'Add a drink', desc: 'Each new flavor you add', pts: '+3', color: '#22d3ee' },
             ].map(({ Icon, label, desc, pts, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ width: 34, height: 34, borderRadius: 10, background: `${color}1a`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} color={color} /></span>
+                <span style={{ width: 34, height: 34, borderRadius: 10, background: `color-mix(in srgb, ${color} 10%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} color={color} /></span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: 'block', fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{label}</span>
                   <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)' }}>{desc}</span>
