@@ -309,6 +309,10 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
   100% { clip-path: inset(0 0 0 0); filter: none; opacity: 0; }
 }
 
+/* Loader message breathes in time with the bolt. */
+@keyframes loaderText { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.bolt-loader-text { animation: loaderText 1.3s ease-in-out infinite; }
+
 /* Streak flame flicker. */
 @keyframes flameFlicker {
   0%, 100% { transform: scale(1) rotate(0); }
@@ -337,6 +341,7 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   .bolt-loader-fill { animation: none; clip-path: none; }
+  .bolt-loader-text { animation: none; }
   .flame, .slide-next, .slide-back { animation: none; }
   .confetti { display: none; }
 }

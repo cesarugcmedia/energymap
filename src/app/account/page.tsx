@@ -796,9 +796,7 @@ function switchMode(m: Mode) {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)' }}>
-        <BoltLoader fullScreen={false} />
-      </div>
+      <BoltLoader message="Loading your account…" />
     )
   }
 
@@ -806,20 +804,14 @@ function switchMode(m: Mode) {
   const isPaidSignup = submitting && selectedTier === 'tracker'
   if (isPaidSignup) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)', gap: 16 }}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <BoltLoader fullScreen={false} />
-        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-muted)' }}>Redirecting to payment...</p>
-      </div>
+      <BoltLoader message="Heading to secure checkout…" />
     )
   }
 
   if (user && !profile && !loading) return <SetupProfile userId={user.id} email={user.email ?? ''} />
   if (user && !profile) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: 'var(--bg)' }}>
-        <BoltLoader fullScreen={false} />
-      </div>
+      <BoltLoader message="Setting up your profile…" />
     )
   }
 

@@ -14,9 +14,7 @@ const MapHome = dynamic(() => import('@/components/MapHome'), {
 
 function HomeSpinner() {
   return (
-    <div className="flex items-center justify-center h-screen">
-      <BoltLoader fullScreen={false} />
-    </div>
+    <BoltLoader message="Charging up the map…" />
   )
 }
 

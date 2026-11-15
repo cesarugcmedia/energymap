@@ -543,18 +543,13 @@ export default function MapHome() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen ">
-        <BoltLoader fullScreen={false} />
-      </div>
+      <BoltLoader message="Charging up the map…" />
     )
   }
 
   if (locLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 ">
-        <BoltLoader fullScreen={false} />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Finding your location…</p>
-      </div>
+      <BoltLoader message="Finding stores near you…" />
     )
   }
 

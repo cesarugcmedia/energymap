@@ -41,9 +41,7 @@ export default function CommunityPage() {
 
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: 'var(--bg)' }}>
-        <BoltLoader fullScreen={false} />
-      </div>
+      <BoltLoader message="Loading the community…" />
     )
   }
 
