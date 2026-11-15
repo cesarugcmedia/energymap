@@ -11,13 +11,13 @@ import BackButton from '@/components/BackButton'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
 import CountUp from '@/components/ui/CountUp'
-import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon } from '@/components/Icons'
+import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon, DrinkIcon } from '@/components/Icons'
 import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
 
 type ProfileData = {
-  profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean }
+  profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; bio?: string | null; favoriteDrink?: string | null }
   counts: { reports: number; storesAdded: number; followers: number; following: number }
   following: boolean
   stats?: { uniqueFlavors: number; streak: number }
@@ -150,6 +150,12 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
                 {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="flame">🔥</span> {data.stats!.streak}-day streak</span>}
               </div>
+              {data.profile.bio && <p style={{ fontSize: 15, color: 'var(--text)', textAlign: 'center', maxWidth: 360, lineHeight: 1.45 }}>{data.profile.bio}</p>}
+              {data.profile.favoriteDrink && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.1)', borderRadius: 999, padding: '4px 10px' }}>
+                  <DrinkIcon size={13} color="var(--accent-text)" /> Favorite: {data.profile.favoriteDrink}
+                </span>
+              )}
               {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>}
               {!isMe && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

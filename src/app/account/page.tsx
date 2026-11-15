@@ -2,7 +2,9 @@
 
 import { BADGE_DEFS } from '@/lib/badges'
 import PlanDetails from '@/components/account/PlanDetails'
+import ProfileExtras from '@/components/account/ProfileExtras'
 import { useTheme, type ThemePref } from '@/contexts/ThemeContext'
+import { useMutedNotifications, NOTIFICATION_GROUPS } from '@/lib/notificationPrefs'
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import authStyles from './auth.module.css'
@@ -171,7 +173,7 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
   full:   { label: 'FULL', color: 'var(--accent-text)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
-type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'appearance'
+type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'appearance' | 'notifications'
 
 // Small line icons used only by the Account settings list (no equivalent in
 // the shared Icons set). Same 24×24 / rounded-stroke language as Icons.tsx.
@@ -255,6 +257,23 @@ function AccountPageInner() {
   // Profile management
   const [newUsername, setNewUsername] = useState('')
   const [usernameError, setUsernameError] = useState<string | null>(null)
+  // Sign-up: live username availability (debounced) — the same check
+  // handleSignUp runs on submit, surfaced while typing.
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'short' | 'checking' | 'available' | 'taken'>('idle')
+  useEffect(() => {
+    if (user || mode !== 'signup') return
+    const name = username.trim()
+    if (!name) { setUsernameStatus('idle'); return }
+    if (name.length < 3) { setUsernameStatus('short'); return }
+    setUsernameStatus('checking')
+    let cancelled = false
+    const t = setTimeout(async () => {
+      const { data, error: err } = await supabase.from('profiles').select('id').eq('username', name).maybeSingle()
+      if (cancelled) return
+      setUsernameStatus(err ? 'idle' : data ? 'taken' : 'available')
+    }, 400)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [username, mode, user])
   const [savingUsername, setSavingUsername] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -279,6 +298,7 @@ function AccountPageInner() {
   const [accountPage, setAccountPage] = useState<AccountSubpage>('root')
   const { prefs, save: savePrefs } = usePreferences()
   const { pref: themePref, setPref: setThemePref } = useTheme()
+  const { muted: mutedTypes, save: saveMuted } = useMutedNotifications()
   const [editingPrefs, setEditingPrefs] = useState(false)
 
   useEffect(() => {
@@ -293,7 +313,7 @@ function AccountPageInner() {
   // drill-down directly, with Back returning to the Account list.
   useEffect(() => {
     const p = searchParams.get('page')
-    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance') return
+    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance' && p !== 'notifications') return
     window.history.replaceState({ accountPage: 'root' }, '', '/account')
     window.history.pushState({ accountPage: p }, '')
     setAccountPage(p)
@@ -908,7 +928,7 @@ function switchMode(m: Mode) {
     const ICON = '#0D1210'
     const PAGE_TITLES: Record<AccountSubpage, string> = {
       root: 'Account', profile: 'Profile', plan: 'Plan', badges: 'Badges', saved: 'Saved Stores',
-      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', appearance: 'Appearance',
+      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', appearance: 'Appearance', notifications: 'Notifications',
     }
 
     const avatar = (size: number) => (
@@ -955,6 +975,7 @@ function switchMode(m: Mode) {
                   {!statsLoading && rank && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.25)' }}>#{rank} All-Time</span>}
                 </div>
               </div>
+              <ProfileExtras userId={user!.id} username={profile.username} />
               {group(<>
                 {row({ label: 'Reports', value: statsLoading ? '–' : reportCount })}
                 {ROW_SEP}
@@ -1101,6 +1122,34 @@ function switchMode(m: Mode) {
             </>
           )
 
+        case 'notifications': {
+          return (
+            <>
+              {group(NOTIFICATION_GROUPS.map((g, i) => {
+                const on = !g.types.every((t) => mutedTypes.includes(t))
+                const toggle = () => saveMuted(on
+                  ? [...new Set([...mutedTypes, ...g.types])]
+                  : mutedTypes.filter((t) => !g.types.includes(t)))
+                return (
+                  <div key={g.key}>
+                    {i > 0 && ROW_SEP}
+                    <button onClick={toggle} role="switch" aria-checked={on}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 16, color: 'var(--text)' }}>{g.label}</span>
+                        <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1 }}>{g.hint}</span>
+                      </span>
+                      <span aria-hidden="true" style={{ width: 46, height: 28, borderRadius: 999, padding: 3, flexShrink: 0, background: on ? '#C9F400' : 'var(--fg-15)', transition: 'background 0.2s ease', display: 'flex' }}>
+                        <span style={{ width: 22, height: 22, borderRadius: '50%', background: on ? '#0D1210' : 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transform: on ? 'translateX(18px)' : 'none', transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)' }} />
+                      </span>
+                    </button>
+                  </div>
+                )
+              }), { footer: 'Turned-off alerts won’t show in the Alerts tab or its badge. Alerts appear while the app is open; phone push notifications are coming later.' })}
+            </>
+          )
+        }
+
         case 'appearance': {
           const OPTIONS: { value: ThemePref; label: string; hint: string }[] = [
             { value: 'dark', label: 'Dark', hint: 'The original AmpedMap look' },
@@ -1193,6 +1242,8 @@ function switchMode(m: Mode) {
               {row({ icon: <HeartIcon size={17} color={ICON} />, label: 'Saved Stores', value: isTracker ? favorites.length : 'Tracker', onPress: () => openAccountPage('saved') })}
               {ROW_SEP}
               {row({ icon: <DrinkIcon size={17} color={ICON} />, label: 'Flavor Alerts', value: drinkAlerts.length, onPress: () => openAccountPage('alerts') })}
+              {ROW_SEP}
+              {row({ icon: <BellIcon size={17} color={ICON} />, label: 'Notifications', value: mutedTypes.length ? `${NOTIFICATION_GROUPS.filter((g) => !g.types.every((t) => mutedTypes.includes(t))).length} of ${NOTIFICATION_GROUPS.length} on` : 'All on', onPress: () => openAccountPage('notifications') })}
               {ROW_SEP}
               {row({ icon: <ThemeIcon />, label: 'Appearance', value: themePref === 'system' ? 'Match phone' : themePref === 'light' ? 'Light' : 'Dark', onPress: () => openAccountPage('appearance') })}
               {ROW_SEP}
@@ -1342,7 +1393,17 @@ function switchMode(m: Mode) {
                 <div className={authStyles.field}>
                   <label htmlFor="username" className={authStyles.label}>Username</label>
                   <input id="username" className={authStyles.input} type="text" placeholder="yourname" autoComplete="username" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(null) }} required />
-                  <p className={authStyles.hint}>Shown on reports and the leaderboard. Lowercase letters, numbers and underscores.</p>
+                  {usernameStatus === 'taken' ? (
+                    <p className={authStyles.hint} style={{ color: '#FF6B6B' }}>@{username} is taken. Try another.</p>
+                  ) : usernameStatus === 'available' ? (
+                    <p className={authStyles.hint} style={{ color: '#C9F400' }}>✓ @{username} is available</p>
+                  ) : usernameStatus === 'short' ? (
+                    <p className={authStyles.hint}>At least 3 characters.</p>
+                  ) : usernameStatus === 'checking' ? (
+                    <p className={authStyles.hint}>Checking…</p>
+                  ) : (
+                    <p className={authStyles.hint}>Shown on reports and the leaderboard. Lowercase letters, numbers and underscores.</p>
+                  )}
                 </div>
                 <div className={authStyles.field}>
                   <label htmlFor="email" className={authStyles.label}>Email</label>
@@ -1351,6 +1412,25 @@ function switchMode(m: Mode) {
                 <div className={authStyles.field}>
                   <label htmlFor="password" className={authStyles.label}>Password</label>
                   {passwordField('At least 8 characters', 'new-password')}
+                  {password && (() => {
+                    // Simple strength meter: length plus character variety.
+                    const variety = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((r) => r.test(password)).length
+                    const score = password.length < 8 ? 0 : Math.min(3, (password.length >= 12 ? 1 : 0) + (variety >= 3 ? 2 : variety >= 2 ? 1 : 0) + 0) + 1
+                    const LABELS = ['Too short', 'Weak', 'Okay', 'Strong', 'Strong']
+                    const COLORS = ['#FF6B6B', '#FF8A3D', '#FFB300', '#C9F400', '#C9F400']
+                    return (
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {[1, 2, 3, 4].map((i) => (
+                            <span key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= Math.max(1, score) ? COLORS[score] : 'rgba(255,255,255,0.1)', transition: 'background 0.2s ease' }} />
+                          ))}
+                        </div>
+                        <p className={authStyles.hint} style={{ marginTop: 6, color: COLORS[score] }}>
+                          {LABELS[score]}{score === 0 ? ` · ${8 - password.length} more character${8 - password.length === 1 ? '' : 's'}` : score < 3 ? ' · add length, numbers or symbols' : ''}
+                        </p>
+                      </div>
+                    )
+                  })()}
                 </div>
                 <label className={authStyles.checkRow}>
                   <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} />

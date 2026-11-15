@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, Suspense } from 'react'
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -66,6 +66,20 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
+// Loose match for catalog suggestions: case/spacing/punctuation-insensitive.
+const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+// "Report a problem" reasons, with a matching hint for the optional note.
+const FLAG_REASONS: { label: string; hint: string }[] = [
+  { label: 'Permanently closed', hint: 'Anything else? e.g. "Closed last month, building is empty"' },
+  { label: 'Moved', hint: 'Where did it move to? An address or cross streets helps.' },
+  { label: 'Wrong pin on map', hint: 'Where is it actually? e.g. "Across the street, next to the bank"' },
+  { label: 'Wrong address', hint: 'What’s the correct address?' },
+  { label: 'Duplicate store', hint: 'Which store is it a duplicate of?' },
+  { label: 'Not a store', hint: 'What is it instead?' },
+  { label: 'Other', hint: 'Tell us what’s wrong.' },
+]
+
 function stalenessColor(dateStr: string) {
   const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
   if (hrs < 2) return 'var(--accent-text)'
@@ -126,6 +140,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
   const [drinkResults, setDrinkResults] = useState<{ added: number; skipped: number; names: string[] } | null>(null)
   const [drinkDuplicatePopup, setDrinkDuplicatePopup] = useState<string[] | null>(null)
+  // Drink catalog for the Add-a-flavor suggestions (loaded when the sheet opens).
+  const [catalog, setCatalog] = useState<{ id: string; brand: string; name: string; flavor: string | null }[]>([])
+  const [suggestFor, setSuggestFor] = useState<{ id: string; field: 'brand' | 'flavor' } | null>(null)
+  const catalogBrands = useMemo(() => [...new Set(catalog.map((d) => d.brand))].sort(), [catalog])
+  useEffect(() => {
+    if (!showAddDrink || catalog.length) return
+    supabase.from('drinks').select('id, brand, name, flavor').then(({ data }) => { if (data) setCatalog(data) })
+  }, [showAddDrink, catalog.length])
 
   // Lets the map/list "Report it" links jump straight to the flag modal
   // instead of landing on the store page with no obvious next step.
@@ -764,30 +786,72 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                             <button onClick={() => removeEntry(entry.id)} className="text-[var(--text-dim)]" style={{ display: 'flex' }}><CloseIcon size={11} color="rgba(255,255,255,0.25)" /></button>
                           )}
                         </div>
-                        <input
-                          type="text"
-                          placeholder="Brand (e.g. Monster)"
-                          value={entry.brand}
-                          onChange={(e) => updateEntry(entry.id, 'brand', e.target.value)}
-                          onBlur={() => normalizeEntryBrand(entry.id)}
-                          className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none mb-2"
-                          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Flavor (e.g. Ultra White)"
-                          value={entry.flavor}
-                          onChange={(e) => updateEntry(entry.id, 'flavor', e.target.value)}
-                          className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none mb-2"
-                          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
-                        />
+                        {(() => {
+                          // Catalog-aware suggestions: existing brands as you type,
+                          // the flavors that brand already has, and a live warning
+                          // when this exact flavor already exists.
+                          const brandMatches = entry.brand.trim()
+                            ? catalogBrands.filter((b) => norm(b).includes(norm(entry.brand)) && norm(b) !== norm(entry.brand)).slice(0, 5)
+                            : []
+                          const knownBrand = catalogBrands.find((b) => norm(b) === norm(entry.brand))
+                          const brandFlavors = knownBrand ? catalog.filter((d) => d.brand === knownBrand) : []
+                          const flavorMatches = brandFlavors
+                            .filter((d) => !entry.flavor.trim() || norm(d.flavor ?? d.name).includes(norm(entry.flavor)))
+                            .slice(0, 5)
+                          const exists = knownBrand && entry.flavor.trim() ? brandFlavors.find((d) => norm(d.flavor ?? d.name) === norm(entry.flavor)) : undefined
+                          return (
+                            <>
+                              <input
+                                type="text"
+                                placeholder="Brand (e.g. Monster)"
+                                value={entry.brand}
+                                onChange={(e) => updateEntry(entry.id, 'brand', e.target.value)}
+                                onFocus={() => setSuggestFor({ id: entry.id, field: 'brand' })}
+                                onBlur={() => { normalizeEntryBrand(entry.id); setTimeout(() => setSuggestFor(null), 150) }}
+                                className={ui.input}
+                                style={{ marginBottom: 8 }}
+                              />
+                              {suggestFor?.id === entry.id && suggestFor.field === 'brand' && brandMatches.length > 0 && (
+                                <div className="anim-rise" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '-2px 0 10px' }}>
+                                  {brandMatches.map((b) => (
+                                    <button key={b} className={ui.chip} style={{ fontSize: 13 }} onMouseDown={(e) => e.preventDefault()} onClick={() => updateEntry(entry.id, 'brand', b)}>{b}</button>
+                                  ))}
+                                </div>
+                              )}
+                              <input
+                                type="text"
+                                placeholder="Flavor (e.g. Ultra White)"
+                                value={entry.flavor}
+                                onChange={(e) => updateEntry(entry.id, 'flavor', e.target.value)}
+                                onFocus={() => setSuggestFor({ id: entry.id, field: 'flavor' })}
+                                onBlur={() => setTimeout(() => setSuggestFor(null), 150)}
+                                className={ui.input}
+                                style={{ marginBottom: 8, borderColor: exists ? 'rgba(255,179,0,0.6)' : undefined }}
+                              />
+                              {exists ? (
+                                <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '-2px 0 10px', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,179,0,0.1)' }}>
+                                  <p style={{ flex: 1, fontSize: 13, color: 'var(--text-muted)' }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>{knownBrand} {exists.flavor ?? exists.name}</strong> is already in the catalog.</p>
+                                  <button className={ui.linkQuiet} style={{ color: 'var(--accent-text)', fontWeight: 600, textDecoration: 'none', flexShrink: 0 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>Report it</button>
+                                </div>
+                              ) : suggestFor?.id === entry.id && suggestFor.field === 'flavor' && flavorMatches.length > 0 && (
+                                <div className="anim-rise" style={{ margin: '-2px 0 10px' }}>
+                                  <p style={{ fontSize: 12, color: 'var(--text-dim)', margin: '0 2px 6px' }}>Already in the catalog for {knownBrand}{brandFlavors.length > 5 ? ` (${brandFlavors.length} flavors)` : ''}:</p>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                    {flavorMatches.map((d) => (
+                                      <span key={d.id} className={ui.chip} style={{ fontSize: 13, cursor: 'default', opacity: 0.85 }}>{d.flavor ?? d.name}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                         <input
                           type="number"
                           placeholder="Caffeine mg (optional, e.g. 200)"
                           value={entry.caffeine_mg}
                           onChange={(e) => updateEntry(entry.id, 'caffeine_mg', e.target.value)}
-                          className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none"
-                          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--fg-07)' }}
+                          className={ui.input}
                         />
                         {entry.duplicate && (
                           <div className="flex items-center gap-2 mt-2.5">
@@ -913,62 +977,38 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2.5 mb-1">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                     <FlagIcon size={18} color="var(--text-dim)" />
-                    <p className="text-lg font-semibold text-white">Flag Location</p>
+                    <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Report a problem</p>
                   </div>
-                  <p className="text-xs mb-5" style={{ color: 'var(--text-dim)' }}>Something wrong with this location? Let us know so we can fix it.</p>
+                  <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>What&apos;s wrong with {name || 'this store'}? An admin will take a look.</p>
 
-                  <p className="text-sm font-semibold mb-2.5" style={{ color: 'var(--text-muted)' }}>Reason</p>
-                  <div className="flex flex-col gap-2 mb-4">
-                    {['Wrong location on map', 'Wrong address', "Store doesn't exist", 'Duplicate store', 'Other'].map((reason) => (
-                      <button
-                        key={reason}
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-left"
-                        style={{
-                          backgroundColor: flagReason === reason ? 'rgba(239,68,68,0.08)' : 'var(--fg-04)',
-                          border: `1.5px solid ${flagReason === reason ? 'rgba(239,68,68,0.4)' : 'var(--fg-07)'}`,
-                        }}
-                        onClick={() => setFlagReason(reason)}
-                      >
-                        <div
-                          className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                          style={{ borderColor: flagReason === reason ? '#FF4545' : 'var(--fg-20)' }}
-                        >
-                          {flagReason === reason && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FF4545' }} />}
-                        </div>
-                        <span className="text-sm font-semibold" style={{ color: flagReason === reason ? '#fff' : 'var(--fg-60)' }}>{reason}</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                    {FLAG_REASONS.map((r) => (
+                      <button key={r.label} className={`${ui.chip} ${flagReason === r.label ? ui.chipActive : ''}`} onClick={() => setFlagReason(r.label)}>
+                        {r.label}
                       </button>
                     ))}
                   </div>
 
-                  <p className="text-sm font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Notes (optional)</p>
-                  <textarea
-                    placeholder="Describe the issue in more detail..."
-                    value={flagNotes}
-                    onChange={(e) => setFlagNotes(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-xl px-3.5 py-3 text-sm text-white outline-none resize-none mb-4"
-                    style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--fg-07)' }}
-                  />
+                  {flagReason && (
+                    <div className="anim-rise" style={{ marginBottom: 16 }}>
+                      <p className={ui.sectionLabel} style={{ margin: '0 2px 8px' }}>Details (optional)</p>
+                      <textarea
+                        placeholder={FLAG_REASONS.find((r) => r.label === flagReason)?.hint}
+                        value={flagNotes}
+                        onChange={(e) => setFlagNotes(e.target.value.slice(0, 300))}
+                        rows={3}
+                        className={ui.input}
+                        style={{ resize: 'none' }}
+                      />
+                    </div>
+                  )}
 
-                  <div className="flex gap-2.5">
-                    <button
-                      className="flex-1 rounded-xl p-3.5 font-semibold text-sm"
-                      style={{ backgroundColor: 'var(--fg-06)', color: 'var(--text-muted)' }}
-                      onClick={closeFlag}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="flex-1 rounded-xl p-3.5 font-bold text-white text-sm flex items-center justify-center"
-                      style={{ backgroundColor: !flagReason || flagSubmitting ? 'rgba(239,68,68,0.35)' : '#FF4545' }}
-                      disabled={!flagReason || flagSubmitting}
-                      onClick={submitFlag}
-                    >
-                      {flagSubmitting
-                        ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                        : 'Send report'}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={closeFlag}>Cancel</button>
+                    <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} disabled={!flagReason || flagSubmitting} onClick={submitFlag}>
+                      {flagSubmitting ? 'Sending…' : 'Send report'}
                     </button>
                   </div>
                 </>

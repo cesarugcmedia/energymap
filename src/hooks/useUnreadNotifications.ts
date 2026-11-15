@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMutedNotifications, mutedFilter } from '@/lib/notificationPrefs'
 
 // Shared by BottomNav and SideNav so the Alerts tab's badge count works
 // identically on mobile and desktop without duplicating the fetch/subscribe
@@ -17,16 +18,21 @@ import { useAuth } from '@/contexts/AuthContext'
 export function useUnreadNotifications() {
   const { user } = useAuth()
   const [unread, setUnread] = useState(0)
+  // Types muted in Account → Notifications don't count toward the badge.
+  const { muted } = useMutedNotifications()
+  const mutedKey = muted.join(',')
 
   useEffect(() => {
     if (!user) { setUnread(0); return }
 
     const fetchCount = () => {
-      supabase
+      let q = supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('read', false)
+      if (mutedKey) q = q.not('type', 'in', mutedFilter(mutedKey.split(',')))
+      q
         // Same visibility rule as the /notifications list, so the badge never
         // counts something the page doesn't show yet.
         .lte('visible_after', new Date().toISOString())
@@ -57,7 +63,7 @@ export function useUnreadNotifications() {
       window.removeEventListener('notifications-changed', fetchCount)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [user])
+  }, [user, mutedKey])
 
   return unread
 }

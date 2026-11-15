@@ -115,6 +115,8 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .input::placeholder { color: #66716A; }
+/* Hide Edge's built-in password reveal — the field has its own eye button. */
+.input::-ms-reveal, .input::-ms-clear { display: none; }
 .input:focus {
   border-color: rgba(201, 244, 0, 0.6);
   box-shadow: 0 0 0 3px rgba(201, 244, 0, 0.12);

@@ -23,12 +23,20 @@ export async function GET(req: NextRequest) {
   const username = (req.nextUrl.searchParams.get('username') ?? '').toLowerCase()
   if (!/^[a-z0-9_]{3,30}$/.test(username)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id, username, created_at, is_verified_reporter, badges')
-    .eq('username', username)
-    .single()
+  // bio / favorite_drink_id come from scripts/profile-extras.sql — fall back
+  // to the base columns until that has run.
+  const BASE = 'id, username, created_at, is_verified_reporter, badges'
+  const withExtras = await supabaseAdmin.from('profiles').select(`${BASE}, bio, favorite_drink_id`).eq('username', username).maybeSingle()
+  const profile = withExtras.error
+    ? (await supabaseAdmin.from('profiles').select(BASE).eq('username', username).maybeSingle()).data
+    : withExtras.data
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const extras = profile as typeof profile & { bio?: string | null; favorite_drink_id?: string | null }
+  let favoriteDrink: string | null = null
+  if (extras.favorite_drink_id) {
+    const { data: d } = await supabaseAdmin.from('drinks').select('brand, name, flavor').eq('id', extras.favorite_drink_id).maybeSingle()
+    if (d) favoriteDrink = `${d.brand} ${d.flavor ?? d.name}`
+  }
 
   const count = async (q: any) => { const { count } = await q; return count ?? 0 }
   const [reports, storesAdded, followers, following, iFollow, { data: rows }] = await Promise.all([
@@ -83,6 +91,8 @@ export async function GET(req: NextRequest) {
       joined: profile.created_at,
       verified: !!profile.is_verified_reporter,
       weeklyChampion,
+      bio: extras.bio ?? null,
+      favoriteDrink,
     },
     counts: { reports, storesAdded, followers, following },
     following: iFollow > 0,

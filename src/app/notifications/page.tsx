@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMutedNotifications, mutedFilter } from '@/lib/notificationPrefs'
 import { notificationIcon } from '@/components/NotificationIcons'
 import { BellIcon, ChevronRightIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
@@ -117,6 +118,9 @@ function buildItems(list: any[]): Item[] {
 export default function NotificationsPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  // Types muted in Account → Notifications are left out of the list.
+  const { muted } = useMutedNotifications()
+  const mutedKey = muted.join(',')
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(false)
@@ -142,9 +146,10 @@ export default function NotificationsPage() {
       .order('created_at', { ascending: false })
       .limit(PAGE)
     if (before) q = q.lt('created_at', before)
+    if (mutedKey) q = q.not('type', 'in', mutedFilter(mutedKey.split(',')))
     const { data } = await q
     return data ?? []
-  }, [user])
+  }, [user, mutedKey])
 
   const refresh = useCallback(async () => {
     const data = await fetchPage()

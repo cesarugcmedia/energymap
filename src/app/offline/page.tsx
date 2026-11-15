@@ -1,23 +1,12 @@
+import StatusScreen from '@/components/ui/StatusScreen'
+import ui from '@/components/ui/ui.module.css'
+import ReloadButton from './ReloadButton'
+
+// Served by the service worker when a page can't load without a connection.
 export default function OfflinePage() {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: 'var(--bg)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 32px',
-        textAlign: 'center',
-        gap: 12,
-      }}
-    >
-      <span style={{ fontSize: 52 }}>⚡</span>
-      <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>You're Offline</p>
-      <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, margin: 0 }}>
-        Check your connection and try again.
-      </p>
-    </div>
+    <StatusScreen tone="offline" title="No signal" body="You’re offline right now. Any stock reports you make are saved on your phone and sent once you’re back.">
+      <ReloadButton className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} />
+    </StatusScreen>
   )
 }

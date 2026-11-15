@@ -475,23 +475,93 @@ export default function MapHome() {
       .slice(0, 5)
   }, [byDistance, search])
 
+  // Recent searches (this device) and the flavors in stock at the most
+  // nearby stores — shown when the search box is focused but still empty.
+  type Recent = { kind: 'drink' | 'store'; id: string; label: string }
+  const RECENTS_KEY = 'ampedmap_recent_searches'
+  const [recents, setRecents] = useState<Recent[]>([])
+  useEffect(() => { try { setRecents(JSON.parse(localStorage.getItem(RECENTS_KEY) ?? '[]')) } catch { /* ignore */ } }, [])
+  function rememberSearch(r: Recent) {
+    setRecents((prev) => {
+      const next = [r, ...prev.filter((p) => !(p.kind === r.kind && p.id === r.id))].slice(0, 5)
+      try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }
+  function clearRecents() {
+    setRecents([])
+    try { localStorage.removeItem(RECENTS_KEY) } catch { /* ignore */ }
+  }
+  const popularNearby = useMemo(() => {
+    const count = new Map<string, number>()
+    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.quantity !== 'out') count.set(r.drink_id, (count.get(r.drink_id) ?? 0) + 1) }))
+    const byId = new Map(allDrinks.map((d) => [d.id, d]))
+    return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ drink: byId.get(id), n })).filter((x): x is { drink: Drink; n: number } => !!x.drink).slice(0, 6)
+  }, [storeStock, allDrinks])
+
   function selectStoreSuggestion(store: Store) {
+    rememberSearch({ kind: 'store', id: store.id, label: store.name })
     setSearchFocused(false)
     router.push(`/store/${store.id}?name=${encodeURIComponent(store.name)}`)
   }
 
   function selectDrinkSuggestion(drink: Drink) {
     const label = `${drink.brand} ${drink.flavor || drink.name}`
+    rememberSearch({ kind: 'drink', id: drink.id, label })
     setDrinkFilter({ id: drink.id, label })
     setSearch(label)
     setSearchFocused(false)
   }
 
   const showSuggestions = searchFocused && search.trim().length > 0 && (drinkSuggestions.length > 0 || storeSuggestions.length > 0)
+  const showStarters = searchFocused && search.trim().length === 0 && (recents.length > 0 || popularNearby.length > 0)
+  function openRecent(r: Recent) {
+    if (r.kind === 'store') {
+      const store = byDistance.find((s) => s.id === r.id)
+      if (store) selectStoreSuggestion(store)
+      else { setSearchFocused(false); router.push(`/store/${r.id}?name=${encodeURIComponent(r.label)}`) }
+    } else {
+      const drink = allDrinks.find((d) => d.id === r.id)
+      if (drink) selectDrinkSuggestion(drink)
+    }
+  }
   const suggestionSectionLabelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', padding: '6px 10px 4px' }
   const suggestionRowStyle = { width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const }
 
-  const searchSuggestions = showSuggestions && (
+  const starterPanel = showStarters && (
+    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 30, backgroundColor: 'var(--surface)', border: '1px solid var(--fg-10)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxHeight: 360, overflowY: 'auto', padding: 6 }} className="anim-rise">
+      {recents.length > 0 && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={suggestionSectionLabelStyle}>Recent</p>
+            <button onMouseDown={(e) => e.preventDefault()} onClick={clearRecents} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', padding: '6px 10px', cursor: 'pointer' }}>Clear</button>
+          </div>
+          {recents.map((r) => (
+            <button key={`${r.kind}-${r.id}`} onMouseDown={(e) => e.preventDefault()} onClick={() => openRecent(r)} style={suggestionRowStyle}>
+              <ClockIcon size={16} color="var(--text-dim)" />
+              <p style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</p>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{r.kind === 'store' ? 'Store' : 'Flavor'}</span>
+            </button>
+          ))}
+        </>
+      )}
+      {popularNearby.length > 0 && (
+        <>
+          <p style={suggestionSectionLabelStyle}>In stock near you</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '2px 8px 8px' }}>
+            {popularNearby.map(({ drink, n }) => (
+              <button key={drink.id} onMouseDown={(e) => e.preventDefault()} onClick={() => selectDrinkSuggestion(drink)} className={ui.chip} style={{ fontSize: 13 }}>
+                {drink.brand} {drink.flavor || drink.name}
+                <span style={{ color: 'var(--text-dim)', fontWeight: 500 }}> · {n}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+
+  const searchSuggestions = showSuggestions ? (
     <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 30, backgroundColor: 'var(--surface)', border: '1px solid var(--fg-10)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.45)', maxHeight: 320, overflowY: 'auto', padding: 6 }}>
       {drinkSuggestions.length > 0 && (
         <>
@@ -519,7 +589,7 @@ export default function MapHome() {
         </>
       )}
     </div>
-  )
+  ) : starterPanel
 
   // Collapsed to a binary signal for map coloring — 'fresh' covers the
   // store page's Fresh+Aging buckets (< 12h), everything else (including no
@@ -798,7 +868,7 @@ export default function MapHome() {
             stay interactive while this dims and captures taps on the map/
             list underneath, closing the dropdown on the first tap instead
             of the dropdown just silently overlapping unreachable content. */}
-        {showSuggestions && (
+        {(showSuggestions || showStarters) && (
           <div
             onMouseDown={() => setSearchFocused(false)}
             style={{ position: 'absolute', inset: 0, zIndex: 24, backgroundColor: 'rgba(5,6,4,0.55)' }}
