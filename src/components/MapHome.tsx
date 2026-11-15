@@ -18,6 +18,7 @@ import SlideHighlight from '@/components/ui/SlideHighlight'
 import BoltLoader from '@/components/ui/BoltLoader'
 import Burst from '@/components/ui/Burst'
 import { isFresh, stalenessOf, type Staleness } from '@/lib/freshness'
+import FreshnessRing from '@/components/ui/FreshnessRing'
 
 type View = 'map' | 'list'
 
@@ -152,6 +153,7 @@ export default function MapHome() {
   // List-view state
   const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
+  const [pinFlash, setPinFlash] = useState<{ id: string; n: number } | null>(null)
   const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
@@ -320,6 +322,7 @@ export default function MapHome() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stock_reports' }, async (payload) => {
         const report = payload.new as any
         if (!storeIds.has(report.store_id)) return
+        setPinFlash({ id: report.store_id, n: Date.now() })
 
         const [{ data: drinkData }, { data: profileData }] = await Promise.all([
           supabase.from('drinks').select('name, flavor').eq('id', report.drink_id).single(),
@@ -893,6 +896,7 @@ export default function MapHome() {
                 onSelectStore={setSelected}
                 onMapReady={setLeafletMap}
                 storeFreshness={storeFreshness}
+                flash={pinFlash}
               />
             </div>
 
@@ -1312,7 +1316,7 @@ export default function MapHome() {
                             {stockChips(store.id) && <div style={{ marginBottom: 8 }}>{stockChips(store.id)}</div>}
                             {latestReport && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
-                                <span className={stalenessColor(latestReport.reported_at) === '#C9F400' ? 'live-dot' : ''} style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: stalenessColor(latestReport.reported_at), flexShrink: 0 }} />
+                                <FreshnessRing reportedAt={latestReport.reported_at} color={stalenessColor(latestReport.reported_at)} />
                                 Reported {timeAgo(latestReport.reported_at)}
                               </div>
                             )}

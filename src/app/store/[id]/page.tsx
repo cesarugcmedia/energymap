@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Avatar } from '@/components/community/RichText'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
@@ -160,7 +161,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
     const channel = supabase
       .channel(`store-detail:${id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stock_reports', filter: `store_id=eq.${id}` }, fetchStock)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stock_reports', filter: `store_id=eq.${id}` }, onLiveReport)
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -263,20 +264,45 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   // drink_id → username of whoever filed its latest report ("by @name").
   const [reporters, setReporters] = useState<Record<string, string>>({})
-  async function fetchReporters() {
+  const [reporterAvatars, setReporterAvatars] = useState<Record<string, string>>({})
+  async function fetchReporters(): Promise<Record<string, string>> {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
+    if (!session) return {}
     const res = await fetch(`/api/stores/reporters?store_id=${id}`, { headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => null)
-    if (res?.ok) setReporters((await res.json()).reporters ?? {})
+    if (!res?.ok) return {}
+    const json = await res.json()
+    setReporters(json.reporters ?? {})
+    setReporterAvatars(json.avatars ?? {})
+    return json.reporters ?? {}
   }
 
-  async function fetchStock() {
-    fetchReporters()
+  // "@name just reported Kiwi Guava · Full" — slides in when someone else
+  // reports at this store while the page is open.
+  const [justReported, setJustReported] = useState<{ key: number; name: string | null; avatar: string | null; drink: string; quantity: Quantity } | null>(null)
+  const justTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const userIdRef = useRef<string | null>(null)
+  userIdRef.current = user?.id ?? null
+  async function onLiveReport(payload: { new: Record<string, any> }) {
+    const r = payload.new
+    const reportersP = fetchStock()
+    if (!r?.drink_id || (r.user_id && r.user_id === userIdRef.current)) return
+    const [{ data: d }, names] = await Promise.all([
+      supabase.from('drinks').select('brand, name, flavor').eq('id', r.drink_id).maybeSingle(),
+      reportersP,
+    ])
+    const name = names[r.drink_id] ?? null
+    setJustReported({ key: Date.now(), name, avatar: null, drink: d ? (d.flavor || d.name) : 'a flavor', quantity: r.quantity as Quantity })
+    clearTimeout(justTimer.current)
+    justTimer.current = setTimeout(() => setJustReported(null), 4500)
+  }
+
+  async function fetchStock(): Promise<Record<string, string>> {
+    const reportersP = fetchReporters()
     const { data: stockData, error } = await supabase
       .from('latest_stock')
       .select('drink_id, quantity, reported_at')
       .eq('store_id', id)
-    if (error) { setStockError(true); setLoading(false); return }
+    if (error) { setStockError(true); setLoading(false); return reportersP }
 
     const drinkIds = [...new Set((stockData ?? []).map((d) => d.drink_id).filter(Boolean))]
 
@@ -303,6 +329,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     }
 
     setLoading(false)
+    return reportersP
   }
 
   function toggleBrand(brand: string) {
@@ -517,6 +544,18 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       </div>
 
       <Toast message={toastMessage} visible={toastVisible} />
+      {justReported && (
+        <div key={justReported.key} className="toast-drop" role="status"
+          style={{ position: 'fixed', left: '50%', top: 'calc(env(safe-area-inset-top) + 12px)', zIndex: 70, maxWidth: 'calc(100% - 32px)', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 8px 8px', borderRadius: 999, background: 'var(--surface)', border: '1px solid rgba(201,244,0,0.35)', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', fontSize: 14, color: 'var(--text-muted)' }}>
+          {justReported.name
+            ? <Avatar name={justReported.name} url={reporterAvatars[justReported.name]} size={24} />
+            : <span className="live-dot" style={{ width: 10, height: 10, margin: '0 7px', borderRadius: '50%', background: '#C9F400', flexShrink: 0 }} />}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{justReported.name ? `@${justReported.name}` : 'Someone'}</strong> just reported {justReported.drink} ·{' '}
+            <span style={{ color: (LEVEL[justReported.quantity] ?? LEVEL.out).color, fontWeight: 600 }}>{(LEVEL[justReported.quantity] ?? LEVEL.out).label}</span>
+          </span>
+        </div>
+      )}
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 
@@ -685,7 +724,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                         {stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}
                                       </span>
                                       {reporters[item.drink_id] && (
-                                        <span>· by <Link href={`/u/${reporters[item.drink_id]}`} style={{ color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}>@{reporters[item.drink_id]}</Link></span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>· by <Link href={`/u/${reporters[item.drink_id]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}><Avatar name={reporters[item.drink_id]} url={reporterAvatars[reporters[item.drink_id]]} size={16} />@{reporters[item.drink_id]}</Link></span>
                                       )}
                                       {item.drink?.caffeine_mg ? <span>· {item.drink.caffeine_mg} mg caffeine</span> : null}
                                     </p>

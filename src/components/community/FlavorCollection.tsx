@@ -81,16 +81,17 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {shown.map(({ brand, drinks, got: g }) => {
+        {shown.map(({ brand, drinks, got: g }, bi) => {
           const isOpen = open.has(brand)
           const list = onlyFound ? drinks.filter((d) => foundSet.has(d.id)) : drinks
+          let lit = 0
           return (
-            <div key={brand} className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+            <div key={brand} className={`${ui.card} anim-rise`} style={{ padding: 0, overflow: 'hidden', animationDelay: `${Math.min(bi, 10) * 40}ms` }}>
               <button onClick={() => toggle(brand)} aria-expanded={isOpen} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{brand}</span>
                   <span style={{ display: 'block', height: 4, borderRadius: 99, background: 'var(--fg-08)', marginTop: 7, overflow: 'hidden' }}>
-                    <span style={{ display: 'block', width: `${(g / drinks.length) * 100}%`, height: '100%', background: '#C9F400' }} />
+                    <span className="anim-fill" style={{ display: 'block', width: `${(g / drinks.length) * 100}%`, height: '100%', background: '#C9F400', animationDelay: `${150 + Math.min(bi, 10) * 40}ms` }} />
                   </span>
                 </span>
                 <span style={{ fontSize: 13, color: g ? 'var(--accent-text)' : 'var(--text-dim)', fontWeight: 600, flexShrink: 0 }}>{g}/{drinks.length}</span>
@@ -100,8 +101,9 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
                 <div className="anim-fade" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 14px 14px' }}>
                   {list.map((d) => {
                     const has = foundSet.has(d.id)
+                    const order = has ? lit++ : 0
                     return (
-                      <span key={d.id} style={{ fontSize: 13, fontWeight: has ? 600 : 500, padding: '5px 10px', borderRadius: 999, color: has ? 'var(--accent-text)' : 'var(--text-dim)', background: has ? 'rgba(201,244,0,0.12)' : 'var(--fg-04)', border: `1px ${has ? 'solid' : 'dashed'} ${has ? 'rgba(201,244,0,0.35)' : 'var(--fg-13)'}` }}>
+                      <span key={d.id} className={has ? 'chip-light' : undefined} style={{ animationDelay: has ? `${Math.min(order, 16) * 45}ms` : undefined, fontSize: 13, fontWeight: has ? 600 : 500, padding: '5px 10px', borderRadius: 999, color: has ? 'var(--accent-text)' : 'var(--text-dim)', background: has ? 'rgba(201,244,0,0.12)' : 'var(--fg-04)', border: `1px ${has ? 'solid' : 'dashed'} ${has ? 'rgba(201,244,0,0.35)' : 'var(--fg-13)'}` }}>
                         {d.flavor || d.name}
                       </span>
                     )

@@ -10,6 +10,7 @@ import SkeletonList from '@/components/ui/SkeletonList'
 import { CheckIcon, LightningIcon, GroceryIcon, DrinkIcon, TrophyIcon, UsersIcon, PinIcon } from '@/components/Icons'
 import { Avatar } from './RichText'
 import SlideHighlight from '@/components/ui/SlideHighlight'
+import { fetchProfileLites } from '@/lib/avatar'
 
 type Scope = 'everyone' | 'following' | 'near'
 type Metric = 'points' | 'stores' | 'flavors'
@@ -47,6 +48,18 @@ export default function Leaderboard({ me }: {
   const [metric, setMetric] = useState<Metric>('points')
   const [timeframe, setTimeframe] = useState<Timeframe>('All Time')
   const [entries, setEntries] = useState<Entry[] | null>(null)
+  // Profile photos for whoever is on the board (profile-v2; letters until then).
+  const [photos, setPhotos] = useState<Record<string, string>>({})
+  useEffect(() => {
+    const ids = (entries ?? []).map((e) => e.id).filter((id) => !(id in photos)).slice(0, 100)
+    if (!ids.length) return
+    let live = true
+    fetchProfileLites(ids).then((m) => {
+      if (!live) return
+      setPhotos((p) => { const n = { ...p }; for (const id of ids) n[id] = m.get(id)?.avatar ?? ''; return n })
+    })
+    return () => { live = false }
+  }, [entries]) // eslint-disable-line react-hooks/exhaustive-deps
   const [serverMe, setServerMe] = useState<{ rank: number; value: number } | null>(null)
   const [error, setError] = useState(false)
   const [followingIds, setFollowingIds] = useState<Set<string> | null>(null)
@@ -214,7 +227,7 @@ export default function Leaderboard({ me }: {
               return (
                 <Link key={e.id} href={`/u/${e.username}`} className="reveal" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 0 }}>
                   <div style={{ position: 'relative' }}>
-                    <Avatar name={e.username} size={pos === 0 ? 60 : 50} />
+                    <Avatar name={e.username} url={photos[e.id] || null} size={pos === 0 ? 60 : 50} />
                     <span style={{ position: 'absolute', bottom: -6, right: -6, fontSize: pos === 0 ? 22 : 18 }}>{MEDAL[pos]}</span>
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: isMe ? 'var(--accent-text)' : 'var(--text)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
@@ -241,7 +254,7 @@ export default function Leaderboard({ me }: {
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', textDecoration: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)', background: isMe ? 'rgba(201,244,0,0.06)' : 'transparent', boxShadow: isMe ? 'inset 3px 0 0 #C9F400' : 'none' }}
                   >
                     <span style={{ width: 26, fontSize: 14, fontWeight: 600, color: 'var(--text-dim)', textAlign: 'center', flexShrink: 0 }}>{rank}</span>
-                    <Avatar name={e.username} size={34} />
+                    <Avatar name={e.username} url={photos[e.id] || null} size={34} />
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 500, color: isMe ? 'var(--accent-text)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
                       {isMe && <span style={{ fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '1px 6px' }}>You</span>}

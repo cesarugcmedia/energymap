@@ -118,9 +118,28 @@ export async function POST(req: NextRequest) {
 
   const { data: drinks } = await supabaseAdmin
     .from('drinks')
-    .select('id, name')
+    .select('id, name, brand, flavor')
     .in('id', toSubmit.map((r) => r.drink_id))
   const drinkNameById = Object.fromEntries((drinks ?? []).map((d) => [d.id, d.name]))
+
+  // Flavor collection: which in-stock picks are flavors this person has never
+  // found before? Uses flavor_finds (profile-v2) when it exists, else the
+  // reports that survive the 7-day pruning. Checked before the insert.
+  const inStockIds = [...new Set(toSubmit.filter((r) => r.quantity !== 'out').map((r) => r.drink_id))]
+  let alreadyFound = new Set<string>()
+  let hasFindsTable = false
+  if (inStockIds.length) {
+    const ff = await supabaseAdmin.from('flavor_finds').select('drink_id').eq('user_id', user.id).in('drink_id', inStockIds)
+    if (!ff.error) {
+      hasFindsTable = true
+      alreadyFound = new Set((ff.data ?? []).map((r) => r.drink_id))
+    } else {
+      const { data: prior } = await supabaseAdmin.from('stock_reports').select('drink_id')
+        .eq('user_id', user.id).in('drink_id', inStockIds).neq('quantity', 'out')
+      alreadyFound = new Set((prior ?? []).map((r) => r.drink_id))
+    }
+  }
+  const newFlavorIds = inStockIds.filter((id) => !alreadyFound.has(id))
 
   const { data: inserted, error: insertError } = await supabaseAdmin.from('stock_reports').insert(
     toSubmit.map((r) => ({
@@ -149,6 +168,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Collection progress for the success screen ("New flavor! 48 of 212").
+  let collection: { newFlavors: string[]; found: number; total: number } | null = null
+  if (newFlavorIds.length) {
+    try {
+      const [{ count: total }, found] = await Promise.all([
+        supabaseAdmin.from('drinks').select('id', { count: 'exact', head: true }),
+        hasFindsTable
+          ? supabaseAdmin.from('flavor_finds').select('drink_id', { count: 'exact', head: true }).eq('user_id', user.id).then((r) => r.count ?? 0)
+          : supabaseAdmin.from('stock_reports').select('drink_id').eq('user_id', user.id).neq('quantity', 'out').limit(5000)
+              .then((r) => new Set((r.data ?? []).map((x) => x.drink_id)).size),
+      ])
+      const byId = new Map((drinks ?? []).map((d) => [d.id, d]))
+      collection = {
+        newFlavors: newFlavorIds.map((id) => byId.get(id)).filter(Boolean).map((d) => `${d!.brand} ${d!.flavor || d!.name}`),
+        found,
+        total: total ?? 0,
+      }
+    } catch { /* collection progress is a nice-to-have */ }
+  }
+
   // ids let the success screen offer a short-lived Undo (/api/stock/undo).
-  return NextResponse.json({ submitted: toSubmit.length, ids: (inserted ?? []).map((r) => r.id) })
+  return NextResponse.json({ submitted: toSubmit.length, ids: (inserted ?? []).map((r) => r.id), collection })
 }

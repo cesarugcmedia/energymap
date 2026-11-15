@@ -171,6 +171,15 @@ A Kroger Products/Locations API integration ("Verified" stock badges on store pa
   - **Suggested people**: `GET /api/community/people?suggest=1`, shown in Find people before you type. Ranked by: regulars at your saved stores, then shared favorite brands, then reporters within 10 mi, then active hunters overall. Leaves out people you already follow or blocked.
   - **Profile tabs**: Posts / Finds / Collection / Stores on `/u/[username]`. **Collection** (`src/components/community/FlavorCollection.tsx`) shows the whole catalog by brand, with found flavors lit. It comes from the permanent `flavor_finds` table (a trigger on `stock_reports` INSERT, backfilled). Before that table exists, it uses the 7-day-pruned reports instead. "Flavors found" counts in-stock reports only.
   - **Share**: Share button (`navigator.share`, falls back to copying the link). `u/[username]/layout.tsx` sets the title, and `opengraph-image.tsx` renders the preview card with the photo and stats.
+- **Round 4 (2026-11-15)** (styles at the end of `globals.css`, all reduced-motion safe):
+  - **Map live pin flash**: `MapView`'s `flash` prop. `MapHome` sets it from the realtime handler, and lime rings ripple from that store's pin. Clustered stores have no pin, so they're skipped.
+  - **`FollowButton`** (`community/FollowButton.tsx`, used on profiles and in `PeopleSheet`): on follow it pops, draws a check, bursts and buzzes.
+  - **Collection animations**: brand rows rise in a stagger, their bars fill, and found chips light up in order (`chip-light`).
+  - **Profile tab swipe**: swipe the tab content left/right to change tabs (ignored within 24px of the left edge, which belongs to the phone's back gesture). The content slides in from the side you're heading.
+  - **`FreshnessRing`** (`ui/FreshnessRing.tsx`): List view cards show a ring that drains over the 3-day `STALE_HOURS`. It pulses while the report is < 2h old.
+  - **Report success "+N new flavors"**: `/api/stock/report` returns `collection: { newFlavors, found, total }` (checked against `flavor_finds`, or the remaining reports before profile-v2). `/submit/drinks` stashes it in `sessionStorage.last_report`, and `/submit/result` shows it with a ticking count and a "See collection" link.
+  - **Store page "just reported" toast**: realtime `onLiveReport` shows "@name just reported X · Level". It's skipped for your own reports and says "Someone" for anonymous reporters.
+  - **Photos everywhere**: `/api/stores/reporters` also returns `avatars`, so the "by @name" line gets a 16px photo. The leaderboard podium and rows load photos via `fetchProfileLites()`.
 - **Status pages** share `src/components/ui/StatusScreen.tsx`: `error.tsx` ("Something shorted out"), `/offline` ("No signal", mentions saved offline reports) and a new `not-found.tsx` 404 ("This page ran dry").
 
 ### Sign In / Sign Up

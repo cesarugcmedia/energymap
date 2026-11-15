@@ -127,9 +127,11 @@ interface MapViewProps {
   /** When set (a drink filter is active), stores NOT in the set are dimmed
    *  instead of hidden, so the whole map stays visible but the answer pops. */
   highlightIds?: Set<string> | null
+  /** A store that just got a live report: its pin ripples once (n = nonce). */
+  flash?: { id: string; n: number } | null
 }
 
-export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds }: MapViewProps) {
+export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds, flash }: MapViewProps) {
   const highlightRef = useRef<Set<string> | null>(highlightIds ?? null)
   highlightRef.current = highlightIds ?? null
   const containerRef = useRef<HTMLDivElement>(null)
@@ -138,6 +140,24 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
   const themeRef = useRef(theme)
   themeRef.current = theme
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
+
+  // Ripple the pin of a store that just got a live report. Clustered stores
+  // have no pin of their own, so they're skipped.
+  useEffect(() => {
+    if (!flash) return
+    const marker = markersRef.current.get(`store_${flash.id}`)
+    // el > pin-drop wrapper > orb container (position: relative)
+    const orb = marker?.getElement().firstElementChild?.firstElementChild as HTMLElement | null | undefined
+    if (!orb) return
+    const rings = [0, 1].map(() => {
+      const r = document.createElement('div')
+      r.className = 'pin-flash'
+      orb.appendChild(r)
+      return r
+    })
+    const t = setTimeout(() => rings.forEach((r) => r.remove()), 2800)
+    return () => { clearTimeout(t); rings.forEach((r) => r.remove()) }
+  }, [flash])
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const fittedRef = useRef(false)
   const scRef = useRef<Supercluster<Store> | null>(null)

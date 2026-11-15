@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import ui from '@/components/ui/ui.module.css'
 import { CheckIcon, CloseIcon, SearchIcon } from '@/components/Icons'
 import { Avatar } from './RichText'
+import FollowButton from './FollowButton'
 
 export type Person = { id: string; username: string; verified: boolean; following: boolean; isMe: boolean; avatarUrl?: string | null; reason?: string | null }
 
@@ -118,7 +119,7 @@ export default function PeopleSheet(props: Props) {
       </Link>
       {p.isMe
         ? <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>You</span>
-        : <button className={p.following ? ui.btnSecondary : ui.btnPrimary} style={{ padding: '7px 14px', fontSize: 14, flexShrink: 0 }} disabled={busy === p.id} onClick={() => toggleFollow(p)}>{p.following ? 'Following' : 'Follow'}</button>}
+        : <FollowButton compact following={p.following} disabled={busy === p.id} onToggle={() => toggleFollow(p)} />}
     </div>
   ))
 

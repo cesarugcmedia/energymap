@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
 
-// GET /api/stores/reporters?store_id= → { reporters: { [drink_id]: username } }
+// GET /api/stores/reporters?store_id= → { reporters: { [drink_id]: username }, avatars: { [username]: url } }
 // Who filed the most recent report for each flavor at a store, so the store
 // page can show "by @name" linking to their profile. Signed-in callers only
 // (profiles are a signed-in feature). Uses the service role because
@@ -40,12 +40,17 @@ export async function GET(req: NextRequest) {
   }
   const userIds = [...new Set([...byDrink.values()].filter(Boolean))]
   const names = new Map<string, string>()
+  const avatars: Record<string, string> = {}
   if (userIds.length) {
     // Skip anyone who turned on "Hide my name on stock reports" (profile-v2).
     const ids = userIds.slice(0, 500)
-    let res: { data: any[] | null; error: unknown } = await supabaseAdmin.from('profiles').select('id, username, anonymous_reports').in('id', ids)
+    let res: { data: any[] | null; error: unknown } = await supabaseAdmin.from('profiles').select('id, username, anonymous_reports, avatar_url').in('id', ids)
     if (res.error) res = await supabaseAdmin.from('profiles').select('id, username').in('id', ids)
-    for (const p of res.data ?? []) if (p.username && !p.anonymous_reports) names.set(p.id, p.username)
+    for (const p of res.data ?? []) {
+      if (!p.username || p.anonymous_reports) continue
+      names.set(p.id, p.username)
+      if (p.avatar_url) avatars[p.username] = p.avatar_url
+    }
   }
 
   const reporters: Record<string, string> = {}
@@ -53,5 +58,5 @@ export async function GET(req: NextRequest) {
     const name = userId ? names.get(userId) : undefined
     if (name) reporters[drinkId] = name
   }
-  return NextResponse.json({ reporters })
+  return NextResponse.json({ reporters, avatars })
 }

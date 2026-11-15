@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -16,6 +16,7 @@ import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
 import PeopleSheet from '@/components/community/PeopleSheet'
+import FollowButton from '@/components/community/FollowButton'
 import FlavorCollection from '@/components/community/FlavorCollection'
 import SlideHighlight from '@/components/ui/SlideHighlight'
 
@@ -49,6 +50,34 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const [blocked, setBlocked] = useState(false)
   const [peopleList, setPeopleList] = useState<'followers' | 'following' | null>(null)
   const [tab, setTab] = useState<Tab>('posts')
+  // Swipe left/right on the tab content to move between tabs; the content
+  // slides in from the side you're heading.
+  const [tabDir, setTabDir] = useState<'next' | 'back' | null>(null)
+  const swipe = useRef<{ x: number; y: number } | null>(null)
+  const goTab = (next: Tab) => {
+    const from = TABS.findIndex((t) => t.key === tab)
+    const to = TABS.findIndex((t) => t.key === next)
+    if (from === to) return
+    setTabDir(to > from ? 'next' : 'back')
+    setTab(next)
+  }
+  const onSwipeStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    // Leave the screen's left edge to the phone's own back gesture.
+    swipe.current = t.clientX < 24 ? null : { x: t.clientX, y: t.clientY }
+  }
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    const start = swipe.current
+    swipe.current = null
+    if (!start) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    const i = TABS.findIndex((x) => x.key === tab)
+    const next = TABS[i + (dx < 0 ? 1 : -1)]
+    if (next) goTab(next.key)
+  }
   const [blocksEnabled, setBlocksEnabled] = useState(false)
   const [toast, setToast] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -59,6 +88,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   useEffect(() => {
     if (!user) return
     setTab('posts')
+    setTabDir(null)
     setData(null)
     setPosts(null)
     setNotFound(false)
@@ -202,7 +232,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               )}
               {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                {!isMe && <button className={following ? ui.btnSecondary : ui.btnPrimary} onClick={toggleFollow} disabled={blocked}>{following ? 'Following' : 'Follow'}</button>}
+                {!isMe && <FollowButton following={following} onToggle={toggleFollow} disabled={blocked} />}
                 <button className={isMe ? ui.btnPrimary : ui.btnSecondary} onClick={shareProfile} style={{ gap: 6 }}><ShareIcon /> {isMe ? 'Share my profile' : 'Share'}</button>
                 {!isMe && blocksEnabled && <button className={ui.btnGhost} onClick={toggleBlock}>{blocked ? 'Unblock' : 'Block'}</button>}
               </div>
@@ -244,12 +274,13 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               <SlideHighlight activeKey={tab} />
               {TABS.map((t) => (
                 <button key={t.key} role="tab" aria-selected={tab === t.key} data-active={tab === t.key}
-                  className={`${ui.segment} ${tab === t.key ? ui.segmentActive : ''}`} style={{ flex: 1 }} onClick={() => setTab(t.key)}>
+                  className={`${ui.segment} ${tab === t.key ? ui.segmentActive : ''}`} style={{ flex: 1 }} onClick={() => goTab(t.key)}>
                   {t.label}
                 </button>
               ))}
             </div>
 
+            <div key={tab} className={tabDir === 'next' ? 'slide-next' : tabDir === 'back' ? 'slide-back' : undefined} onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd} style={{ minHeight: 240 }}>
             {blocked && tab !== 'collection' ? (
               <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>You blocked this user. Unblock to see their activity.</p>
             ) : tab === 'finds' ? (
@@ -349,6 +380,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 ))}
               </div>
             )}
+            </div>
           </>
         )}
       </div>

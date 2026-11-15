@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ui from '@/components/ui/ui.module.css'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 const UNDO_MS = 5 * 60 * 1000
 
@@ -59,6 +60,11 @@ function ResultContent() {
   const [undoing, setUndoing] = useState(false)
   const [undone, setUndone] = useState(false)
   const [undoError, setUndoError] = useState<string | null>(null)
+  // "New flavor! 48 of 212" — set by /api/stock/report when this report added
+  // flavors to the person's collection.
+  const [collection, setCollection] = useState<{ newFlavors: string[]; found: number; total: number } | null>(null)
+  const [shownFound, setShownFound] = useState(0)
+  const { profile } = useAuth()
 
   useEffect(() => {
     try {
@@ -66,9 +72,26 @@ function ResultContent() {
       if (last && last.storeId === storeId && Array.isArray(last.ids) && last.ids.length && Date.now() - last.at < UNDO_MS) {
         setUndoIds(last.ids)
         setUndoUntil(last.at + UNDO_MS)
+        if (last.collection?.newFlavors?.length && last.collection.total) setCollection(last.collection)
       }
     } catch { /* storage unavailable */ }
   }, [storeId])
+
+  useEffect(() => {
+    if (!collection) return
+    const from = Math.max(0, collection.found - collection.newFlavors.length)
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShownFound(collection.found); return }
+    setShownFound(from)
+    let raf = 0
+    const start = performance.now() + 700
+    const tick = (t: number) => {
+      const p = Math.min(1, Math.max(0, (t - start) / 600))
+      setShownFound(Math.round(from + (collection.found - from) * p))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [collection])
 
   useEffect(() => {
     if (!undoUntil || undone) return
@@ -138,6 +161,28 @@ function ResultContent() {
           Thanks for updating{storeName ? <> <span style={{ color: 'var(--text)', fontWeight: 600 }}>{storeName}</span></> : ' this store'}.
           <br />You just helped everyone nearby find their drink.
         </p>
+        {collection && !undone && (
+          <div className={`${ui.card} anim-rise`} style={{ width: '100%', marginTop: 20, textAlign: 'left', animationDelay: '0.45s', border: '1px solid rgba(201,244,0,0.35)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="anim-pop" style={{ fontSize: 13, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 999, padding: '3px 9px', animationDelay: '0.6s' }}>
+                +{collection.newFlavors.length}
+              </span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                {collection.newFlavors.length === 1 ? 'New flavor for your collection!' : `${collection.newFlavors.length} new flavors for your collection!`}
+              </span>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {collection.newFlavors.slice(0, 3).join(', ')}{collection.newFlavors.length > 3 ? ` +${collection.newFlavors.length - 3} more` : ''}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 10, fontSize: 13 }}>
+              <span style={{ color: 'var(--text)' }}><strong style={{ fontSize: 17 }}>{shownFound}</strong> of {collection.total} flavors</span>
+              {profile?.username && <a href={`/u/${profile.username}`} onClick={(e) => { e.preventDefault(); router.push(`/u/${profile.username}`) }} className={ui.linkQuiet} style={{ color: 'var(--accent-text)' }}>See collection</a>}
+            </div>
+            <div style={{ height: 6, borderRadius: 99, background: 'var(--fg-08)', marginTop: 6, overflow: 'hidden' }}>
+              <div style={{ width: `${(shownFound / collection.total) * 100}%`, height: '100%', borderRadius: 99, background: '#C9F400', transition: 'width 0.12s linear' }} />
+            </div>
+          </div>
+        )}
         {canUndo && (
           <div style={{ marginTop: 18 }}>
             <button className={ui.btnGhost} onClick={undo} disabled={undoing} style={{ fontSize: 14 }}>

@@ -242,7 +242,7 @@ function DrinksContent() {
       }
 
       // Remembered for the success screen's Undo (5 minutes).
-      try { sessionStorage.setItem('last_report', JSON.stringify({ ids: body.ids ?? [], storeId, at: Date.now() })) } catch { /* ignore */ }
+      try { sessionStorage.setItem('last_report', JSON.stringify({ ids: body.ids ?? [], storeId, at: Date.now(), collection: body.collection ?? null })) } catch { /* ignore */ }
       haptic([12, 40, 12])
       setSent(true)
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
