@@ -10,6 +10,7 @@ export interface FeedComment {
   body: string
   created_at: string
   username: string
+  avatar?: string | null
   parent_id: string | null
   store: { id: string; name: string } | null
 }
@@ -20,6 +21,7 @@ export interface FeedPost {
   body: string
   created_at: string
   username: string
+  avatar?: string | null
   post_type: PostType
   photos: string[]
   store: { id: string; name: string; address: string | null; lat: number | null; lng: number | null } | null

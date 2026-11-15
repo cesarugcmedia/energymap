@@ -8,7 +8,7 @@ import ui from '@/components/ui/ui.module.css'
 import { CheckIcon, CloseIcon, SearchIcon } from '@/components/Icons'
 import { Avatar } from './RichText'
 
-export type Person = { id: string; username: string; verified: boolean; following: boolean; isMe: boolean }
+export type Person = { id: string; username: string; verified: boolean; following: boolean; isMe: boolean; avatarUrl?: string | null; reason?: string | null }
 
 type Props =
   | { mode: 'search'; onClose: () => void; title?: string }
@@ -29,6 +29,8 @@ export default function PeopleSheet(props: Props) {
   const [busy, setBusy] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listUser = mode === 'search' ? null : props.userId
+  // Search mode with an empty box shows "Suggested for you" instead.
+  const [suggested, setSuggested] = useState<Person[] | null>(null)
 
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -52,6 +54,19 @@ export default function PeopleSheet(props: Props) {
     return () => { live = false }
   }, [listUser, mode])
 
+  useEffect(() => {
+    if (mode !== 'search') return
+    let live = true
+    ;(async () => {
+      const h = await authHeader()
+      if (!h) return
+      const res = await fetch('/api/community/people?suggest=1', { headers: h }).catch(() => null)
+      const json = res?.ok ? await res.json() : { people: [] }
+      if (live) setSuggested(json.people ?? [])
+    })()
+    return () => { live = false }
+  }, [mode])
+
   // Search: debounced as you type.
   useEffect(() => {
     if (mode !== 'search') return
@@ -74,13 +89,14 @@ export default function PeopleSheet(props: Props) {
     if (!h || busy) return
     const next = !p.following
     setBusy(p.id)
-    setPeople((list) => list && list.map((x) => (x.id === p.id ? { ...x, following: next } : x)))
+    const flip = (v: boolean) => (list: Person[] | null) => list && list.map((x) => (x.id === p.id ? { ...x, following: v } : x))
+    setPeople(flip(next)); setSuggested(flip(next))
     const res = await fetch('/api/community/follow', {
       method: 'POST',
       headers: { ...h, 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: p.id, following: next }),
     }).catch(() => null)
-    if (!res?.ok) setPeople((list) => list && list.map((x) => (x.id === p.id ? { ...x, following: !next } : x)))
+    if (!res?.ok) { setPeople(flip(!next)); setSuggested(flip(!next)) }
     else if (mode !== 'search') props.onFollowChange?.(next ? 1 : -1)
     setBusy(null)
   }
@@ -88,8 +104,32 @@ export default function PeopleSheet(props: Props) {
   const title = mode === 'search' ? (props.title ?? 'Find people') : mode === 'followers' ? `Followers of @${props.username}` : `@${props.username} follows`
   const q = query.trim().replace(/^@/, '')
 
+  const renderRows = (list: Person[]) => list.map((p, i) => (
+    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)' }}>
+      <Link href={`/u/${p.username}`} onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none' }}>
+        <Avatar name={p.username} url={p.avatarUrl} size={40} />
+        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{p.username}</span>
+            {p.verified && <CheckIcon size={14} color="#60a5fa" />}
+          </span>
+          {p.reason && <span style={{ fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.reason}</span>}
+        </span>
+      </Link>
+      {p.isMe
+        ? <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>You</span>
+        : <button className={p.following ? ui.btnSecondary : ui.btnPrimary} style={{ padding: '7px 14px', fontSize: 14, flexShrink: 0 }} disabled={busy === p.id} onClick={() => toggleFollow(p)}>{p.following ? 'Following' : 'Follow'}</button>}
+    </div>
+  ))
+
   let body: React.ReactNode
-  if (people === null) {
+  if (mode === 'search' && q.length < 2) {
+    body = suggested === null
+      ? <p style={{ padding: '18px 4px', fontSize: 15, color: 'var(--text-muted)' }}>Finding people near you…</p>
+      : suggested.length === 0
+        ? <p style={{ padding: '18px 4px', fontSize: 15, color: 'var(--text-muted)' }}>Type at least 2 letters of a username.</p>
+        : <><p className={ui.sectionLabel} style={{ margin: '12px 2px 4px' }}>Suggested for you</p>{renderRows(suggested)}</>
+  } else if (people === null) {
     body = <p style={{ padding: '18px 4px', fontSize: 15, color: 'var(--text-muted)' }}>Loading…</p>
   } else if (people.length === 0) {
     body = (
@@ -100,18 +140,7 @@ export default function PeopleSheet(props: Props) {
       </p>
     )
   } else {
-    body = people.map((p, i) => (
-      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)' }}>
-        <Link href={`/u/${p.username}`} onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none' }}>
-          <Avatar name={p.username} size={38} />
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{p.username}</span>
-          {p.verified && <CheckIcon size={14} color="#60a5fa" />}
-        </Link>
-        {p.isMe
-          ? <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>You</span>
-          : <button className={p.following ? ui.btnSecondary : ui.btnPrimary} style={{ padding: '7px 14px', fontSize: 14 }} disabled={busy === p.id} onClick={() => toggleFollow(p)}>{p.following ? 'Following' : 'Follow'}</button>}
-      </div>
-    ))
+    body = renderRows(people)
   }
 
   return createPortal(

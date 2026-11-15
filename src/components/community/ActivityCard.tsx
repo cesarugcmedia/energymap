@@ -29,7 +29,9 @@ export default function ActivityCard({ item }: { item: ActivityItem }) {
       <span style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.45, color: 'var(--text-muted)' }}>
         {item.kind === 'report' && (
           <>
-            <Link href={`/u/${item.username}`} onClick={(e) => e.stopPropagation()} style={{ color: 'var(--text)', fontWeight: 600, textDecoration: 'none' }}>@{item.username}</Link>
+            {item.username
+              ? <Link href={`/u/${item.username}`} onClick={(e) => e.stopPropagation()} style={{ color: 'var(--text)', fontWeight: 600, textDecoration: 'none' }}>@{item.username}</Link>
+              : <span style={{ color: 'var(--text)', fontWeight: 600 }}>A hunter</span>}
             {' reported '}
             {item.drinks.length === 1 ? (
               <>

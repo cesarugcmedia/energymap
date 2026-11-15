@@ -12,6 +12,7 @@ import Composer from './Composer'
 import PostCard from './PostCard'
 import ActivityCard from './ActivityCard'
 import { milesBetween, trendingScore, type ActivityItem, type FeedComment, type FeedPost, type StoreSummary } from './types'
+import { fetchProfileLites } from '@/lib/avatar'
 
 const PAGE = 15
 const NEAR_MILES = 10
@@ -70,8 +71,8 @@ export default function Feed({ me, toast }: {
       .select(withV3 ? 'id, post_id, user_id, body, created_at, parent_id, store_id' : 'id, post_id, user_id, body, created_at')
       .in('post_id', postIds).order('created_at', { ascending: true })
 
-    const [{ data: profiles }, { data: stores }, { data: drinks }, { data: likes }, commentsRes] = await Promise.all([
-      supabase.from('profiles').select('id, username').in('id', userIds),
+    const [profiles, { data: stores }, { data: drinks }, { data: likes }, commentsRes] = await Promise.all([
+      fetchProfileLites(userIds),
       storeIds.length ? supabase.from('stores').select('id, name, address, lat, lng').in('id', storeIds) : Promise.resolve({ data: [] as any[] }),
       drinkIds.length ? supabase.from('drinks').select('id, brand, name, flavor').in('id', drinkIds) : Promise.resolve({ data: [] as any[] }),
       supabase.from('community_post_likes').select('post_id, user_id').in('post_id', postIds),
@@ -82,13 +83,14 @@ export default function Feed({ me, toast }: {
 
     const commentUserIds = [...new Set(commentRows.map((c) => c.user_id))].filter((id) => !userIds.includes(id))
     const commentStoreIds = [...new Set(commentRows.map((c) => c.store_id).filter(Boolean))].filter((id) => !storeIds.includes(id as string)) as string[]
-    const [{ data: extraProfiles }, { data: extraStores }, { data: stock }] = await Promise.all([
-      commentUserIds.length ? supabase.from('profiles').select('id, username').in('id', commentUserIds) : Promise.resolve({ data: [] as any[] }),
+    const [extraProfiles, { data: extraStores }, { data: stock }] = await Promise.all([
+      fetchProfileLites(commentUserIds),
       commentStoreIds.length ? supabase.from('stores').select('id, name').in('id', commentStoreIds) : Promise.resolve({ data: [] as any[] }),
       storeIds.length ? supabase.from('latest_stock').select('store_id, quantity, reported_at').in('store_id', storeIds) : Promise.resolve({ data: [] as any[] }),
     ])
 
-    const name = new Map([...(profiles ?? []), ...(extraProfiles ?? [])].map((p: any) => [p.id, p.username]))
+    const people = new Map([...profiles, ...extraProfiles])
+    const name = new Map([...people].map(([id, p]) => [id, p.username]))
     const storeById = new Map([...(stores ?? []), ...(extraStores ?? [])].map((s: any) => [s.id, s]))
     const drinkById = new Map((drinks ?? []).map((d: any) => [d.id, d]))
     const likeMap: Record<string, { n: number; mine: boolean }> = {}
@@ -112,7 +114,7 @@ export default function Feed({ me, toast }: {
       const st = c.store_id ? storeById.get(c.store_id) : null
       ;(byPost[c.post_id] ??= []).push({
         id: c.id, post_id: c.post_id, user_id: c.user_id, body: c.body, created_at: c.created_at,
-        username: name.get(c.user_id) ?? 'someone', parent_id: c.parent_id ?? null,
+        username: name.get(c.user_id) ?? 'someone', avatar: people.get(c.user_id)?.avatar ?? null, parent_id: c.parent_id ?? null,
         store: st ? { id: st.id, name: st.name } : null,
       })
     }
@@ -126,6 +128,7 @@ export default function Feed({ me, toast }: {
         return {
           id: p.id, user_id: p.user_id, body: p.body, created_at: p.created_at,
           username: name.get(p.user_id) ?? 'someone',
+          avatar: people.get(p.user_id)?.avatar ?? null,
           post_type: (p.post_type ?? 'post') as FeedPost['post_type'],
           photos,
           store: st ? { id: st.id, name: st.name, address: st.address ?? null, lat: st.lat ?? null, lng: st.lng ?? null } : null,

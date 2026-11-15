@@ -16,16 +16,25 @@ import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
 import PeopleSheet from '@/components/community/PeopleSheet'
+import FlavorCollection from '@/components/community/FlavorCollection'
+import SlideHighlight from '@/components/ui/SlideHighlight'
 
 type ProfileData = {
-  profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; bio?: string | null; favoriteDrink?: string | null }
+  profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; bio?: string | null; favoriteDrink?: string | null; avatarUrl?: string | null }
   counts: { reports: number; storesAdded: number; followers: number; following: number }
   following: boolean
   stats?: { uniqueFlavors: number; streak: number }
   badges?: string[]
   topStores?: { id: string; name: string; type: string; reports: number }[]
   recentFinds?: { drink: string; quantity: string; storeId: string; storeName: string; at: string }[]
+  collection?: { found: string[]; permanent: boolean }
+  storesAddedList?: { id: string; name: string; type: string; address: string | null; at: string }[]
+  privateReports?: boolean
 }
+type Tab = 'posts' | 'finds' | 'collection' | 'stores'
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'posts', label: 'Posts' }, { key: 'finds', label: 'Finds' }, { key: 'collection', label: 'Collection' }, { key: 'stores', label: 'Stores' },
+]
 type MiniPost = { id: string; body: string; created_at: string; photo: string | null; storeName: string | null; likes: number; type: string }
 
 // Public profile: who they are, what they've contributed, their posts.
@@ -39,6 +48,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const [following, setFollowing] = useState(false)
   const [blocked, setBlocked] = useState(false)
   const [peopleList, setPeopleList] = useState<'followers' | 'following' | null>(null)
+  const [tab, setTab] = useState<Tab>('posts')
   const [blocksEnabled, setBlocksEnabled] = useState(false)
   const [toast, setToast] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -48,6 +58,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
   useEffect(() => {
     if (!user) return
+    setTab('posts')
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
@@ -118,6 +129,18 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     showToast(blocked ? `Unblocked @${data.profile.username}` : `Blocked @${data.profile.username}`)
   }
 
+  // Share sheet on phones, copy-the-link elsewhere. The link unfurls into a
+  // preview card (src/app/u/[username]/opengraph-image.tsx).
+  async function shareProfile() {
+    if (!data) return
+    const url = `${window.location.origin}/u/${data.profile.username}`
+    const text = isMe ? 'Find me on AmpedMap' : `@${data.profile.username} on AmpedMap`
+    if (navigator.share) {
+      try { await navigator.share({ title: text, url }); return } catch (e) { if ((e as Error).name === 'AbortError') return }
+    }
+    try { await navigator.clipboard.writeText(url); showToast('Profile link copied') } catch { showToast(url) }
+  }
+
   const isMe = data?.profile.id === user?.id
   const stat = (n: number, label: string, onTap?: () => void) => {
     const inner = (
@@ -158,7 +181,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
         ) : (
           <>
             <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 0 20px' }}>
-              <Avatar name={data.profile.username} size={84} />
+              <Avatar name={data.profile.username} url={data.profile.avatarUrl} size={88} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700 }}>@{data.profile.username}</h1>
                 {data.profile.verified && <CheckIcon size={16} color="#60a5fa" />}
@@ -174,12 +197,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 </span>
               )}
               {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>}
-              {!isMe && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                  <button className={following ? ui.btnSecondary : ui.btnPrimary} onClick={toggleFollow} disabled={blocked}>{following ? 'Following' : 'Follow'}</button>
-                  {blocksEnabled && <button className={ui.btnGhost} onClick={toggleBlock}>{blocked ? 'Unblock' : 'Block'}</button>}
-                </div>
-              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                {!isMe && <button className={following ? ui.btnSecondary : ui.btnPrimary} onClick={toggleFollow} disabled={blocked}>{following ? 'Following' : 'Follow'}</button>}
+                <button className={isMe ? ui.btnPrimary : ui.btnSecondary} onClick={shareProfile} style={{ gap: 6 }}><ShareIcon /> {isMe ? 'Share my profile' : 'Share'}</button>
+                {!isMe && blocksEnabled && <button className={ui.btnGhost} onClick={toggleBlock}>{blocked ? 'Unblock' : 'Block'}</button>}
+              </div>
             </div>
 
             <div className={`${ui.card} anim-rise`} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', rowGap: 16, padding: '16px 8px', marginBottom: 22 }}>
@@ -213,54 +235,98 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               </div>
             )}
 
-            {/* Recent finds */}
-            {!blocked && data.recentFinds && data.recentFinds.length > 0 && (
-              <div style={{ marginBottom: 22 }}>
-                <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Recent finds</p>
-                <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
-                  {data.recentFinds.map((f, i) => (
-                    <Link key={`${f.storeId}-${f.at}-${i}`} href={`/store/${f.storeId}?name=${encodeURIComponent(f.storeName)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: f.quantity === 'full' ? '#C9F400' : f.quantity === 'medium' ? '#FFB300' : '#FF8A3D' }} />
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.drink}</span>
-                        <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {f.quantity === 'full' ? 'Full' : f.quantity === 'medium' ? 'Medium' : 'Low'} · {f.storeName} · {timeAgo(f.at)}
+            {/* Tabs */}
+            <div className={`${ui.segmented} ${ui.segSlide}`} style={{ display: 'flex', marginBottom: 16 }} role="tablist">
+              <SlideHighlight activeKey={tab} />
+              {TABS.map((t) => (
+                <button key={t.key} role="tab" aria-selected={tab === t.key} data-active={tab === t.key}
+                  className={`${ui.segment} ${tab === t.key ? ui.segmentActive : ''}`} style={{ flex: 1 }} onClick={() => setTab(t.key)}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {blocked && tab !== 'collection' ? (
+              <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>You blocked this user. Unblock to see their activity.</p>
+            ) : tab === 'finds' ? (
+              <div key="finds" className="anim-fade">
+                {data.privateReports ? (
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>@{data.profile.username} keeps their reports private.</p>
+                ) : (!data.recentFinds?.length && !data.topStores?.length) ? (
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Your in-stock reports will show up here.' : 'No recent finds.'}</p>
+                ) : (
+                  <>
+                    {!!data.recentFinds?.length && (
+                      <div style={{ marginBottom: 22 }}>
+                        <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Recent finds</p>
+                        <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+                          {data.recentFinds.map((f, i) => (
+                            <Link key={`${f.storeId}-${f.at}-${i}`} href={`/store/${f.storeId}?name=${encodeURIComponent(f.storeName)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: f.quantity === 'full' ? '#C9F400' : f.quantity === 'medium' ? '#FFB300' : '#FF8A3D' }} />
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.drink}</span>
+                                <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {f.quantity === 'full' ? 'Full' : f.quantity === 'medium' ? 'Medium' : 'Low'} · {f.storeName} · {timeAgo(f.at)}
+                                </span>
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {!!data.topStores?.length && (
+                      <div style={{ marginBottom: 22 }}>
+                        <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Reports most at</p>
+                        <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+                          {data.topStores.map((st, i) => (
+                            <Link key={st.id} href={`/store/${st.id}?name=${encodeURIComponent(st.name)}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
+                              <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <StoreTypeIcon type={st.type} size={18} color="var(--text-muted)" />
+                              </span>
+                              <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st.name}</span>
+                              <span style={{ fontSize: 13, color: 'var(--text-dim)', flexShrink: 0 }}>{st.reports} report{st.reports === 1 ? '' : 's'}</span>
+                              <ChevronRightIcon size={16} color="var(--text-dim)" />
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : tab === 'collection' ? (
+              <div key="collection" className="anim-fade">
+                <FlavorCollection found={data.collection?.found ?? []} isMe={isMe} />
+              </div>
+            ) : tab === 'stores' ? (
+              <div key="stores" className="anim-fade">
+                {!data.storesAddedList?.length ? (
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Stores you add (once approved) show up here.' : 'No stores added yet.'}</p>
+                ) : (
+                  <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
+                    {data.storesAddedList.map((st, i) => (
+                      <Link key={st.id} href={`/store/${st.id}?name=${encodeURIComponent(st.name)}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
+                        <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <StoreTypeIcon type={st.type} size={18} color="var(--text-muted)" />
                         </span>
-                      </span>
-                    </Link>
-                  ))}
-                </div>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st.name}</span>
+                          <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            Added {new Date(st.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}{st.address ? ` · ${st.address}` : ''}
+                          </span>
+                        </span>
+                        <ChevronRightIcon size={16} color="var(--text-dim)" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Favorite stores */}
-            {!blocked && data.topStores && data.topStores.length > 0 && (
-              <div style={{ marginBottom: 22 }}>
-                <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Reports most at</p>
-                <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
-                  {data.topStores.map((s, i) => (
-                    <Link key={s.id} href={`/store/${s.id}?name=${encodeURIComponent(s.name)}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
-                      <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <StoreTypeIcon type={s.type} size={18} color="var(--text-muted)" />
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
-                      <span style={{ fontSize: 13, color: 'var(--text-dim)', flexShrink: 0 }}>{s.reports} report{s.reports === 1 ? '' : 's'}</span>
-                      <ChevronRightIcon size={16} color="var(--text-dim)" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <p className={ui.sectionLabel}>Posts</p>
-            {blocked ? (
-              <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>You blocked this user. Unblock to see their posts.</p>
             ) : posts === null ? (
               <SkeletonList count={2} />
             ) : posts.length === 0 ? (
               <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'You haven’t posted yet.' : 'No posts yet.'}</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div key="posts" className="anim-fade" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {posts.map((post) => (
                   <Link key={post.id} href={`/community?post=${post.id}`} className={`${ui.card} reveal`} style={{ display: 'flex', gap: 12, textDecoration: 'none', color: 'inherit' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -283,5 +349,14 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
         )}
       </div>
     </div>
+  )
+}
+
+
+function ShareIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v12" /><path d="m7 8 5-5 5 5" /><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+    </svg>
   )
 }

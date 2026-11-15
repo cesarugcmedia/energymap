@@ -3,6 +3,8 @@
 import { BADGE_DEFS } from '@/lib/badges'
 import PlanDetails from '@/components/account/PlanDetails'
 import ProfileExtras from '@/components/account/ProfileExtras'
+import ProfilePhoto from '@/components/account/ProfilePhoto'
+import { isMissingSchema } from '@/lib/community'
 import { useTheme, type ThemePref } from '@/contexts/ThemeContext'
 import { useMutedNotifications, NOTIFICATION_GROUPS } from '@/lib/notificationPrefs'
 import { useState, useEffect, useRef, Suspense } from 'react'
@@ -173,7 +175,7 @@ const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string
   full:   { label: 'FULL', color: 'var(--accent-text)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
 }
 
-type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'appearance' | 'notifications'
+type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'appearance' | 'notifications' | 'privacy'
 
 // Small line icons used only by the Account settings list (no equivalent in
 // the shared Icons set). Same 24×24 / rounded-stroke language as Icons.tsx.
@@ -195,6 +197,13 @@ function KeyIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: stri
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3 20 3M16 7l3 3M18 5l2 2" />
+    </svg>
+  )
+}
+function EyeIcon({ size = 17, color = '#0D1210' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
     </svg>
   )
 }
@@ -299,6 +308,21 @@ function AccountPageInner() {
   const { prefs, save: savePrefs } = usePreferences()
   const { pref: themePref, setPref: setThemePref } = useTheme()
   const { muted: mutedTypes, save: saveMuted } = useMutedNotifications()
+  // Account → Privacy (profiles.hide_from_search / anonymous_reports, scripts/profile-v2.sql).
+  const [privacyMsg, setPrivacyMsg] = useState<string | null>(null)
+  const [privacyLocal, setPrivacyLocal] = useState<{ hide_from_search?: boolean; anonymous_reports?: boolean }>({})
+  async function savePrivacy(field: 'hide_from_search' | 'anonymous_reports', value: boolean) {
+    if (!user) return
+    setPrivacyMsg(null)
+    setPrivacyLocal((p) => ({ ...p, [field]: value }))
+    const { error } = await supabase.from('profiles').update({ [field]: value }).eq('id', user.id)
+    if (error) {
+      setPrivacyLocal((p) => ({ ...p, [field]: !value }))
+      setPrivacyMsg(isMissingSchema(error) ? 'Privacy settings aren’t switched on yet. Check back soon.' : 'Couldn’t save. Try again.')
+      return
+    }
+    refreshProfile()
+  }
   const [editingPrefs, setEditingPrefs] = useState(false)
 
   useEffect(() => {
@@ -313,7 +337,7 @@ function AccountPageInner() {
   // drill-down directly, with Back returning to the Account list.
   useEffect(() => {
     const p = searchParams.get('page')
-    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance' && p !== 'notifications') return
+    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance' && p !== 'notifications' && p !== 'privacy') return
     window.history.replaceState({ accountPage: 'root' }, '', '/account')
     window.history.pushState({ accountPage: p }, '')
     setAccountPage(p)
@@ -928,10 +952,13 @@ function switchMode(m: Mode) {
     const ICON = '#0D1210'
     const PAGE_TITLES: Record<AccountSubpage, string> = {
       root: 'Account', profile: 'Profile', plan: 'Plan', badges: 'Badges', saved: 'Saved Stores',
-      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', appearance: 'Appearance', notifications: 'Notifications',
+      alerts: 'Flavor Alerts', username: 'Username', password: 'Password', appearance: 'Appearance', notifications: 'Notifications', privacy: 'Privacy',
     }
 
-    const avatar = (size: number) => (
+    const avatar = (size: number) => profile.avatar_url ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={profile.avatar_url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: `${size > 70 ? 3 : 2}px solid rgba(201,244,0,0.5)` }} />
+    ) : (
       <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(201,244,0,0.3), rgba(201,244,0,0.08))', border: `${size > 70 ? 3 : 2}px solid rgba(201,244,0,0.5)` }}>
         <span style={{ fontSize: size * 0.42, fontWeight: 700, color: 'var(--accent-text)' }}>{profile.username[0].toUpperCase()}</span>
       </div>
@@ -964,7 +991,7 @@ function switchMode(m: Mode) {
           return (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 20px 24px' }}>
-                {avatar(90)}
+                <ProfilePhoto userId={user!.id} username={profile.username} url={profile.avatar_url ?? null} onChange={refreshProfile} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>@{profile.username}</p>
                   {profile.is_verified_reporter && <CheckIcon size={16} color="#60a5fa" />}
@@ -1150,6 +1177,36 @@ function switchMode(m: Mode) {
           )
         }
 
+        case 'privacy': {
+          const OPTIONS: { field: 'hide_from_search' | 'anonymous_reports'; label: string; hint: string }[] = [
+            { field: 'hide_from_search', label: 'Hide me from people search', hint: 'You won’t appear in Find people or in suggestions. Anyone with your profile link can still open it.' },
+            { field: 'anonymous_reports', label: 'Keep my reports private', hint: 'Store pages and the Community feed show “a hunter” instead of your name, and your profile hides where you report.' },
+          ]
+          return (
+            <>
+              {group(OPTIONS.map((o, i) => {
+                const on = privacyLocal[o.field] ?? !!profile[o.field]
+                return (
+                  <div key={o.field}>
+                    {i > 0 && ROW_SEP}
+                    <button onClick={() => savePrivacy(o.field, !on)} role="switch" aria-checked={on}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 16, color: 'var(--text)' }}>{o.label}</span>
+                        <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1 }}>{o.hint}</span>
+                      </span>
+                      <span aria-hidden="true" style={{ width: 46, height: 28, borderRadius: 999, padding: 3, flexShrink: 0, background: on ? '#C9F400' : 'var(--fg-15)', transition: 'background 0.2s ease', display: 'flex' }}>
+                        <span style={{ width: 22, height: 22, borderRadius: '50%', background: on ? '#0D1210' : 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transform: on ? 'translateX(18px)' : 'none', transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)' }} />
+                      </span>
+                    </button>
+                  </div>
+                )
+              }), { footer: 'Your username, photo, bio, badges and flavor collection are always visible to signed-in members. Leaderboards still show your rank.' })}
+              {privacyMsg && <p style={{ fontSize: 14, color: '#FF8A3D', padding: '0 20px' }}>{privacyMsg}</p>}
+            </>
+          )
+        }
+
         case 'appearance': {
           const OPTIONS: { value: ThemePref; label: string; hint: string }[] = [
             { value: 'dark', label: 'Dark', hint: 'The original AmpedMap look' },
@@ -1244,6 +1301,8 @@ function switchMode(m: Mode) {
               {row({ icon: <DrinkIcon size={17} color={ICON} />, label: 'Flavor Alerts', value: drinkAlerts.length, onPress: () => openAccountPage('alerts') })}
               {ROW_SEP}
               {row({ icon: <BellIcon size={17} color={ICON} />, label: 'Notifications', value: mutedTypes.length ? `${NOTIFICATION_GROUPS.filter((g) => !g.types.every((t) => mutedTypes.includes(t))).length} of ${NOTIFICATION_GROUPS.length} on` : 'All on', onPress: () => openAccountPage('notifications') })}
+              {ROW_SEP}
+              {row({ icon: <EyeIcon />, label: 'Privacy', value: profile.hide_from_search || profile.anonymous_reports ? 'Limited' : 'Public', onPress: () => openAccountPage('privacy') })}
               {ROW_SEP}
               {row({ icon: <ThemeIcon />, label: 'Appearance', value: themePref === 'system' ? 'Match phone' : themePref === 'light' ? 'Light' : 'Dark', onPress: () => openAccountPage('appearance') })}
               {ROW_SEP}

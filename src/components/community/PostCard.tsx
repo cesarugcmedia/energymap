@@ -71,7 +71,7 @@ export default function PostCard(p: PostCardProps) {
     const mine = c.user_id === p.meId
     return (
       <div key={c.id} style={{ display: 'flex', gap: 8, marginLeft: isReply ? 32 : 0 }}>
-        <Link href={`/u/${c.username}`} style={{ textDecoration: 'none' }}><Avatar name={c.username} size={isReply ? 22 : 26} /></Link>
+        <Link href={`/u/${c.username}`} style={{ textDecoration: 'none' }}><Avatar name={c.username} url={c.avatar} size={isReply ? 22 : 26} /></Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>
             <Link href={`/u/${c.username}`} style={{ fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>@{c.username}</Link>{' '}
@@ -105,7 +105,7 @@ export default function PostCard(p: PostCardProps) {
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <Link href={`/u/${post.username}`} style={{ textDecoration: 'none' }}><Avatar name={post.username} /></Link>
+        <Link href={`/u/${post.username}`} style={{ textDecoration: 'none' }}><Avatar name={post.username} url={post.avatar} /></Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <Link href={`/u/${post.username}`} style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>@{post.username}</Link>

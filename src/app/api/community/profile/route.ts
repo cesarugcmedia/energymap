@@ -26,12 +26,16 @@ export async function GET(req: NextRequest) {
   // bio / favorite_drink_id come from scripts/profile-extras.sql — fall back
   // to the base columns until that has run.
   const BASE = 'id, username, created_at, is_verified_reporter, badges'
-  const withExtras = await supabaseAdmin.from('profiles').select(`${BASE}, bio, favorite_drink_id`).eq('username', username).maybeSingle()
-  const profile = withExtras.error
-    ? (await supabaseAdmin.from('profiles').select(BASE).eq('username', username).maybeSingle()).data
-    : withExtras.data
+  // avatar_url / anonymous_reports come from scripts/profile-v2.sql.
+  let profile: any = null
+  for (const cols of [`${BASE}, bio, favorite_drink_id, avatar_url, anonymous_reports`, `${BASE}, bio, favorite_drink_id`, BASE]) {
+    const res = await supabaseAdmin.from('profiles').select(cols).eq('username', username).maybeSingle()
+    if (!res.error) { profile = res.data; break }
+  }
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  const extras = profile as typeof profile & { bio?: string | null; favorite_drink_id?: string | null }
+  const extras = profile as { bio?: string | null; favorite_drink_id?: string | null; avatar_url?: string | null; anonymous_reports?: boolean }
+  // "Keep my reports private": others don't see where this person reports.
+  const privateReports = !!extras.anonymous_reports && profile.id !== user.id
   let favoriteDrink: string | null = null
   if (extras.favorite_drink_id) {
     const { data: d } = await supabaseAdmin.from('drinks').select('brand, name, flavor').eq('id', extras.favorite_drink_id).maybeSingle()
@@ -39,13 +43,16 @@ export async function GET(req: NextRequest) {
   }
 
   const count = async (q: any) => { const { count } = await q; return count ?? 0 }
-  const [reports, storesAdded, followers, following, iFollow, { data: rows }] = await Promise.all([
+  const [reports, storesAdded, followers, following, iFollow, { data: rows }, finds_, { data: addedRows }] = await Promise.all([
     count(supabaseAdmin.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', profile.id)),
     count(supabaseAdmin.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', profile.id).eq('status', 'approved')),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('followed_id', profile.id)),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', profile.id)),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id).eq('followed_id', profile.id)),
     supabaseAdmin.from('stock_reports').select('drink_id, store_id, quantity, reported_at').eq('user_id', profile.id).order('reported_at', { ascending: false }).limit(1000),
+    // Permanent flavor collection (profile-v2); errors until that script runs.
+    supabaseAdmin.from('flavor_finds').select('drink_id').eq('user_id', profile.id).limit(5000),
+    supabaseAdmin.from('stores').select('id, name, type, address, created_at').eq('submitted_by', profile.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(50),
   ])
   const reportRows: { drink_id: string; store_id: string; quantity: string; reported_at: string }[] = rows ?? []
 
@@ -55,7 +62,12 @@ export async function GET(req: NextRequest) {
   const localHour = (iso: string) => new Date(new Date(iso).getTime() - tz * 60000).getUTCHours()
   const hours = reportRows.map((r) => localHour(r.reported_at))
   const streak = streakFrom(reportRows.map((r) => r.reported_at))
-  const uniqueFlavors = new Set(reportRows.map((r) => r.drink_id)).size
+  // Flavors found = flavors ever reported in stock. Without flavor_finds,
+  // fall back to the reports that survive the 7-day pruning.
+  const collection = finds_.error
+    ? [...new Set(reportRows.filter((r) => r.quantity !== 'out').map((r) => r.drink_id))]
+    : (finds_.data ?? []).map((f: { drink_id: string }) => f.drink_id)
+  const uniqueFlavors = collection.length
   const weeklyChampion = Array.isArray(profile.badges) && profile.badges.includes('weekly_champion')
   const badges = [...computeBadges({
     memberSince: profile.created_at, reports, storesAdded, uniqueFlavors, streak,
@@ -79,9 +91,12 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     stats: { uniqueFlavors, streak },
+    collection: { found: collection, permanent: !finds_.error },
+    storesAddedList: (addedRows ?? []).map((s: any) => ({ id: s.id, name: s.name, type: s.type, address: s.address, at: s.created_at })),
+    privateReports,
     badges,
-    topStores: topStoreIds.filter((id) => storeById.has(id)).map((id) => ({ id, name: storeById.get(id).name, type: storeById.get(id).type, reports: perStore[id] })),
-    recentFinds: finds.filter((f) => storeById.has(f.store_id) && drinkById.has(f.drink_id)).map((f) => {
+    topStores: privateReports ? [] : topStoreIds.filter((id) => storeById.has(id)).map((id) => ({ id, name: storeById.get(id).name, type: storeById.get(id).type, reports: perStore[id] })),
+    recentFinds: privateReports ? [] : finds.filter((f) => storeById.has(f.store_id) && drinkById.has(f.drink_id)).map((f) => {
       const d = drinkById.get(f.drink_id)
       return { drink: `${d.brand} ${d.flavor ?? d.name}`, quantity: f.quantity, storeId: f.store_id, storeName: storeById.get(f.store_id).name, at: f.reported_at }
     }),
@@ -92,6 +107,7 @@ export async function GET(req: NextRequest) {
       verified: !!profile.is_verified_reporter,
       weeklyChampion,
       bio: extras.bio ?? null,
+      avatarUrl: extras.avatar_url ?? null,
       favoriteDrink,
     },
     counts: { reports, storesAdded, followers, following },

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { CameraIcon, CloseIcon } from '@/components/Icons'
 import ui from '@/components/ui/ui.module.css'
 import { Avatar } from './RichText'
+import { useAuth } from '@/contexts/AuthContext'
 import { DrinkPicker, StorePicker } from './Pickers'
 import { QUANTITY_STYLE, type PostType, type Quantity } from './types'
 import SlideHighlight from '@/components/ui/SlideHighlight'
@@ -25,6 +26,7 @@ export default function Composer({ username, v3, onPosted, toast }: {
   onPosted: () => void
   toast: (msg: string) => void
 }) {
+  const { profile } = useAuth()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<PostType>('post')
   const [text, setText] = useState('')
@@ -113,7 +115,7 @@ export default function Composer({ username, v3, onPosted, toast }: {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className={ui.card} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
-        <Avatar name={username} size={32} />
+        <Avatar name={username} url={profile?.avatar_url} size={32} />
         <span style={{ flex: 1, fontSize: 15, color: 'var(--text-dim)' }}>Share a find, ask, or post an update…</span>
         <span className={ui.btnPrimary} style={{ minHeight: 34, padding: '6px 14px', fontSize: 14 }}>Post</span>
       </button>

@@ -60,11 +60,17 @@ export async function GET(req: NextRequest) {
   const [{ data: stores }, { data: drinks }, { data: profiles }] = await Promise.all([
     storeIds.length ? supabaseAdmin.from('stores').select('id, name, lat, lng').in('id', storeIds.slice(0, 300)) : Promise.resolve({ data: [] as any[] }),
     drinkIds.length ? supabaseAdmin.from('drinks').select('id, brand, name, flavor').in('id', drinkIds.slice(0, 300)) : Promise.resolve({ data: [] as any[] }),
-    userIds.length ? supabaseAdmin.from('profiles').select('id, username').in('id', userIds.slice(0, 300)) : Promise.resolve({ data: [] as any[] }),
+    // anonymous_reports (scripts/profile-v2.sql): fall back to plain usernames before it runs.
+    userIds.length
+      ? supabaseAdmin.from('profiles').select('id, username, anonymous_reports').in('id', userIds.slice(0, 300))
+          .then((r) => (r.error ? supabaseAdmin.from('profiles').select('id, username').in('id', userIds.slice(0, 300)) : r))
+      : Promise.resolve({ data: [] as any[] }),
   ])
   const storeById = new Map((stores ?? []).map((s: any) => [s.id, s]))
   const drinkById = new Map((drinks ?? []).map((d: any) => [d.id, d]))
   const nameById = new Map((profiles ?? []).map((p: any) => [p.id, p.username]))
+  // People who chose "Hide my name on stock reports" show as "A hunter".
+  const anonymous = new Set((profiles ?? []).filter((p: any) => p.anonymous_reports).map((p: any) => p.id))
   const isNear = (s: { lat: number; lng: number } | undefined) => !near || (s ? miles(nearLat, nearLng, s.lat, s.lng) <= NEAR_MILES : false)
   const drinkLite = (drinkId: string, quantity: string): DrinkLite | null => {
     const d = drinkById.get(drinkId)
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
     if (existing) { if (existing.drinks.length < 12) existing.drinks.push(lite); continue }
     visits.set(key, {
       kind: 'report', id: `report:${key}`, created_at: r.reported_at, user_id: r.user_id,
-      username: nameById.get(r.user_id) ?? 'someone', store: { id: store.id, name: store.name }, drinks: [lite],
+      username: anonymous.has(r.user_id) ? '' : nameById.get(r.user_id) ?? 'someone', store: { id: store.id, name: store.name }, drinks: [lite],
     })
   }
   items.push(...[...visits.values()].slice(0, 30))

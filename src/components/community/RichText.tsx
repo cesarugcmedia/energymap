@@ -15,7 +15,11 @@ export function RichText({ text, style }: { text: string; style?: React.CSSPrope
   )
 }
 
-export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 36, url }: { name: string; size?: number; url?: string | null }) {
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt="" width={size} height={size} loading="lazy" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: 'var(--fg-06)' }} />
+  }
   const color = avatarColor(name)
   return (
     <span style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: `${color}22`, color, fontSize: size * 0.4, fontWeight: 700 }}>
