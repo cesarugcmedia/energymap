@@ -69,7 +69,10 @@ async function suggestions(userId: string): Promise<{ rows: Row[]; reasons: Map<
   }
 
   // 3. Same favorite brands (onboarding answers; column may not exist yet).
-  const brands: string[] = Array.isArray(me?.favorite_brands) ? me.favorite_brands.slice(0, 10) : []
+  // Plain names only: the array literal sent to PostgREST breaks on commas/braces/quotes.
+  const brands: string[] = Array.isArray(me?.favorite_brands)
+    ? me.favorite_brands.filter((b: unknown) => typeof b === 'string' && /^[\w .&!-]{1,40}$/.test(b)).slice(0, 10)
+    : []
   if (brands.length) {
     const { data: fans, error } = await supabaseAdmin.from('profiles').select('id, favorite_brands').overlaps('favorite_brands', brands).limit(40)
     if (!error) for (const f of fans ?? []) {
@@ -110,7 +113,7 @@ export async function GET(req: NextRequest) {
     const target = params.get('user') ?? ''
     if (!/^[0-9a-f-]{36}$/i.test(target)) return NextResponse.json({ error: 'Invalid user' }, { status: 400 })
     const [mine, other] = list === 'followers' ? ['followed_id', 'follower_id'] : ['follower_id', 'followed_id']
-    const { data: links } = await supabaseAdmin.from('follows').select(other).eq(mine, target).limit(500)
+    const { data: links } = await supabaseAdmin.from('follows').select(other).eq(mine, target).limit(200)
     const ids = (links ?? []).map((l) => (l as unknown as Record<string, string>)[other])
     if (ids.length) rows = (await profilesWhere((q) => q.in('id', ids))).sort((a, b) => a.username.localeCompare(b.username))
   } else if (suggest) {

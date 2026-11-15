@@ -59,6 +59,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   useEffect(() => {
     if (!user) return
     setTab('posts')
+    setData(null)
+    setPosts(null)
+    setNotFound(false)
+    setBlocked(false)
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return

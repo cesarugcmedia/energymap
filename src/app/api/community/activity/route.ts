@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     const existing = visits.get(key)
     if (existing) { if (existing.drinks.length < 12) existing.drinks.push(lite); continue }
     visits.set(key, {
-      kind: 'report', id: `report:${key}`, created_at: r.reported_at, user_id: r.user_id,
+      kind: 'report', id: `report:${key}`, created_at: r.reported_at, user_id: anonymous.has(r.user_id) ? '' : r.user_id,
       username: anonymous.has(r.user_id) ? '' : nameById.get(r.user_id) ?? 'someone', store: { id: store.id, name: store.name }, drinks: [lite],
     })
   }

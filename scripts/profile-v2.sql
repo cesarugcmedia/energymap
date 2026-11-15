@@ -14,21 +14,21 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS hide_from_search BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS anonymous_reports BOOLEAN NOT NULL DEFAULT false;
 
--- A profile photo may only point at that user's own folder in the avatars
--- bucket, never an arbitrary external URL.
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_avatar_url_own') THEN
-    ALTER TABLE profiles ADD CONSTRAINT profiles_avatar_url_own CHECK (
-      avatar_url IS NULL OR avatar_url LIKE '%/storage/v1/object/public/avatars/' || id::text || '/%'
-    );
-  END IF;
-END $$;
+-- A profile photo may only be that user's own file in this project's avatars
+-- bucket (what the app uploads), never an arbitrary external URL — otherwise
+-- someone could point their photo at a tracking pixel or unmoderated image.
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_avatar_url_own;
+ALTER TABLE profiles ADD CONSTRAINT profiles_avatar_url_own CHECK (
+  avatar_url IS NULL OR avatar_url ~ (
+    '^https://[a-z0-9-]+\.supabase\.co/storage/v1/object/public/avatars/' || id::text || '/avatar\.jpg(\?v=[0-9]+)?$'
+  )
+);
 
 -- ── 2. Storage bucket for profile photos ─────────────────────────────────
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('avatars', 'avatars', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
+-- 2 MB cap and images only (the app uploads ~30 KB JPEGs).
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('avatars', 'avatars', true, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp'])
+ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 2097152, allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp'];
 
 DROP POLICY IF EXISTS "avatars public read" ON storage.objects;
 CREATE POLICY "avatars public read" ON storage.objects

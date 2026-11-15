@@ -11,6 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   return {
     title,
     description,
+    robots: { index: false, follow: false },
     openGraph: { title, description, url: `/u/${name}`, type: 'profile' },
     twitter: { card: 'summary_large_image', title, description },
   }
