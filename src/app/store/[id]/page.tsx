@@ -14,6 +14,7 @@ import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, B
 import SkeletonList from '@/components/ui/SkeletonList'
 import { usePreferences } from '@/lib/preferences'
 import Burst from '@/components/ui/Burst'
+import { stalenessOf, type Staleness } from '@/lib/freshness'
 
 const BRAND_ALIASES: Record<string, string> = {
   'alani':          'Alani Nu',
@@ -81,21 +82,10 @@ const FLAG_REASONS: { label: string; hint: string }[] = [
   { label: 'Other', hint: 'Tell us what’s wrong.' },
 ]
 
-function stalenessColor(dateStr: string) {
-  const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
-  if (hrs < 2) return 'var(--accent-text)'
-  if (hrs < 12) return '#FFB300'
-  if (hrs < 24) return '#FF4545'
-  return 'var(--text-dim)'
-}
-
-function stalenessLabel(dateStr: string) {
-  const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
-  if (hrs < 2) return 'Fresh'
-  if (hrs < 12) return 'Aging'
-  if (hrs < 24) return 'Stale'
-  return 'Unverified'
-}
+// Fresh < 1 day, Aging 1–2 days, Stale 2–3 days, Unverified after (src/lib/freshness.ts).
+const STALENESS_COLOR: Record<Staleness, string> = { Fresh: 'var(--accent-text)', Aging: '#FFB300', Stale: '#FF4545', Unverified: 'var(--text-dim)' }
+const stalenessColor = (dateStr: string) => STALENESS_COLOR[stalenessOf(dateStr)]
+const stalenessLabel = (dateStr: string) => stalenessOf(dateStr)
 
 function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()

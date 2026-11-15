@@ -245,7 +245,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
           {
             icon: <span style={{ display: 'flex', gap: 3 }}>{['#C9F400', '#FFB300', 'var(--text-dim)'].map((c) => <span key={c} style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />)}</span>,
             title: 'See what’s in stock',
-            body: 'Pins turn lime when someone reported in the last 12 hours. Tap one to see flavors and stock levels.',
+            body: 'Pins turn lime when someone reported in the last day. Tap one to see flavors and stock levels.',
           },
           { icon: <BellIcon size={18} color="var(--accent-text)" />, title: 'Never miss a restock', body: 'Follow a flavor and we’ll tell you when it’s back.' },
           { icon: <LightningIcon size={18} color="var(--accent-text)" />, title: 'Powered by hunters like you', body: 'Report what you see in seconds, earn badges and climb the leaderboard.' },

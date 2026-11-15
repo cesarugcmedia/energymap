@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { StoreTypeIcon, SearchIcon } from '@/components/Icons'
 import styles from './landing.module.css'
+import { isFresh } from '@/lib/freshness'
 
 // "See what's near you" — lets a logged-out visitor try the product with a
 // ZIP code before signing up. Backed by /api/preview (5-mile radius, top 5
@@ -36,7 +37,7 @@ function ago(iso: string) {
 
 function freshColor(iso: string | null) {
   if (!iso) return '#6B7468'
-  return Date.now() - new Date(iso).getTime() < 12 * 3600 * 1000 ? '#C9F400' : '#FFB300'
+  return isFresh(iso) ? '#C9F400' : '#FFB300'
 }
 
 export default function ZipPreview() {

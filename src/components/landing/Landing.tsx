@@ -117,7 +117,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
               ))}
             </div>
             <div className={styles.legend}>
-              <span><i style={{ background: '#C9F400' }} /> Reported in the last 12 hours</span>
+              <span><i style={{ background: '#C9F400' }} /> Reported in the last day</span>
               <span><i style={{ background: '#FFB300' }} /> Mixed</span>
               <span><i style={{ background: '#6B7468' }} /> Older or no reports</span>
             </div>

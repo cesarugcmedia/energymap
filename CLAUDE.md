@@ -92,7 +92,7 @@ Favorites (the heart/save-a-store list, `favorites` table) is gated behind `trac
 
 `src/components/MapView.tsx` renders a Mapbox GL map. Supercluster aggregates store markers client-side (radius: 60px, max zoom: 16). The user's live location shows as a pulsing dot. Store markers use line-icon SVGs (`storeTypeIconSvg()` from `src/components/Icons.tsx` — see "App-Wide Icon System" below), not emoji. Radius is enforced **server-side** in `/api/stores/nearby` (free/anon capped to 5 miles, tracker/admin unlimited) — the server determines tier from the caller's bearer token, so a free-tier client never receives out-of-radius stores over the wire.
 
-Clusters and individual store markers are **freshness-coded**: `src/app/page.tsx` collapses each store's most recent report age to a binary `'fresh' | 'stale'` signal (< 12h = fresh, mirroring the store page's Fresh/Aging buckets; no reports at all also reads as stale) and passes it into `MapView` as `storeFreshness`. A cluster aggregates its members via Supercluster's `getLeaves()` — all-fresh renders lime, all-stale renders gray, a mix renders amber — so density-grouped pins don't lose the "worth a trip vs. probably dead data" signal once stores get bucketed together. An always-visible legend (bottom-left) explains the three colors; there's no toggle for it since the colors need explaining at a glance, not on request.
+Clusters and individual store markers are **freshness-coded**: `src/app/page.tsx` collapses each store's most recent report age to a binary `'fresh' | 'stale'` signal (< 1 day = fresh, mirroring the store page's Fresh bucket — thresholds live in `src/lib/freshness.ts`; no reports at all also reads as stale) and passes it into `MapView` as `storeFreshness`. A cluster aggregates its members via Supercluster's `getLeaves()` — all-fresh renders lime, all-stale renders gray, a mix renders amber — so density-grouped pins don't lose the "worth a trip vs. probably dead data" signal once stores get bucketed together. An always-visible legend (bottom-left) explains the three colors; there's no toggle for it since the colors need explaining at a glance, not on request.
 
 **Map/List upgrades (2026-11-14):** `sortedBase` = every filter except a picked drink; the map plots `mapStores` (= `sortedBase`, minus non-fresh stores when the **Fresh only** chip is on) and passes `highlightIds` (stores carrying the picked drink) to `MapView`, which dims non-matching pins/clusters to 30% instead of hiding them; the list uses `sorted` (drink filter applied). `storeSummary` gives each store its in-stock count + top 3 in-stock flavors (fullest, then freshest), shown in the pin popup and on list cards. A swipe-up "N stores nearby" sheet sits at the bottom of the map (hidden while a popup/welcome sheet is open; tap a row to select + fly to it); legend and zoom controls shift up while it shows. List View: sticky search/controls, one **Filters** sheet (distance, type, brand, with an active-count badge) plus Nearest / Freshest / Most in stock sort chips, incremental rendering 30 at a time via an IntersectionObserver on the list's own scroll container, and a save heart on cards for Tracker (`favorites`). The Mapbox dark style is recolored at load to the app's neutral palette (gray roads, muted labels, neutral buildings). Previously: Map View also carries its own search box + store-type filter chips in the header (mirroring List View's), and both actually filter what's plotted — `MapView` is fed the same already-filtered `sorted` list List View uses, not the raw unfiltered `stores` array, so switching views doesn't reset what's currently filtered.
 
@@ -267,12 +267,12 @@ This replaced standalone emoji used as functional UI icons app-wide (search boxe
 ### Stock Report Accuracy
 
 Stock reports on store pages show a freshness state based on age:
-- **Fresh** — reported < 2h ago
-- **Aging** — 2–12h ago
-- **Stale** — 12–24h ago
-- **Unverified** — > 24h ago (greyed out)
+- **Fresh** — reported < 1 day ago (thresholds: `src/lib/freshness.ts`, changed from 2h/12h/24h on 2026-11-15)
+- **Aging** — 1–2 days ago
+- **Stale** — 2–3 days ago
+- **Unverified** — 3+ days ago (greyed out)
 
-All users see the freshness label; `tracker` tier users additionally see the exact time ago. Each drink card also shows a small lime/amber/gray status dot next to the flavor name — the same simplified fresh(<12h)/stale/never-reported signal used for Report Stock's flavor rows and the map's marker freshness, layered on top of the more precise 4-bucket text label rather than replacing it.
+All users see the freshness label; `tracker` tier users additionally see the exact time ago. Each drink card also shows a small lime/amber/gray status dot next to the flavor name — the same simplified fresh(< 1 day)/stale/never-reported signal used for Report Stock's flavor rows and the map's marker freshness, layered on top of the more precise 4-bucket text label rather than replacing it.
 
 Community ✓/✗ confirmation voting on individual drink cards was removed — freshness now rests on the timestamp and status dot alone. The `stock_confirmations` table and `POST /api/stock/confirm` route still exist but are currently unused/orphaned; left in place rather than deleted in case the feature comes back, not an oversight.
 

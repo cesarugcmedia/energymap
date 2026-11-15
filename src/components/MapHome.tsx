@@ -17,6 +17,7 @@ import SkeletonList from '@/components/ui/SkeletonList'
 import SlideHighlight from '@/components/ui/SlideHighlight'
 import BoltLoader from '@/components/ui/BoltLoader'
 import Burst from '@/components/ui/Burst'
+import { isFresh, stalenessOf, type Staleness } from '@/lib/freshness'
 
 type View = 'map' | 'list'
 
@@ -49,13 +50,9 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-function stalenessColor(dateStr: string) {
-  const hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000
-  if (hrs < 2) return '#C9F400'
-  if (hrs < 12) return '#FFB300'
-  if (hrs < 24) return '#FF4545'
-  return 'var(--text-dim)'
-}
+// Same buckets as the store page (src/lib/freshness.ts).
+const STALENESS_COLOR: Record<Staleness, string> = { Fresh: '#C9F400', Aging: '#FFB300', Stale: '#FF4545', Unverified: 'var(--text-dim)' }
+const stalenessColor = (dateStr: string) => STALENESS_COLOR[stalenessOf(dateStr)]
 
 function getLatestReport(stock: any[]) {
   return stock.reduce<any>((latest, item) => {
@@ -164,7 +161,7 @@ export default function MapHome() {
   const [allDrinks, setAllDrinks] = useState<Drink[]>([])
   const [drinkFilter, setDrinkFilter] = useState<{ id: string; label: string } | null>(null)
   const [searchFocused, setSearchFocused] = useState(false)
-  // Map: show only stores reported in the last 12h. List: sort, filter sheet,
+  // Map: show only stores reported in the last day. List: sort, filter sheet,
   // incremental rendering. Map sheet: swipe-up nearby list. Saved stores.
   const [freshOnly, setFreshOnly] = useState(false)
   const [sortMode, setSortMode] = useState<'nearest' | 'freshest' | 'most'>('nearest')
@@ -592,14 +589,13 @@ export default function MapHome() {
   ) : starterPanel
 
   // Collapsed to a binary signal for map coloring — 'fresh' covers the
-  // store page's Fresh+Aging buckets (< 12h), everything else (including no
+  // store page's Fresh bucket (< 1 day), everything else (including no
   // reports at all) reads as 'stale' so a cold pin can't look misleadingly fresh.
   const storeFreshness = useMemo(() => {
     const map: Record<string, 'fresh' | 'stale'> = {}
     for (const store of stores) {
       const latest = getLatestReport(storeStock[store.id] ?? [])
-      const hrs = latest ? (Date.now() - new Date(latest.reported_at).getTime()) / 3600000 : Infinity
-      map[store.id] = hrs < 12 ? 'fresh' : 'stale'
+      map[store.id] = isFresh(latest?.reported_at) ? 'fresh' : 'stale'
     }
     return map
   }, [stores, storeStock])

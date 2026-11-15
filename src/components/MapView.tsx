@@ -29,7 +29,7 @@ const MAP_THEME = {
 
 // Simplified 2-state freshness per store (mirrors the 4-bucket Fresh/Aging/
 // Stale/Unverified staleness on store pages, collapsed to a binary signal
-// suited to at-a-glance map coloring — 'fresh' covers Fresh+Aging).
+// suited to at-a-glance map coloring — 'fresh' = the Fresh bucket, < 1 day; see src/lib/freshness.ts).
 export type StoreFreshness = 'fresh' | 'stale'
 
 type MarkerFreshness = StoreFreshness | 'mixed'
