@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Quantity } from '@/lib/types'
@@ -270,7 +271,17 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [changedIds, setChangedIds] = useState<Set<string>>(new Set())
   const changedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+  // drink_id → username of whoever filed its latest report ("by @name").
+  const [reporters, setReporters] = useState<Record<string, string>>({})
+  async function fetchReporters() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch(`/api/stores/reporters?store_id=${id}`, { headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => null)
+    if (res?.ok) setReporters((await res.json()).reporters ?? {})
+  }
+
   async function fetchStock() {
+    fetchReporters()
     const { data: stockData, error } = await supabase
       .from('latest_stock')
       .select('drink_id, quantity, reported_at')
@@ -683,6 +694,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: freshColor }} />
                                         {stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}
                                       </span>
+                                      {reporters[item.drink_id] && (
+                                        <span>· by <Link href={`/u/${reporters[item.drink_id]}`} style={{ color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}>@{reporters[item.drink_id]}</Link></span>
+                                      )}
                                       {item.drink?.caffeine_mg ? <span>· {item.drink.caffeine_mg} mg caffeine</span> : null}
                                     </p>
                                   </div>

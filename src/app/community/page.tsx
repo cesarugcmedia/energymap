@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import Toast from '@/components/Toast'
 import Feed from '@/components/community/Feed'
 import Leaderboard from '@/components/community/Leaderboard'
-import { ClipboardIcon, TrophyIcon } from '@/components/Icons'
+import { ClipboardIcon, TrophyIcon, UsersIcon } from '@/components/Icons'
+import PeopleSheet from '@/components/community/PeopleSheet'
 import { usePreferences } from '@/lib/preferences'
 import ui from '@/components/ui/ui.module.css'
 import SlideHighlight from '@/components/ui/SlideHighlight'
@@ -21,6 +22,7 @@ export default function CommunityPage() {
   const router = useRouter()
   const { user, profile, loading: authLoading } = useAuth()
   const [mainView, setMainView] = useState<MainView>('feed')
+  const [findPeople, setFindPeople] = useState(false)
   const { prefs } = usePreferences()
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -57,10 +59,16 @@ export default function CommunityPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden', position: 'relative', paddingTop: 'calc(56px + env(safe-area-inset-top))' }}>
       <Toast message={toastMessage} visible={toastVisible} />
+      {findPeople && <PeopleSheet mode="search" onClose={() => setFindPeople(false)} />}
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px 100px' }}>
         <div style={{ padding: '12px 0 16px' }}>
-          <h1 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>Community</h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <h1 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>Community</h1>
+            <button className={ui.btnSecondary} onClick={() => setFindPeople(true)} style={{ padding: '8px 12px', fontSize: 14, gap: 6 }}>
+              <UsersIcon size={16} color="var(--text)" /> Find people
+            </button>
+          </div>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Finds, questions and live reports from hunters near you</p>
         </div>
 

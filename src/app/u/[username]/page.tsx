@@ -15,6 +15,7 @@ import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon, DrinkIc
 import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
+import PeopleSheet from '@/components/community/PeopleSheet'
 
 type ProfileData = {
   profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; bio?: string | null; favoriteDrink?: string | null }
@@ -37,6 +38,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const [posts, setPosts] = useState<MiniPost[] | null>(null)
   const [following, setFollowing] = useState(false)
   const [blocked, setBlocked] = useState(false)
+  const [peopleList, setPeopleList] = useState<'followers' | 'following' | null>(null)
   const [blocksEnabled, setBlocksEnabled] = useState(false)
   const [toast, setToast] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -117,16 +119,31 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   }
 
   const isMe = data?.profile.id === user?.id
-  const stat = (n: number, label: string) => (
-    <div style={{ flex: 1, textAlign: 'center' }}>
-      <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}><CountUp value={n} /></p>
-      <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>{label}</p>
-    </div>
-  )
+  const stat = (n: number, label: string, onTap?: () => void) => {
+    const inner = (
+      <>
+        <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}><CountUp value={n} /></p>
+        <p style={{ fontSize: 13, color: onTap ? 'var(--text-muted)' : 'var(--text-dim)' }}>{label}</p>
+      </>
+    )
+    return onTap
+      ? <button onClick={onTap} style={{ flex: 1, textAlign: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>{inner}</button>
+      : <div style={{ flex: 1, textAlign: 'center' }}>{inner}</div>
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
       <Toast message={toast} visible={toastVisible} />
+      {peopleList && data && (
+        <PeopleSheet
+          mode={peopleList}
+          userId={data.profile.id}
+          username={data.profile.username}
+          onClose={() => setPeopleList(null)}
+          // Following someone from my own Following/Followers list changes my "Following" count.
+          onFollowChange={(d) => { if (isMe) setData((cur) => cur && { ...cur, counts: { ...cur.counts, following: cur.counts.following + d } }) }}
+        />
+      )}
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px 100px' }}>
         <div style={{ marginBottom: 12 }}><BackButton label="Back" fallbackHref="/community" /></div>
 
@@ -169,8 +186,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               {stat(data.counts.reports, 'Reports')}
               {stat(data.stats?.uniqueFlavors ?? 0, 'Flavors found')}
               {stat(data.counts.storesAdded, 'Stores added')}
-              {stat(data.counts.followers, 'Followers')}
-              {stat(data.counts.following, 'Following')}
+              {stat(data.counts.followers, 'Followers', () => setPeopleList('followers'))}
+              {stat(data.counts.following, 'Following', () => setPeopleList('following'))}
               {stat(data.badges?.length ?? 0, 'Badges')}
             </div>
 
