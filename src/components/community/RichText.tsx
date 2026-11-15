@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { avatarColor } from './types'
+import { useIsLive } from '@/contexts/PresenceContext'
 
 // Post/comment text with @mentions turned into profile links.
 export function RichText({ text, style }: { text: string; style?: React.CSSProperties }) {
@@ -15,15 +18,27 @@ export function RichText({ text, style }: { text: string; style?: React.CSSPrope
   )
 }
 
-export function Avatar({ name, size = 36, url }: { name: string; size?: number; url?: string | null }) {
+export function Avatar({ name, size = 36, url, userId }: { name: string; size?: number; url?: string | null; userId?: string | null }) {
+  const live = useIsLive(userId)
+  let face: React.ReactNode
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt="" width={size} height={size} loading="lazy" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: 'var(--fg-06)' }} />
+    face = <img src={url} alt="" width={size} height={size} loading="lazy" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: 'var(--fg-06)' }} />
+  } else {
+    const color = avatarColor(name)
+    face = (
+      <span style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: `${color}22`, color, fontSize: size * 0.4, fontWeight: 700 }}>
+        {name[0]?.toUpperCase() ?? '?'}
+      </span>
+    )
   }
-  const color = avatarColor(name)
+  if (!live) return face
+  // Live: a lime dot with a soft pulse on the bottom-right edge.
+  const dot = Math.max(8, Math.round(size * 0.28))
   return (
-    <span style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: `${color}22`, color, fontSize: size * 0.4, fontWeight: 700 }}>
-      {name[0]?.toUpperCase() ?? '?'}
+    <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }} title="Live now">
+      {face}
+      <span className="live-dot" aria-label="Live now" style={{ position: 'absolute', right: 0, bottom: 0, width: dot, height: dot, borderRadius: '50%', background: '#C9F400', border: `${size >= 60 ? 3 : 2}px solid var(--bg)` }} />
     </span>
   )
 }

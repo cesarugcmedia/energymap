@@ -17,6 +17,7 @@ import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
 import PeopleSheet from '@/components/community/PeopleSheet'
 import FollowButton from '@/components/community/FollowButton'
+import { useIsLive } from '@/contexts/PresenceContext'
 import FlavorCollection from '@/components/community/FlavorCollection'
 import SlideHighlight from '@/components/ui/SlideHighlight'
 
@@ -176,6 +177,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   }
 
   const isMe = data?.profile.id === user?.id
+  const isLive = useIsLive(data?.profile.id)
   const stat = (n: number, label: string, onTap?: () => void) => {
     const inner = (
       <>
@@ -215,12 +217,13 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
         ) : (
           <>
             <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 0 20px' }}>
-              <Avatar name={data.profile.username} url={data.profile.avatarUrl} size={88} />
+              <Avatar name={data.profile.username} url={data.profile.avatarUrl} userId={data.profile.id} size={88} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700 }}>@{data.profile.username}</h1>
                 {data.profile.verified && <CheckIcon size={16} color="#60a5fa" />}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {isLive && !isMe && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="live-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9F400' }} /> Live now</span>}
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
                 {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="flame">🔥</span> {data.stats!.streak}-day streak</span>}
               </div>

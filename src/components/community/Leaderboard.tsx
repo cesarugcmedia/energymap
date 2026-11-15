@@ -227,7 +227,7 @@ export default function Leaderboard({ me }: {
               return (
                 <Link key={e.id} href={`/u/${e.username}`} className="reveal" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 0 }}>
                   <div style={{ position: 'relative' }}>
-                    <Avatar name={e.username} url={photos[e.id] || null} size={pos === 0 ? 60 : 50} />
+                    <Avatar name={e.username} url={photos[e.id] || null} userId={e.id} size={pos === 0 ? 60 : 50} />
                     <span style={{ position: 'absolute', bottom: -6, right: -6, fontSize: pos === 0 ? 22 : 18 }}>{MEDAL[pos]}</span>
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: isMe ? 'var(--accent-text)' : 'var(--text)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
@@ -254,7 +254,7 @@ export default function Leaderboard({ me }: {
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', textDecoration: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)', background: isMe ? 'rgba(201,244,0,0.06)' : 'transparent', boxShadow: isMe ? 'inset 3px 0 0 #C9F400' : 'none' }}
                   >
                     <span style={{ width: 26, fontSize: 14, fontWeight: 600, color: 'var(--text-dim)', textAlign: 'center', flexShrink: 0 }}>{rank}</span>
-                    <Avatar name={e.username} url={photos[e.id] || null} size={34} />
+                    <Avatar name={e.username} url={photos[e.id] || null} userId={e.id} size={34} />
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 500, color: isMe ? 'var(--accent-text)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
                       {isMe && <span style={{ fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '1px 6px' }}>You</span>}

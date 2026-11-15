@@ -108,7 +108,7 @@ export default function PeopleSheet(props: Props) {
   const renderRows = (list: Person[]) => list.map((p, i) => (
     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)' }}>
       <Link href={`/u/${p.username}`} onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none' }}>
-        <Avatar name={p.username} url={p.avatarUrl} size={40} />
+        <Avatar name={p.username} url={p.avatarUrl} userId={p.id} size={40} />
         <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{p.username}</span>

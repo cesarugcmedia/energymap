@@ -4,6 +4,7 @@ import { BADGE_DEFS } from '@/lib/badges'
 import PlanDetails from '@/components/account/PlanDetails'
 import ProfileExtras from '@/components/account/ProfileExtras'
 import ProfilePhoto from '@/components/account/ProfilePhoto'
+import { usePresence } from '@/contexts/PresenceContext'
 import { isMissingSchema } from '@/lib/community'
 import { useTheme, type ThemePref } from '@/contexts/ThemeContext'
 import { useMutedNotifications, NOTIFICATION_GROUPS } from '@/lib/notificationPrefs'
@@ -308,6 +309,7 @@ function AccountPageInner() {
   const { prefs, save: savePrefs } = usePreferences()
   const { pref: themePref, setPref: setThemePref } = useTheme()
   const { muted: mutedTypes, save: saveMuted } = useMutedNotifications()
+  const { showMe: showLive, setShowMe: setShowLive } = usePresence()
   // Account → Privacy (profiles.hide_from_search / anonymous_reports, scripts/profile-v2.sql).
   const [privacyMsg, setPrivacyMsg] = useState<string | null>(null)
   const [privacyLocal, setPrivacyLocal] = useState<{ hide_from_search?: boolean; anonymous_reports?: boolean }>({})
@@ -1203,6 +1205,19 @@ function switchMode(m: Mode) {
                 )
               }), { footer: 'Your username, photo, bio, badges and flavor collection are always visible to signed-in members. Leaderboards still show your rank.' })}
               {privacyMsg && <p style={{ fontSize: 14, color: '#FF8A3D', padding: '0 20px' }}>{privacyMsg}</p>}
+              {group(
+                <button onClick={() => setShowLive(!showLive)} role="switch" aria-checked={showLive}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 16, color: 'var(--text)' }}>Show when I’m live</span>
+                    <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1 }}>A lime dot on your photo while you have AmpedMap open. Turn off to browse without it.</span>
+                  </span>
+                  <span aria-hidden="true" style={{ width: 46, height: 28, borderRadius: 999, padding: 3, flexShrink: 0, background: showLive ? '#C9F400' : 'var(--fg-15)', transition: 'background 0.2s ease', display: 'flex' }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', background: showLive ? '#0D1210' : 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transform: showLive ? 'translateX(18px)' : 'none', transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)' }} />
+                  </span>
+                </button>,
+                { footer: 'Saved on this device.' }
+              )}
             </>
           )
         }

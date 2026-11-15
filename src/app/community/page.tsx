@@ -8,6 +8,7 @@ import Feed from '@/components/community/Feed'
 import Leaderboard from '@/components/community/Leaderboard'
 import { ClipboardIcon, TrophyIcon, UsersIcon } from '@/components/Icons'
 import PeopleSheet from '@/components/community/PeopleSheet'
+import { usePresence } from '@/contexts/PresenceContext'
 import { usePreferences } from '@/lib/preferences'
 import ui from '@/components/ui/ui.module.css'
 import SlideHighlight from '@/components/ui/SlideHighlight'
@@ -23,6 +24,8 @@ export default function CommunityPage() {
   const { user, profile, loading: authLoading } = useAuth()
   const [mainView, setMainView] = useState<MainView>('feed')
   const [findPeople, setFindPeople] = useState(false)
+  const { online } = usePresence()
+  const liveCount = [...online].filter((id) => id !== user?.id).length
   const { prefs } = usePreferences()
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -70,6 +73,12 @@ export default function CommunityPage() {
             </button>
           </div>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Finds, questions and live reports from hunters near you</p>
+          {liveCount > 0 && (
+            <button onClick={() => setFindPeople(true)} className="anim-fade" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 8, padding: 0, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent-text)' }}>
+              <span className="live-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#C9F400' }} />
+              {liveCount} {liveCount === 1 ? 'hunter' : 'hunters'} live now
+            </button>
+          )}
         </div>
 
         <div className={ui.segSlide} style={{ display: 'flex', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 4, gap: 4, marginBottom: 14 }}>

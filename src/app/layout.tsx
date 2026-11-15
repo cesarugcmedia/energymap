@@ -13,6 +13,7 @@ import AppStartGuard from '@/components/AppStartGuard'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { PresenceProvider } from '@/contexts/PresenceContext'
 
 const barlow = Barlow({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-barlow' })
 const barlowCondensed = Barlow_Condensed({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-barlow-condensed' })
@@ -64,6 +65,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <ThemeProvider>
+          <PresenceProvider>
           <AppStartGuard />
           <ServiceWorkerRegister />
           <ScrollReveal />
@@ -76,6 +78,7 @@ export default function RootLayout({
             <MainWrapper>{children}</MainWrapper>
             <BottomNav />
           </ContentShell>
+          </PresenceProvider>
           </ThemeProvider>
         </AuthProvider>
         {/* Cookieless page-view analytics (enable under Vercel → Analytics). */}
