@@ -42,21 +42,29 @@ function Bars({ days, highlight, dim }: { days: number[]; highlight: number; dim
 export default function RestockPatterns({ storeId, isTracker }: { storeId: string; isTracker: boolean }) {
   const router = useRouter()
   const [data, setData] = useState<Patterns | null>(null)
-  const [failed, setFailed] = useState(false)
+  // Why loading failed (shown small so it can be reported), or null.
+  const [failed, setFailed] = useState<string | null>(null)
+  // The server decides who's Tracker; if it says no, show the free teaser.
+  const [serverSaysFree, setServerSaysFree] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!isTracker) return
     let alive = true
+    setFailed(null)
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const res = await fetch(`/api/stores/patterns?store_id=${storeId}&tz=${new Date().getTimezoneOffset()}`, { headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => null)
       if (!alive) return
-      if (res?.ok) setData(await res.json())
-      else setFailed(true)
+      if (!session) { setFailed('no session'); return }
+      const res = await fetch(`/api/stores/patterns?store_id=${encodeURIComponent(storeId)}&tz=${new Date().getTimezoneOffset()}`, { headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => null)
+      if (!alive) return
+      if (res?.ok) { setData(await res.json()); return }
+      if (res?.status === 403) { setServerSaysFree(true); return }
+      const body = res ? await res.json().catch(() => null) : null
+      setFailed(res ? `${res.status}${body?.error ? ` · ${body.error}` : ''}` : 'network')
     })()
     return () => { alive = false }
-  }, [storeId, isTracker])
+  }, [storeId, isTracker, attempt])
 
   const header = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -66,7 +74,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
     </div>
   )
 
-  if (!isTracker) {
+  if (!isTracker || serverSaysFree) {
     return (
       <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
         {header}
@@ -79,7 +87,18 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
     )
   }
 
-  if (failed) return null
+  if (failed) {
+    return (
+      <div className={ui.card} style={{ margin: '14px 16px 0' }}>
+        {header}
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6 }}>Couldn&apos;t load restock patterns right now.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+          <button className={ui.btnSecondary} onClick={() => setAttempt((a) => a + 1)}>Try again</button>
+          <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Error {failed}</span>
+        </div>
+      </div>
+    )
+  }
   if (!data) {
     return (
       <div className={ui.card} style={{ margin: '14px 16px 0' }}>

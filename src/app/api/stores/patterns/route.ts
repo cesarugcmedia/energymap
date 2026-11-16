@@ -28,6 +28,15 @@ function partOf(hour: number) {
 }
 
 export async function GET(req: NextRequest) {
+  try {
+    return await handle(req)
+  } catch (e) {
+    console.error('patterns failed', e)
+    return NextResponse.json({ error: 'server' }, { status: 500 })
+  }
+}
+
+async function handle(req: NextRequest) {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.slice(7))
@@ -53,7 +62,10 @@ export async function GET(req: NextRequest) {
       .gte('reported_at', since)
       .order('reported_at', { ascending: true })
       .range(from, from + 999)
-    if (error) return NextResponse.json({ error: 'Failed to load' }, { status: 500 })
+    if (error) {
+      console.error('patterns: stock_reports query failed', error.message)
+      return NextResponse.json({ error: 'reports' }, { status: 500 })
+    }
     rows.push(...((data ?? []) as Row[]))
     if (!data || data.length < 1000) break
   }
