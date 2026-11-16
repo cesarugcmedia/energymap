@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon } from '@/components/Icons'
 import PhoneMockup from './PhoneMockup'
 import ZipPreview from './ZipPreview'
+import LiveTicker from './LiveTicker'
+import TrackerShowcase from './TrackerShowcase'
 import { FREE_FEATURES, TRACKER_FEATURES } from '@/lib/plans'
 import styles from './landing.module.css'
 
@@ -92,6 +94,9 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
           </div>
         </section>
 
+        {/* Real recent reports, anonymous */}
+        <LiveTicker />
+
         {/* Try it — no account needed */}
         <section className={styles.section} aria-labelledby="near">
           <div className={styles.container}>
@@ -122,6 +127,9 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
             </div>
           </div>
         </section>
+
+        {/* Tracker features, drawn */}
+        <TrackerShowcase />
 
         {/* Pricing */}
         <section className={styles.section} aria-labelledby="pricing">

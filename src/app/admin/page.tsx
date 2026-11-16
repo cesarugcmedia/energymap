@@ -8,6 +8,7 @@ import { BRAND_COLORS } from '@/components/BrandLogo'
 import Toast from '@/components/Toast'
 import BackButton from '@/components/BackButton'
 import CommunityModeration from '@/components/admin/CommunityModeration'
+import { KNOWN_ABBRS, STATE_NAME_TO_ABBR } from '@/lib/place'
 import { StoreTypeIcon, SearchIcon, CheckIcon, FlagIcon, PinIcon, ClockIcon, DrinkIcon, UserIcon, ClipboardIcon, CloseIcon } from '@/components/Icons'
 
 const TYPE_OPTIONS = [
@@ -17,23 +18,8 @@ const TYPE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ]
 
-// Full name → USPS abbreviation, for grouping the Locations tab by state.
-// Derived from the free-text address field (there's no structured state
-// column on stores) — best-effort, not authoritative.
-const STATE_NAME_TO_ABBR: Record<string, string> = {
-  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
-  colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
-  hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA',
-  kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD',
-  massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS', missouri: 'MO',
-  montana: 'MT', nebraska: 'NE', nevada: 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH',
-  oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-  'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT',
-  virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
-  'district of columbia': 'DC',
-}
-const KNOWN_ABBRS = new Set(Object.values(STATE_NAME_TO_ABBR))
+// Locations tab groups stores by state, parsed from the free-text address
+// (no structured state column) with the map in src/lib/place.ts.
 
 function extractStateAbbr(address: string | null | undefined): string {
   if (!address) return 'Unknown'
