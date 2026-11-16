@@ -101,32 +101,71 @@ function buildMatcher(names: string[]) {
   return new RegExp(`(?<!\\w)(${LEVELS}${alts.length ? '|' + alts.join('|') : ''})(?!\\w)`, 'gi')
 }
 
-function StockText({ text, matcher }: { text: string; matcher: RegExp }) {
+const LEVEL_WORD: Record<string, string> = { full: 'Full', medium: 'Medium', low: 'Low', out: 'Out' }
+
+/** A flavor that was actually reported for this notification (from
+ *  /api/notifications/stock-details), with the names it may appear under. */
+type Reported = { label: string; names: string[]; quantity: string }
+
+function glow(color: string): React.CSSProperties {
+  return { color, fontWeight: 700, textShadow: `0 0 10px ${GLOW[color]}` }
+}
+
+function StockText({ text, matcher, reported }: { text: string; matcher: RegExp; reported?: Reported[] }) {
+  // Exact reported level per flavor name, when we know it.
+  const known = new Map<string, string>()
+  for (const r of reported ?? []) for (const n of r.names) known.set(n.toLowerCase(), r.quantity)
+
   const tokens: { start: number; end: number; word: string; level: string | null }[] = []
   for (const m of text.matchAll(matcher)) {
     const lc = m[0].toLowerCase()
     const start = m.index ?? 0
     tokens.push({ start, end: start + m[0].length, word: m[0], level: LEVEL_COLOR[lc] ? lc : null })
   }
-  // A drink takes the next level after it, else the one before it.
+  // Otherwise a flavor takes the next level word after it, else the one before.
   const colorFor = (i: number) => {
+    const exact = known.get(tokens[i].word.toLowerCase())
+    if (exact) return LEVEL_COLOR[exact]
     for (let j = i + 1; j < tokens.length; j++) if (tokens[j].level) return LEVEL_COLOR[tokens[j].level!]
     for (let j = i - 1; j >= 0; j--) if (tokens[j].level) return LEVEL_COLOR[tokens[j].level!]
     return null
   }
   const parts: React.ReactNode[] = []
+  const mentioned = new Set<string>()
   let last = 0
   tokens.forEach((t, i) => {
     const color = t.level ? LEVEL_COLOR[t.level] : colorFor(i)
+    if (!t.level) mentioned.add(t.word.toLowerCase())
     if (!color) return
     if (t.start > last) parts.push(text.slice(last, t.start))
-    parts.push(<span key={t.start} className="lvl-glow" style={{ color, fontWeight: 700, textShadow: `0 0 10px ${GLOW[color]}` }}>{t.word}</span>)
+    parts.push(<span key={t.start} className="lvl-glow" style={glow(color)}>{t.word}</span>)
     last = t.end
   })
   parts.push(text.slice(last))
-  return <>{parts}</>
+
+  // Reported flavors the text doesn't name ("+2 more", or a different
+  // wording) are listed underneath with their levels.
+  const extra = (reported ?? []).filter((r) => !r.names.some((n) => mentioned.has(n.toLowerCase())))
+  return (
+    <>
+      {parts}
+      {extra.length > 0 && (
+        <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+          {extra.map((r) => (
+            <span key={r.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)' }}>
+              <span className="lvl-glow" style={glow(LEVEL_COLOR[r.quantity] ?? LIME)}>{r.label}</span>
+              <span style={{ color: LEVEL_COLOR[r.quantity], fontWeight: 700 }}>{LEVEL_WORD[r.quantity] ?? r.quantity}</span>
+            </span>
+          ))}
+        </span>
+      )}
+    </>
+  )
 }
 const isStock = (type: string) => type === 'stock_update' || type === 'drink_alert'
+// Worth asking the server what was reported: stock types, and any type this
+// page doesn't know yet (DB triggers may add new ones) that points at a store.
+const wantsStockDetails = (n: any) => !!n.store_id && (isStock(n.type) || !CATEGORY[n.type])
 
 // Where tapping a notification takes you.
 function hrefFor(n: any): string | null {
@@ -188,19 +227,27 @@ export default function NotificationsPage() {
   const [clearError, setClearError] = useState(false)
   useEffect(() => { if (confirmClear) setClearError(false) }, [confirmClear])
   // Drink names from the catalog, so they can be colored in stock messages.
-  const [drinkNames, setDrinkNames] = useState<string[]>([])
+  type DrinkRow = { id: string; name: string | null; brand: string | null; flavor: string | null }
+  const [drinks, setDrinks] = useState<DrinkRow[]>([])
+  const drinkNames = useMemo(() => {
+    const names: string[] = []
+    for (const d of drinks) {
+      if (d.name) names.push(d.name)
+      if (d.flavor) names.push(d.flavor)
+      if (d.brand && d.flavor) names.push(`${d.brand} ${d.flavor}`)
+    }
+    return names
+  }, [drinks])
+  const drinkById = useMemo(() => new Map(drinks.map((d) => [d.id, d])), [drinks])
   const matcher = useMemo(() => buildMatcher(drinkNames), [drinkNames])
   useEffect(() => {
-    supabase.from('drinks').select('name, brand, flavor').then(({ data }) => {
-      const names: string[] = []
-      for (const d of data ?? []) {
-        if (d.name) names.push(d.name)
-        if (d.flavor) names.push(d.flavor)
-        if (d.brand && d.flavor) names.push(`${d.brand} ${d.flavor}`)
-      }
-      setDrinkNames(names)
-    })
+    supabase.from('drinks').select('id, name, brand, flavor').then(({ data }) => setDrinks((data ?? []) as DrinkRow[]))
   }, [])
+
+  // What was actually reported for each stock notification (flavor + level),
+  // looked up by store and time — see /api/notifications/stock-details.
+  const [stockDetails, setStockDetails] = useState<Record<string, { drink_id: string; quantity: string }[]>>({})
+  const askedDetails = useRef<Set<string>>(new Set())
   // Rows that arrived live while the page is open get a brief highlight.
   const knownIds = useRef<Set<string> | null>(cached ? new Set(cached.list.map((n: any) => n.id)) : null)
   const [arrivedIds, setArrivedIds] = useState<Set<string>>(new Set())
@@ -250,6 +297,36 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!loading && user) listCache = { uid: user.id, muted: mutedKey, list: notifications, hasMore }
   }, [loading, user, mutedKey, notifications, hasMore])
+
+  useEffect(() => {
+    const ids = notifications.filter((n) => wantsStockDetails(n) && !askedDetails.current.has(n.id)).map((n) => n.id)
+    if (!ids.length) return
+    ids.forEach((id) => askedDetails.current.add(id))
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      for (let i = 0; i < ids.length; i += 100) {
+        const res = await fetch('/api/notifications/stock-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ ids: ids.slice(i, i + 100) }),
+        }).catch(() => null)
+        const body = res?.ok ? await res.json().catch(() => null) : null
+        if (body?.details) setStockDetails((prev) => ({ ...prev, ...body.details }))
+      }
+    })()
+  }, [notifications])
+
+  const reportedFor = (n: any): Reported[] | undefined => {
+    const list = stockDetails[n.id]
+    if (!list?.length || !drinks.length) return undefined
+    return list.flatMap((r) => {
+      const d = drinkById.get(r.drink_id)
+      if (!d) return []
+      const label = d.brand && d.flavor ? `${d.brand} ${d.flavor}` : d.name ?? d.flavor ?? 'A flavor'
+      return [{ label, names: [label, d.name, d.flavor].filter(Boolean) as string[], quantity: r.quantity }]
+    })
+  }
 
   async function loadMore() {
     if (loadingMore || notifications.length === 0) return
@@ -369,7 +446,7 @@ export default function NotificationsPage() {
         {iconTile(n.type, !n.read)}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: n.read ? 400 : 600, color: n.read ? 'var(--text-muted)' : 'var(--text)' }}>
-            {isStock(n.type) ? <StockText text={cleanMessage(n.message)} matcher={matcher} /> : cleanMessage(n.message)}
+            {isStock(n.type) || stockDetails[n.id] ? <StockText text={cleanMessage(n.message)} matcher={matcher} reported={reportedFor(n)} /> : cleanMessage(n.message)}
           </span>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {n.store?.name ? `${n.store.name} · ` : ''}{timeAgo(n.created_at)}
@@ -395,7 +472,7 @@ export default function NotificationsPage() {
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
             {shown.map((n) => (
               <span key={n.id} style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)', lineHeight: 1.35, alignSelf: 'flex-start' }}>
-                <StockText text={cleanMessage(n.message)} matcher={matcher} />
+                <StockText text={cleanMessage(n.message)} matcher={matcher} reported={reportedFor(n)} />
               </span>
             ))}
             {ns.length > 3 && (

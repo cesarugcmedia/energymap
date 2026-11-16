@@ -7,7 +7,7 @@ import styles from './landing.module.css'
 // from /api/landing/activity, scrolling slowly. Renders nothing until real
 // data loads (never placeholder rows), and nothing if there's too little.
 
-type Item = { flavor: string; quantity: 'full' | 'medium' | 'low' | 'out'; chain: string; place: string | null; at: string }
+type Item = { flavor: string; quantity: 'full' | 'medium' | 'low' | 'out'; store: string; state: string | null; at: string }
 
 const LEVEL: Record<Item['quantity'], { word: string; color: string }> = {
   full: { word: 'Full', color: '#C9F400' },
@@ -23,8 +23,6 @@ function ago(iso: string) {
   const h = Math.floor(mins / 60)
   return h < 24 ? `${h}h ago` : 'yesterday'
 }
-
-const an = (word: string) => (/^[aeiou]/i.test(word) ? 'an' : 'a')
 
 export default function LiveTicker() {
   const [items, setItems] = useState<Item[] | null>(null)
@@ -46,7 +44,7 @@ export default function LiveTicker() {
           <span className={styles.tickerDot} style={{ background: LEVEL[it.quantity].color }} />
           <strong>{it.flavor}</strong>
           <span style={{ color: LEVEL[it.quantity].color, fontWeight: 600 }}>{LEVEL[it.quantity].word}</span>
-          <span className={styles.tickerMeta}>· {an(it.chain)} {it.chain}{it.place ? ` in ${it.place}` : ''} · {ago(it.at)}</span>
+          <span className={styles.tickerMeta}>· {it.store}{it.state ? ` · ${it.state}` : ''} · {ago(it.at)}</span>
         </li>
       ))}
     </ul>

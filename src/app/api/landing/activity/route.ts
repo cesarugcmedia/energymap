@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
-import { chainName, cityState } from '@/lib/place'
+import { stateOf } from '@/lib/place'
 
 // GET /api/landing/activity — public, no login. Powers the landing page's
 // "Live right now" strip: the most recent stock reports as
-// "flavor · level · a <chain> in <City, ST> · time". Deliberately anonymous:
-// no usernames, user ids, store ids or street addresses leave the server.
+// "flavor · level · <store name> · <state> · time". Deliberately anonymous
+// and coarse: no usernames, user ids, store ids, street addresses or cities.
 // Edge-cached for 60 s so traffic on the landing page doesn't hit the DB.
 
 const supabaseAdmin = createClient(
@@ -59,8 +59,8 @@ export async function GET(req: NextRequest) {
     return [{
       flavor: d.flavor ? `${d.brand} ${d.flavor}` : d.name,
       quantity: r.quantity as 'full' | 'medium' | 'low' | 'out',
-      chain: chainName(s.name),
-      place: cityState(s.address),
+      store: s.name,
+      state: stateOf(s.address),
       at: r.reported_at,
     }]
   }).slice(0, MAX_ITEMS)

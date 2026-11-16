@@ -42,3 +42,15 @@ export function cityState(address: string | null | undefined): string | null {
 export function chainName(name: string): string {
   return name.replace(/\s*(#|no\.?|store)\s*\d+.*$/i, '').replace(/\s+\d{2,}$/, '').trim() || name
 }
+
+/** Just the state: "OK", or null. */
+export function stateOf(address: string | null | undefined): string | null {
+  const cs = cityState(address)
+  if (cs) return cs.slice(cs.lastIndexOf(', ') + 2)
+  if (!address) return null
+  const m = address.match(/\b([A-Z]{2})\b,?\s*\d{5}/)
+  if (m && KNOWN_ABBRS.has(m[1])) return m[1]
+  const lower = address.toLowerCase()
+  for (const [name, abbr] of Object.entries(STATE_NAME_TO_ABBR)) if (lower.includes(name)) return abbr
+  return null
+}
