@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { CloseIcon, DrinkIcon, PinIcon, LightningIcon, SearchIcon, StoreTypeIcon, BellIcon } from '@/components/Icons'
 import ui from '@/components/ui/ui.module.css'
+import { useAuth } from '@/contexts/AuthContext'
+import { FREE_ALERT_LIMIT, isTrackerProfile } from '@/lib/plans'
 import type { Preferences } from '@/lib/preferences'
 
 type DrinkLite = { id: string; brand: string; flavor: string }
@@ -41,6 +43,10 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
   const [catalog, setCatalog] = useState<DrinkLite[]>([])
   const [followed, setFollowed] = useState<Map<string, DrinkLite>>(new Map())
   const [alreadyFollowed, setAlreadyFollowed] = useState<Set<string>>(new Set())
+  // Free accounts can follow FREE_ALERT_LIMIT flavors in all.
+  const { profile } = useAuth()
+  const room = isTrackerProfile(profile) ? Infinity : Math.max(0, FREE_ALERT_LIMIT - alreadyFollowed.size)
+  const atLimit = followed.size >= room
   const [q, setQ] = useState('')
   const [zipState, setZipState] = useState<'idle' | 'checking' | 'ok' | 'error'>(initial.homeZip ? 'ok' : 'idle')
   const [saving, setSaving] = useState(false)
@@ -150,11 +156,14 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
               ))}
             </div>
           )}
+          {atLimit && room !== Infinity && (
+            <p style={{ fontSize: 14, color: 'var(--text-dim)', marginBottom: 10 }}>Free accounts can follow {FREE_ALERT_LIMIT} flavors. Tracker follows as many as you like.</p>
+          )}
           <div className={ui.card} style={{ padding: 0, overflow: 'hidden' }}>
             {flavorResults.map((d, i) => {
               const on = followed.has(d.id) || alreadyFollowed.has(d.id)
               return (
-                <button key={d.id} disabled={alreadyFollowed.has(d.id)} onClick={() => { const m = new Map(followed); if (m.has(d.id)) m.delete(d.id); else m.set(d.id, d); setFollowed(m) }}
+                <button key={d.id} disabled={alreadyFollowed.has(d.id) || (atLimit && !followed.has(d.id))} onClick={() => { const m = new Map(followed); if (m.has(d.id)) m.delete(d.id); else if (!atLimit) m.set(d.id, d); setFollowed(m) }}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', borderTop: i ? '1px solid var(--fg-06)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
                   <DrinkIcon size={16} color="var(--text-muted)" />
                   <span style={{ flex: 1, fontSize: 15, color: 'var(--text)' }}>{d.brand} {d.flavor}</span>

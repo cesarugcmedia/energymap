@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
 import type { Quantity } from '@/lib/types'
+import { sendPush, trackerIds, pushConfigured } from '@/lib/push'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const { data: store } = await supabaseAdmin
     .from('stores')
-    .select('lat, lng')
+    .select('lat, lng, name')
     .eq('id', store_id)
     .single()
 
@@ -141,6 +142,9 @@ export async function POST(req: NextRequest) {
   }
   const newFlavorIds = inStockIds.filter((id) => !alreadyFound.has(id))
 
+  // Restock alerts are written by a DB trigger during this insert; anything
+  // newer than this moment for this store is from this report.
+  const insertStartedAt = new Date(Date.now() - 2000).toISOString()
   const { data: inserted, error: insertError } = await supabaseAdmin.from('stock_reports').insert(
     toSubmit.map((r) => ({
       store_id,
@@ -166,6 +170,29 @@ export async function POST(req: NextRequest) {
     } catch {
       // Notification failure shouldn't fail the report submission
     }
+  }
+
+  // Tracker push: mirror this report's restock alerts to subscribers' phones.
+  // Runs after the response is sent so reporting stays fast.
+  if (pushConfigured() && toSubmit.some((r) => r.quantity !== 'out')) {
+    after(async () => {
+      const { data: alerts } = await supabaseAdmin.from('notifications')
+        .select('user_id, message')
+        .eq('type', 'drink_alert')
+        .gte('created_at', insertStartedAt)
+        .ilike('message', `%${store.name}%`)
+      if (!alerts?.length) return
+      const trackers = await trackerIds(supabaseAdmin, [...new Set(alerts.map((a) => a.user_id))])
+      await sendPush(supabaseAdmin, alerts.filter((a) => trackers.has(a.user_id)).map((a) => ({
+        userId: a.user_id,
+        payload: {
+          title: 'Back in stock',
+          body: String(a.message ?? '').replace(/^(\p{Extended_Pictographic}|️|\s)+/u, ''),
+          url: `/store/${store_id}`,
+          tag: `restock-${store_id}`,
+        },
+      })))
+    })
   }
 
   // Collection progress for the success screen ("New flavor! 48 of 212").

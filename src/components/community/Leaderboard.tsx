@@ -10,6 +10,7 @@ import SkeletonList from '@/components/ui/SkeletonList'
 import { CheckIcon, LightningIcon, GroceryIcon, DrinkIcon, TrophyIcon, UsersIcon, PinIcon } from '@/components/Icons'
 import { Avatar } from './RichText'
 import SlideHighlight from '@/components/ui/SlideHighlight'
+import { TRACKER_PITCH } from '@/lib/plans'
 import { fetchProfileLites } from '@/lib/avatar'
 
 type Scope = 'everyone' | 'following' | 'near'
@@ -319,7 +320,7 @@ export default function Leaderboard({ me }: {
         <div className={ui.card} style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
           <div>
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>See the whole map with Tracker</p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Unlimited radius, exact report times and saved store lists</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{TRACKER_PITCH}</p>
           </div>
           <button className={ui.btnPrimary} onClick={() => router.push('/account')}>Upgrade</button>
         </div>

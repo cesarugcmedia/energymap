@@ -17,6 +17,10 @@ import Toast from '@/components/Toast'
 import Onboarding from '@/components/onboarding/Onboarding'
 import { usePreferences } from '@/lib/preferences'
 import { StoreTypeIcon, CheckIcon, BellIcon, HeartIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon, LightningIcon, TrophyIcon, DrinkIcon, UserIcon, ClipboardIcon } from '@/components/Icons'
+import { alertSlotsLeft, isAlertLimitError } from '@/lib/flavorAlerts'
+import { FREE_ALERT_LIMIT } from '@/lib/plans'
+import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
+import PushSettings from '@/components/account/PushSettings'
 import BoltLoader from '@/components/ui/BoltLoader'
 
 type Mode = 'signin' | 'signup'
@@ -244,6 +248,7 @@ function AccountPageInner() {
   const [flavorResults, setFlavorResults] = useState<any[]>([])
   const [flavorSearching, setFlavorSearching] = useState(false)
   const [followingDrinkId, setFollowingDrinkId] = useState<string | null>(null)
+  const [alertLimitOpen, setAlertLimitOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState(false)
@@ -608,6 +613,8 @@ function AccountPageInner() {
   // isn't. Searches the full catalog, not what's currently in stock.
   async function followDrinkById(drinkId: string) {
     if (!user || followingDrinkId) return
+    const tracker = !!(profile?.is_admin || profile?.tier === 'tracker')
+    if ((await alertSlotsLeft(user.id, tracker)) <= 0) { setAlertLimitOpen(true); return }
     setFollowingDrinkId(drinkId)
     const { error } = await supabase.from('drink_alerts').upsert(
       { user_id: user.id, drink_id: drinkId, scope: 'anywhere', store_id: null, radius_miles: null, anchor_lat: null, anchor_lng: null },
@@ -619,6 +626,8 @@ function AccountPageInner() {
       setFlavorQuery('')
       setFlavorResults([])
       fetchDrinkAlerts(user.id)
+    } else if (isAlertLimitError(error)) {
+      setAlertLimitOpen(true)
     } else {
       showToast('Could not follow — try again.')
     }
@@ -1040,6 +1049,13 @@ function switchMode(m: Mode) {
         case 'alerts':
           return (
             <>
+              {alertLimitOpen && <UpgradeSheet {...ALERT_LIMIT_COPY(FREE_ALERT_LIMIT)} onClose={() => setAlertLimitOpen(false)} />}
+              {!isTracker && (
+                <p style={{ margin: '0 20px 10px', fontSize: 13, color: 'var(--text-dim)' }}>
+                  Following {drinkAlerts.length} of {FREE_ALERT_LIMIT} flavors on Free.{' '}
+                  <button onClick={() => openAccountPage('plan')} style={{ fontSize: 13, background: 'none', border: 'none', padding: 0, color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Tracker is unlimited</button>
+                </p>
+              )}
               {/* Search the full catalog, not just what's currently in stock —
                   for following a discontinued/rare flavor that won't show up as
                   a bell on any store's card right now. */}
@@ -1123,6 +1139,7 @@ function switchMode(m: Mode) {
         case 'notifications': {
           return (
             <>
+              <PushSettings isTracker={!!isTracker} onUpgrade={() => openAccountPage('plan')} />
               {group(NOTIFICATION_GROUPS.map((g, i) => {
                 const on = !g.types.every((t) => mutedTypes.includes(t))
                 const toggle = () => saveMuted(on
@@ -1143,7 +1160,7 @@ function switchMode(m: Mode) {
                     </button>
                   </div>
                 )
-              }), { footer: 'Turned-off alerts won’t show in the Alerts tab or its badge. Alerts appear while the app is open; phone push notifications are coming later.' })}
+              }), { footer: 'Turned-off alerts won’t show in the Alerts tab or its badge. These switches control the Alerts tab; push restock alerts above go to your phone.' })}
             </>
           )
         }

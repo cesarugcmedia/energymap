@@ -47,6 +47,7 @@ export default function PrivacyPage() {
 • Mapbox — map rendering (your location is used to center the map; it is not transmitted to Mapbox in an identifiable form).
 • Resend — transactional email delivery.
 • Vercel — website hosting and anonymous, cookie-free page-view analytics (which pages are visited, referrer, device type and country). No personal identifiers are collected.
+• Your browser's push service (for example Apple, Google or Mozilla) — only if you turn on push notifications. It delivers restock alerts to your device; the message text is encrypted in transit and you can turn this off at any time in Account → Notifications.
 
 These providers are contractually obligated to protect your data and may not use it for their own purposes.`,
           },

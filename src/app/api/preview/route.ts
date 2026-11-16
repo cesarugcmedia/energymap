@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { geocode } from '@/lib/geocode'
+import { FREE_RADIUS_MILES } from '@/lib/plans'
 
 // Public, no-login teaser for the landing page's "See what's near you" box.
-// Deliberately limited: stores within the same 5-mile radius free users get,
+// Deliberately limited: stores within the same radius free users get,
 // at most PREVIEW_STORES stores and PREVIEW_DRINKS in-stock drinks each, no
 // store IDs. The full map stays behind sign-up.
 
@@ -13,7 +14,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const RADIUS_MILES = 5
+const RADIUS_MILES = FREE_RADIUS_MILES
 const PREVIEW_STORES = 5
 const PREVIEW_DRINKS = 3
 

@@ -11,6 +11,10 @@ import SkeletonList from '@/components/ui/SkeletonList'
 import Composer from './Composer'
 import PostCard from './PostCard'
 import { milesBetween, trendingScore, type FeedComment, type FeedPost, type StoreSummary } from './types'
+import { useAuth } from '@/contexts/AuthContext'
+import { alertSlotsLeft, isAlertLimitError } from '@/lib/flavorAlerts'
+import { FREE_ALERT_LIMIT, isTrackerProfile } from '@/lib/plans'
+import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
 import { fetchProfileLites } from '@/lib/avatar'
 
 const PAGE = 15
@@ -63,6 +67,8 @@ export default function Feed({ me, toast }: {
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const [reportTarget, setReportTarget] = useState<{ post: FeedPost; comment?: FeedComment } | null>(null)
   const [pull, setPull] = useState(0)
+  const { profile } = useAuth()
+  const [alertLimitOpen, setAlertLimitOpen] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   // ── Data ────────────────────────────────────────────────────────────
@@ -294,9 +300,14 @@ export default function Feed({ me, toast }: {
   }
 
   async function followDrink(drinkId: string) {
+    if ((await alertSlotsLeft(me.id, isTrackerProfile(profile))) <= 0) { setAlertLimitOpen(true); return }
     setFollowedDrinks((prev) => new Set(prev).add(drinkId))
     const { error: e } = await supabase.from('drink_alerts').upsert({ user_id: me.id, drink_id: drinkId, scope: 'anywhere' }, { onConflict: 'user_id,drink_id' })
-    if (e) { setFollowedDrinks((prev) => { const s = new Set(prev); s.delete(drinkId); return s }); toast('Could not follow that flavor.') }
+    if (e) {
+      setFollowedDrinks((prev) => { const s = new Set(prev); s.delete(drinkId); return s })
+      if (isAlertLimitError(e)) setAlertLimitOpen(true)
+      else toast('Could not follow that flavor.')
+    }
     else toast("Following. You'll be alerted when it restocks.")
   }
 
@@ -501,6 +512,7 @@ export default function Feed({ me, toast }: {
         </div>,
         document.body
       )}
+      {alertLimitOpen && <UpgradeSheet {...ALERT_LIMIT_COPY(FREE_ALERT_LIMIT)} onClose={() => setAlertLimitOpen(false)} />}
     </div>
   )
 }

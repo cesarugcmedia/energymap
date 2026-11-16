@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ui from '@/components/ui/ui.module.css'
 import SkeletonList from '@/components/ui/SkeletonList'
+import { FREE_ALERT_LIMIT, FREE_RADIUS_MILES } from '@/lib/plans'
 import { LightningIcon, CheckIcon } from '@/components/Icons'
 
 type PlanData = {
@@ -25,13 +26,15 @@ type PlanData = {
 // Comparison rows — must match what the server actually enforces (see the
 // "Plan copy must match enforcement" note in CLAUDE.md).
 const COMPARE: { label: string; free: string | boolean; tracker: string | boolean }[] = [
-  { label: 'Map radius', free: '5 miles', tracker: 'Unlimited' },
-  { label: 'Report times', free: 'Fresh / Aging labels', tracker: 'Exact time' },
+  { label: 'Map range', free: `${FREE_RADIUS_MILES} miles`, tracker: 'Unlimited' },
+  { label: 'Exact report times', free: true, tracker: true },
+  { label: 'Flavor alerts', free: `${FREE_ALERT_LIMIT} flavors`, tracker: 'Unlimited' },
+  { label: 'Push notifications', free: false, tracker: true },
+  { label: 'Restock patterns', free: false, tracker: true },
   { label: 'Saved store lists', free: false, tracker: true },
-  { label: 'Re-report the same drink', free: 'After 30 min', tracker: 'Anytime' },
-  { label: 'Stores you can add', free: '10 a day', tracker: 'Unlimited' },
+  { label: 'Tracker badge', free: false, tracker: true },
   { label: 'Stock reports', free: '25 a day', tracker: '25 a day' },
-  { label: 'Flavor restock alerts', free: true, tracker: true },
+  { label: 'Stores you can add', free: '10 a day', tracker: 'Unlimited' },
   { label: 'Community & leaderboard', free: true, tracker: true },
 ]
 
@@ -130,7 +133,7 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
               {sub.startedAt && <p>Tracker since {fmtDate(sub.startedAt)}</p>}
             </>
           )}
-          {tier === 'free' && <p>See stock within 5 miles, report, add stores and follow flavors, all free.</p>}
+          {tier === 'free' && <p>See stock within {FREE_RADIUS_MILES} miles, report, add stores and follow up to {FREE_ALERT_LIMIT} flavors, all free.</p>}
         </div>
         {sub?.cancelAtPeriodEnd && sub.status !== 'canceled' && (
           <div style={{ marginTop: 14 }}>

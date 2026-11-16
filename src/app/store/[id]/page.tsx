@@ -15,6 +15,10 @@ import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, B
 import SkeletonList from '@/components/ui/SkeletonList'
 import { usePreferences } from '@/lib/preferences'
 import Burst from '@/components/ui/Burst'
+import { alertSlotsLeft, isAlertLimitError } from '@/lib/flavorAlerts'
+import { FREE_ALERT_LIMIT } from '@/lib/plans'
+import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
+import RestockPatterns from '@/components/store/RestockPatterns'
 import { stalenessOf, type Staleness } from '@/lib/freshness'
 
 const BRAND_ALIASES: Record<string, string> = {
@@ -94,6 +98,7 @@ function StoreDetailContent({ id }: { id: string }) {
   const name = params.get('name') ?? ''
   const { user, profile } = useAuth()
   const isTracker = profile?.is_admin || profile?.tier === 'tracker'
+  const [alertLimitOpen, setAlertLimitOpen] = useState(false)
 
   const [stock, setStock] = useState<any[]>([])
   const [store, setStore] = useState<any>(null)
@@ -224,6 +229,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       }
       showToast('Alert removed')
     } else {
+      if (user && (await alertSlotsLeft(user.id, !!isTracker)) <= 0) { setAlertLimitOpen(true); return }
       setAlertScope('store')
       setAlertRadius(10)
       setAlertSheetDrinkId(drinkId)
@@ -251,6 +257,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       setBellAnim((b) => ({ id: alertSheetDrinkId, n: (b?.n ?? 0) + 1 }))
       setAlertSheetDrinkId(null)
       showToast("You'll be notified when it's back")
+    } else if (isAlertLimitError(error)) {
+      setAlertSheetDrinkId(null)
+      setAlertLimitOpen(true)
     } else {
       showToast('Could not save alert — try again.')
     }
@@ -572,7 +581,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               {latestReport && (
                 <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
                   <span className={Date.now() - new Date(latestReport.reported_at).getTime() < 2 * 3600000 ? 'live-dot' : ''} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
-                  {isTracker ? `Last report ${timeAgo(latestReport.reported_at)}` : `${stalenessLabel(latestReport.reported_at)} reports`}
+                  {`Last report ${timeAgo(latestReport.reported_at)}`}
                 </p>
               )}
               {/* Stock-level mix */}
@@ -605,6 +614,11 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               </button>
             )}
           </div>
+        )}
+
+        {/* ── Restock patterns (Tracker; free accounts see a teaser) ── */}
+        {!storeError && !stockError && !loading && stock.length > 0 && user && (
+          <RestockPatterns storeId={id} isTracker={!!isTracker} />
         )}
 
         {/* ── Content ───────────────────────────────────────────────── */}
@@ -721,7 +735,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                     <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 13, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
                                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: freshColor }}>
                                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: freshColor }} />
-                                        {stalenessLabel(item.reported_at)}{isTracker ? ` · ${timeAgo(item.reported_at)}` : ''}
+                                        {stalenessLabel(item.reported_at)} · {timeAgo(item.reported_at)}
                                       </span>
                                       {reporters[item.drink_id] && (
                                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>· by <Link href={`/u/${reporters[item.drink_id]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}><Avatar name={reporters[item.drink_id]} url={reporterAvatars[reporters[item.drink_id]]} size={16} />@{reporters[item.drink_id]}</Link></span>
@@ -1158,6 +1172,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         )}
 
       </div>
+      {alertLimitOpen && <UpgradeSheet {...ALERT_LIMIT_COPY(FREE_ALERT_LIMIT)} onClose={() => setAlertLimitOpen(false)} />}
     </div>
   )
 }

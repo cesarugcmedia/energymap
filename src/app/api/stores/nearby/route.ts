@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import type { Store } from '@/lib/types'
+import { FREE_RADIUS_MILES } from '@/lib/plans'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +10,6 @@ const supabaseAdmin = createClient(
 )
 
 const BATCH = 1000
-const FREE_RADIUS_MILES = 5
 const NEARBY_COUNT_RADIUS_MILES = 10
 const ALL_STORES_TTL_MS = 60_000
 const COLUMNS = 'id, name, type, address, lat, lng'
@@ -70,10 +70,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing or invalid lat/lng' }, { status: 400 })
   }
 
-  // Bounding box around the 10-mile count radius (which also covers the
-  // 5-mile free radius). 1° latitude ≈ 69 mi; longitude shrinks with cos(lat).
-  const dLat = NEARBY_COUNT_RADIUS_MILES / 69
-  const dLng = NEARBY_COUNT_RADIUS_MILES / (69 * Math.max(0.2, Math.cos(lat * Math.PI / 180)))
+  // Bounding box covering both the 10-mile count radius and the free radius.
+  // 1° latitude ≈ 69 mi; longitude shrinks with cos(lat).
+  const boxMiles = Math.max(NEARBY_COUNT_RADIUS_MILES, FREE_RADIUS_MILES)
+  const dLat = boxMiles / 69
+  const dLng = boxMiles / (69 * Math.max(0.2, Math.cos(lat * Math.PI / 180)))
   const box = { minLat: lat - dLat, maxLat: lat + dLat, minLng: lng - dLng, maxLng: lng + dLng }
 
   // Tier check and the nearby read run in parallel; only tracker/admin

@@ -4,10 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { StoreTypeIcon, SearchIcon } from '@/components/Icons'
 import styles from './landing.module.css'
+import { FREE_RADIUS_MILES } from '@/lib/plans'
 import { isFresh } from '@/lib/freshness'
 
 // "See what's near you" — lets a logged-out visitor try the product with a
-// ZIP code before signing up. Backed by /api/preview (5-mile radius, top 5
+// ZIP code before signing up. Backed by /api/preview (free-tier radius, top 5
 // stores, 3 drinks each).
 
 type PreviewStore = {
@@ -97,7 +98,7 @@ export default function ZipPreview() {
           ) : (
             <>
               <p className={styles.previewSummary}>
-                <strong>{result.totalStores}</strong> store{result.totalStores === 1 ? '' : 's'} within 5 miles of {result.zip}
+                <strong>{result.totalStores}</strong> store{result.totalStores === 1 ? '' : 's'} within {FREE_RADIUS_MILES} miles of {result.zip}
                 {result.reportedStores > 0 && <> · <strong>{result.reportedStores}</strong> with stock reports</>}
               </p>
               <ul className={styles.previewList}>

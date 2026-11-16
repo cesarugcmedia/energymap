@@ -18,6 +18,7 @@ import SlideHighlight from '@/components/ui/SlideHighlight'
 import BoltLoader from '@/components/ui/BoltLoader'
 import Burst from '@/components/ui/Burst'
 import { isFresh, stalenessOf, type Staleness } from '@/lib/freshness'
+import { FREE_RADIUS_MILES } from '@/lib/plans'
 import FreshnessRing from '@/components/ui/FreshnessRing'
 
 type View = 'map' | 'list'
@@ -75,8 +76,8 @@ const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
   full:   { label: 'FULL', color: 'var(--accent-text)' },
 }
 
-const FREE_RADIUS_OPTIONS = [5]
-const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, null]
+const FREE_RADIUS_OPTIONS = [5, 10, 15, FREE_RADIUS_MILES]
+const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, 50, null]
 
 const TYPE_FILTERS = [
   { value: null,          label: 'All'     },
@@ -256,7 +257,7 @@ export default function MapHome() {
 
   useEffect(() => {
     if (!authLoading && !radiusInitialized) {
-      setRadius(isTracker ? 25 : 5)
+      setRadius(isTracker ? 25 : FREE_RADIUS_MILES)
       setRadiusInitialized(true)
     }
   }, [authLoading, isTracker, radiusInitialized])
@@ -1066,7 +1067,7 @@ export default function MapHome() {
 
                 <div className="flex items-center flex-wrap" style={{ gap: '4px 14px', marginBottom: 16, fontSize: 14, color: 'var(--text-muted)' }}>
                   <span className="flex items-center gap-1.5"><PinIcon size={13} color="var(--text-dim)" />{getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away</span>
-                  {lastUpdated && isTracker && (
+                  {lastUpdated && (
                     <span className="flex items-center gap-1.5"><ClockIcon size={13} color="var(--text-dim)" />Updated {timeAgo(lastUpdated)}</span>
                   )}
                 </div>
@@ -1142,7 +1143,7 @@ export default function MapHome() {
                   </button>
                 </div>
                 {(() => {
-                  const defaultRadius = isTracker ? 25 : 5
+                  const defaultRadius = isTracker ? 25 : FREE_RADIUS_MILES
                   const activeFilters = (radius !== defaultRadius ? 1 : 0) + (typeFilter ? 1 : 0) + (brandFilter ? 1 : 0)
                   return (
                     <div className={ui.chipRow}>
@@ -1165,7 +1166,7 @@ export default function MapHome() {
                     <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--fg-20)', margin: '0 auto 16px' }} />
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                       <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Filters</p>
-                      <button className={ui.btnGhost} onClick={() => { setRadius(isTracker ? 25 : 5); setTypeFilter(null); setBrandFilter(null) }}>Reset</button>
+                      <button className={ui.btnGhost} onClick={() => { setRadius(isTracker ? 25 : FREE_RADIUS_MILES); setTypeFilter(null); setBrandFilter(null) }}>Reset</button>
                     </div>
                     <p className={ui.sectionLabel}>Distance</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>

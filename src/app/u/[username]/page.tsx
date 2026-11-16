@@ -11,7 +11,7 @@ import BackButton from '@/components/BackButton'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
 import CountUp from '@/components/ui/CountUp'
-import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon, DrinkIcon } from '@/components/Icons'
+import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon, DrinkIcon, LightningIcon } from '@/components/Icons'
 import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
@@ -24,7 +24,7 @@ import ProfilePhoto from '@/components/account/ProfilePhoto'
 import ProfileExtras from '@/components/account/ProfileExtras'
 
 type ProfileData = {
-  profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; bio?: string | null; favoriteDrink?: string | null; avatarUrl?: string | null }
+  profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; tracker?: boolean; bio?: string | null; favoriteDrink?: string | null; avatarUrl?: string | null }
   counts: { reports: number; storesAdded: number; followers: number; following: number }
   following: boolean
   stats?: { uniqueFlavors: number; streak: number }
@@ -284,6 +284,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {isLive && !isMe && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="live-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9F400' }} /> Live now</span>}
+                {data.profile.tracker && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 8, padding: '3px 8px' }}><LightningIcon size={12} color="#0D1210" /> Tracker</span>}
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
                 {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className={flameGrow ? 'flame flame-grow' : 'flame'}>🔥</span> {data.stats!.streak}-day streak</span>}
               </div>

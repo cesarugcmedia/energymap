@@ -78,11 +78,17 @@ Admin and webhook operations use the service role client (bypasses RLS). Regular
 
 ### Tier System
 
+**Plan split (2026-11-16)** — the free plan must stand on its own; Tracker sells extras on top, never basics. Limits and plan copy live in one file, `src/lib/plans.ts` (`FREE_RADIUS_MILES` = 20, `FREE_ALERT_LIMIT` = 5, `FREE_FEATURES` / `TRACKER_FEATURES` / `TRACKER_PITCH`), used by the landing pricing cards, Account → Plan's comparison, upsells and the server routes.
+
 | Tier | Features |
 |---|---|
-| `free` | 5-mile map radius, view stock, limited submissions |
-| `tracker` | Unlimited radius, advanced analytics, badge system, favorited/saved stores |
+| `free` | 20-mile map radius, exact report times, reporting (25/day) + adding stores (10/day), follow up to 5 flavors, community/profiles/badges/leaderboard |
+| `tracker` | Unlimited radius, unlimited flavor alerts, **push restock notifications**, **restock patterns** on store pages, saved store lists, a Tracker chip on their profile, unlimited store adds, no 30-min same-drink dedup (not advertised) |
 | `admin` | All tracker features + moderation |
+
+- **Flavor alert cap**: `alertSlotsLeft()` (`src/lib/flavorAlerts.ts`) is checked before every `drink_alerts` save (store-page bell, Account → Flavor Alerts search, Community post bell, onboarding — which disables picks past the limit). At the limit, `UpgradeSheet` (`src/components/ui/UpgradeSheet.tsx`, portaled) explains it. Server-side, the `trg_drink_alert_limit` trigger in `scripts/tracker-features.sql` refuses a 6th row for free accounts with an `alert_limit` error (`isAlertLimitError()`); existing over-limit follows are kept.
+- **Push restock notifications**: `public/sw.js` handles `push` + `notificationclick`; `src/lib/pushClient.ts` subscribes the device (iPhone needs the app added to the Home Screen) and `POST /api/push/subscribe` saves it to `push_subscriptions` (Tracker only; `{ remove: true }` unsubscribes for anyone). `/api/stock/report` uses `after()` to look up the `drink_alert` notifications its insert triggered (by time + store name) and sends them to Tracker subscribers via `sendPush()` (`src/lib/push.ts`, `web-push`; dead subscriptions are deleted). Toggle: Account → Notifications → **Push restock alerts** (`PushSettings.tsx`). Needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`; without them the toggle says "coming soon" and sending is a no-op.
+- **Restock patterns**: `GET /api/stores/patterns?store_id=&tz=` (Tracker only) buckets "level went up" reports by weekday/time of day (falls back to Full reports when there are fewer than 3 restocks) and lists the flavors that ran out most in 30 days. `src/components/store/RestockPatterns.tsx` shows it under the store page's actions; free accounts get a blurred sample with "Unlock with Tracker". Needs history, so `tracker-features.sql` extends report retention from 7 to 90 days.
 
 Tier upgrades go through Stripe. The webhook at `/api/stripe/webhook` handles fulfillment by updating `profiles.tier` and `profiles.stripe_customer_id`.
 
@@ -90,7 +96,7 @@ Favorites (the heart/save-a-store list, `favorites` table) is gated behind `trac
 
 ### Maps
 
-`src/components/MapView.tsx` renders a Mapbox GL map. Supercluster aggregates store markers client-side (radius: 60px, max zoom: 16). The user's live location shows as a pulsing dot. Store markers use line-icon SVGs (`storeTypeIconSvg()` from `src/components/Icons.tsx` — see "App-Wide Icon System" below), not emoji. Radius is enforced **server-side** in `/api/stores/nearby` (free/anon capped to 5 miles, tracker/admin unlimited) — the server determines tier from the caller's bearer token, so a free-tier client never receives out-of-radius stores over the wire.
+`src/components/MapView.tsx` renders a Mapbox GL map. Supercluster aggregates store markers client-side (radius: 60px, max zoom: 16). The user's live location shows as a pulsing dot. Store markers use line-icon SVGs (`storeTypeIconSvg()` from `src/components/Icons.tsx` — see "App-Wide Icon System" below), not emoji. Radius is enforced **server-side** in `/api/stores/nearby` (free/anon capped to `FREE_RADIUS_MILES` = 20 miles, tracker/admin unlimited) — the server determines tier from the caller's bearer token, so a free-tier client never receives out-of-radius stores over the wire.
 
 Clusters and individual store markers are **freshness-coded**: `src/app/page.tsx` collapses each store's most recent report age to a binary `'fresh' | 'stale'` signal (< 1 day = fresh, mirroring the store page's Fresh bucket — thresholds live in `src/lib/freshness.ts`; no reports at all also reads as stale) and passes it into `MapView` as `storeFreshness`. A cluster aggregates its members via Supercluster's `getLeaves()` — all-fresh renders lime, all-stale renders gray, a mix renders amber — so density-grouped pins don't lose the "worth a trip vs. probably dead data" signal once stores get bucketed together. An always-visible legend (bottom-left) explains the three colors; there's no toggle for it since the colors need explaining at a glance, not on request.
 
@@ -116,7 +122,7 @@ Key routes:
 - `POST /api/email/welcome` — Sends welcome email via Resend (internal calls from the Stripe webhook authenticate via `INTERNAL_API_SECRET`, not a user token)
 - `POST /api/geocode` — Geocodes an address string to lat/lng
 - `POST /api/stock/report` — Submits stock reports for a store; enforces the geofence, daily limit, and dedup window server-side (see Geofencing & Submission Limits below)
-- `GET /api/preview?zip=` — Public, no-login teaser behind the landing page's "See what's near you" box (`src/components/landing/ZipPreview.tsx`): geocodes the ZIP, bounding-box-queries stores within 5 miles (the free-tier radius), and returns at most 5 stores (reported-first, freshest first) with up to 3 in-stock drinks each and no store IDs. Rate-limited 15/min per IP and edge-cached per ZIP for 5 minutes (`s-maxage=300`). Geocoding lives in `src/lib/geocode.ts`, shared with `/api/geocode`
+- `GET /api/preview?zip=` — Public, no-login teaser behind the landing page's "See what's near you" box (`src/components/landing/ZipPreview.tsx`): geocodes the ZIP, bounding-box-queries stores within the free-tier radius (20 miles), and returns at most 5 stores (reported-first, freshest first) with up to 3 in-stock drinks each and no store IDs. Rate-limited 15/min per IP and edge-cached per ZIP for 5 minutes (`s-maxage=300`). Geocoding lives in `src/lib/geocode.ts`, shared with `/api/geocode`
 - `GET /api/stores/nearby` — Returns approved stores near `lat`/`lng`, tier-filtered server-side (5mi cap for free/anon, unlimited for tracker/admin)
 - `POST /api/stock/confirm` — Upserts or deletes a community confirmation vote on a stock report (currently unused — see "Stock Report Accuracy" below)
 - `POST /api/community/post` — Creates a `/community` feed post (1–500 chars, optional `store_id` tag and/or `photo_url`), rate-limited to 10/hour
@@ -189,7 +195,7 @@ A Kroger Products/Locations API integration ("Verified" stock badges on store pa
 
 `/account` (logged out) is a single centered card styled like the landing page (`src/app/account/auth.module.css`). Sign-up is one form (username, email, password ≥ 8 chars, terms) — there is no plan-picker step; new accounts start on Free and upgrade later from Account → Plan. Arriving with `?plan=tracker` (landing pricing card) shows a "Signing up for Tracker" note with a "Start on Free instead" link and runs the existing `/api/upgrade/tracker` beta/Stripe flow after signup. When `NEXT_PUBLIC_WAITLIST_ACTIVE=1` and the visitor isn't `?invited=1`, the sign-up card is replaced by a "Join the waitlist" gate. No code path ever derives a username from the email address — a missing profile always routes to `SetupProfile`.
 
-**Plan copy must match enforcement.** Tracker's real perks are: unlimited map radius (`/api/stores/nearby`), exact report times (store page), saved store lists (favorites), and no 30-minute same-drink dedup (`/api/stock/report`); it also lifts the 10/day store-submission cap. It does **not** lift the 25 reports/day limit, and Flavor Alerts are free for everyone — don't advertise "unlimited submissions" or alerts as Tracker perks.
+**Plan copy must match enforcement.** Tracker's real perks are listed in the tier table above (and `TRACKER_FEATURES` in `src/lib/plans.ts`). Exact report times are **free** since 2026-11-16. Tracker does **not** lift the 25 reports/day limit, and free accounts still get Flavor Alerts (up to 5) — don't advertise "unlimited submissions".
 
 ### Brand Assets & SEO
 
@@ -237,7 +243,7 @@ Three Supabase automations in `scripts/automation-*.sql` — run each once in th
 |---|---|---|
 | `automation-weekly-champion.sql` | Assigns 👑 badge + notification to top reporter | Every Monday 00:00 UTC (pg_cron) |
 | `automation-badge-notifications.sql` | Fires in-app notification on report/drink/store milestones | DB trigger on `stock_reports` INSERT + `stores` UPDATE |
-| `automation-stale-cleanup.sql` | Deletes non-latest reports older than 7 days | Every night 03:00 UTC (pg_cron) |
+| `automation-stale-cleanup.sql` | Deletes non-latest reports older than 7 days (90 days once `tracker-features.sql` has replaced the function) | Every night 03:00 UTC (pg_cron) |
 
 Requires pg_cron (enabled by default on Supabase Pro).
 
@@ -269,8 +275,8 @@ This replaced standalone emoji used as functional UI icons app-wide (search boxe
 
 "Follow a flavor" — a user taps the 🔔 bell on any drink card (store page) to get notified the next time it genuinely restocks. Defined in `scripts/create-drink-alerts-tables.sql` (not yet run against production as of this writing).
 
-- **In-app only, no push** — deliberately built on the existing `notifications` table + the Alerts nav tab rather than OS-level push notifications, which would need separate infrastructure (VAPID keys, a service worker push handler, stored push subscriptions, a send endpoint) not yet built. An alert fires while the app is open/foregrounded; it won't wake a closed app.
-- **No paywall/tier gating** — every user gets unlimited alerts at any scope for now. A tiered version (e.g. radius/anywhere scope or alert count gated behind `tracker`) was considered but explicitly deferred.
+- **In-app for everyone, push for Tracker** — every alert lands in the Alerts tab; Tracker members can also turn on phone push (see "Tier System").
+- **Free accounts follow up to 5 flavors**; Tracker is unlimited (see "Tier System" for where it's enforced). Every scope is available on both plans.
 - **One alert per user+drink** (`drink_alerts`, `UNIQUE(user_id, drink_id)`) — tapping an inactive bell opens a scope-picker sheet (This store only / Within N miles / Anywhere); tapping an active bell unfollows immediately, no sheet, since following needs a scope decision but unfollowing doesn't. Radius scope anchors to the *store's* lat/lng at the time the alert was created (not the user's live location), so the "in range" set stays meaningful after they leave.
 - **Restock detection is a DB trigger** (`notify_drink_alert_subscribers()`, same pattern as `automation-badge-notifications.sql`), firing `AFTER INSERT ON stock_reports`. Only fires on a genuine transition into stock — the new report isn't `'out'`, and the prior report for that store+drink (if any) was `'out'`. A same-state re-report (already in stock, reported again) deliberately does not notify.
 - Only a **single unified alert** exists per drink — no separate "notify on brand-wide new drops" toggle. That's a different data shape (brand-level, not drink-level) and was scoped out of this pass.
@@ -427,4 +433,7 @@ ADMIN_BYPASS_SECRET            # Optional — cookie value for admin bypass
 INVITE_COOKIE_SECRET           # Required when waitlist gating is active — HMAC key signing the invite-accept bypass cookie
 NEXT_PUBLIC_GOOGLE_AUTH_ENABLED # Optional — set to "true" to show "Continue with Google" (requires Google enabled under Supabase Auth → Providers)
 INTERNAL_API_SECRET            # Required — shared secret for server-to-server calls (e.g. Stripe webhook → /api/email/welcome)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY   # Web push public key (Tracker restock notifications)
+VAPID_PRIVATE_KEY              # Web push private key — server only
+VAPID_SUBJECT                  # Web push contact, e.g. https://ampedmap.com
 ```

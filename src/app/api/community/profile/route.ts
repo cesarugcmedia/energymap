@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   // bio / favorite_drink_id come from scripts/profile-extras.sql — fall back
   // to the base columns until that has run.
-  const BASE = 'id, username, created_at, is_verified_reporter, badges'
+  const BASE = 'id, username, created_at, is_verified_reporter, badges, tier'
   // avatar_url / anonymous_reports come from scripts/profile-v2.sql.
   let profile: any = null
   for (const cols of [`${BASE}, bio, favorite_drink_id, avatar_url, anonymous_reports`, `${BASE}, bio, favorite_drink_id`, BASE]) {
@@ -104,6 +104,8 @@ export async function GET(req: NextRequest) {
       joined: profile.created_at,
       verified: !!profile.is_verified_reporter,
       weeklyChampion,
+      // Supporter flair: paying Tracker members get a badge on their profile.
+      tracker: profile.tier === 'tracker',
       bio: extras.bio ?? null,
       avatarUrl: extras.avatar_url ?? null,
       favoriteDrink,

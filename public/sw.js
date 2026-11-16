@@ -24,3 +24,36 @@ self.addEventListener('fetch', (event) => {
     )
   }
 })
+
+// Tracker push notifications (restocks). Payload: { title, body, url, tag }.
+self.addEventListener('push', (event) => {
+  let data = {}
+  try { data = event.data ? event.data.json() : {} } catch (e) { data = { body: event.data && event.data.text() } }
+  const title = data.title || 'AmpedMap'
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      icon: '/icon',
+      badge: '/icon',
+      tag: data.tag,
+      renotify: !!data.tag,
+      data: { url: data.url || '/notifications' },
+    })
+  )
+})
+
+// Tapping it focuses an open AmpedMap window (and navigates it) or opens one.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (w.url.startsWith(self.location.origin) && 'focus' in w) {
+          return w.focus().then(() => ('navigate' in w ? w.navigate(url) : undefined))
+        }
+      }
+      return self.clients.openWindow(url)
+    })
+  )
+})

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon } from '@/components/Icons'
 import PhoneMockup from './PhoneMockup'
 import ZipPreview from './ZipPreview'
+import { FREE_FEATURES, TRACKER_FEATURES } from '@/lib/plans'
 import styles from './landing.module.css'
 
 export type LandingStats = { stores: number; drinks: number; trackers: number | null }
@@ -28,11 +29,9 @@ const STEPS = [
   { Icon: LightningIcon, title: 'Report what you see', body: 'Standing at a cooler? Tap what is there in a few seconds and save the next person a wasted trip.' },
 ]
 
-const FREE_FEATURES = ['See stock within 5 miles', 'Report stock and add missing stores', 'Flavor restock alerts', 'Community feed and leaderboard']
-const TRACKER_FEATURES = ['Unlimited map radius', 'Exact time of every report', 'Saved store lists', 'Re-report a drink without the 30-minute wait']
 
 const FAQ = [
-  { q: 'Is AmpedMap free?', a: 'Yes. Seeing stock, reporting it and adding stores are all free. Tracker ($5/month) adds an unlimited map radius, exact report times and saved store lists.' },
+  { q: 'Is AmpedMap free?', a: 'Yes. Seeing stock, reporting it and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, restock patterns for each store, and saved store lists.' },
   { q: 'Where does the stock information come from?', a: 'From people. When someone sees a store’s cooler, they report which flavors are there and how full it looks. Every report shows how old it is, so you can judge how fresh it is.' },
   { q: 'Which areas are covered?', a: 'Anywhere people report. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
   { q: 'Do I have to share my location?', a: 'No. You can search by ZIP code instead. Sharing your location just makes it quicker to see what is closest.' },
