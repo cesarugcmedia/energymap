@@ -81,6 +81,24 @@ function cleanMessage(msg: string) {
   return (msg ?? '').replace(/^(\p{Extended_Pictographic}|️|‍|\s)+/u, '')
 }
 
+// Stock levels keep the colors the old Community report cards used:
+// Full lime, Medium/Low amber, Out red, "back in stock" lime.
+const LEVEL_COLOR: Record<string, string> = { full: '#C9F400', medium: '#FFB300', med: '#FFB300', low: '#FFB300', out: '#FF4545', 'out of stock': '#FF4545', 'back in stock': '#C9F400', 'in stock': '#C9F400' }
+const LEVEL_RE = /\b(back in stock|out of stock|in stock|full|medium|med|low|out)\b/gi
+function StockText({ text }: { text: string }) {
+  const parts: React.ReactNode[] = []
+  let last = 0
+  for (const m of text.matchAll(LEVEL_RE)) {
+    const i = m.index ?? 0
+    if (i > last) parts.push(text.slice(last, i))
+    parts.push(<span key={i} style={{ color: LEVEL_COLOR[m[0].toLowerCase()], fontWeight: 700 }}>{m[0]}</span>)
+    last = i + m[0].length
+  }
+  parts.push(text.slice(last))
+  return <>{parts}</>
+}
+const isStock = (type: string) => type === 'stock_update' || type === 'drink_alert'
+
 // Where tapping a notification takes you.
 function hrefFor(n: any): string | null {
   if (n.store?.id) return `/store/${n.store.id}?name=${encodeURIComponent(n.store.name)}`
@@ -278,7 +296,7 @@ export default function NotificationsPage() {
         {iconTile(n.type, !n.read)}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: n.read ? 400 : 600, color: n.read ? 'var(--text-muted)' : 'var(--text)' }}>
-            {cleanMessage(n.message)}
+            {isStock(n.type) ? <StockText text={cleanMessage(n.message)} /> : cleanMessage(n.message)}
           </span>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {n.store?.name ? `${n.store.name} · ` : ''}{timeAgo(n.created_at)}
@@ -304,7 +322,7 @@ export default function NotificationsPage() {
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
             {shown.map((n) => (
               <span key={n.id} style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)', lineHeight: 1.35, alignSelf: 'flex-start' }}>
-                {cleanMessage(n.message)}
+                <StockText text={cleanMessage(n.message)} />
               </span>
             ))}
             {ns.length > 3 && (

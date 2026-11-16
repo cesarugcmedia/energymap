@@ -1271,7 +1271,9 @@ function switchMode(m: Mode) {
                     {tierInfo.label}{!statsLoading && rank ? ` · #${rank} All-Time` : ''}{streak > 0 ? ` · 🔥 ${streak}` : ''}
                   </p>
                 </div>
-                <ChevronRightIcon size={15} color="var(--fg-25)" />
+                <span style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0, fontSize: 14, fontWeight: 600, color: 'var(--accent-text)' }}>
+                  View profile <ChevronRightIcon size={15} color="var(--accent-text)" />
+                </span>
               </button>
             </div>
 
