@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { PinIcon, CommentIcon, BellIcon, ChevronRightIcon, DrinkIcon } from '@/components/Icons'
@@ -10,6 +10,7 @@ import Lightbox from './Lightbox'
 import { StorePicker } from './Pickers'
 import { QUANTITY_STYLE, timeAgo, type FeedComment, type FeedPost, type StoreSummary } from './types'
 import Burst from '@/components/ui/Burst'
+import RollNumber from '@/components/ui/RollNumber'
 
 const MAX_COMMENT = 300
 
@@ -67,10 +68,20 @@ export default function PostCard(p: PostCardProps) {
 
   const menuItem: React.CSSProperties = { display: 'block', width: '100%', textAlign: 'left', padding: '11px 14px', background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 15, cursor: 'pointer', color: 'var(--text)' }
 
+  // Comments that arrive after the card first rendered slide in with a lime
+  // wash; they join the "seen" set once the animation has had time to play.
+  const seenComments = useRef<Set<string> | null>(null)
+  if (seenComments.current === null) seenComments.current = new Set(p.comments.map((c) => c.id))
+  useEffect(() => {
+    const ids = p.comments.map((c) => c.id)
+    const t = setTimeout(() => ids.forEach((id) => seenComments.current!.add(id)), 1800)
+    return () => clearTimeout(t)
+  }, [p.comments])
+
   function renderComment(c: FeedComment, isReply = false) {
     const mine = c.user_id === p.meId
     return (
-      <div key={c.id} style={{ display: 'flex', gap: 8, marginLeft: isReply ? 32 : 0 }}>
+      <div key={c.id} className={seenComments.current!.has(c.id) ? undefined : 'comment-new'} style={{ display: 'flex', gap: 8, marginLeft: isReply ? 32 : 0 }}>
         <Link href={`/u/${c.username}`} style={{ textDecoration: 'none' }}><Avatar name={c.username} url={c.avatar} userId={c.user_id} size={isReply ? 22 : 26} /></Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>
@@ -204,11 +215,11 @@ export default function PostCard(p: PostCardProps) {
         >
           <span style={{ position: 'relative', display: 'flex' }}><Burst trigger={post.likedByMe ? likeAnim : 0} />
           <span key={likeAnim} className={likeAnim > 0 && post.likedByMe ? 'anim-pop' : ''} style={{ display: 'flex', fontSize: 15 }}>{post.likedByMe ? '▲' : '△'}</span></span>
-          <span>{post.likeCount}</span>
+          <RollNumber value={post.likeCount} />
         </button>
         <button onClick={() => setCommentsOpen((o) => !o)} style={{ ...actionBtn, color: commentsOpen ? 'var(--accent-text)' : 'var(--text-muted)' }}>
           <CommentIcon size={14} color={commentsOpen ? 'var(--accent)' : 'var(--text-muted)'} />
-          <span>{p.comments.length}{post.post_type === 'looking' && p.comments.length === 0 ? ' · Help out' : ''}</span>
+          <span><RollNumber value={p.comments.length} />{post.post_type === 'looking' && p.comments.length === 0 ? ' · Help out' : ''}</span>
         </button>
         <button onClick={() => p.onShare(post)} style={{ ...actionBtn, color: 'var(--text-muted)' }}>
           <span style={{ fontSize: 14 }}>↗</span><span>Share</span>

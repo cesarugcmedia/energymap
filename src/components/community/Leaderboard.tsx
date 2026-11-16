@@ -115,6 +115,24 @@ export default function Leaderboard({ me }: {
   }, [entries, scope, followingIds, me.id])
 
   const myIndex = list ? list.findIndex((e) => e.id === me.id) : -1
+
+  // Places climbed on this exact board since this device last looked.
+  const [climb, setClimb] = useState<{ board: string; n: number } | null>(null)
+  const boardKey = `${scope}:${metric}:${effectiveTimeframe}`
+  useEffect(() => {
+    if (!list || myIndex < 0) return
+    const key = `lb_rank_v1:${me.id}:${boardKey}`
+    try {
+      const prev = Number(localStorage.getItem(key) ?? '0')
+      const rank = myIndex + 1
+      setClimb(prev > rank ? { board: boardKey, n: prev - rank } : null)
+      localStorage.setItem(key, String(rank))
+    } catch { /* ignore */ }
+  }, [list, myIndex, me.id, boardKey])
+  const climbed = climb && climb.board === boardKey ? climb.n : 0
+  const climbChip = climbed > 0 && (
+    <span className="anim-pop" style={{ animationDelay: '0.55s', fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '1px 6px', flexShrink: 0 }}>▲ {climbed}</span>
+  )
   const myEntry = myIndex >= 0 ? list![myIndex] : null
   const unit = (n: number) => (n === 1 ? UNIT[unitKey].one : UNIT[unitKey].many)
 
@@ -231,6 +249,7 @@ export default function Leaderboard({ me }: {
                     <span style={{ position: 'absolute', bottom: -6, right: -6, fontSize: pos === 0 ? 22 : 18 }}>{MEDAL[pos]}</span>
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: isMe ? 'var(--accent-text)' : 'var(--text)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
+                  {isMe && climbChip}
                   <div className="anim-grow" style={{ animationDelay: `${pos === 2 ? 0.1 : pos === 1 ? 0.25 : 0.4}s`, width: '100%', height, borderRadius: '12px 12px 4px 4px', background: `linear-gradient(180deg, ${PODIUM_COLOR[pos]}2e, ${PODIUM_COLOR[pos]}0d)`, border: `1px solid ${PODIUM_COLOR[pos]}40`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 18, fontWeight: 700, color: PODIUM_COLOR[pos] }}><CountUp value={e.value} /></span>
                     <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{unit(e.value)}</span>
@@ -250,14 +269,15 @@ export default function Leaderboard({ me }: {
                   <Link
                     key={e.id}
                     href={`/u/${e.username}`}
-                    className="reveal"
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', textDecoration: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)', background: isMe ? 'rgba(201,244,0,0.06)' : 'transparent', boxShadow: isMe ? 'inset 3px 0 0 #C9F400' : 'none' }}
+                    className={isMe && climbed > 0 ? 'rank-climb' : 'reveal'}
+                    style={{ ['--climb' as string]: `${Math.min(climbed, 6) * 57}px`, position: 'relative', zIndex: isMe ? 1 : undefined, display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', textDecoration: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--fg-06)', background: isMe ? 'rgba(201,244,0,0.06)' : 'transparent', boxShadow: isMe ? 'inset 3px 0 0 #C9F400' : 'none' }}
                   >
                     <span style={{ width: 26, fontSize: 14, fontWeight: 600, color: 'var(--text-dim)', textAlign: 'center', flexShrink: 0 }}>{rank}</span>
                     <Avatar name={e.username} url={photos[e.id] || null} userId={e.id} size={34} />
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 500, color: isMe ? 'var(--accent-text)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
                       {isMe && <span style={{ fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '1px 6px' }}>You</span>}
+                      {isMe && climbChip}
                       {e.is_verified_reporter && <span title="Verified reporter" style={{ display: 'flex' }}><CheckIcon size={13} color="#60a5fa" /></span>}
                       {e.tier === 'tracker' && <span title="Tracker" style={{ display: 'flex' }}><LightningIcon size={13} color="var(--accent-text)" /></span>}
                       {e.badges.includes('weekly_champion') && <span title="Weekly champion" style={{ fontSize: 13 }}>👑</span>}

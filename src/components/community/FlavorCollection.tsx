@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ui from '@/components/ui/ui.module.css'
 import { ChevronDownIcon } from '@/components/Icons'
+import ConfettiShower from '@/components/ui/ConfettiShower'
+import Burst from '@/components/ui/Burst'
 
 type Drink = { id: string; brand: string; name: string; flavor: string | null }
 
@@ -29,6 +31,8 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
   const [catalog, setCatalog] = useState<Drink[] | null>(catalogCache)
   const [open, setOpen] = useState<Set<string>>(new Set())
   const [onlyFound, setOnlyFound] = useState(false)
+  const [celebrate, setCelebrate] = useState(0)
+  const [newlyDone, setNewlyDone] = useState<Set<string>>(new Set())
   const foundSet = useMemo(() => new Set(found), [found])
 
   useEffect(() => { if (!catalog) loadCatalog().then(setCatalog) }, [catalog])
@@ -47,6 +51,23 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
       .sort((a, b) => (b.got > 0 ? 1 : 0) - (a.got > 0 ? 1 : 0) || b.got / b.drinks.length - a.got / a.drinks.length || a.brand.localeCompare(b.brand))
   }, [catalog, foundSet])
 
+  // Your own brands at 100%: confetti the first time this device sees each one.
+  useEffect(() => {
+    if (!isMe || !brands.length) return
+    const done = brands.filter((b) => b.got > 0 && b.got === b.drinks.length).map((b) => b.brand)
+    if (!done.length) return
+    const KEY = 'ampedmap_complete_brands_v1'
+    try {
+      const seen: string[] = JSON.parse(localStorage.getItem(KEY) ?? '[]')
+      const fresh = done.filter((b) => !seen.includes(b))
+      if (fresh.length) {
+        setNewlyDone(new Set(fresh))
+        setCelebrate(Date.now())
+        localStorage.setItem(KEY, JSON.stringify([...new Set([...seen, ...fresh])]))
+      }
+    } catch { /* ignore */ }
+  }, [isMe, brands])
+
   if (!catalog) return <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Loading the catalog…</p>
 
   const total = catalog.length
@@ -57,6 +78,7 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
 
   return (
     <div>
+      <ConfettiShower trigger={celebrate} />
       <div className={`${ui.card} reveal`} style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>{got}</span>
@@ -83,13 +105,21 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {shown.map(({ brand, drinks, got: g }, bi) => {
           const isOpen = open.has(brand)
+          const complete = g > 0 && g === drinks.length
           const list = onlyFound ? drinks.filter((d) => foundSet.has(d.id)) : drinks
           let lit = 0
           return (
-            <div key={brand} className={`${ui.card} anim-rise`} style={{ padding: 0, overflow: 'hidden', animationDelay: `${Math.min(bi, 10) * 40}ms` }}>
+            <div key={brand} className={`${ui.card} anim-rise${complete ? ' shine' : ''}`} style={{ padding: 0, overflow: 'hidden', animationDelay: `${Math.min(bi, 10) * 40}ms`, ['--shine-delay' as string]: `${0.5 + Math.min(bi, 10) * 0.04}s`, borderColor: complete ? 'rgba(201,244,0,0.45)' : undefined }}>
               <button onClick={() => toggle(brand)} aria-expanded={isOpen} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{brand}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                    {brand}
+                    {complete && (
+                      <span className={newlyDone.has(brand) ? 'anim-pop' : undefined} style={{ position: 'relative', fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '2px 7px', animationDelay: '0.6s' }}>
+                        <Burst trigger={newlyDone.has(brand) ? celebrate : 0} />Complete
+                      </span>
+                    )}
+                  </span>
                   <span style={{ display: 'block', height: 4, borderRadius: 99, background: 'var(--fg-08)', marginTop: 7, overflow: 'hidden' }}>
                     <span className="anim-fill" style={{ display: 'block', width: `${(g / drinks.length) * 100}%`, height: '100%', background: '#C9F400', animationDelay: `${150 + Math.min(bi, 10) * 40}ms` }} />
                   </span>

@@ -154,6 +154,7 @@ export default function MapHome() {
   const liveUpdateTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [pinFlash, setPinFlash] = useState<{ id: string; n: number } | null>(null)
+  const [locatePing, setLocatePing] = useState(0)
   const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
@@ -897,6 +898,7 @@ export default function MapHome() {
                 onMapReady={setLeafletMap}
                 storeFreshness={storeFreshness}
                 flash={pinFlash}
+                locatePing={locatePing}
               />
             </div>
 
@@ -912,7 +914,7 @@ export default function MapHome() {
                   </button>
                 ))}
                 <button
-                  onClick={() => leafletMap.flyTo({ center: [lng, lat], zoom: 15 })}
+                  onClick={() => { leafletMap.flyTo({ center: [lng, lat], zoom: 15 }); setLocatePing((n) => n + 1) }}
                   className={ui.iconBtn}
                   style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
                   title="Re-center on my location"

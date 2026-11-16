@@ -129,9 +129,11 @@ interface MapViewProps {
   highlightIds?: Set<string> | null
   /** A store that just got a live report: its pin ripples once (n = nonce). */
   flash?: { id: string; n: number } | null
+  /** Bump to send a ring out from the user's dot (after the map stops moving). */
+  locatePing?: number
 }
 
-export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds, flash }: MapViewProps) {
+export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds, flash, locatePing }: MapViewProps) {
   const highlightRef = useRef<Set<string> | null>(highlightIds ?? null)
   highlightRef.current = highlightIds ?? null
   const containerRef = useRef<HTMLDivElement>(null)
@@ -159,6 +161,14 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     return () => { clearTimeout(t); rings.forEach((r) => r.remove()) }
   }, [flash])
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const userElRef = useRef<HTMLDivElement | null>(null)
+  // Two blue rings ripple out of the user's dot.
+  const pingUser = () => {
+    const el = userElRef.current
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const rings = [0, 1].map(() => { const r = document.createElement('div'); r.className = 'locate-ring'; el.appendChild(r); return r })
+    setTimeout(() => rings.forEach((r) => r.remove()), 2000)
+  }
   const fittedRef = useRef(false)
   const scRef = useRef<Supercluster<Store> | null>(null)
   const onMapReadyRef = useRef(onMapReady)
@@ -447,6 +457,8 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.2);animation:ampPulse2 2s ease-out infinite 0.6s;"></div>
       <div style="position:relative;width:16px;height:16px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.7);"></div>
     `
+    userElRef.current = userEl
+    map.once('idle', () => pingUser())
     userMarkerRef.current = new mapboxgl.Marker({ element: userEl, anchor: 'center' })
       .setLngLat([lng, lat])
       .addTo(map)
@@ -463,6 +475,13 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       mapRef.current = null
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!locatePing || !map) return
+    if (map.isMoving()) map.once('moveend', pingUser)
+    else pingUser()
+  }, [locatePing]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep user marker in sync with location
   useEffect(() => {

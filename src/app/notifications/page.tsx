@@ -146,6 +146,8 @@ export default function NotificationsPage() {
   const [confirmClear, setConfirmClear] = useState(false)
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  // Mark all read: unread dots pop out top to bottom before the rows settle.
+  const [sweeping, setSweeping] = useState(false)
   // Rows that arrived live while the page is open get a brief highlight.
   const knownIds = useRef<Set<string> | null>(null)
   const [arrivedIds, setArrivedIds] = useState<Set<string>>(new Set())
@@ -224,7 +226,14 @@ export default function NotificationsPage() {
   }
 
   async function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    if (sweeping) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const unread = Math.min(12, notifications.filter((n) => !n.read).length)
+    setSweeping(true)
+    setTimeout(() => {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+      setSweeping(false)
+    }, reduce ? 0 : unread * 60 + 320)
     await saveRead({ all: true })
   }
 
@@ -266,10 +275,11 @@ export default function NotificationsPage() {
 
   // Same compact card as the old Community activity cards: icon tile,
   // message, time, chevron. Unread cards get a lime tint and a dot.
+  let sweepOrder = 0
   const iconTile = (type: string, unread: boolean) => (
     <span style={{ position: 'relative', width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: unread ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)' }}>
       {notificationIcon(type)}
-      {unread && <span style={{ position: 'absolute', top: -3, right: -3, width: 9, height: 9, borderRadius: '50%', background: '#C9F400', border: '2px solid var(--bg)' }} />}
+      {unread && <span className={sweeping ? 'dot-out' : undefined} style={{ ['--d' as string]: `${Math.min(sweepOrder++, 12) * 60}ms`, position: 'absolute', top: -3, right: -3, width: 9, height: 9, borderRadius: '50%', background: '#C9F400', border: '2px solid var(--bg)' }} />}
     </span>
   )
 
@@ -281,7 +291,7 @@ export default function NotificationsPage() {
       style={{
         width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', textAlign: 'left', borderRadius: 14,
         background: unread ? 'rgba(201,244,0,0.05)' : 'var(--fg-03)', border: `1px solid ${unread ? 'rgba(201,244,0,0.22)' : 'var(--fg-06)'}`,
-        cursor: 'pointer', fontFamily: 'inherit', color: 'inherit',
+        cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', transition: 'background 0.35s ease, border-color 0.35s ease',
       }}
     >
       {children}

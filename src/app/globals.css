@@ -377,3 +377,44 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
 @keyframes ringDrain { from { stroke-dashoffset: 0; } }
 .ring-drain { animation: ringDrain 0.9s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 @media (prefers-reduced-motion: reduce) { .ring-drain { animation: none; } }
+
+/* Round 5 ─────────────────────────────────────────────────────────────── */
+/* Odometer numbers (RollNumber): old value slides out as the new one slides in. */
+.roll { display: inline-grid; overflow: hidden; vertical-align: bottom; line-height: inherit; }
+.roll > span { grid-area: 1 / 1; }
+@keyframes rollOutUp { to { transform: translateY(-100%); opacity: 0; } }
+@keyframes rollInUp { from { transform: translateY(100%); opacity: 0; } }
+@keyframes rollOutDown { to { transform: translateY(100%); opacity: 0; } }
+@keyframes rollInDown { from { transform: translateY(-100%); opacity: 0; } }
+.roll-out-up { animation: rollOutUp 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.roll-in-up { animation: rollInUp 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.roll-out-down { animation: rollOutDown 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.roll-in-down { animation: rollInDown 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* A comment that just arrived slides in under the post with a lime wash. */
+@keyframes commentIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes commentWash { 0%, 30% { background: rgba(201, 244, 0, 0.14); } 100% { background: transparent; } }
+.comment-new { margin: -4px -6px; padding: 4px 6px; border-radius: 10px; animation: commentIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both, commentWash 1.6s ease both; }
+
+/* Mark all read: unread dots pop out one after another (--d = stagger). */
+@keyframes dotOut { 40% { transform: scale(1.35); } to { transform: scale(0); opacity: 0; } }
+.dot-out { animation: dotOut 0.3s var(--d, 0ms) ease-in forwards; }
+
+/* Map: a ring ripples out of your location dot. */
+@keyframes locateRing { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(5.5); } }
+.locate-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #3b82f6; pointer-events: none; animation: locateRing 1.3s ease-out both; }
+.locate-ring + .locate-ring { animation-delay: 0.3s; }
+
+/* Streak flame swells when the streak went up, then goes back to flickering. */
+@keyframes flameGrow { 0% { transform: scale(1); } 40% { transform: scale(1.8) rotate(-8deg); } 70% { transform: scale(0.9) rotate(3deg); } 100% { transform: scale(1); } }
+.flame.flame-grow { animation: flameGrow 0.9s 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both, flameFlicker 1.6s 1.3s ease-in-out infinite; }
+
+/* Leaderboard: your row slides up from where you were (--climb = distance). */
+@keyframes rankClimb { from { transform: translateY(var(--climb, 0px)); box-shadow: inset 3px 0 0 #C9F400, 0 8px 24px rgba(0, 0, 0, 0.45); } to { transform: none; } }
+.rank-climb { animation: rankClimb 0.8s 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .roll-out-up, .roll-out-down { display: none; }
+  .roll-in-up, .roll-in-down, .comment-new, .dot-out, .flame.flame-grow, .rank-climb { animation: none; }
+  .locate-ring { display: none; }
+}

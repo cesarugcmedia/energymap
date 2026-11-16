@@ -48,6 +48,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   // Your own profile opens as everyone else sees it; Edit profile swaps in
   // the editor and Save brings you back to the public view.
   const [editing, setEditing] = useState(false)
+  const [backFromEdit, setBackFromEdit] = useState(false)
+  const [flameGrow, setFlameGrow] = useState(false)
   const [data, setData] = useState<ProfileData | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [posts, setPosts] = useState<MiniPost[] | null>(null)
@@ -147,7 +149,13 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     if (res.ok) setData(await res.json())
   }
 
+  function stopEditing() {
+    setBackFromEdit(true)
+    setEditing(false)
+  }
+
   function startEditing() {
+    setBackFromEdit(false)
     setEditing(true)
     document.querySelector('main')?.scrollTo({ top: 0 })
     window.scrollTo(0, 0)
@@ -155,7 +163,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
   async function finishEditing() {
     await reloadProfile()
-    setEditing(false)
+    stopEditing()
     showToast('Profile saved')
   }
 
@@ -202,6 +210,18 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
   const isMe = data?.profile.id === user?.id
   const isLive = useIsLive(data?.profile.id)
+
+  // Your streak flame grows the first time you see it after the streak went up.
+  const myStreak = isMe ? data?.stats?.streak ?? 0 : 0
+  useEffect(() => {
+    if (!isMe || !user || myStreak < 2) return
+    const key = `streak_seen_v1:${user.id}`
+    try {
+      const prev = Number(localStorage.getItem(key) ?? '0')
+      if (prev > 0 && myStreak > prev) setFlameGrow(true)
+      localStorage.setItem(key, String(myStreak))
+    } catch { /* ignore */ }
+  }, [isMe, user, myStreak])
   const stat = (n: number, label: string, onTap?: () => void) => {
     const inner = (
       <>
@@ -239,13 +259,13 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
         ) : !data ? (
           <SkeletonList count={3} />
         ) : editing && isMe ? (
-          <div className="anim-fade">
+          <div className="slide-next">
             <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 18 }}>Edit profile</h1>
             <div style={{ marginBottom: 22 }}>
               <ProfilePhoto userId={data.profile.id} username={data.profile.username} url={data.profile.avatarUrl ?? null}
                 onChange={async () => { await refreshProfile(); await reloadProfile() }} />
             </div>
-            <ProfileExtras userId={data.profile.id} onSaved={finishEditing} onCancel={() => setEditing(false)} />
+            <ProfileExtras userId={data.profile.id} onSaved={finishEditing} onCancel={stopEditing} />
             <Link href="/account?page=username" className={ui.card} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit' }}>
               <span style={{ flex: 1 }}>
                 <span style={{ display: 'block', fontSize: 15, color: 'var(--text)' }}>Username</span>
@@ -255,8 +275,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             </Link>
           </div>
         ) : (
-          <>
-            <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 0 20px' }}>
+          <div className={backFromEdit ? 'slide-back' : undefined}>
+            <div className={backFromEdit ? undefined : 'anim-rise'} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 0 20px' }}>
               <Avatar name={data.profile.username} url={data.profile.avatarUrl} userId={data.profile.id} size={88} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700 }}>@{data.profile.username}</h1>
@@ -265,7 +285,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {isLive && !isMe && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="live-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9F400' }} /> Live now</span>}
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
-                {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="flame">🔥</span> {data.stats!.streak}-day streak</span>}
+                {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className={flameGrow ? 'flame flame-grow' : 'flame'}>🔥</span> {data.stats!.streak}-day streak</span>}
               </div>
               {data.profile.bio && <p style={{ fontSize: 15, color: 'var(--text)', textAlign: 'center', maxWidth: 360, lineHeight: 1.45 }}>{data.profile.bio}</p>}
               {data.profile.favoriteDrink && (
@@ -402,7 +422,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               </div>
             )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
