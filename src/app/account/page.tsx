@@ -1267,9 +1267,6 @@ function switchMode(m: Mode) {
                     <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{profile.username}</p>
                     {profile.is_verified_reporter && <CheckIcon size={15} color="#60a5fa" />}
                   </div>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {tierInfo.label}{!statsLoading && rank ? ` · #${rank} All-Time` : ''}{streak > 0 ? ` · 🔥 ${streak}` : ''}
-                  </p>
                 </div>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0, fontSize: 14, fontWeight: 600, color: 'var(--accent-text)' }}>
                   View profile <ChevronRightIcon size={15} color="var(--accent-text)" />
