@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { notify } from '@/lib/community'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,9 +29,23 @@ export async function POST(req: NextRequest) {
   }
 
   if (following) {
+    const { data: existing } = await supabaseAdmin
+      .from('follows').select('follower_id').eq('follower_id', user.id).eq('followed_id', user_id).maybeSingle()
     await supabaseAdmin
       .from('follows')
       .upsert({ follower_id: user.id, followed_id: user_id }, { onConflict: 'follower_id,followed_id' })
+    // Tell them about a new follower — once per follower per day, so
+    // unfollow/refollow taps don't spam their Alerts tab.
+    if (!existing) {
+      const { data: me } = await supabaseAdmin.from('profiles').select('username').eq('id', user.id).maybeSingle()
+      if (me?.username) {
+        const message = `@${me.username} started following you`
+        const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+        const { data: recent } = await supabaseAdmin.from('notifications').select('id')
+          .eq('user_id', user_id).eq('type', 'follow').eq('message', message).gte('created_at', since).limit(1)
+        if (!recent?.length) await notify(supabaseAdmin, { user_id, type: 'follow', message })
+      }
+    }
   } else {
     await supabaseAdmin
       .from('follows')

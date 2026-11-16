@@ -82,18 +82,46 @@ function cleanMessage(msg: string) {
 }
 
 // Stock levels keep the colors the old Community report cards used:
-// Full lime, Medium/Low amber, Out red, "back in stock" lime.
-const LEVEL_COLOR: Record<string, string> = { full: '#C9F400', medium: '#FFB300', med: '#FFB300', low: '#FFB300', out: '#FF4545', 'out of stock': '#FF4545', 'back in stock': '#C9F400', 'in stock': '#C9F400' }
-const LEVEL_RE = /\b(back in stock|out of stock|in stock|full|medium|med|low|out)\b/gi
-function StockText({ text }: { text: string }) {
+// Full lime, Medium/Low amber, Out red, "back in stock" lime. Drink names in
+// the message (matched against the catalog, since these messages come from
+// DB triggers/RPCs as plain text) take the color of the level that follows
+// them, with a soft glow (dropped in light mode, see .lvl-glow in globals.css).
+const LIME = 'var(--accent-text)'
+const LEVEL_COLOR: Record<string, string> = { full: LIME, medium: '#FFB300', med: '#FFB300', low: '#FFB300', out: '#FF4545', 'out of stock': '#FF4545', 'back in stock': LIME, 'in stock': LIME }
+const GLOW: Record<string, string> = { [LIME]: 'rgba(201,244,0,0.45)', '#FFB300': 'rgba(255,179,0,0.45)', '#FF4545': 'rgba(255,69,69,0.45)' }
+const LEVELS = 'back in stock|out of stock|in stock|full|medium|med|low|out'
+const LEVEL_ONLY = new RegExp(`^(${LEVELS})$`, 'i')
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+function buildMatcher(names: string[]) {
+  const alts = [...new Set(names.map((n) => n.trim()).filter((n) => n.length >= 3 && !LEVEL_ONLY.test(n)))]
+    .sort((x, y) => y.length - x.length)
+    .map(esc)
+  return new RegExp(`(?<!\\w)(${LEVELS}${alts.length ? '|' + alts.join('|') : ''})(?!\\w)`, 'gi')
+}
+
+function StockText({ text, matcher }: { text: string; matcher: RegExp }) {
+  const tokens: { start: number; end: number; word: string; level: string | null }[] = []
+  for (const m of text.matchAll(matcher)) {
+    const lc = m[0].toLowerCase()
+    const start = m.index ?? 0
+    tokens.push({ start, end: start + m[0].length, word: m[0], level: LEVEL_COLOR[lc] ? lc : null })
+  }
+  // A drink takes the next level after it, else the one before it.
+  const colorFor = (i: number) => {
+    for (let j = i + 1; j < tokens.length; j++) if (tokens[j].level) return LEVEL_COLOR[tokens[j].level!]
+    for (let j = i - 1; j >= 0; j--) if (tokens[j].level) return LEVEL_COLOR[tokens[j].level!]
+    return null
+  }
   const parts: React.ReactNode[] = []
   let last = 0
-  for (const m of text.matchAll(LEVEL_RE)) {
-    const i = m.index ?? 0
-    if (i > last) parts.push(text.slice(last, i))
-    parts.push(<span key={i} style={{ color: LEVEL_COLOR[m[0].toLowerCase()], fontWeight: 700 }}>{m[0]}</span>)
-    last = i + m[0].length
-  }
+  tokens.forEach((t, i) => {
+    const color = t.level ? LEVEL_COLOR[t.level] : colorFor(i)
+    if (!color) return
+    if (t.start > last) parts.push(text.slice(last, t.start))
+    parts.push(<span key={t.start} className="lvl-glow" style={{ color, fontWeight: 700, textShadow: `0 0 10px ${GLOW[color]}` }}>{t.word}</span>)
+    last = t.end
+  })
   parts.push(text.slice(last))
   return <>{parts}</>
 }
@@ -105,6 +133,8 @@ function hrefFor(n: any): string | null {
   if (n.post_id) return `/community?post=${n.post_id}`
   if (n.type === 'badge') return '/account?page=badges'
   if (n.type === 'drink_alert') return '/account?page=alerts'
+  const who = n.type === 'follow' && /@([a-z0-9_]+)/i.exec(n.message ?? '')
+  if (who) return `/u/${who[1]}`
   return null
 }
 
@@ -148,6 +178,21 @@ export default function NotificationsPage() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   // Mark all read: unread dots pop out top to bottom before the rows settle.
   const [sweeping, setSweeping] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  // Drink names from the catalog, so they can be colored in stock messages.
+  const [drinkNames, setDrinkNames] = useState<string[]>([])
+  const matcher = useMemo(() => buildMatcher(drinkNames), [drinkNames])
+  useEffect(() => {
+    supabase.from('drinks').select('name, brand, flavor').then(({ data }) => {
+      const names: string[] = []
+      for (const d of data ?? []) {
+        if (d.name) names.push(d.name)
+        if (d.flavor) names.push(d.flavor)
+        if (d.brand && d.flavor) names.push(`${d.brand} ${d.flavor}`)
+      }
+      setDrinkNames(names)
+    })
+  }, [])
   // Rows that arrived live while the page is open get a brief highlight.
   const knownIds = useRef<Set<string> | null>(null)
   const [arrivedIds, setArrivedIds] = useState<Set<string>>(new Set())
@@ -238,9 +283,15 @@ export default function NotificationsPage() {
   }
 
   async function clearAll() {
-    const { error } = await supabase.from('notifications').delete().eq('user_id', user!.id)
+    setClearing(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const ok = session && await fetch('/api/notifications/clear', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).then((r) => r.ok).catch(() => false)
+    setClearing(false)
     setConfirmClear(false)
-    if (error) return
+    if (!ok) return
     setNotifications([])
     setHasMore(false)
     window.dispatchEvent(new Event('notifications-changed'))
@@ -306,7 +357,7 @@ export default function NotificationsPage() {
         {iconTile(n.type, !n.read)}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: n.read ? 400 : 600, color: n.read ? 'var(--text-muted)' : 'var(--text)' }}>
-            {isStock(n.type) ? <StockText text={cleanMessage(n.message)} /> : cleanMessage(n.message)}
+            {isStock(n.type) ? <StockText text={cleanMessage(n.message)} matcher={matcher} /> : cleanMessage(n.message)}
           </span>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {n.store?.name ? `${n.store.name} · ` : ''}{timeAgo(n.created_at)}
@@ -332,7 +383,7 @@ export default function NotificationsPage() {
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
             {shown.map((n) => (
               <span key={n.id} style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)', lineHeight: 1.35, alignSelf: 'flex-start' }}>
-                <StockText text={cleanMessage(n.message)} />
+                <StockText text={cleanMessage(n.message)} matcher={matcher} />
               </span>
             ))}
             {ns.length > 3 && (
@@ -365,10 +416,17 @@ export default function NotificationsPage() {
               {loading ? ' ' : unreadCount > 0 ? `${unreadCount}${hasMore ? '+' : ''} unread` : 'You’re all caught up'}
             </p>
           </div>
-          {unreadCount > 0 && (
-            <button className={ui.btnGhost} onClick={markAllRead} style={{ color: 'var(--accent-text)', fontSize: 14, fontWeight: 600, minHeight: 36 }}>
-              Mark all read
-            </button>
+          {notifications.length > 0 && (
+            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+              {unreadCount > 0 && (
+                <button className={ui.btnGhost} onClick={markAllRead} style={{ color: 'var(--accent-text)', fontSize: 14, fontWeight: 600, minHeight: 36 }}>
+                  Mark all read
+                </button>
+              )}
+              <button className={ui.btnGhost} onClick={() => setConfirmClear(true)} style={{ color: 'var(--text-muted)', fontSize: 14, fontWeight: 600, minHeight: 36 }}>
+                Clear all
+              </button>
+            </div>
           )}
         </div>
 
@@ -420,9 +478,6 @@ export default function NotificationsPage() {
                 </button>
               )}
 
-              <div style={{ textAlign: 'center', marginTop: 18 }}>
-                <button className={ui.linkQuiet} onClick={() => setConfirmClear(true)}>Clear all notifications</button>
-              </div>
             </>
           )}
         </div>
@@ -436,7 +491,7 @@ export default function NotificationsPage() {
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 18 }}>This removes every notification for good. It can&apos;t be undone.</p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => setConfirmClear(false)}>Cancel</button>
-              <button className={ui.btnSecondary} style={{ flex: 1, color: '#FF6B6B', borderColor: 'rgba(255,107,107,0.35)' }} onClick={clearAll}>Clear all</button>
+              <button className={ui.btnSecondary} style={{ flex: 1, color: '#FF6B6B', borderColor: 'rgba(255,107,107,0.35)' }} onClick={clearAll} disabled={clearing}>{clearing ? 'Clearing…' : 'Clear all'}</button>
             </div>
           </div>
         </div>

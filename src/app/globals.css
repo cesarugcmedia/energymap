@@ -418,3 +418,6 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
   .roll-in-up, .roll-in-down, .comment-new, .dot-out, .flame.flame-grow, .rank-climb { animation: none; }
   .locate-ring { display: none; }
 }
+
+/* Notifications: the stock-level glow on drink names smudges on light backgrounds. */
+html[data-theme="light"] .lvl-glow { text-shadow: none !important; }

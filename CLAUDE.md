@@ -253,7 +253,9 @@ The `/notifications` page (redesigned 2026-11-14):
 - **Explicit read state** — visiting doesn't mark anything read; "Mark all read" in the header marks every unread row for the user server-side.
 - **Grouped stock updates** — consecutive same-store, same-day `stock_update` rows collapse into one ("N stock updates at Store", first 3 sub-lines + "+N more"). Sub-lines reuse each notification's raw `message`, since the `notify_stock_update` RPC (called from `/api/stock/report`) was created in the Supabase dashboard and its wording isn't defined in this repo.
 - **Filters**: All / Unread (with count) / Stock (`stock_update`, `drink_alert`) / Community (`comment`, `reply`, `mention`, `follow`) / Stores & drinks / Badges — the `CATEGORY` map in `src/app/notifications/page.tsx`. Add new notification types there and in `NotificationIcons.tsx`.
-- Pages 40 at a time ("Load older notifications" by `created_at` cursor), refreshes live on realtime INSERTs, and "Clear all" sits at the bottom behind a confirmation sheet.
+- Pages 40 at a time ("Load older notifications" by `created_at` cursor), refreshes live on realtime INSERTs. **Clear all** sits in the header next to Mark all read, behind a confirmation sheet, and deletes through `POST /api/notifications/clear` (service role).
+- **Drink names glow by level**: stock_update / drink_alert messages are plain text from DB triggers/RPCs, so the page fetches the drinks catalog and colors any drink name (name, flavor, or brand + flavor) with the level that follows it in the message (lime / amber / red, plus a soft glow that is dropped in light mode via `.lvl-glow`).
+- **New follower**: `/api/community/follow` sends a `follow` notification ("@name started following you") on a new follow, at most once per follower per 24h; tapping it opens `/u/name`.
 
 ### App-Wide Icon System
 
