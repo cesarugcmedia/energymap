@@ -10,14 +10,13 @@ import ui from '@/components/ui/ui.module.css'
 import SkeletonList from '@/components/ui/SkeletonList'
 import Composer from './Composer'
 import PostCard from './PostCard'
-import ActivityCard from './ActivityCard'
-import { milesBetween, trendingScore, type ActivityItem, type FeedComment, type FeedPost, type StoreSummary } from './types'
+import { milesBetween, trendingScore, type FeedComment, type FeedPost, type StoreSummary } from './types'
 import { fetchProfileLites } from '@/lib/avatar'
 
 const PAGE = 15
 const NEAR_MILES = 10
 type Filter = 'latest' | 'trending' | 'following' | 'near'
-type Entry = { kind: 'post'; post: FeedPost; at: string } | { kind: 'activity'; item: ActivityItem; at: string }
+type Entry = { kind: 'post'; post: FeedPost; at: string }
 
 const SELECT_V3 = 'id, user_id, store_id, body, photo_url, photo_urls, post_type, drink_id, quantity, created_at'
 const SELECT_V2 = 'id, user_id, store_id, body, photo_url, created_at'
@@ -41,7 +40,6 @@ export default function Feed({ me, toast }: {
   const [posts, setPosts] = useState<FeedPost[]>([])
   const [comments, setComments] = useState<Record<string, FeedComment[]>>({})
   const [summaries, setSummaries] = useState<Record<string, StoreSummary>>({})
-  const [activity, setActivity] = useState<ActivityItem[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(true)
@@ -155,16 +153,6 @@ export default function Feed({ me, toast }: {
     return { rows: (res.data ?? []) as any[], error: res.error, isV3: useV3 }
   }, [])
 
-  const fetchActivity = useCallback(async (near: boolean) => {
-    const headers = await authHeaders()
-    if (!headers) return
-    const qs = near && me.lat != null && me.lng != null ? `?lat=${me.lat}&lng=${me.lng}` : ''
-    try {
-      const res = await fetch(`/api/community/activity${qs}`, { headers })
-      if (res.ok) setActivity((await res.json()).items ?? [])
-    } catch { /* activity is a bonus — never block the feed on it */ }
-  }, [me.lat, me.lng])
-
   const refresh = useCallback(async () => {
     setError(false)
     const { rows, error: err, isV3 } = await fetchRows(null)
@@ -193,7 +181,6 @@ export default function Feed({ me, toast }: {
   // Initial load + side data
   useEffect(() => {
     refresh()
-    fetchActivity(false)
     supabase.rpc('get_leaderboard', { p_timeframe: 'This Week' }).then(({ data }) => {
       if (data) setTopWeeklyIds(new Set(data.slice(0, 10).map((e: any) => e.id)))
     })
@@ -207,9 +194,6 @@ export default function Feed({ me, toast }: {
       if (!e && data) setBlockedIds(new Set(data.map((b: any) => b.blocked_id)))
     })
   }, [me.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Near me uses location-filtered activity
-  useEffect(() => { if (!loading) fetchActivity(filter === 'near') }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live "N new posts" pill (needs realtime on community_posts — community-v3.sql)
   useEffect(() => {
@@ -245,7 +229,7 @@ export default function Feed({ me, toast }: {
       setPull(dist)
     }
     const onEnd = () => {
-      if (startY !== null && dist >= 60) { setPull(60); refresh().then(() => fetchActivity(filter === 'near')).finally(() => setPull(0)) }
+      if (startY !== null && dist >= 60) { setPull(60); refresh().finally(() => setPull(0)) }
       else setPull(0)
       startY = null
     }
@@ -253,7 +237,7 @@ export default function Feed({ me, toast }: {
     main.addEventListener('touchmove', onMove, { passive: true })
     main.addEventListener('touchend', onEnd)
     return () => { main.removeEventListener('touchstart', onStart); main.removeEventListener('touchmove', onMove); main.removeEventListener('touchend', onEnd) }
-  }, [refresh, fetchActivity, filter])
+  }, [refresh])
 
   // Shared-post deep link (?post=<id>): fetch it if it isn't already loaded.
   useEffect(() => {
@@ -361,8 +345,6 @@ export default function Feed({ me, toast }: {
   const hasLocation = me.lat != null && me.lng != null
 
   const entries: Entry[] = useMemo(() => {
-    const oldest = hasMore && visiblePosts.length ? visiblePosts[visiblePosts.length - 1].created_at : ''
-    const acts = activity.filter((a) => (a.kind !== 'report' || !blockedIds.has(a.user_id)) && a.created_at >= oldest)
     const postEntries = (list: FeedPost[]): Entry[] => list.map((post) => ({ kind: 'post', post, at: post.created_at }))
     if (filter === 'trending') {
       return postEntries([...visiblePosts].sort((a, b) => trendingScore(b, visibleComments(b.id).length) - trendingScore(a, visibleComments(a.id).length)))
@@ -373,18 +355,16 @@ export default function Feed({ me, toast }: {
       if (!hasLocation) return []
       list = visiblePosts.filter((p) => p.store?.lat != null && p.store?.lng != null && milesBetween(me.lat!, me.lng!, p.store.lat, p.store.lng) <= NEAR_MILES)
     }
-    return [...postEntries(list), ...acts.map((item): Entry => ({ kind: 'activity', item, at: item.created_at }))]
-      .sort((a, b) => b.at.localeCompare(a.at))
-  }, [filter, visiblePosts, activity, blockedIds, followingIds, hasMore, hasLocation, me.lat, me.lng, visibleComments])
+    return postEntries(list)
+  }, [filter, visiblePosts, followingIds, hasLocation, me.lat, me.lng, visibleComments])
 
   const hotStores = useMemo(() => {
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
     const counts = new Map<string, { id: string; name: string; n: number }>()
     const bump = (id: string, name: string) => { const e = counts.get(id) ?? { id, name, n: 0 }; e.n++; counts.set(id, e) }
     visiblePosts.forEach((p) => { if (p.store && p.created_at >= weekAgo) bump(p.store.id, p.store.name) })
-    activity.forEach((a) => { if (a.kind === 'report') bump(a.store.id, a.store.name) })
     return [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 8)
-  }, [visiblePosts, activity])
+  }, [visiblePosts])
 
   const FILTERS: { key: Filter; label: string; Icon: typeof ClockIcon }[] = [
     { key: 'latest', label: 'Latest', Icon: ClockIcon },
@@ -404,7 +384,7 @@ export default function Feed({ me, toast }: {
       {newCount > 0 && (
         <div style={{ position: 'sticky', top: 'calc(env(safe-area-inset-top) + 8px)', zIndex: 15, display: 'flex', justifyContent: 'center', height: 0 }}>
           <button className={`${ui.btnPrimary} anim-rise`} style={{ minHeight: 36, padding: '6px 16px', fontSize: 14, boxShadow: '0 6px 20px rgba(0,0,0,0.45)' }}
-            onClick={async () => { document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }); await refresh(); fetchActivity(filter === 'near') }}>
+            onClick={async () => { document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }); await refresh() }}>
             ↑ {newCount} new post{newCount === 1 ? '' : 's'}
           </button>
         </div>
@@ -434,7 +414,7 @@ export default function Feed({ me, toast }: {
       )}
 
       <div style={{ marginBottom: 14 }}>
-        <Composer username={me.username} v3={!!v3} toast={toast} onPosted={() => { refresh(); fetchActivity(filter === 'near') }} />
+        <Composer username={me.username} v3={!!v3} toast={toast} onPosted={() => { refresh() }} />
       </div>
 
       {loading ? (
@@ -454,15 +434,13 @@ export default function Feed({ me, toast }: {
           </p>
           <p className={ui.emptyBody}>
             {filter === 'following' ? 'Follow people from their posts or profiles to see them here.'
-              : filter === 'near' ? (hasLocation ? 'No posts or reports within 10 miles this week. Be the first.' : 'Open the map once so we know where “near you” is.')
+              : filter === 'near' ? (hasLocation ? 'No posts about stores within 10 miles yet. Be the first.' : 'Open the map once so we know where “near you” is.')
               : 'Be the first to share something with the community.'}
           </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {entries.map((e) => e.kind === 'activity'
-            ? <ActivityCard key={e.item.id} item={e.item} />
-            : (
+          {entries.map((e) => (
               <PostCard
                 key={e.post.id}
                 post={e.post}

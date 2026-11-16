@@ -20,6 +20,8 @@ import FollowButton from '@/components/community/FollowButton'
 import { useIsLive } from '@/contexts/PresenceContext'
 import FlavorCollection from '@/components/community/FlavorCollection'
 import SlideHighlight from '@/components/ui/SlideHighlight'
+import ProfilePhoto from '@/components/account/ProfilePhoto'
+import ProfileExtras from '@/components/account/ProfileExtras'
 
 type ProfileData = {
   profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; bio?: string | null; favoriteDrink?: string | null; avatarUrl?: string | null }
@@ -30,12 +32,11 @@ type ProfileData = {
   topStores?: { id: string; name: string; type: string; reports: number }[]
   recentFinds?: { drink: string; quantity: string; storeId: string; storeName: string; at: string }[]
   collection?: { found: string[]; permanent: boolean }
-  storesAddedList?: { id: string; name: string; type: string; address: string | null; at: string }[]
   privateReports?: boolean
 }
-type Tab = 'posts' | 'finds' | 'collection' | 'stores'
+type Tab = 'posts' | 'finds' | 'collection'
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'posts', label: 'Posts' }, { key: 'finds', label: 'Finds' }, { key: 'collection', label: 'Collection' }, { key: 'stores', label: 'Stores' },
+  { key: 'posts', label: 'Posts' }, { key: 'finds', label: 'Finds' }, { key: 'collection', label: 'Collection' },
 ]
 type MiniPost = { id: string; body: string; created_at: string; photo: string | null; storeName: string | null; likes: number; type: string }
 
@@ -43,7 +44,10 @@ type MiniPost = { id: string; body: string; created_at: string; photo: string | 
 export default function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params)
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, refreshProfile } = useAuth()
+  // Your own profile opens as everyone else sees it; Edit profile swaps in
+  // the editor and Save brings you back to the public view.
+  const [editing, setEditing] = useState(false)
   const [data, setData] = useState<ProfileData | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [posts, setPosts] = useState<MiniPost[] | null>(null)
@@ -90,6 +94,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     if (!user) return
     setTab('posts')
     setTabDir(null)
+    setEditing(false)
     setData(null)
     setPosts(null)
     setNotFound(false)
@@ -134,6 +139,25 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
       if (!blockErr) { setBlocksEnabled(true); setBlocked(!!blockRow) }
     })()
   }, [user, username])
+
+  async function reloadProfile() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch(`/api/community/profile?username=${encodeURIComponent(username)}&tz=${new Date().getTimezoneOffset()}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
+    if (res.ok) setData(await res.json())
+  }
+
+  function startEditing() {
+    setEditing(true)
+    document.querySelector('main')?.scrollTo({ top: 0 })
+    window.scrollTo(0, 0)
+  }
+
+  async function finishEditing() {
+    await reloadProfile()
+    setEditing(false)
+    showToast('Profile saved')
+  }
 
   async function toggleFollow() {
     if (!data) return
@@ -214,6 +238,22 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
           </div>
         ) : !data ? (
           <SkeletonList count={3} />
+        ) : editing && isMe ? (
+          <div className="anim-fade">
+            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 18 }}>Edit profile</h1>
+            <div style={{ marginBottom: 22 }}>
+              <ProfilePhoto userId={data.profile.id} username={data.profile.username} url={data.profile.avatarUrl ?? null}
+                onChange={async () => { await refreshProfile(); await reloadProfile() }} />
+            </div>
+            <ProfileExtras userId={data.profile.id} onSaved={finishEditing} onCancel={() => setEditing(false)} />
+            <Link href="/account?page=username" className={ui.card} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit' }}>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: 15, color: 'var(--text)' }}>Username</span>
+                <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 1 }}>@{data.profile.username}</span>
+              </span>
+              <ChevronRightIcon size={16} color="var(--text-dim)" />
+            </Link>
+          </div>
         ) : (
           <>
             <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 0 20px' }}>
@@ -236,7 +276,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               {data.profile.joined && <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Joined {new Date(data.profile.joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 {!isMe && <FollowButton following={following} onToggle={toggleFollow} disabled={blocked} />}
-                <button className={isMe ? ui.btnPrimary : ui.btnSecondary} onClick={shareProfile} style={{ gap: 6 }}><ShareIcon /> {isMe ? 'Share my profile' : 'Share'}</button>
+                {isMe && <button className={ui.btnPrimary} onClick={startEditing}>Edit profile</button>}
+                <button className={ui.btnSecondary} onClick={shareProfile} style={{ gap: 6 }}><ShareIcon /> Share</button>
                 {!isMe && blocksEnabled && <button className={ui.btnGhost} onClick={toggleBlock}>{blocked ? 'Unblock' : 'Block'}</button>}
               </div>
             </div>
@@ -335,29 +376,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             ) : tab === 'collection' ? (
               <div key="collection" className="anim-fade">
                 <FlavorCollection found={data.collection?.found ?? []} isMe={isMe} />
-              </div>
-            ) : tab === 'stores' ? (
-              <div key="stores" className="anim-fade">
-                {!data.storesAddedList?.length ? (
-                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Stores you add (once approved) show up here.' : 'No stores added yet.'}</p>
-                ) : (
-                  <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
-                    {data.storesAddedList.map((st, i) => (
-                      <Link key={st.id} href={`/store/${st.id}?name=${encodeURIComponent(st.name)}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
-                        <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <StoreTypeIcon type={st.type} size={18} color="var(--text-muted)" />
-                        </span>
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st.name}</span>
-                          <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            Added {new Date(st.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}{st.address ? ` · ${st.address}` : ''}
-                          </span>
-                        </span>
-                        <ChevronRightIcon size={16} color="var(--text-dim)" />
-                      </Link>
-                    ))}
-                  </div>
-                )}
               </div>
             ) : posts === null ? (
               <SkeletonList count={2} />

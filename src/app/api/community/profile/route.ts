@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   }
 
   const count = async (q: any) => { const { count } = await q; return count ?? 0 }
-  const [reports, storesAdded, followers, following, iFollow, { data: rows }, finds_, { data: addedRows }] = await Promise.all([
+  const [reports, storesAdded, followers, following, iFollow, { data: rows }, finds_] = await Promise.all([
     count(supabaseAdmin.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', profile.id)),
     count(supabaseAdmin.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', profile.id).eq('status', 'approved')),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('followed_id', profile.id)),
@@ -52,7 +52,6 @@ export async function GET(req: NextRequest) {
     supabaseAdmin.from('stock_reports').select('drink_id, store_id, quantity, reported_at').eq('user_id', profile.id).order('reported_at', { ascending: false }).limit(1000),
     // Permanent flavor collection (profile-v2); errors until that script runs.
     supabaseAdmin.from('flavor_finds').select('drink_id').eq('user_id', profile.id).limit(5000),
-    supabaseAdmin.from('stores').select('id, name, type, address, created_at').eq('submitted_by', profile.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(50),
   ])
   const reportRows: { drink_id: string; store_id: string; quantity: string; reported_at: string }[] = rows ?? []
 
@@ -92,7 +91,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     stats: { uniqueFlavors, streak },
     collection: { found: collection, permanent: !finds_.error },
-    storesAddedList: (addedRows ?? []).map((s: any) => ({ id: s.id, name: s.name, type: s.type, address: s.address, at: s.created_at })),
     privateReports,
     badges,
     topStores: privateReports ? [] : topStoreIds.filter((id) => storeById.has(id)).map((id) => ({ id, name: storeById.get(id).name, type: storeById.get(id).type, reports: perStore[id] })),

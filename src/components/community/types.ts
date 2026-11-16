@@ -31,11 +31,6 @@ export interface FeedPost {
   likedByMe: boolean
 }
 
-export type ActivityItem =
-  | { kind: 'report'; id: string; created_at: string; user_id: string; username: string; store: { id: string; name: string }; drinks: { brand: string; flavor: string; quantity: string }[] }
-  | { kind: 'store'; id: string; created_at: string; username: string | null; store: { id: string; name: string; address: string | null } }
-  | { kind: 'restock'; id: string; created_at: string; store: { id: string; name: string }; drink: { brand: string; flavor: string; quantity: string } }
-
 export interface StoreSummary { inStock: number; total: number; latest: string | null }
 
 export const QUANTITY_STYLE: Record<string, { label: string; color: string }> = {

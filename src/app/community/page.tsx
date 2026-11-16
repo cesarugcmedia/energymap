@@ -72,7 +72,7 @@ export default function CommunityPage() {
               <UsersIcon size={16} color="var(--text)" /> Find people
             </button>
           </div>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Finds, questions and live reports from hunters near you</p>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Finds, questions and posts from hunters near you</p>
           {liveCount > 0 && (
             <button onClick={() => setFindPeople(true)} className="anim-fade" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 8, padding: 0, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent-text)' }}>
               <span className="live-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#C9F400' }} />

@@ -2,8 +2,6 @@
 
 import { BADGE_DEFS } from '@/lib/badges'
 import PlanDetails from '@/components/account/PlanDetails'
-import ProfileExtras from '@/components/account/ProfileExtras'
-import ProfilePhoto from '@/components/account/ProfilePhoto'
 import { usePresence } from '@/contexts/PresenceContext'
 import { isMissingSchema } from '@/lib/community'
 import { useTheme, type ThemePref } from '@/contexts/ThemeContext'
@@ -339,7 +337,7 @@ function AccountPageInner() {
   // drill-down directly, with Back returning to the Account list.
   useEffect(() => {
     const p = searchParams.get('page')
-    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance' && p !== 'notifications' && p !== 'privacy') return
+    if (p !== 'badges' && p !== 'alerts' && p !== 'plan' && p !== 'appearance' && p !== 'notifications' && p !== 'privacy' && p !== 'username') return
     window.history.replaceState({ accountPage: 'root' }, '', '/account')
     window.history.pushState({ accountPage: p }, '')
     setAccountPage(p)
@@ -989,35 +987,6 @@ function switchMode(m: Mode) {
 
     function renderSubpage() {
       switch (accountPage) {
-        case 'profile':
-          return (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 20px 24px' }}>
-                <ProfilePhoto userId={user!.id} username={profile.username} url={profile.avatar_url ?? null} onChange={refreshProfile} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>@{profile.username}</p>
-                  {profile.is_verified_reporter && <CheckIcon size={16} color="#60a5fa" />}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  {profile.is_admin && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(201,244,0,0.15)', color: 'var(--accent-text)', border: '1px solid rgba(201,244,0,0.3)' }}>ADMIN</span>}
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: `color-mix(in srgb, ${tierInfo.color} 9%, transparent)`, color: tierInfo.color, border: `1px solid color-mix(in srgb, ${tierInfo.color} 25%, transparent)` }}>{tierInfo.icon} {tierInfo.label.toUpperCase()}</span>
-                  {!statsLoading && rank && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, backgroundColor: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.25)' }}>#{rank} All-Time</span>}
-                </div>
-              </div>
-              <ProfileExtras userId={user!.id} username={profile.username} />
-              {group(<>
-                {row({ label: 'Reports', value: statsLoading ? '–' : reportCount })}
-                {ROW_SEP}
-                {row({ label: 'Stores Added', value: statsLoading ? '–' : storeCount })}
-                {ROW_SEP}
-                {row({ label: 'Drinks Reported', value: statsLoading ? '–' : uniqueFlavors })}
-                {ROW_SEP}
-                {row({ label: 'Reporting Streak', value: statsLoading ? '–' : `${streak} day${streak === 1 ? '' : 's'}${streak > 0 ? ' 🔥' : ''}` })}
-              </>, { header: 'Activity' })}
-              {group(row({ label: 'Email', value: user!.email }), { header: 'Account' })}
-            </>
-          )
-
         case 'plan':
           return (
             <PlanDetails betaSpotsLeft={Math.max(0, 60 - betaCount)} checkoutLoading={checkoutLoading} checkoutError={checkoutError} onUpgrade={() => startCheckout('tracker')} cancelLoading={cancelLoading} cancelError={cancelError} onCancel={(isBeta) => cancelSubscription(false, isBeta)} onResume={() => cancelSubscription(true)} />
@@ -1291,7 +1260,7 @@ function switchMode(m: Mode) {
 
             {/* Profile card */}
             <div style={{ margin: '0 16px 22px' }}>
-              <button onClick={() => openAccountPage('profile')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 12, backgroundColor: 'var(--surface)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <button onClick={() => router.push(`/u/${encodeURIComponent(profile.username)}`)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 12, backgroundColor: 'var(--surface)', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                 {avatar(60)}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

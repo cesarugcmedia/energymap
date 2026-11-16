@@ -1,14 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { isMissingSchema } from '@/lib/community'
 import ui from '@/components/ui/ui.module.css'
 import { DrinkIcon, CloseIcon, SearchIcon } from '@/components/Icons'
 
-// Account → Profile: an optional bio line and a favorite drink, both shown on
-// the public profile (/u/[username]). Columns come from
+// Edit profile (on your own /u/[username]): an optional bio line and a
+// favorite drink, both shown on the public profile. Columns come from
 // scripts/profile-extras.sql; before it runs the editor still renders but
 // saving explains that the feature isn't switched on yet.
 
@@ -16,7 +15,7 @@ type DrinkLite = { id: string; brand: string; name: string; flavor: string | nul
 const label = (d: DrinkLite) => `${d.brand} ${d.flavor ?? d.name}`
 const MAX_BIO = 160
 
-export default function ProfileExtras({ userId, username }: { userId: string; username: string }) {
+export default function ProfileExtras({ userId, onSaved, onCancel }: { userId: string; onSaved: () => void; onCancel: () => void }) {
   const [bio, setBio] = useState('')
   const [fav, setFav] = useState<DrinkLite | null>(null)
   const [initial, setInitial] = useState<{ bio: string; favId: string | null }>({ bio: '', favId: null })
@@ -56,6 +55,7 @@ export default function ProfileExtras({ userId, username }: { userId: string; us
   const dirty = bio.trim() !== initial.bio.trim() || (fav?.id ?? null) !== initial.favId
 
   async function save() {
+    if (!dirty) { onSaved(); return }
     setSaving(true)
     setStatus(null)
     const { error } = await supabase.from('profiles').update({ bio: bio.trim() || null, favorite_drink_id: fav?.id ?? null }).eq('id', userId)
@@ -65,14 +65,13 @@ export default function ProfileExtras({ userId, username }: { userId: string; us
       return
     }
     setInitial({ bio: bio.trim(), favId: fav?.id ?? null })
-    setStatus('Saved')
-    setTimeout(() => setStatus(null), 2000)
+    onSaved()
   }
 
   if (!loaded) return null
 
   return (
-    <div style={{ padding: '0 16px', marginBottom: 22 }}>
+    <div style={{ marginBottom: 22 }}>
       <p className={ui.sectionLabel} style={{ margin: '0 4px 8px' }}>About you</p>
       <div className={ui.card} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
@@ -115,10 +114,10 @@ export default function ProfileExtras({ userId, username }: { userId: string; us
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className={ui.btnPrimary} disabled={!dirty || saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button>
-          {status && <span className="anim-fade" style={{ fontSize: 14, color: status === 'Saved' ? 'var(--accent-text)' : 'var(--text-muted)' }}>{status}</span>}
-          <Link href={`/u/${username}`} className={ui.linkQuiet} style={{ marginLeft: 'auto' }}>View public profile</Link>
+        {status && <p className="anim-fade" style={{ fontSize: 14, color: 'var(--text-muted)' }}>{status}</p>}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={onCancel} disabled={saving}>Cancel</button>
+          <button className={ui.btnPrimary} style={{ flex: 1 }} disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
     </div>

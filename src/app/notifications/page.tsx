@@ -246,47 +246,49 @@ export default function NotificationsPage() {
     )
   }
 
+  // Same compact card as the old Community activity cards: icon tile,
+  // message, time, chevron. Unread cards get a lime tint and a dot.
   const iconTile = (type: string, unread: boolean) => (
-    <span style={{ width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: unread ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)' }}>
+    <span style={{ position: 'relative', width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: unread ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)' }}>
       {notificationIcon(type)}
+      {unread && <span style={{ position: 'absolute', top: -3, right: -3, width: 9, height: 9, borderRadius: '50%', background: '#C9F400', border: '2px solid var(--bg)' }} />}
     </span>
   )
 
-  const rowShell = (key: string, unread: boolean, onClick: () => void, href: string | null, children: React.ReactNode, i: number) => (
+  const rowShell = (key: string, unread: boolean, onClick: () => void, href: string | null, children: React.ReactNode) => (
     <button
       key={key}
       onClick={onClick}
-      className={arrivedIds.has(key) ? 'anim-new' : undefined}
+      className={`reveal ${arrivedIds.has(key) ? 'anim-new' : ''}`}
       style={{
-        width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 14px 13px 12px', textAlign: 'left',
-        background: unread ? 'rgba(201,244,0,0.035)' : 'none', border: 'none', borderTop: i ? '1px solid var(--fg-06)' : 'none',
+        width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', textAlign: 'left', borderRadius: 14,
+        background: unread ? 'rgba(201,244,0,0.05)' : 'var(--fg-03)', border: `1px solid ${unread ? 'rgba(201,244,0,0.22)' : 'var(--fg-06)'}`,
         cursor: 'pointer', fontFamily: 'inherit', color: 'inherit',
       }}
     >
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: unread ? '#C9F400' : 'transparent', flexShrink: 0, marginTop: 16 }} />
       {children}
-      {href && <span style={{ alignSelf: 'center', display: 'flex', flexShrink: 0 }}><ChevronRightIcon size={16} color="var(--text-dim)" /></span>}
+      {href && <span style={{ alignSelf: 'center', display: 'flex', flexShrink: 0 }}><ChevronRightIcon size={14} color="var(--text-dim)" /></span>}
     </button>
   )
 
-  const singleRow = (n: any, i: number) => {
+  const singleRow = (n: any) => {
     const href = hrefFor(n)
     return rowShell(n.id, !n.read, () => open([n.id], href), href, (
       <>
         {iconTile(n.type, !n.read)}
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 15, lineHeight: 1.4, fontWeight: n.read ? 400 : 600, color: n.read ? 'var(--text-muted)' : 'var(--text)' }}>
+          <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: n.read ? 400 : 600, color: n.read ? 'var(--text-muted)' : 'var(--text)' }}>
             {cleanMessage(n.message)}
           </span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {n.store?.name ? `${n.store.name} · ` : ''}{timeAgo(n.created_at)}
           </span>
         </span>
       </>
-    ), i)
+    ))
   }
 
-  const groupRow = (ns: any[], i: number) => {
+  const groupRow = (ns: any[]) => {
     const first = ns[0]
     const unread = ns.some((n) => !n.read)
     const href = hrefFor(first)
@@ -296,13 +298,13 @@ export default function NotificationsPage() {
       <>
         {iconTile('stock_update', unread)}
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 15, lineHeight: 1.4, fontWeight: unread ? 600 : 400, color: unread ? 'var(--text)' : 'var(--text-muted)' }}>
+          <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: unread ? 600 : 400, color: unread ? 'var(--text)' : 'var(--text-muted)' }}>
             {ns.length} stock updates{first.store?.name ? ` at ${first.store.name}` : ''}
           </span>
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
             {shown.map((n) => (
-              <span key={n.id} style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.35, display: 'flex', gap: 6 }}>
-                <span style={{ color: 'var(--text-dim)' }}>•</span>{cleanMessage(n.message)}
+              <span key={n.id} style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)', lineHeight: 1.35, alignSelf: 'flex-start' }}>
+                {cleanMessage(n.message)}
               </span>
             ))}
             {ns.length > 3 && (
@@ -318,10 +320,10 @@ export default function NotificationsPage() {
               </span>
             )}
           </span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(first.created_at)}</span>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(first.created_at)}</span>
         </span>
       </>
-    ), i)
+    ))
   }
 
   return (
@@ -378,8 +380,8 @@ export default function NotificationsPage() {
               {sections.map((sec) => (
                 <div key={sec.label} style={{ marginBottom: 20 }}>
                   <p className={ui.sectionLabel} style={{ margin: '0 4px 8px' }}>{sec.label}</p>
-                  <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
-                    {sec.items.map((it, i) => (it.kind === 'single' ? singleRow(it.n, i) : groupRow(it.ns, i)))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {sec.items.map((it) => (it.kind === 'single' ? singleRow(it.n) : groupRow(it.ns)))}
                   </div>
                 </div>
               ))}
