@@ -197,6 +197,13 @@ A Kroger Products/Locations API integration ("Verified" stock badges on store pa
 
 **Plan copy must match enforcement.** Tracker's real perks are listed in the tier table above (and `TRACKER_FEATURES` in `src/lib/plans.ts`). Exact report times are **free** since 2026-11-16. Tracker does **not** lift the 25 reports/day limit, and free accounts still get Flavor Alerts (up to 5) — don't advertise "unlimited submissions".
 
+### Share Links (2026-11-16)
+
+Shared links carry rich previews (texts, group chats, social). Data comes from server-only loaders in `src/lib/shareCards.ts` (`loadStoreCard`, `loadPostCard`; service role, public fields only, hidden posts excluded).
+- **Stores**: `src/app/store/[id]/layout.tsx` (title "Store: what's in stock", description with in-stock count, freshness, top flavors) + `opengraph-image.tsx` (name, address, N of M in stock, 4 fullest flavors with level colors, "Reported 2h ago" dot; revalidates every 10 min). Share button in the store-page header and on the report success screen.
+- **Posts**: Community share now links to `/p/[id]` (`src/app/p/[id]/`): its own metadata ("@name found X at Store") and preview image (type chip, drink + level, text, store, first photo). Signed-out visitors get a read-only copy with a Join prompt; signed-in visitors are redirected to `/community?post=` (`OpenInApp`). Unknown/hidden posts 404.
+- `shareLink()` (`src/lib/share.ts`) opens the share sheet or copies the link; `ShareIcon` lives in `Icons.tsx`.
+
 ### Brand Assets & SEO
 
 The logo mark is a dark bolt on a lime (`#C9F400`) rounded square, used in the landing/auth headers and generated (no image files) by `src/app/icon.tsx` (full-bleed, doubles as the maskable manifest icon), `apple-icon.tsx` (square and opaque — iOS applies its own mask) and `opengraph-image.tsx`. `ImageResponse` can't resolve CSS variables, so those files must use literal hex colors. `src/app/robots.ts` keeps admin/API/auth and signed-in-only routes out of search; `src/app/sitemap.ts` lists the public pages; the landing page embeds `WebSite` + `FAQPage` JSON-LD built from its FAQ content. `metadataBase` is set to `https://ampedmap.com` in `layout.tsx`.

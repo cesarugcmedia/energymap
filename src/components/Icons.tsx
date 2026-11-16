@@ -305,3 +305,11 @@ export function storeTypeIconSvg(type: string | null | undefined, color: string,
   const inner = (type && STORE_TYPE_PATH[type]) || STORE_TYPE_PATH.other
   return `<svg viewBox="0 0 24 24" fill="none" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">${inner(color)}</svg>`
 }
+
+export function ShareIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v12" /><path d="m7 8 5-5 5 5" /><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+    </svg>
+  )
+}

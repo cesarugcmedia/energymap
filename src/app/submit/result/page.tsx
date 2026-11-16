@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ui from '@/components/ui/ui.module.css'
 import { supabase } from '@/lib/supabase'
+import { ShareIcon } from '@/components/Icons'
+import { shareLink } from '@/lib/share'
 import { useAuth } from '@/contexts/AuthContext'
 
 const UNDO_MS = 5 * 60 * 1000
@@ -32,6 +34,13 @@ function ResultContent() {
     const t = setTimeout(() => window.dispatchEvent(new Event('check-badges')), 1600)
     return () => clearTimeout(t)
   }, [])
+  // Let the reporter tell friends; the link preview shows the store's stock.
+  const [shareNote, setShareNote] = useState<string | null>(null)
+  async function shareStore() {
+    const r = await shareLink({ url: `${window.location.origin}/store/${storeId}`, title: `${storeName || 'This store'} on AmpedMap`, text: `Just reported what's in stock at ${storeName || 'this store'}` })
+    if (r === 'copied') setShareNote('Link copied')
+    else if (r === 'failed') setShareNote('Could not share')
+  }
   const reportHref = `/submit/drinks?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}`
 
   // Tick the headline count up from 0 for a little celebration (instant when
@@ -200,9 +209,16 @@ function ResultContent() {
         <button className={`${ui.btnSecondary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => router.replace(reportHref)}>
           Report more flavors
         </button>
-        <button className={ui.btnGhost} onClick={() => router.replace(storeHref)}>
-          View store
-        </button>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <button className={ui.btnGhost} onClick={() => router.replace(storeHref)}>
+            View store
+          </button>
+          {storeId && (
+            <button className={ui.btnGhost} onClick={shareStore} style={{ gap: 6 }}>
+              <ShareIcon size={15} color="currentColor" /> {shareNote ?? 'Share'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

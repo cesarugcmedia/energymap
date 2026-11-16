@@ -11,7 +11,7 @@ import type { Quantity } from '@/lib/types'
 import Toast from '@/components/Toast'
 import CountUp from '@/components/ui/CountUp'
 import ui from '@/components/ui/ui.module.css'
-import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon } from '@/components/Icons'
+import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon, ShareIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import { usePreferences } from '@/lib/preferences'
 import Burst from '@/components/ui/Burst'
@@ -19,6 +19,7 @@ import { alertSlotsLeft, isAlertLimitError } from '@/lib/flavorAlerts'
 import { FREE_ALERT_LIMIT } from '@/lib/plans'
 import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
 import RestockPatterns from '@/components/store/RestockPatterns'
+import { shareLink } from '@/lib/share'
 import { stalenessOf, type Staleness } from '@/lib/freshness'
 
 const BRAND_ALIASES: Record<string, string> = {
@@ -234,6 +235,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       setAlertRadius(10)
       setAlertSheetDrinkId(drinkId)
     }
+  }
+
+  // Share link previews show the store's live stock (./opengraph-image.tsx).
+  async function shareStore() {
+    const url = `${window.location.origin}/store/${id}`
+    const r = await shareLink({ url, title: `${name} on AmpedMap`, text: inStockTotal > 0 ? `${inStockTotal} flavors in stock at ${name}` : `What's in stock at ${name}` })
+    if (r === 'copied') showToast('Link copied')
+    else if (r === 'failed') showToast('Could not share this store')
   }
 
   async function saveDrinkAlert() {
@@ -545,6 +554,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             <span key={heartAnim} className={heartAnim > 0 && isFavorited ? 'anim-pop' : ''} style={{ display: 'flex' }}>
               <HeartIcon size={16} color={isFavorited ? '#FF4545' : 'var(--text-muted)'} filled={isFavorited} />
             </span>
+          </button>
+          <button onClick={shareStore} aria-label="Share this store" title="Share this store" className={ui.iconBtn} style={{ width: 38, height: 38, flexShrink: 0 }}>
+            <ShareIcon size={16} color="var(--text-muted)" />
           </button>
           <button onClick={() => setShowFlag(true)} aria-label="Report a problem with this store" title="Report a problem with this store" className={ui.iconBtn} style={{ width: 38, height: 38, flexShrink: 0 }}>
             <FlagIcon size={15} color="var(--text-muted)" />

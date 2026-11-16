@@ -11,7 +11,7 @@ import BackButton from '@/components/BackButton'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
 import CountUp from '@/components/ui/CountUp'
-import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon, DrinkIcon, LightningIcon } from '@/components/Icons'
+import { CheckIcon, PinIcon, UsersIcon, StoreTypeIcon, ChevronRightIcon, DrinkIcon, LightningIcon, ShareIcon } from '@/components/Icons'
 import { BADGE_DEFS } from '@/lib/badges'
 import { Avatar, RichText } from '@/components/community/RichText'
 import { timeAgo } from '@/components/community/types'
@@ -298,7 +298,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 {!isMe && <FollowButton following={following} onToggle={toggleFollow} disabled={blocked} />}
                 {isMe && <button className={ui.btnPrimary} onClick={startEditing}>Edit profile</button>}
-                <button className={ui.btnSecondary} onClick={shareProfile} style={{ gap: 6 }}><ShareIcon /> Share</button>
+                <button className={ui.btnSecondary} onClick={shareProfile} style={{ gap: 6 }}><ShareIcon size={15} color="currentColor" /> Share</button>
                 {!isMe && blocksEnabled && <button className={ui.btnGhost} onClick={toggleBlock}>{blocked ? 'Unblock' : 'Block'}</button>}
               </div>
             </div>
@@ -430,11 +430,3 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   )
 }
 
-
-function ShareIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 3v12" /><path d="m7 8 5-5 5 5" /><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
-    </svg>
-  )
-}

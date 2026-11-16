@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { alertSlotsLeft, isAlertLimitError } from '@/lib/flavorAlerts'
 import { FREE_ALERT_LIMIT, isTrackerProfile } from '@/lib/plans'
 import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
+import { shareLink } from '@/lib/share'
 import { fetchProfileLites } from '@/lib/avatar'
 
 const PAGE = 15
@@ -312,10 +313,11 @@ export default function Feed({ me, toast }: {
   }
 
   async function share(post: FeedPost) {
-    const url = `${window.location.origin}/community?post=${post.id}`
-    const text = `@${post.username} on AmpedMap: ${post.body}`.slice(0, 200)
-    if (navigator.share) { try { await navigator.share({ text, url }) } catch { /* cancelled */ } return }
-    try { await navigator.clipboard.writeText(url); toast('Link copied!') } catch { toast('Could not copy link.') }
+    // /p/[id] carries the post's own link preview image and a public copy.
+    const url = `${window.location.origin}/p/${post.id}`
+    const r = await shareLink({ url, text: `@${post.username} on AmpedMap: ${post.body}`.slice(0, 200) })
+    if (r === 'copied') toast('Link copied!')
+    else if (r === 'failed') toast('Could not copy link.')
   }
 
   async function deletePost(post: FeedPost) {
