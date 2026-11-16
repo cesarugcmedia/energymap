@@ -9,13 +9,17 @@ interface LocationObject {
 
 export type LocationError = 'denied' | 'unavailable' | 'timeout'
 
+// The last fix this session. Coming back to the map reuses it right away
+// (no loader) and refreshes the position quietly in the background.
+let lastFix: LocationObject | null = null
+
 export function useLocation() {
-  const [location, setLocation] = useState<LocationObject | null>(null)
+  const [location, setLocation] = useState<LocationObject | null>(lastFix)
   const [error, setError] = useState<LocationError | null>(null)
   const [loading, setLoading] = useState(false)
 
   const request = useCallback(() => {
-    setLoading(true)
+    if (!lastFix) setLoading(true)
     setError(null)
 
     if (!navigator.geolocation) {
@@ -26,15 +30,13 @@ export function useLocation() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({
-          coords: {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          },
-        })
+        lastFix = { coords: { latitude: pos.coords.latitude, longitude: pos.coords.longitude } }
+        setLocation(lastFix)
         setLoading(false)
       },
       (err) => {
+        // A failed background refresh keeps showing the last good fix.
+        if (lastFix) { setLoading(false); return }
         if (err.code === err.PERMISSION_DENIED) {
           setError('denied')
         } else if (err.code === err.TIMEOUT) {

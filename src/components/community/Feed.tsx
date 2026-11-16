@@ -28,21 +28,29 @@ async function authHeaders() {
   return session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` } : null
 }
 
+// The last feed this tab showed, kept in memory (not storage) so switching
+// back to Community paints it instantly; refresh() then updates it quietly.
+let feedCache: {
+  uid: string; v3: boolean | null; posts: FeedPost[]; comments: Record<string, FeedComment[]>
+  summaries: Record<string, StoreSummary>; cursor: string | null; hasMore: boolean
+} | null = null
+
 export default function Feed({ me, toast }: {
   me: { id: string; username: string; lat: number | null; lng: number | null }
   toast: (msg: string) => void
 }) {
   const router = useRouter()
   // null = not detected yet. false = community-v3.sql not run (v3 features hidden).
-  const [v3, setV3] = useState<boolean | null>(null)
-  const v3Ref = useRef<boolean | null>(null)
+  const cached = feedCache?.uid === me.id ? feedCache : null
+  const [v3, setV3] = useState<boolean | null>(cached?.v3 ?? null)
+  const v3Ref = useRef<boolean | null>(cached?.v3 ?? null)
 
-  const [posts, setPosts] = useState<FeedPost[]>([])
-  const [comments, setComments] = useState<Record<string, FeedComment[]>>({})
-  const [summaries, setSummaries] = useState<Record<string, StoreSummary>>({})
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [hasMore, setHasMore] = useState(true)
-  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState<FeedPost[]>(cached?.posts ?? [])
+  const [comments, setComments] = useState<Record<string, FeedComment[]>>(cached?.comments ?? {})
+  const [summaries, setSummaries] = useState<Record<string, StoreSummary>>(cached?.summaries ?? {})
+  const [cursor, setCursor] = useState<string | null>(cached?.cursor ?? null)
+  const [hasMore, setHasMore] = useState(cached?.hasMore ?? true)
+  const [loading, setLoading] = useState(!cached)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
   const [filter, setFilter] = useState<Filter>('latest')
@@ -177,6 +185,11 @@ export default function Feed({ me, toast }: {
     setHasMore(rows.length === PAGE)
     setLoadingMore(false)
   }, [hasMore, loadingMore, cursor, fetchRows, enrich])
+
+  useEffect(() => {
+    if (loading) return
+    feedCache = { uid: me.id, v3, posts, comments, summaries, cursor, hasMore }
+  }, [me.id, loading, v3, posts, comments, summaries, cursor, hasMore])
 
   // Initial load + side data
   useEffect(() => {

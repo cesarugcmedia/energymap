@@ -163,15 +163,20 @@ function buildItems(list: any[]): Item[] {
   return result
 }
 
+// Last list shown, kept in memory so reopening the Alerts tab paints it
+// instantly while refresh() fetches the latest in the background.
+let listCache: { uid: string; muted: string; list: any[]; hasMore: boolean } | null = null
+
 export default function NotificationsPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   // Types muted in Account → Notifications are left out of the list.
   const { muted } = useMutedNotifications()
   const mutedKey = muted.join(',')
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [hasMore, setHasMore] = useState(false)
+  const cached = listCache && listCache.uid === user?.id && listCache.muted === mutedKey ? listCache : null
+  const [notifications, setNotifications] = useState<any[]>(cached?.list ?? [])
+  const [loading, setLoading] = useState(!cached)
+  const [hasMore, setHasMore] = useState(cached?.hasMore ?? false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
@@ -194,7 +199,7 @@ export default function NotificationsPage() {
     })
   }, [])
   // Rows that arrived live while the page is open get a brief highlight.
-  const knownIds = useRef<Set<string> | null>(null)
+  const knownIds = useRef<Set<string> | null>(cached ? new Set(cached.list.map((n: any) => n.id)) : null)
   const [arrivedIds, setArrivedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -238,6 +243,10 @@ export default function NotificationsPage() {
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user, refresh])
+
+  useEffect(() => {
+    if (!loading && user) listCache = { uid: user.id, muted: mutedKey, list: notifications, hasMore }
+  }, [loading, user, mutedKey, notifications, hasMore])
 
   async function loadMore() {
     if (loadingMore || notifications.length === 0) return

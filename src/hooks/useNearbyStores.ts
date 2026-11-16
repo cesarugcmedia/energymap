@@ -43,7 +43,14 @@ export function useNearbyStores(lat: number, lng: number, tierKey: string, enabl
       setError(false)
       return
     }
-    setLoading(true)
+    // Expired: keep showing the old stores while fresh ones load, rather
+    // than dropping back to the loader.
+    if (cached) {
+      setStores(cached.stores)
+      setNearbyCount(cached.nearbyCount)
+    } else {
+      setLoading(true)
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
