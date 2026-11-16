@@ -1,8 +1,18 @@
-// The 18-badge catalog, shared by Account → Badges and public profiles
+// The 19-badge catalog, shared by Account → Badges and public profiles
 // (/u/[username]). Thematic emoji are intentional here (see CLAUDE.md,
 // "Deliberately left as emoji").
 
+/** Founding Hunter: everyone who joins before this date keeps the badge for
+ *  good. Advertised on the landing page ("Join before January 1"). */
+export const FOUNDING_CUTOFF = '2027-01-01T00:00:00Z'
+export const FOUNDING_CUTOFF_LABEL = 'January 1'
+
+export function isFoundingMember(joined: string | null | undefined): boolean {
+  return !!joined && new Date(joined).getTime() < new Date(FOUNDING_CUTOFF).getTime()
+}
+
 export const BADGE_DEFS = [
+  { id: 'founding_hunter', icon: '🎖️', name: 'Founding Hunter', desc: 'Joined before ' + FOUNDING_CUTOFF_LABEL + ', 2027. Yours forever', color: '#C9F400', glow: 'rgba(201,244,0,0.25)' },
   { id: 'early_adopter',   icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)'  },
   { id: 'first_report',    icon: '⚡', name: 'First Report',    desc: 'Submitted your first stock report',   color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
   { id: 'reporter_10',     icon: '📊', name: 'Reporter',        desc: '10 stock reports submitted',          color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
@@ -40,6 +50,7 @@ export function computeBadges(s: BadgeStats): Set<string> {
   const earned = new Set<string>()
   const memberDays = s.memberSince ? Math.floor((Date.now() - new Date(s.memberSince).getTime()) / 86400000) : 0
   if (memberDays >= 30) earned.add('early_adopter')
+  if (isFoundingMember(s.memberSince)) earned.add('founding_hunter')
   if (s.reports >= 1) earned.add('first_report')
   if (s.reports >= 10) earned.add('reporter_10')
   if (s.reports >= 50) earned.add('reporter_50')

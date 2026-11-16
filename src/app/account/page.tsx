@@ -1,6 +1,6 @@
 'use client'
 
-import { BADGE_DEFS } from '@/lib/badges'
+import { BADGE_DEFS, isFoundingMember } from '@/lib/badges'
 import PlanDetails from '@/components/account/PlanDetails'
 import { usePresence } from '@/contexts/PresenceContext'
 import { isMissingSchema } from '@/lib/community'
@@ -876,6 +876,7 @@ function switchMode(m: Mode) {
     const earned = new Set<string>()
     const memberDays = Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
     if (memberDays >= 30)            earned.add('early_adopter')
+    if (isFoundingMember(user.created_at)) earned.add('founding_hunter')
     if (reportCount >= 1)             earned.add('first_report')
     if (reportCount >= 10)            earned.add('reporter_10')
     if (reportCount >= 50)            earned.add('reporter_50')

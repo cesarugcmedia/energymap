@@ -5,6 +5,9 @@ import PhoneMockup from './PhoneMockup'
 import ZipPreview from './ZipPreview'
 import LiveTicker from './LiveTicker'
 import TrackerShowcase from './TrackerShowcase'
+import CollectShowcase from './CollectShowcase'
+import StickyCta from './StickyCta'
+import { FOUNDING_CUTOFF_LABEL, isFoundingMember } from '@/lib/badges'
 import { FREE_FEATURES, TRACKER_FEATURES } from '@/lib/plans'
 import styles from './landing.module.css'
 
@@ -41,6 +44,8 @@ const FAQ = [
 
 export default function Landing({ stats }: { stats: LandingStats | null }) {
   const spotsLeft = stats?.trackers != null ? Math.max(0, BETA_LIMIT - stats.trackers) : null
+  // The Founding Hunter offer disappears by itself after the cutoff date.
+  const foundingOpen = isFoundingMember(new Date().toISOString())
 
   // Structured data so search engines can show the FAQ answers and site name
   // directly in results. Built from the same FAQ content rendered below.
@@ -72,7 +77,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
 
       <main>
         {/* Hero */}
-        <section className={`${styles.container} ${styles.hero}`}>
+        <section id="lp-hero" className={`${styles.container} ${styles.hero}`}>
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>For energy drink hunters</p>
             <h1 className={styles.h1}>Never hunt for your favorite energy drink again.</h1>
@@ -83,6 +88,11 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
               <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
               <Link href="/account?mode=signin" className={styles.btnGhost}>Sign in</Link>
             </div>
+            {foundingOpen && (
+              <p className={styles.foundingLine}>
+                <span aria-hidden="true">🎖️</span> Join before {FOUNDING_CUTOFF_LABEL} to get the <strong>Founding Hunter</strong> badge, forever.
+              </p>
+            )}
             {stats && stats.stores > 0 && (
               <p className={styles.statLine}>
                 <strong><CountUp value={stats.stores} /></strong> stores and <strong><CountUp value={stats.drinks} /></strong> flavors on the map
@@ -127,6 +137,9 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
             </div>
           </div>
         </section>
+
+        {/* Badges, streaks and the flavor collection, drawn; Founding Hunter offer */}
+        <CollectShowcase />
 
         {/* Tracker features, drawn */}
         <TrackerShowcase />
@@ -180,14 +193,16 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         </section>
 
         {/* Closing CTA */}
-        <section className={`${styles.container} ${styles.closing} reveal`}>
+        <section id="lp-join" className={`${styles.container} ${styles.closing} reveal`}>
           <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
           <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
         </section>
       </main>
 
+      <StickyCta note={foundingOpen ? `Founding Hunter badge until ${FOUNDING_CUTOFF_LABEL}` : null} />
+
       {/* Footer */}
-      <footer className={styles.footer}>
+      <footer id="lp-footer" className={styles.footer}>
         <div className={`${styles.container} ${styles.footerInner}`}>
           <Link href="/" className={styles.brand}>
             <LogoMark size={24} />

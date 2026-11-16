@@ -993,3 +993,166 @@
   to { opacity: 0.55; }
 }
 @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+/* ── Founding Hunter line under the hero buttons ── */
+.foundingLine {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--lp-muted);
+}
+.foundingLine strong { color: var(--lp-text); font-weight: 600; }
+
+/* ── Every find counts (CollectShowcase) ── */
+.badgeMock,
+.collectMock {
+  margin-bottom: 18px;
+  border-radius: 16px;
+  padding: 16px;
+  background: #0d100c;
+  border: 1px solid var(--lp-line);
+}
+.badgeMockHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.badgeMockTitle { font-size: 13px; font-weight: 600; color: var(--lp-lime); }
+.streakChip {
+  font-size: 12px;
+  font-weight: 700;
+  color: #FF8A3D;
+  background: rgba(255, 138, 61, 0.12);
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.badgeTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--lp-line);
+  background: rgba(255, 255, 255, 0.02);
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+.badgeOn {
+  opacity: 1;
+  filter: none;
+  border-color: color-mix(in srgb, var(--b) 45%, transparent);
+  background: var(--g);
+}
+.badgeIcon { font-size: 24px; line-height: 1; }
+.badgeName {
+  font-size: 10.5px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--lp-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.badgeOn .badgeName { color: var(--lp-text); }
+
+.collectBrand + .collectBrand { margin-top: 12px; }
+.collectRow { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.collectName { font-size: 14px; font-weight: 600; color: var(--lp-text); }
+.collectCount { font-size: 12px; color: var(--lp-subtle); }
+.completeChip {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0D1210;
+  background: var(--lp-lime);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.collectTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 0 7px;
+  overflow: hidden;
+}
+.collectFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--lp-lime);
+  transform-origin: left;
+}
+.collectChips { display: flex; flex-wrap: wrap; gap: 5px; }
+.flavorFound,
+.flavorMissing {
+  font-size: 11.5px;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.flavorFound { color: var(--lp-text); background: rgba(201, 244, 0, 0.14); }
+.flavorMissing { color: var(--lp-subtle); border: 1px dashed rgba(255, 255, 255, 0.14); }
+
+.founding {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin-top: 16px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(201, 244, 0, 0.4);
+  background: linear-gradient(120deg, rgba(201, 244, 0, 0.1), rgba(201, 244, 0, 0.02) 60%);
+}
+.foundingIcon { font-size: 34px; line-height: 1; }
+.foundingText { flex: 1; min-width: 200px; }
+.foundingTitle { margin: 0 0 2px; font-size: 17px; font-weight: 600; color: var(--lp-text); }
+
+/* ── Phone-only sticky sign-up bar (StickyCta) ── */
+.sticky {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 16px;
+  border-radius: 18px;
+  background: rgba(18, 20, 16, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translateY(calc(100% + 24px));
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.stickyOn { opacity: 1; transform: none; pointer-events: auto; }
+.stickyText { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.stickyText strong { font-size: 15px; color: var(--lp-text); font-weight: 600; }
+.stickyText span { font-size: 12px; color: var(--lp-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sticky .btnPrimary { padding: 10px 16px; min-height: 0; flex-shrink: 0; }
+@media (min-width: 760px) {
+  .sticky { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .showcaseCard[data-revealed] .badgeOn { animation: badgePop 0.5s calc(0.2s + var(--i) * 0.08s) cubic-bezier(0.2, 0.8, 0.2, 1.4) both; }
+  .showcaseCard[data-revealed] .collectFill { animation: collectFill 0.9s calc(0.2s + var(--i) * 0.12s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticky { transition: none; }
+}
+@keyframes badgePop {
+  from { opacity: 0.38; transform: scale(0.8); filter: grayscale(1); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes collectFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
