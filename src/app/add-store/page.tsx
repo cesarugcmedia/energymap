@@ -2,6 +2,7 @@
 
 import ui from '@/components/ui/ui.module.css'
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -342,8 +343,8 @@ export default function AddStorePage() {
       </div>
       </div>
 
-      {/* Duplicate store modal */}
-      {duplicate && (
+      {/* Duplicate store modal (portaled so the tab bar can't cover it) */}
+      {duplicate && createPortal(
         <div
           className="anim-fade"
           style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
@@ -373,7 +374,8 @@ export default function AddStorePage() {
               Got it
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

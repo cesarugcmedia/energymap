@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -184,6 +185,8 @@ export default function NotificationsPage() {
   // Mark all read: unread dots pop out top to bottom before the rows settle.
   const [sweeping, setSweeping] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [clearError, setClearError] = useState(false)
+  useEffect(() => { if (confirmClear) setClearError(false) }, [confirmClear])
   // Drink names from the catalog, so they can be colored in stock messages.
   const [drinkNames, setDrinkNames] = useState<string[]>([])
   const matcher = useMemo(() => buildMatcher(drinkNames), [drinkNames])
@@ -299,8 +302,8 @@ export default function NotificationsPage() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     }).then((r) => r.ok).catch(() => false)
     setClearing(false)
+    if (!ok) { setClearError(true); return }
     setConfirmClear(false)
-    if (!ok) return
     setNotifications([])
     setHasMore(false)
     window.dispatchEvent(new Event('notifications-changed'))
@@ -492,18 +495,22 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* Clear-all confirmation */}
-      {confirmClear && (
+      {/* Clear-all confirmation. Portaled to <body>: <main>'s page-enter
+          animation makes it a stacking context, so a sheet rendered inside it
+          sits under the tab bar (z-50) and its buttons can't be tapped. */}
+      {confirmClear && createPortal(
         <div className="anim-fade" onClick={() => setConfirmClear(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div className="anim-sheet" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: 'var(--surface)', borderRadius: '24px 24px 0 0', border: '1px solid var(--fg-08)', padding: '22px 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
             <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>Clear all notifications?</p>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 18 }}>This removes every notification for good. It can&apos;t be undone.</p>
+            {clearError && <p style={{ fontSize: 14, color: '#FF6B6B', marginBottom: 12 }}>Couldn&apos;t clear them. Check your connection and try again.</p>}
             <div style={{ display: 'flex', gap: 8 }}>
               <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => setConfirmClear(false)}>Cancel</button>
               <button className={ui.btnSecondary} style={{ flex: 1, color: '#FF6B6B', borderColor: 'rgba(255,107,107,0.35)' }} onClick={clearAll} disabled={clearing}>{clearing ? 'Clearing…' : 'Clear all'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
