@@ -274,6 +274,16 @@ export function TiktokIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
   )
 }
 
+// Simplified monochrome approximation of the Discord mark, same single-path
+// approach as TiktokIcon.
+export function DiscordIcon({ size = 20, color = DEFAULT_COLOR }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M19.3 5.6A16 16 0 0 0 15.4 4.4l-.5 1a14.7 14.7 0 0 0-5.8 0l-.5-1a16 16 0 0 0-3.9 1.2C2.2 9.3 1.6 12.9 1.9 16.4a16.2 16.2 0 0 0 4.8 2.4l1-1.6a10 10 0 0 1-1.6-.8l.4-.3a11.4 11.4 0 0 0 11 0l.4.3c-.5.3-1 .6-1.6.8l1 1.6a16.2 16.2 0 0 0 4.8-2.4c.4-4-.6-7.6-2.8-10.8zM8.7 14.3c-.9 0-1.7-.9-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.8 1.9-1.7 1.9zm6.6 0c-.9 0-1.7-.9-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.8 1.9-1.7 1.9z" fill={color} />
+    </svg>
+  )
+}
+
 export const OtherIcon = PinIcon
 
 const STORE_TYPE_ICON: Record<string, (p: IconProps) => JSX.Element> = {

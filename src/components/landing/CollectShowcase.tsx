@@ -1,10 +1,8 @@
-import Link from 'next/link'
-import { BADGE_DEFS, FOUNDING_CUTOFF_LABEL, isFoundingMember } from '@/lib/badges'
+import { BADGE_DEFS } from '@/lib/badges'
 import styles from './landing.module.css'
 
 // Landing section: the game side of AmpedMap — badges, streaks and the flavor
-// Collection — drawn (illustrative, not live data), plus the Founding Hunter
-// offer while it's still open.
+// Collection — drawn (illustrative, not live data).
 
 const SHOWN = ['founding_hunter', 'first_report', 'flavor_hunter', 'on_fire', 'night_owl', 'scout', 'unstoppable', 'weekly_champion']
 const EARNED = new Set(['founding_hunter', 'first_report', 'flavor_hunter', 'on_fire', 'night_owl'])
@@ -16,7 +14,6 @@ const BRANDS = [
 ] as const
 
 export default function CollectShowcase() {
-  const foundingOpen = isFoundingMember(new Date().toISOString())
   const badges = SHOWN.map((id) => BADGE_DEFS.find((b) => b.id === id)!).filter(Boolean)
 
   return (
@@ -77,16 +74,6 @@ export default function CollectShowcase() {
           </div>
         </div>
 
-        {foundingOpen && (
-          <div className={`${styles.founding} reveal`}>
-            <span className={styles.foundingIcon} aria-hidden="true">🎖️</span>
-            <div className={styles.foundingText}>
-              <p className={styles.foundingTitle}>Become a Founding Hunter</p>
-              <p className={styles.body}>Join before {FOUNDING_CUTOFF_LABEL} and the Founding Hunter badge is yours forever. It won&apos;t be offered again.</p>
-            </div>
-            <Link href="/account?mode=signup" className={styles.btnPrimary}>Claim your badge</Link>
-          </div>
-        )}
       </div>
     </section>
   )

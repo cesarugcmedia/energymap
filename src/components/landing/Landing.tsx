@@ -1,13 +1,13 @@
 import CountUp from '@/components/ui/CountUp'
 import Link from 'next/link'
-import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon } from '@/components/Icons'
+import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon, DiscordIcon } from '@/components/Icons'
 import PhoneMockup from './PhoneMockup'
 import ZipPreview from './ZipPreview'
 import LiveTicker from './LiveTicker'
 import TrackerShowcase from './TrackerShowcase'
 import CollectShowcase from './CollectShowcase'
 import StickyCta from './StickyCta'
-import { FOUNDING_CUTOFF_LABEL, isFoundingMember } from '@/lib/badges'
+import Socials, { SOCIAL } from './Socials'
 import { FREE_FEATURES, TRACKER_FEATURES } from '@/lib/plans'
 import styles from './landing.module.css'
 
@@ -44,8 +44,6 @@ const FAQ = [
 
 export default function Landing({ stats }: { stats: LandingStats | null }) {
   const spotsLeft = stats?.trackers != null ? Math.max(0, BETA_LIMIT - stats.trackers) : null
-  // The Founding Hunter offer disappears by itself after the cutoff date.
-  const foundingOpen = isFoundingMember(new Date().toISOString())
 
   // Structured data so search engines can show the FAQ answers and site name
   // directly in results. Built from the same FAQ content rendered below.
@@ -88,11 +86,6 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
               <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
               <Link href="/account?mode=signin" className={styles.btnGhost}>Sign in</Link>
             </div>
-            {foundingOpen && (
-              <p className={styles.foundingLine}>
-                <span aria-hidden="true">🎖️</span> Join before {FOUNDING_CUTOFF_LABEL} to get the <strong>Founding Hunter</strong> badge, forever.
-              </p>
-            )}
             {stats && stats.stores > 0 && (
               <p className={styles.statLine}>
                 <strong><CountUp value={stats.stores} /></strong> stores and <strong><CountUp value={stats.drinks} /></strong> flavors on the map
@@ -193,13 +186,16 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         </section>
 
         {/* Closing CTA */}
+        {/* Community channels */}
+        <Socials />
+
         <section id="lp-join" className={`${styles.container} ${styles.closing} reveal`}>
           <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
           <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
         </section>
       </main>
 
-      <StickyCta note={foundingOpen ? `Founding Hunter badge until ${FOUNDING_CUTOFF_LABEL}` : null} />
+      <StickyCta note="See what’s in stock near you" />
 
       {/* Footer */}
       <footer id="lp-footer" className={styles.footer}>
@@ -211,8 +207,9 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
           <nav className={styles.footerNav}>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>
-            <a href="mailto:support@ampedmap.com"><MailIcon size={14} color="currentColor" /> Contact</a>
-            <a href="https://www.tiktok.com/@ampedmap" target="_blank" rel="noopener noreferrer"><TiktokIcon size={14} color="currentColor" /> TikTok</a>
+            <a href={`mailto:${SOCIAL.email}`}><MailIcon size={14} color="currentColor" /> Contact</a>
+            <a href={SOCIAL.tiktok} target="_blank" rel="noopener noreferrer"><TiktokIcon size={14} color="currentColor" /> TikTok</a>
+            {SOCIAL.discord && <a href={SOCIAL.discord} target="_blank" rel="noopener noreferrer"><DiscordIcon size={14} color="currentColor" /> Discord</a>}
           </nav>
           <p className={styles.copyright}>© {new Date().getFullYear()} AmpedMap</p>
         </div>

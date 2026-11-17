@@ -1156,3 +1156,48 @@
   to { opacity: 1; transform: none; filter: none; }
 }
 @keyframes collectFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Tracker section with a single mockup: keep the card a readable width. */
+@media (min-width: 760px) {
+  .showcaseSingle { grid-template-columns: minmax(0, 560px); }
+}
+
+/* ── Join the hunt (Socials) ── */
+.socials {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 760px) {
+  .socials { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.socialCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--lp-card);
+  border: 1px solid var(--lp-line);
+  color: var(--lp-text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+a.socialCard:hover { border-color: rgba(201, 244, 0, 0.5); }
+a.socialCard:active { transform: scale(0.98); }
+.socialIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--lp-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.socialText { display: flex; flex-direction: column; min-width: 0; }
+.socialTitle { font-size: 17px; font-weight: 600; }
+.socialSub { font-size: 14px; color: var(--lp-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.socialSoon { opacity: 0.6; }
+.socialSoon .socialIcon { background: rgba(255, 255, 255, 0.12); }
+.socialSoon .socialIcon svg path { fill: var(--lp-muted); }
