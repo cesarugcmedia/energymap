@@ -1201,3 +1201,23 @@ a.socialCard:active { transform: scale(0.98); }
 .socialSoon { opacity: 0.6; }
 .socialSoon .socialIcon { background: rgba(255, 255, 255, 0.12); }
 .socialSoon .socialIcon svg path { fill: var(--lp-muted); }
+
+/* Plan tag next to a showcase card title ("Free" / "Tracker"). */
+.planTag {
+  display: inline-block;
+  margin-left: 8px;
+  vertical-align: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--lp-muted);
+  background: rgba(255, 255, 255, 0.08);
+}
+.planTagTracker { color: #0D1210; background: var(--lp-lime); }
+
+/* Collection + patterns side by side: same mockup height. */
+.patternMock { height: auto; min-height: 280px; }
+.collectMock { min-height: 280px; }
+.patternBars { flex: none; height: 150px; }
+.patternFoot { margin-top: auto; }
