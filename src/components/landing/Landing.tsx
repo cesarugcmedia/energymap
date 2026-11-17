@@ -166,8 +166,18 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
           </div>
         </section>
 
+        {/* Community channels */}
+        <Socials />
+
+        {/* Closing CTA */}
+
+        <section id="lp-join" className={`${styles.container} ${styles.closing} reveal`}>
+          <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
+          <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
+        </section>
+
         {/* FAQ */}
-        <section className={styles.section} aria-labelledby="faq">
+        <section id="lp-faq" className={styles.section} aria-labelledby="faq">
           <div className={`${styles.container} ${styles.narrow}`}>
             <h2 id="faq" className={`${styles.h2} reveal`}>Questions</h2>
             <div className={styles.faq}>
@@ -179,15 +189,6 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
               ))}
             </div>
           </div>
-        </section>
-
-        {/* Closing CTA */}
-        {/* Community channels */}
-        <Socials />
-
-        <section id="lp-join" className={`${styles.container} ${styles.closing} reveal`}>
-          <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
-          <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
         </section>
       </main>
 
