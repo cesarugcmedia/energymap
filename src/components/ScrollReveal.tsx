@@ -46,10 +46,25 @@ export default function ScrollReveal() {
     track(document)
     root.classList.add('js-reveal')
 
+    // New elements, and existing ones that gain the class (React often reuses
+    // a DOM node — e.g. a loading placeholder becoming the real card — and
+    // just changes its className; without this the card stays hidden).
     const mo = new MutationObserver((mutations) => {
-      for (const m of mutations) m.addedNodes.forEach((n) => { if (n instanceof Element) track(n) })
+      for (const m of mutations) {
+        if (m.type === 'attributes') {
+          // Only the element itself (class changes are frequent; no subtree scan).
+          const el = m.target
+          if (el instanceof Element && el.matches('.reveal:not([data-revealed])')) {
+            const r = el.getBoundingClientRect()
+            if (r.top < window.innerHeight && r.bottom > 0) reveal([el])
+            else io.observe(el)
+          }
+          continue
+        }
+        m.addedNodes.forEach((n) => { if (n instanceof Element) track(n) })
+      }
     })
-    mo.observe(document.body, { childList: true, subtree: true })
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
 
     return () => { io.disconnect(); mo.disconnect(); root.classList.remove('js-reveal') }
   }, [])
