@@ -199,7 +199,7 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
             { q: 'How does billing work?', a: 'Tracker is $5 a month, billed through Stripe on the same day each month. We never see or store your full card number.' },
             { q: 'What happens if I cancel?', a: 'You keep Tracker until the end of the month you’ve paid for and won’t be charged again. Then your plan switches to Free. You keep your account, reports, badges and flavor alerts; only Tracker features like the unlimited radius and saved stores turn off. Changed your mind? Tap Keep Tracker any time before then.' },
             { q: 'Why is there a daily report limit?', a: 'Up to 25 reports a day keeps the map accurate and stops spam. It’s the same on every plan, and resets at midnight (UTC).' },
-            { q: 'Need help with your plan?', a: 'Email support@ampedmap.com and we’ll sort it out.' },
+            { q: 'Need help with your plan?', a: 'Email ampedmap@gmail.com and we’ll sort it out.' },
           ].map(({ q, a }, i) => (
             <details key={q} style={{ borderTop: i ? '1px solid var(--fg-06)' : 'none', padding: '12px 0' }}>
               <summary style={{ cursor: 'pointer', fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{q}</summary>

@@ -8,7 +8,7 @@ import styles from './landing.module.css'
 
 export const SOCIAL = {
   tiktok: 'https://www.tiktok.com/@ampedmap',
-  email: 'support@ampedmap.com',
+  email: 'ampedmap@gmail.com',
   discord: process.env.NEXT_PUBLIC_DISCORD_URL || null,
 }
 

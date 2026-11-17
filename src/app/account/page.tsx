@@ -1523,7 +1523,7 @@ function switchMode(m: Mode) {
         <Link href="/">Home</Link>
         <Link href="/terms">Terms</Link>
         <Link href="/privacy">Privacy</Link>
-        <a href="mailto:support@ampedmap.com">Contact</a>
+        <a href="mailto:ampedmap@gmail.com">Contact</a>
       </footer>
     </div>
   )

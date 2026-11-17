@@ -84,7 +84,7 @@ To exercise any of these rights, contact us at the email below.`,
           },
           {
             title: '11. Contact Us',
-            body: 'If you have any questions about this Privacy Policy, please contact us at: support@ampedmap.com',
+            body: 'If you have any questions about this Privacy Policy, please contact us at: ampedmap@gmail.com',
           },
         ].map(({ title, body }) => (
           <div key={title} style={{ marginBottom: 32 }}>

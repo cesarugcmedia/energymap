@@ -131,7 +131,7 @@ export default async function WaitlistPage() {
           <nav className={styles.footerNav}>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>
-            <a href="mailto:support@ampedmap.com">Contact</a>
+            <a href="mailto:ampedmap@gmail.com">Contact</a>
           </nav>
           <p className={styles.copyright}>No spam. We only email you about your invite.</p>
         </div>

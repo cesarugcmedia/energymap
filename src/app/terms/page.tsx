@@ -87,7 +87,7 @@ We reserve the right to remove any content that violates these terms.`,
           },
           {
             title: '13. Contact',
-            body: 'For questions about these Terms, contact us at: support@ampedmap.com',
+            body: 'For questions about these Terms, contact us at: ampedmap@gmail.com',
           },
         ].map(({ title, body }) => (
           <div key={title} style={{ marginBottom: 32 }}>
