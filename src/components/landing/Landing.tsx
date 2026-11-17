@@ -5,7 +5,6 @@ import PhoneMockup from './PhoneMockup'
 import ZipPreview from './ZipPreview'
 import LiveTicker from './LiveTicker'
 import TrackerShowcase from './TrackerShowcase'
-import CollectShowcase from './CollectShowcase'
 import StickyCta from './StickyCta'
 import Socials, { SOCIAL } from './Socials'
 import { FREE_FEATURES, TRACKER_FEATURES } from '@/lib/plans'
@@ -130,9 +129,6 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
             </div>
           </div>
         </section>
-
-        {/* Badges, streaks and the flavor collection, drawn; Founding Hunter offer */}
-        <CollectShowcase />
 
         {/* Tracker features, drawn */}
         <TrackerShowcase />
