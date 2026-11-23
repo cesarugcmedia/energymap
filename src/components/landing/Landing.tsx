@@ -29,15 +29,15 @@ function LogoMark({ size = 30 }: { size?: number }) {
 
 const STEPS = [
   { Icon: PinIcon, title: 'Find a store', body: 'Open the map to see gas stations, convenience stores and grocery stores around you.' },
-  { Icon: DrinkIcon, title: "See what's in stock", body: 'Each store lists the flavors people have reported, how full the cooler was, and how long ago.' },
-  { Icon: LightningIcon, title: 'Report what you see', body: 'Standing at a cooler? Tap what is there in a few seconds and save the next person a wasted trip.' },
+  { Icon: DrinkIcon, title: "See what's been spotted", body: 'Each store shows which flavors people spotted, how many times today, and how long ago.' },
+  { Icon: LightningIcon, title: 'Tap Spotted', body: 'Standing at a cooler? One tap per flavor logs a sighting. Not there counts too, it saves the next person a wasted trip.' },
 ]
 
 
 const FAQ = [
-  { q: 'Is AmpedMap free?', a: 'Yes. Seeing stock, reporting it and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, restock patterns for each store, and saved store lists.' },
-  { q: 'Where does the stock information come from?', a: 'From people. When someone sees a store’s cooler, they report which flavors are there and how full it looks. Every report shows how old it is, so you can judge how fresh it is.' },
-  { q: 'Which areas are covered?', a: 'Anywhere people report. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
+  { q: 'Is AmpedMap free?', a: 'Yes. Seeing sightings, logging them and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, restock patterns for each store, and saved store lists.' },
+  { q: 'Where do sightings come from?', a: 'From people. When someone spots a flavor in a store’s cooler, they tap Spotted. If they looked and it was missing, they tap Not there. Every sighting shows how long ago it was, and older ones fade, so you can judge how fresh it is.' },
+  { q: 'Which areas are covered?', a: 'Anywhere people log sightings. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
   { q: 'Do I have to share my location?', a: 'No. You can search by ZIP code instead. Sharing your location just makes it quicker to see what is closest.' },
 ]
 
@@ -79,7 +79,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
             <p className={styles.eyebrow}>For energy drink hunters</p>
             <h1 className={styles.h1}>Never hunt for your favorite energy drink again.</h1>
             <p className={styles.lead}>
-              See which stores near you have it in stock, reported by people who just saw the shelf.
+              See which stores near you have it in stock, spotted by people who just saw the shelf.
             </p>
             <div className={styles.heroCtas}>
               <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
@@ -123,9 +123,9 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
               ))}
             </div>
             <div className={styles.legend}>
-              <span><i style={{ background: '#C9F400' }} /> Reported in the last day</span>
+              <span><i style={{ background: '#C9F400' }} /> Spotted in the last day</span>
               <span><i style={{ background: '#FFB300' }} /> Mixed</span>
-              <span><i style={{ background: '#6B7468' }} /> Older or no reports</span>
+              <span><i style={{ background: '#6B7468' }} /> Older or no sightings</span>
             </div>
           </div>
         </section>

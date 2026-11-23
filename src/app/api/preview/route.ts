@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { geocode } from '@/lib/geocode'
 import { FREE_RADIUS_MILES } from '@/lib/plans'
+import { amountOf, sightingOf } from '@/lib/sightings'
 
 // Public, no-login teaser for the landing page's "See what's near you" box.
 // Deliberately limited: stores within the same radius free users get,
@@ -31,7 +32,8 @@ type PreviewStore = {
   type: string | null
   distanceMi: number
   lastReportedAt: string | null
-  inStock: { brand: string; flavor: string; quantity: string }[]
+  // Flavors last seen as Spotted (amount only when someone gave one).
+  inStock: { brand: string; flavor: string; amount: string | null }[]
   inStockCount: number
 }
 
@@ -72,7 +74,7 @@ export async function GET(req: NextRequest) {
   const ids = nearby.map((s) => s.id)
   const { data: stock, error: stockError } = await supabaseAdmin
     .from('latest_stock')
-    .select('store_id, drink_id, quantity, reported_at')
+    .select('*')
     .in('store_id', ids.slice(0, 300))
     .order('reported_at', { ascending: false })
     .range(0, 999)
@@ -94,7 +96,7 @@ export async function GET(req: NextRequest) {
     const entry = byStore.get(r.store_id) ?? { last: null, inStock: [] }
     if (!entry.last) entry.last = r.reported_at
     const d = drinkById.get(r.drink_id)
-    if (r.quantity !== 'out' && d) entry.inStock.push({ brand: d.brand, flavor: d.flavor || d.name, quantity: r.quantity })
+    if (sightingOf(r) === 'spotted' && d) entry.inStock.push({ brand: d.brand, flavor: d.flavor || d.name, amount: amountOf(r) })
     byStore.set(r.store_id, entry)
   }
 

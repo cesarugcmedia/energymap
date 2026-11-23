@@ -78,7 +78,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
     return (
       <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
         {header}
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>See which days and times this store usually restocks, and which flavors sell out fastest.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>See which days and times this store usually restocks, and which flavors are most often missing.</p>
         <Bars days={SAMPLE} highlight={4} dim />
         <button className={`${ui.btnSecondary} ${ui.btnBlock}`} style={{ marginTop: 14 }} onClick={() => router.push('/account?page=plan')}>
           <LightningIcon size={15} color="var(--accent-text)" /> Unlock with Tracker
@@ -113,7 +113,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
       <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
         {header}
         <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
-          Not enough history here yet. Patterns show up after a few restocks are reported, so every report helps.
+          Not enough history here yet. Patterns show up after a few restocks are spotted, so every sighting helps.
         </p>
       </div>
     )
@@ -124,7 +124,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
   const sinceText = data.since ? new Date(data.since).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null
   const headline = data.basis === 'restocks'
     ? `Usually restocked on ${DAY_NAMES[top]}${topPart ? `, mostly ${PART_LABEL[topPart]}` : ''}`
-    : `Coolers are most often full on ${DAY_NAMES[top]}${topPart ? `, ${PART_LABEL[topPart]}` : ''}`
+    : `Flavors are most often spotted on ${DAY_NAMES[top]}${topPart ? `, ${PART_LABEL[topPart]}` : ''}`
 
   return (
     <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
@@ -133,11 +133,11 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
       <Bars days={data.days} highlight={top} />
       {data.sellsOut.length > 0 && (
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.5 }}>
-          Sells out fastest: {data.sellsOut.map((s) => s.name).join(', ')}
+          Most often not found: {data.sellsOut.map((s) => s.name).join(', ')}
         </p>
       )}
       <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}>
-        Based on {data.signals} {data.basis === 'restocks' ? 'restock' : 'full-cooler'} report{data.signals === 1 ? '' : 's'}{sinceText ? ` since ${sinceText}` : ''}.
+        Based on {data.signals} {data.basis === 'restocks' ? 'restock ' : ''}sighting{data.signals === 1 ? '' : 's'}{sinceText ? ` since ${sinceText}` : ''}.
       </p>
     </div>
   )

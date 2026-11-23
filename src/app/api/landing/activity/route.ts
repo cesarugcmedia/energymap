@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { stateOf } from '@/lib/place'
+import { amountOf, sightingOf } from '@/lib/sightings'
 
 // GET /api/landing/activity — public, no login. Powers the landing page's
-// "Live right now" strip: the most recent stock reports as
-// "flavor · level · <store name> · <state> · time". Deliberately anonymous
+// "Live right now" strip: the most recent sightings as
+// "flavor · Spotted · <store name> · <state> · time". Deliberately anonymous
 // and coarse: no usernames, user ids, store ids, street addresses or cities.
 // Edge-cached for 60 s so traffic on the landing page doesn't hit the DB.
 
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - 48 * 3600 * 1000).toISOString()
   const [{ data: reports, error }, { count: dayCount }] = await Promise.all([
     supabaseAdmin.from('stock_reports')
-      .select('store_id, drink_id, quantity, reported_at')
+      .select('*')
       .gte('reported_at', since)
       .order('reported_at', { ascending: false })
       .limit(200),
@@ -36,7 +37,8 @@ export async function GET(req: NextRequest) {
 
   // One line per store+flavor, newest first.
   const seen = new Set<string>()
-  const picked = (reports ?? []).filter((r) => {
+  // Spotted only: the strip shows what people are finding.
+  const picked = (reports ?? []).filter((r) => sightingOf(r) === 'spotted').filter((r) => {
     const k = `${r.store_id}:${r.drink_id}`
     if (seen.has(k)) return false
     seen.add(k)
@@ -58,7 +60,7 @@ export async function GET(req: NextRequest) {
     if (!s || !d) return []
     return [{
       flavor: d.flavor ? `${d.brand} ${d.flavor}` : d.name,
-      quantity: r.quantity as 'full' | 'medium' | 'low' | 'out',
+      amount: amountOf(r),
       store: s.name,
       state: stateOf(s.address),
       at: r.reported_at,

@@ -216,12 +216,12 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
     },
     {
       title: 'Want to help others find drinks?',
-      sub: 'AmpedMap runs on people reporting what they see. Even one report helps.',
+      sub: 'AmpedMap runs on people logging what they see. Even one sighting helps.',
       body: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {([
-            [true, 'Yes, show me how', 'We’ll walk you through your first report at the nearest store. It takes about 20 seconds.'],
-            [false, 'Just browsing for now', 'No problem. You can report anytime from a store page.'],
+            [true, 'Yes, show me how', 'We’ll walk you through your first sighting at the nearest store. It takes about 10 seconds.'],
+            [false, 'Just browsing for now', 'No problem. You can log a sighting anytime from a store page.'],
           ] as const).map(([value, title, body]) => {
             const on = wantsToReport === value
             return (
@@ -253,11 +253,11 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
           { icon: <PinIcon size={18} color="var(--accent-text)" />, title: 'Every store near you', body: 'Gas stations, convenience and grocery stores on one map.' },
           {
             icon: <span style={{ display: 'flex', gap: 3 }}>{['#C9F400', '#FFB300', 'var(--text-dim)'].map((c) => <span key={c} style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />)}</span>,
-            title: 'See what’s in stock',
-            body: 'Pins turn lime when someone reported in the last day. Tap one to see flavors and stock levels.',
+            title: 'See what’s been spotted',
+            body: 'Pins turn lime when someone spotted something in the last day. Tap one to see which flavors and when.',
           },
           { icon: <BellIcon size={18} color="var(--accent-text)" />, title: 'Never miss a restock', body: 'Follow a flavor and we’ll tell you when it’s back.' },
-          { icon: <LightningIcon size={18} color="var(--accent-text)" />, title: 'Powered by hunters like you', body: 'Report what you see in seconds, earn badges and climb the leaderboard.' },
+          { icon: <LightningIcon size={18} color="var(--accent-text)" />, title: 'Powered by hunters like you', body: 'Log what you see in one tap, earn badges and climb the leaderboard.' },
         ].map((f) => (
           <div key={f.title} className={ui.card} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: 16 }}>
             <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(201,244,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{f.icon}</span>
@@ -277,8 +277,8 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
   const mock: React.CSSProperties = { borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--fg-08)', padding: 10, marginTop: 10 }
   const tutorialStep = {
     key: 'tutorial',
-    title: 'How reporting works',
-    sub: 'Three taps at the cooler. Here’s the whole thing.',
+    title: 'How sightings work',
+    sub: 'One tap per flavor at the cooler. Here’s the whole thing.',
     body: (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[
@@ -292,33 +292,37 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
                   <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>You&apos;re at Quick Stop #12</span>
                   <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)' }}>Seen the cooler?</span>
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#0D1210', background: '#C9F400', borderRadius: 8, padding: '6px 10px' }}>Report stock</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#0D1210', background: '#C9F400', borderRadius: 8, padding: '6px 10px' }}>Log a sighting</span>
               </div>
             ),
           },
           {
-            title: 'Tap what you see',
-            body: 'For each flavor in the cooler, pick how full it looks. Out of stock counts too, it saves people a trip.',
+            title: 'Tap Spotted for what you see',
+            body: 'Each tap saves right away. Looked for a flavor and it’s missing? Tap Not there, it saves people a trip. You can add “Just a few” or “Plenty” if you like.',
             demo: (
               <div style={mock}>
                 <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Celsius Sparkling Kiwi Guava</span>
-                <span style={{ display: 'flex', gap: 6 }}>
-                  {[['FULL', '#C9F400', true], ['MED', '#FFB300', false], ['LOW', '#FF8A3D', false], ['OUT', '#FF4545', false]].map(([label, color, on]) => (
-                    <span key={label as string} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 700, padding: '7px 0', borderRadius: 8, color: on ? '#0D1210' : (color as string), background: on ? (color as string) : 'transparent', border: `1px solid ${on ? (color as string) : 'var(--fg-10)'}` }}>{label as string}</span>
-                  ))}
+                <span style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 6 }}>
+                  <span style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, padding: '8px 0', borderRadius: 8, color: '#0D1210', background: '#C9F400' }}>Spotted</span>
+                  <span style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, padding: '8px 0', borderRadius: 8, color: 'var(--text-muted)', border: '1px solid var(--fg-10)' }}>Not there</span>
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+                  How many?
+                  <span style={{ padding: '3px 8px', borderRadius: 999, border: '1px solid var(--fg-10)', color: 'var(--text-muted)' }}>Just a few</span>
+                  <span style={{ padding: '3px 8px', borderRadius: 999, background: 'rgba(201,244,0,0.14)', color: 'var(--accent-text)', fontWeight: 600 }}>Plenty</span>
                 </span>
               </div>
             ),
           },
           {
-            title: 'Submit, and you’re done',
-            body: 'Everyone nearby sees it right away. You earn 2 points per drink toward badges and the leaderboard.',
+            title: 'That’s it',
+            body: 'Everyone nearby sees it right away. Every sighting, Spotted or Not there, earns 2 points toward badges and the leaderboard.',
             demo: (
               <div style={{ ...mock, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(201,244,0,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
                 </span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>3 reports sent</span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>3 sightings logged</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-text)' }}>+6 pts</span>
               </div>
             ),
@@ -380,7 +384,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
               {wantsToReport && !summary?.reportStore && (
                 <div className={ui.card} style={{ marginTop: 18, maxWidth: 380, textAlign: 'left', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <LightningIcon size={18} color="var(--accent-text)" />
-                  <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>Next time you&apos;re in a store, a <strong style={{ color: 'var(--text)', fontWeight: 600 }}>“You&apos;re at…”</strong> banner will pop up on the map. Tap <strong style={{ color: 'var(--text)', fontWeight: 600 }}>Report stock</strong> and you&apos;re off.</p>
+                  <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.45 }}>Next time you&apos;re in a store, a <strong style={{ color: 'var(--text)', fontWeight: 600 }}>“You&apos;re at…”</strong> banner will pop up on the map. Tap <strong style={{ color: 'var(--text)', fontWeight: 600 }}>Log a sighting</strong> and you&apos;re off.</p>
                 </div>
               )}
             </div>
@@ -401,7 +405,7 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
             <>
               {wantsToReport && summary?.reportStore && onReport && (
                 <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => { onReport(summary.reportStore!); onClose() }}>
-                  Report at {summary.reportStore.name}
+                  Log a sighting at {summary.reportStore.name}
                 </button>
               )}
               <button className={`${wantsToReport && summary?.reportStore ? ui.btnSecondary : ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={onClose}>

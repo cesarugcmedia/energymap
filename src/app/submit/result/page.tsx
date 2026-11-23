@@ -18,7 +18,7 @@ const center: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: '
 const actions: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 360, width: '100%', margin: '0 auto' }
 const circle = (bg: string): React.CSSProperties => ({ width: 80, height: 80, borderRadius: '50%', marginBottom: 22, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' })
 
-// Clean confirmation after a stock report — just the thanks, a short-lived
+// Clean confirmation after logging sightings — just the thanks, a short-lived
 // Undo, and where to go next. (It used to list the store's current stock;
 // that lives on the store page instead.)
 function ResultContent() {
@@ -37,7 +37,7 @@ function ResultContent() {
   // Let the reporter tell friends; the link preview shows the store's stock.
   const [shareNote, setShareNote] = useState<string | null>(null)
   async function shareStore() {
-    const r = await shareLink({ url: `${window.location.origin}/store/${storeId}`, title: `${storeName || 'This store'} on AmpedMap`, text: `Just reported what's in stock at ${storeName || 'this store'}` })
+    const r = await shareLink({ url: `${window.location.origin}/store/${storeId}`, title: `${storeName || 'This store'} on AmpedMap`, text: `Just logged sightings at ${storeName || 'this store'}` })
     if (r === 'copied') setShareNote('Link copied')
     else if (r === 'failed') setShareNote('Could not share')
   }
@@ -140,11 +140,11 @@ function ResultContent() {
           <div className="anim-pop" style={circle('var(--fg-06)')}>
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Report undone</h1>
-          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>We removed it. Want to report again?</p>
+          <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Sightings undone</h1>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>We removed them. Want to log again?</p>
         </div>
         <div style={actions}>
-          <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => router.replace(reportHref)}>Report again</button>
+          <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => router.replace(reportHref)}>Log again</button>
           <button className={ui.btnGhost} onClick={() => router.replace('/')}>Back to map</button>
         </div>
       </div>
@@ -164,7 +164,7 @@ function ResultContent() {
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="anim-draw" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
-          {count !== null ? `${shownCount} report${count !== 1 ? 's' : ''} sent` : 'Report sent'}
+          {count !== null ? `${shownCount} sighting${count !== 1 ? 's' : ''} logged` : 'Sightings logged'}
         </h1>
         <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>
           Thanks for updating{storeName ? <> <span style={{ color: 'var(--text)', fontWeight: 600 }}>{storeName}</span></> : ' this store'}.
@@ -207,7 +207,7 @@ function ResultContent() {
           Done
         </button>
         <button className={`${ui.btnSecondary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => router.replace(reportHref)}>
-          Report more flavors
+          Log more flavors
         </button>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
           <button className={ui.btnGhost} onClick={() => router.replace(storeHref)}>

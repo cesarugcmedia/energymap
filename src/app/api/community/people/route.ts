@@ -64,7 +64,7 @@ async function suggestions(userId: string): Promise<{ rows: Row[]; reasons: Map<
     const nearIds = (near ?? []).map((s) => s.id)
     if (nearIds.length) {
       const { data: reps } = await supabaseAdmin.from('stock_reports').select('user_id').in('store_id', nearIds).order('reported_at', { ascending: false }).limit(1000)
-      for (const r of reps ?? []) bump(r.user_id, 1, 'Reports near you')
+      for (const r of reps ?? []) bump(r.user_id, 1, 'Logs sightings near you')
     }
   }
 

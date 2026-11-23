@@ -16,6 +16,7 @@ import { alertSlotsLeft, isAlertLimitError } from '@/lib/flavorAlerts'
 import { FREE_ALERT_LIMIT, isTrackerProfile } from '@/lib/plans'
 import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
 import { shareLink } from '@/lib/share'
+import { sightingOf } from '@/lib/sightings'
 import { fetchProfileLites } from '@/lib/avatar'
 
 const PAGE = 15
@@ -99,7 +100,7 @@ export default function Feed({ me, toast }: {
     const [extraProfiles, { data: extraStores }, { data: stock }] = await Promise.all([
       fetchProfileLites(commentUserIds),
       commentStoreIds.length ? supabase.from('stores').select('id, name').in('id', commentStoreIds) : Promise.resolve({ data: [] as any[] }),
-      storeIds.length ? supabase.from('latest_stock').select('store_id, quantity, reported_at').in('store_id', storeIds) : Promise.resolve({ data: [] as any[] }),
+      storeIds.length ? supabase.from('latest_stock').select('*').in('store_id', storeIds) : Promise.resolve({ data: [] as any[] }),
     ])
 
     const people = new Map([...profiles, ...extraProfiles])
@@ -117,7 +118,7 @@ export default function Feed({ me, toast }: {
     for (const r of stock ?? []) {
       const s = (sums[r.store_id] ??= { inStock: 0, total: 0, latest: null })
       s.total++
-      if (r.quantity !== 'out') s.inStock++
+      if (sightingOf(r) === 'spotted') s.inStock++
       if (!s.latest || r.reported_at > s.latest) s.latest = r.reported_at
     }
     setSummaries((prev) => ({ ...prev, ...sums }))

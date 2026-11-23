@@ -25,7 +25,7 @@ export default function ReportQueueSync() {
     const run = async () => {
       if (getQueue().length === 0) return
       const { sent, failed } = await flushQueue()
-      if (sent > 0) show(`${sent} saved report${sent === 1 ? '' : 's'} sent`)
+      if (sent > 0) show(`${sent} saved sighting${sent === 1 ? '' : 's'} sent`)
       else if (failed.length > 0) show(failed[0])
     }
     const onVisible = () => { if (document.visibilityState === 'visible') run() }

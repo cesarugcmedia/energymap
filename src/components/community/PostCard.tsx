@@ -198,8 +198,8 @@ export default function PostCard(p: PostCardProps) {
             <span style={{ display: 'block', fontSize: 15, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.store.name}</span>
             <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {p.storeSummary && p.storeSummary.total > 0
-                ? `${p.storeSummary.inStock} in stock${p.storeSummary.latest ? ` · ${timeAgo(p.storeSummary.latest)}` : ''}`
-                : post.store.address ?? 'No reports yet'}
+                ? `${p.storeSummary.inStock} spotted${p.storeSummary.latest ? ` · last sighting ${timeAgo(p.storeSummary.latest)}` : ''}`
+                : post.store.address ?? 'No sightings yet'}
             </span>
           </span>
           <ChevronRightIcon size={15} color="var(--text-dim)" />

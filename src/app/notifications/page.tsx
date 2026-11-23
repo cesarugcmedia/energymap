@@ -37,7 +37,7 @@ const CATEGORY: Record<string, Exclude<FilterMode, 'all' | 'unread'>> = {
 const FILTERS: { mode: FilterMode; label: string }[] = [
   { mode: 'all', label: 'All' },
   { mode: 'unread', label: 'Unread' },
-  { mode: 'stock', label: 'Stock' },
+  { mode: 'stock', label: 'Sightings' },
   { mode: 'community', label: 'Community' },
   { mode: 'stores', label: 'Stores & drinks' },
   { mode: 'badges', label: 'Badges' },
@@ -82,15 +82,21 @@ function cleanMessage(msg: string) {
   return (msg ?? '').replace(/^(\p{Extended_Pictographic}|️|‍|\s)+/u, '')
 }
 
-// Stock levels keep the colors the old Community report cards used:
-// Full lime, Medium/Low amber, Out red, "back in stock" lime. Drink names in
-// the message (matched against the catalog, since these messages come from
-// DB triggers/RPCs as plain text) take the color of the level that follows
-// them, with a soft glow (dropped in light mode, see .lvl-glow in globals.css).
+// Sightings color the message: Spotted (and "back in stock") lime, Not there
+// red. Older notifications from before sightings still carry full / medium /
+// low / out and keep their colors. Drink names in the message (matched
+// against the catalog, since these messages come from DB functions as plain
+// text) take the color of their actual sighting when we know it, else of the
+// nearest sighting word, with a soft glow (dropped in light mode, .lvl-glow).
 const LIME = 'var(--accent-text)'
-const LEVEL_COLOR: Record<string, string> = { full: LIME, medium: '#FFB300', med: '#FFB300', low: '#FFB300', out: '#FF4545', 'out of stock': '#FF4545', 'back in stock': LIME, 'in stock': LIME }
-const GLOW: Record<string, string> = { [LIME]: 'rgba(201,244,0,0.45)', '#FFB300': 'rgba(255,179,0,0.45)', '#FF4545': 'rgba(255,69,69,0.45)' }
-const LEVELS = 'back in stock|out of stock|in stock|full|medium|med|low|out'
+const RED = '#FF4545'
+const LEVEL_COLOR: Record<string, string> = {
+  spotted: LIME, 'back in stock': LIME, 'in stock': LIME, plenty: LIME, 'just a few': LIME,
+  'not there': RED, 'not found': RED, 'couldn’t find': RED, "couldn't find": RED, 'out of stock': RED,
+  full: LIME, medium: '#FFB300', med: '#FFB300', low: '#FFB300', out: RED,
+}
+const GLOW: Record<string, string> = { [LIME]: 'rgba(201,244,0,0.45)', '#FFB300': 'rgba(255,179,0,0.45)', [RED]: 'rgba(255,69,69,0.45)' }
+const LEVELS = "back in stock|out of stock|in stock|not there|not found|couldn’t find|couldn't find|just a few|plenty|spotted|full|medium|med|low|out"
 const LEVEL_ONLY = new RegExp(`^(${LEVELS})$`, 'i')
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -101,20 +107,21 @@ function buildMatcher(names: string[]) {
   return new RegExp(`(?<!\\w)(${LEVELS}${alts.length ? '|' + alts.join('|') : ''})(?!\\w)`, 'gi')
 }
 
-const LEVEL_WORD: Record<string, string> = { full: 'Full', medium: 'Medium', low: 'Low', out: 'Out' }
-
-/** A flavor that was actually reported for this notification (from
+/** A flavor actually logged for this notification (from
  *  /api/notifications/stock-details), with the names it may appear under. */
-type Reported = { label: string; names: string[]; quantity: string }
+type Reported = { label: string; names: string[]; sighting: string; amount: string | null }
+
+const reportedColor = (r: Reported) => (r.sighting === 'not_there' ? RED : LIME)
+const reportedWord = (r: Reported) => (r.sighting === 'not_there' ? 'Not there' : r.amount === 'plenty' ? 'Spotted · Plenty' : r.amount === 'few' ? 'Spotted · Just a few' : 'Spotted')
 
 function glow(color: string): React.CSSProperties {
   return { color, fontWeight: 700, textShadow: `0 0 10px ${GLOW[color]}` }
 }
 
 function StockText({ text, matcher, reported }: { text: string; matcher: RegExp; reported?: Reported[] }) {
-  // Exact reported level per flavor name, when we know it.
+  // Exact sighting per flavor name, when we know it.
   const known = new Map<string, string>()
-  for (const r of reported ?? []) for (const n of r.names) known.set(n.toLowerCase(), r.quantity)
+  for (const r of reported ?? []) for (const n of r.names) known.set(n.toLowerCase(), reportedColor(r))
 
   const tokens: { start: number; end: number; word: string; level: string | null }[] = []
   for (const m of text.matchAll(matcher)) {
@@ -122,10 +129,10 @@ function StockText({ text, matcher, reported }: { text: string; matcher: RegExp;
     const start = m.index ?? 0
     tokens.push({ start, end: start + m[0].length, word: m[0], level: LEVEL_COLOR[lc] ? lc : null })
   }
-  // Otherwise a flavor takes the next level word after it, else the one before.
+  // Otherwise a flavor takes the next sighting word after it, else the one before.
   const colorFor = (i: number) => {
     const exact = known.get(tokens[i].word.toLowerCase())
-    if (exact) return LEVEL_COLOR[exact]
+    if (exact) return exact
     for (let j = i + 1; j < tokens.length; j++) if (tokens[j].level) return LEVEL_COLOR[tokens[j].level!]
     for (let j = i - 1; j >= 0; j--) if (tokens[j].level) return LEVEL_COLOR[tokens[j].level!]
     return null
@@ -143,8 +150,8 @@ function StockText({ text, matcher, reported }: { text: string; matcher: RegExp;
   })
   parts.push(text.slice(last))
 
-  // Reported flavors the text doesn't name ("+2 more", or a different
-  // wording) are listed underneath with their levels.
+  // Logged flavors the text doesn't name (the rest of a quick check at the
+  // same store) are listed underneath with their sighting.
   const extra = (reported ?? []).filter((r) => !r.names.some((n) => mentioned.has(n.toLowerCase())))
   return (
     <>
@@ -153,8 +160,8 @@ function StockText({ text, matcher, reported }: { text: string; matcher: RegExp;
         <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
           {extra.map((r) => (
             <span key={r.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)' }}>
-              <span className="lvl-glow" style={glow(LEVEL_COLOR[r.quantity] ?? LIME)}>{r.label}</span>
-              <span style={{ color: LEVEL_COLOR[r.quantity], fontWeight: 700 }}>{LEVEL_WORD[r.quantity] ?? r.quantity}</span>
+              <span className="lvl-glow" style={glow(reportedColor(r))}>{r.label}</span>
+              <span style={{ color: reportedColor(r), fontWeight: 700 }}>{reportedWord(r)}</span>
             </span>
           ))}
         </span>
@@ -246,7 +253,7 @@ export default function NotificationsPage() {
 
   // What was actually reported for each stock notification (flavor + level),
   // looked up by store and time — see /api/notifications/stock-details.
-  const [stockDetails, setStockDetails] = useState<Record<string, { drink_id: string; quantity: string }[]>>({})
+  const [stockDetails, setStockDetails] = useState<Record<string, { drink_id: string; sighting: string; amount: string | null }[]>>({})
   const askedDetails = useRef<Set<string>>(new Set())
   // Rows that arrived live while the page is open get a brief highlight.
   const knownIds = useRef<Set<string> | null>(cached ? new Set(cached.list.map((n: any) => n.id)) : null)
@@ -324,7 +331,7 @@ export default function NotificationsPage() {
       const d = drinkById.get(r.drink_id)
       if (!d) return []
       const label = d.brand && d.flavor ? `${d.brand} ${d.flavor}` : d.name ?? d.flavor ?? 'A flavor'
-      return [{ label, names: [label, d.name, d.flavor].filter(Boolean) as string[], quantity: r.quantity }]
+      return [{ label, names: [label, d.name, d.flavor].filter(Boolean) as string[], sighting: r.sighting, amount: r.amount }]
     })
   }
 
@@ -467,7 +474,7 @@ export default function NotificationsPage() {
         {iconTile('stock_update', unread)}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: unread ? 600 : 400, color: unread ? 'var(--text)' : 'var(--text-muted)' }}>
-            {ns.length} stock updates{first.store?.name ? ` at ${first.store.name}` : ''}
+            {ns.length} sightings{first.store?.name ? ` at ${first.store.name}` : ''}
           </span>
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
             {shown.map((n) => (

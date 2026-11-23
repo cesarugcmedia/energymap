@@ -16,16 +16,10 @@ type PreviewStore = {
   type: string | null
   distanceMi: number
   lastReportedAt: string | null
-  inStock: { brand: string; flavor: string; quantity: string }[]
+  inStock: { brand: string; flavor: string; amount: string | null }[]
   inStockCount: number
 }
 type PreviewResult = { zip: string; totalStores: number; reportedStores: number; stores: PreviewStore[] }
-
-const LEVEL: Record<string, { label: string; color: string }> = {
-  full: { label: 'Full', color: '#C9F400' },
-  medium: { label: 'Med', color: '#FFB300' },
-  low: { label: 'Low', color: '#FFB300' },
-}
 
 function ago(iso: string) {
   const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
@@ -99,7 +93,7 @@ export default function ZipPreview() {
             <>
               <p className={styles.previewSummary}>
                 <strong>{result.totalStores}</strong> store{result.totalStores === 1 ? '' : 's'} within {FREE_RADIUS_MILES} miles of {result.zip}
-                {result.reportedStores > 0 && <> · <strong>{result.reportedStores}</strong> with stock reports</>}
+                {result.reportedStores > 0 && <> · <strong>{result.reportedStores}</strong> with sightings</>}
               </p>
               <ul className={styles.previewList}>
                 {result.stores.map((s, i) => (
@@ -110,18 +104,17 @@ export default function ZipPreview() {
                         <p className={styles.previewName}>{s.name}</p>
                         <p className={styles.previewMeta}>
                           <span className={styles.previewDot} style={{ background: freshColor(s.lastReportedAt) }} />
-                          {s.lastReportedAt ? `Reported ${ago(s.lastReportedAt)}` : 'No reports yet'} · {s.distanceMi} mi
+                          {s.lastReportedAt ? `Last sighting ${ago(s.lastReportedAt)}` : 'No sightings yet'} · {s.distanceMi} mi
                         </p>
                       </div>
                     </div>
                     {s.inStock.length > 0 && (
                       <div className={styles.previewChips}>
                         {s.inStock.map((d) => {
-                          const lvl = LEVEL[d.quantity] ?? LEVEL.full
                           return (
                             <span key={`${d.brand}-${d.flavor}`} className={styles.previewChip}>
                               {d.brand} {d.flavor}
-                              <em style={{ color: lvl.color }}>{lvl.label}</em>
+                              <em style={{ color: '#C9F400' }}>{d.amount === 'plenty' ? 'Plenty' : d.amount === 'few' ? 'Just a few' : 'Spotted'}</em>
                             </span>
                           )
                         })}

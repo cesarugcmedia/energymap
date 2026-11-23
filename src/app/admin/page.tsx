@@ -328,7 +328,7 @@ export default function AdminPage() {
   // that silently skips rows can't make the UI drop stores that still exist.
   async function deleteLocationGroup(label: string, ids: string[]) {
     if (ids.length === 0 || bulkDeleting) return
-    if (!window.confirm(`Permanently delete all ${ids.length} location${ids.length === 1 ? '' : 's'} in "${label}"? Their stock reports go with them. This cannot be undone.`)) return
+    if (!window.confirm(`Permanently delete all ${ids.length} location${ids.length === 1 ? '' : 's'} in "${label}"? Their sightings go with them. This cannot be undone.`)) return
     setBulkDeleting(true)
     const deleted = new Set<string>()
     const CHUNK = 100
@@ -432,7 +432,7 @@ export default function AdminPage() {
   }
 
   async function deleteDrink(id: string) {
-    if (!window.confirm('Delete this drink? This will also remove all stock reports for it.')) return
+    if (!window.confirm('Delete this drink? This will also remove all sightings of it.')) return
     const { error } = await supabase.from('drinks').delete().eq('id', id)
     if (error) { console.error('deleteDrink failed:', error.message); showToast('Could not delete drink — check admin permissions.'); return }
     setDrinks((prev) => prev.filter((d) => d.id !== id))

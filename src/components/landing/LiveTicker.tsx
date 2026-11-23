@@ -3,18 +3,11 @@
 import { useEffect, useState } from 'react'
 import styles from './landing.module.css'
 
-// "Live right now" strip under the landing hero: real recent stock reports
+// "Live right now" strip under the landing hero: real recent sightings
 // from /api/landing/activity, scrolling slowly. Renders nothing until real
 // data loads (never placeholder rows), and nothing if there's too little.
 
-type Item = { flavor: string; quantity: 'full' | 'medium' | 'low' | 'out'; store: string; state: string | null; at: string }
-
-const LEVEL: Record<Item['quantity'], { word: string; color: string }> = {
-  full: { word: 'Full', color: '#C9F400' },
-  medium: { word: 'Medium', color: '#FFB300' },
-  low: { word: 'Low', color: '#FFB300' },
-  out: { word: 'Out', color: '#FF4545' },
-}
+type Item = { flavor: string; amount: 'few' | 'plenty' | null; store: string; state: string | null; at: string }
 
 function ago(iso: string) {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000))
@@ -41,9 +34,9 @@ export default function LiveTicker() {
     <ul className={styles.tickerRow} aria-hidden={hidden || undefined} key={key}>
       {items.map((it, i) => (
         <li key={i} className={styles.tickerItem}>
-          <span className={styles.tickerDot} style={{ background: LEVEL[it.quantity].color }} />
+          <span className={styles.tickerDot} style={{ background: '#C9F400' }} />
           <strong>{it.flavor}</strong>
-          <span style={{ color: LEVEL[it.quantity].color, fontWeight: 600 }}>{LEVEL[it.quantity].word}</span>
+          <span style={{ color: '#C9F400', fontWeight: 600 }}>Spotted{it.amount ? ` · ${it.amount === 'plenty' ? 'Plenty' : 'Just a few'}` : ''}</span>
           <span className={styles.tickerMeta}>· {it.store}{it.state ? ` · ${it.state}` : ''} · {ago(it.at)}</span>
         </li>
       ))}
@@ -51,10 +44,10 @@ export default function LiveTicker() {
   )
 
   return (
-    <section className={styles.ticker} aria-label="Live stock reports">
+    <section className={styles.ticker} aria-label="Live sightings">
       <div className={`${styles.container} ${styles.tickerHead}`}>
         <span className={styles.tickerLive}><i />Live right now</span>
-        {today != null && today > 0 && <span className={styles.tickerCount}>{today.toLocaleString('en-US')} report{today === 1 ? '' : 's'} in the last day</span>}
+        {today != null && today > 0 && <span className={styles.tickerCount}>{today.toLocaleString('en-US')} sighting{today === 1 ? '' : 's'} in the last day</span>}
       </div>
       <div className={styles.tickerViewport}>
         <div className={styles.tickerTrack} style={{ ['--ticker-dur' as string]: `${Math.max(30, items.length * 6)}s` }}>

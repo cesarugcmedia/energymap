@@ -21,10 +21,10 @@ const barlowCondensed = Barlow_Condensed({ subsets: ['latin'], weight: ['400', '
 export const metadata: Metadata = {
   metadataBase: new URL('https://ampedmap.com'),
   title: 'AmpedMap',
-  description: 'See which stores near you have your favorite energy drinks in stock, reported by the community.',
+  description: 'See which stores near you have your favorite energy drinks in stock, spotted by the community.',
   openGraph: {
     title: 'AmpedMap — Find energy drinks in stock near you',
-    description: 'See which stores near you have your favorite energy drinks in stock, reported by the community.',
+    description: 'See which stores near you have your favorite energy drinks in stock, spotted by the community.',
     siteName: 'AmpedMap',
     type: 'website',
     url: 'https://ampedmap.com',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'AmpedMap — Find energy drinks in stock near you',
-    description: 'See which stores near you have your favorite energy drinks in stock, reported by the community.',
+    description: 'See which stores near you have your favorite energy drinks in stock, spotted by the community.',
   },
 }
 

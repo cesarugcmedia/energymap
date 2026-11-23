@@ -30,7 +30,7 @@ type ProfileData = {
   stats?: { uniqueFlavors: number; streak: number }
   badges?: string[]
   topStores?: { id: string; name: string; type: string; reports: number }[]
-  recentFinds?: { drink: string; quantity: string; storeId: string; storeName: string; at: string }[]
+  recentFinds?: { drink: string; amount?: 'few' | 'plenty' | null; storeId: string; storeName: string; at: string }[]
   collection?: { found: string[]; permanent: boolean }
   privateReports?: boolean
 }
@@ -320,7 +320,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                   <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{data.badges.length} of {BADGE_DEFS.length}</span>
                 </div>
                 {data.badges.length === 0 ? (
-                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Report stock to earn your first badge.' : 'No badges yet.'}</p>
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Log a sighting to earn your first badge.' : 'No badges yet.'}</p>
                 ) : (
                   <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '0 -16px', padding: '0 16px' }}>
                     {BADGE_DEFS.filter((b) => data.badges!.includes(b.id)).map((b, i) => (
@@ -353,7 +353,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 {data.privateReports ? (
                   <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>@{data.profile.username} keeps their reports private.</p>
                 ) : (!data.recentFinds?.length && !data.topStores?.length) ? (
-                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Your in-stock reports will show up here.' : 'No recent finds.'}</p>
+                  <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>{isMe ? 'Flavors you spot will show up here.' : 'No recent finds.'}</p>
                 ) : (
                   <>
                     {!!data.recentFinds?.length && (
@@ -362,11 +362,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                         <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
                           {data.recentFinds.map((f, i) => (
                             <Link key={`${f.storeId}-${f.at}-${i}`} href={`/store/${f.storeId}?name=${encodeURIComponent(f.storeName)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: f.quantity === 'full' ? '#C9F400' : f.quantity === 'medium' ? '#FFB300' : '#FF8A3D' }} />
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: '#C9F400' }} />
                               <span style={{ flex: 1, minWidth: 0 }}>
                                 <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.drink}</span>
                                 <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {f.quantity === 'full' ? 'Full' : f.quantity === 'medium' ? 'Medium' : 'Low'} · {f.storeName} · {timeAgo(f.at)}
+                                  Spotted{f.amount ? ` · ${f.amount === 'plenty' ? 'Plenty' : 'Just a few'}` : ''} · {f.storeName} · {timeAgo(f.at)}
                                 </span>
                               </span>
                             </Link>

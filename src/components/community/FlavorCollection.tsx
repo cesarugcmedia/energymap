@@ -90,8 +90,8 @@ export default function FlavorCollection({ found, isMe }: { found: string[]; isM
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 8 }}>
           {got === 0
-            ? isMe ? 'Report a flavor in stock to add it to your collection.' : 'No flavors found yet.'
-            : 'A flavor counts once it’s reported in stock.'}
+            ? isMe ? 'Spot a flavor at a store to add it to your collection.' : 'No flavors found yet.'
+            : 'A flavor counts once you spot it.'}
         </p>
       </div>
 

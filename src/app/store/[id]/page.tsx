@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Avatar } from '@/components/community/RichText'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Quantity } from '@/lib/types'
+import { AMOUNT_LABEL, NOT_THERE_HEX, SPOTTED_TEXT, agoText, amountOf, isReliable, sightingOf, timesToday, type Sighting } from '@/lib/sightings'
 import Toast from '@/components/Toast'
 import CountUp from '@/components/ui/CountUp'
 import ui from '@/components/ui/ui.module.css'
@@ -44,15 +44,6 @@ function normalizeBrand(input: string): string {
 }
 
 
-// Stock level pill/bar styles for the store page.
-const LEVEL: Record<Quantity, { label: string; color: string }> = {
-  full:   { label: 'Full',   color: 'var(--accent-text)' },
-  medium: { label: 'Medium', color: '#FFB300' },
-  low:    { label: 'Low',    color: '#FF8A3D' },
-  out:    { label: 'Out',    color: '#FF4545' },
-}
-const LEVEL_ORDER: Quantity[] = ['full', 'medium', 'low', 'out']
-
 const addLinkStyle: React.CSSProperties = { background: 'none', border: 'none', padding: '6px 4px', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: 'var(--accent-text)', cursor: 'pointer' }
 
 function openDirections(lat: number, lng: number) {
@@ -62,17 +53,6 @@ function openDirections(lat: number, lng: number) {
     : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank')
 }
 
-const STOCK_ORDER: Record<string, number> = { full: 0, medium: 1, low: 2, out: 3 }
-
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
 
 // Loose match for catalog suggestions: case/spacing/punctuation-insensitive.
 const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -91,7 +71,6 @@ const FLAG_REASONS: { label: string; hint: string }[] = [
 // Fresh < 1 day, Aging 1–2 days, Stale 2–3 days, Unverified after (src/lib/freshness.ts).
 const STALENESS_COLOR: Record<Staleness, string> = { Fresh: 'var(--accent-text)', Aging: '#FFB300', Stale: '#FF4545', Unverified: 'var(--text-dim)' }
 const stalenessColor = (dateStr: string) => STALENESS_COLOR[stalenessOf(dateStr)]
-const stalenessLabel = (dateStr: string) => stalenessOf(dateStr)
 
 function StoreDetailContent({ id }: { id: string }) {
   const router = useRouter()
@@ -132,7 +111,10 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
   const [search, setSearch] = useState('')
   const { prefs } = usePreferences()
-  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all')
+  const [stockFilter, setStockFilter] = useState<'all' | 'spotted' | 'not_there'>('all')
+  // How many times each flavor was spotted here today (/api/stores/sightings).
+  const [todayCounts, setTodayCounts] = useState<Record<string, number>>({})
+  const [todayTotal, setTodayTotal] = useState(0)
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
@@ -240,7 +222,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   // Share link previews show the store's live stock (./opengraph-image.tsx).
   async function shareStore() {
     const url = `${window.location.origin}/store/${id}`
-    const r = await shareLink({ url, title: `${name} on AmpedMap`, text: inStockTotal > 0 ? `${inStockTotal} flavors in stock at ${name}` : `What's in stock at ${name}` })
+    const r = await shareLink({ url, title: `${name} on AmpedMap`, text: inStockTotal > 0 ? `${inStockTotal} flavors spotted at ${name}` : `What's been spotted at ${name}` })
     if (r === 'copied') showToast('Link copied')
     else if (r === 'failed') showToast('Could not share this store')
   }
@@ -294,9 +276,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     return json.reporters ?? {}
   }
 
-  // "@name just reported Kiwi Guava · Full" — slides in when someone else
-  // reports at this store while the page is open.
-  const [justReported, setJustReported] = useState<{ key: number; name: string | null; avatar: string | null; drink: string; quantity: Quantity } | null>(null)
+  // "@name just spotted Kiwi Guava" — slides in when someone else logs a
+  // sighting at this store while the page is open.
+  const [justReported, setJustReported] = useState<{ key: number; name: string | null; avatar: string | null; drink: string; sighting: Sighting } | null>(null)
   const justTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const userIdRef = useRef<string | null>(null)
   userIdRef.current = user?.id ?? null
@@ -309,20 +291,30 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
       reportersP,
     ])
     const name = names[r.drink_id] ?? null
-    setJustReported({ key: Date.now(), name, avatar: null, drink: d ? (d.flavor || d.name) : 'a flavor', quantity: r.quantity as Quantity })
+    setJustReported({ key: Date.now(), name, avatar: null, drink: d ? (d.flavor || d.name) : 'a flavor', sighting: sightingOf(r) })
     clearTimeout(justTimer.current)
     justTimer.current = setTimeout(() => setJustReported(null), 4500)
   }
 
+  async function fetchToday() {
+    const res = await fetch(`/api/stores/sightings?store_id=${encodeURIComponent(id)}&tz=${new Date().getTimezoneOffset()}`).catch(() => null)
+    const body = res?.ok ? await res.json().catch(() => null) : null
+    if (body) { setTodayCounts(body.spotted ?? {}); setTodayTotal(body.total ?? 0) }
+  }
+
   async function fetchStock(): Promise<Record<string, string>> {
     const reportersP = fetchReporters()
-    const { data: stockData, error } = await supabase
+    fetchToday()
+    // '*' so the new sighting / amount columns come back once the migration
+    // has run, and the legacy quantity before that (src/lib/sightings.ts).
+    const { data: rawStock, error } = await supabase
       .from('latest_stock')
-      .select('drink_id, quantity, reported_at')
+      .select('*')
       .eq('store_id', id)
+    const stockData = (rawStock ?? []).map((r: any) => ({ ...r, sighting: sightingOf(r), amount: amountOf(r) }))
     if (error) { setStockError(true); setLoading(false); return reportersP }
 
-    const drinkIds = [...new Set((stockData ?? []).map((d) => d.drink_id).filter(Boolean))]
+    const drinkIds = [...new Set((stockData ?? []).map((d: any) => d.drink_id).filter(Boolean))]
 
     if (drinkIds.length > 0) {
       const { data: drinksData } = await supabase
@@ -331,8 +323,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         .in('id', drinkIds)
       const drinksMap: Record<string, any> = {}
       drinksData?.forEach((d) => { drinksMap[d.id] = d })
-      setStock((stockData ?? []).map((s) => ({ ...s, drink: drinksMap[s.drink_id] ?? null })))
-      const next = new Map((stockData ?? []).map((r) => [r.drink_id, `${r.quantity}|${r.reported_at}`]))
+      setStock((stockData ?? []).map((s: any) => ({ ...s, drink: drinksMap[s.drink_id] ?? null })))
+      const next = new Map((stockData ?? []).map((r: any) => [r.drink_id, `${r.sighting}|${r.amount}|${r.reported_at}`]))
       if (prevLevels.current) {
         const changed = new Set([...next].filter(([id, v]) => prevLevels.current!.get(id) !== v).map(([id]) => id))
         if (changed.size) {
@@ -508,7 +500,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }, {})
 
   const staleColor = latestReport ? stalenessColor(latestReport.reported_at) : null
-  const inStockTotal = stock.filter((i) => i.quantity !== 'out').length
+  const inStockTotal = stock.filter((i) => i.sighting === 'spotted').length
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden' }}>
@@ -572,44 +564,36 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
             ? <Avatar name={justReported.name} url={reporterAvatars[justReported.name]} size={24} />
             : <span className="live-dot" style={{ width: 10, height: 10, margin: '0 7px', borderRadius: '50%', background: '#C9F400', flexShrink: 0 }} />}
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{justReported.name ? `@${justReported.name}` : 'Someone'}</strong> just reported {justReported.drink} ·{' '}
-            <span style={{ color: (LEVEL[justReported.quantity] ?? LEVEL.out).color, fontWeight: 600 }}>{(LEVEL[justReported.quantity] ?? LEVEL.out).label}</span>
+            <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{justReported.name ? `@${justReported.name}` : 'Someone'}</strong> {justReported.sighting === 'spotted' ? 'just spotted' : 'couldn’t find'}{' '}
+            <span style={{ color: justReported.sighting === 'spotted' ? SPOTTED_TEXT : NOT_THERE_HEX, fontWeight: 600 }}>{justReported.drink}</span>
           </span>
         </div>
       )}
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── Stock overview ── */}
+        {/* ── Sightings overview ── */}
         {!storeError && !stockError && !loading && stock.length > 0 && (() => {
-          const counts = { full: 0, medium: 0, low: 0, out: 0 } as Record<string, number>
-          stock.forEach((s) => { counts[s.quantity] = (counts[s.quantity] ?? 0) + 1 })
+          const notThere = stock.filter((s) => s.sighting === 'not_there').length
           return (
             <div className={`${ui.card} anim-rise`} style={{ margin: '16px 16px 0' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}><CountUp value={inStockTotal} duration={600} /></span>
-                <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>of {stock.length} flavors in stock</span>
+                <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>flavor{inStockTotal === 1 ? '' : 's'} spotted here</span>
               </div>
               {latestReport && (
                 <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
                   <span className={Date.now() - new Date(latestReport.reported_at).getTime() < 2 * 3600000 ? 'live-dot' : ''} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
-                  {`Last report ${timeAgo(latestReport.reported_at)}`}
+                  {`Last checked ${agoText(latestReport.reported_at)}`}
+                  {todayTotal > 0 && <span>· {todayTotal} sighting{todayTotal === 1 ? '' : 's'} today</span>}
                 </p>
               )}
-              {/* Stock-level mix */}
-              <div className="anim-fill" style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 2, margin: '14px 0 8px', background: 'var(--fg-06)' }}>
-                {LEVEL_ORDER.map((lvl) => counts[lvl] > 0 && (
-                  <span key={lvl} style={{ flex: counts[lvl], background: LEVEL[lvl].color, opacity: lvl === 'out' ? 0.75 : 1 }} />
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', fontSize: 13, color: 'var(--text-muted)' }}>
-                {LEVEL_ORDER.map((lvl) => counts[lvl] > 0 && (
-                  <span key={lvl} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: LEVEL[lvl].color }} />
-                    {counts[lvl]} {LEVEL[lvl].label.toLowerCase()}
-                  </span>
-                ))}
-              </div>
+              {notThere > 0 && (
+                <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 0', fontSize: 13, color: 'var(--text-dim)' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: NOT_THERE_HEX }} />
+                  {notThere} flavor{notThere === 1 ? '' : 's'} not found last time someone checked
+                </p>
+              )}
             </div>
           )
         })()}
@@ -618,7 +602,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         {!storeError && (
           <div style={{ display: 'flex', gap: 10, margin: '14px 16px 0' }}>
             <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>
-              Report stock
+              Log a sighting
             </button>
             {store?.lat != null && store?.lng != null && (
               <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(store.lat, store.lng)}>
@@ -654,7 +638,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
           <div className={ui.emptyState}>
             <DrinkIcon size={36} color="var(--text-dim)" />
             <p className={ui.emptyTitle}>No reports yet</p>
-            <p className={ui.emptyBody}>Be the first to report what&apos;s in the cooler here.</p>
+            <p className={ui.emptyBody}>Be the first to log a sighting here.</p>
             <button onClick={() => setShowAddDrink(true)} style={addLinkStyle}>Flavor not in our list? Add it</button>
           </div>
         ) : (
@@ -677,14 +661,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               )}
             </div>
             <div className={ui.chipRow} style={{ marginBottom: 16 }}>
-              {([['all', 'All'], ['in', 'In stock'], ['out', 'Out of stock']] as const).map(([key, label]) => (
+              {([['all', 'All'], ['spotted', 'Spotted'], ['not_there', 'Not found']] as const).map(([key, label]) => (
                 <button key={key} className={`${ui.chip} ${stockFilter === key ? ui.chipActive : ''}`} onClick={() => setStockFilter(key)}>{label}</button>
               ))}
             </div>
 
             {(() => {
               const brands = Object.entries(byBrand)
-                .map(([brand, items]) => [brand, items.filter((i) => stockFilter === 'all' || (stockFilter === 'in' ? i.quantity !== 'out' : i.quantity === 'out'))] as const)
+                .map(([brand, items]) => [brand, items.filter((i) => stockFilter === 'all' || i.sighting === stockFilter)] as const)
                 .filter(([, items]) => items.length > 0)
 
               if (brands.length === 0) {
@@ -692,7 +676,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   <div className={ui.emptyState} style={{ paddingTop: 24 }}>
                     <SearchIcon size={32} color="var(--text-dim)" />
                     <p className={ui.emptyTitle}>No matching flavors</p>
-                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'out' ? 'Nothing reported out of stock.' : 'Nothing reported in stock right now.'}</p>
+                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'not_there' ? 'Nothing marked not found.' : 'Nothing spotted here yet.'}</p>
                   </div>
                 )
               }
@@ -701,11 +685,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {brands.map(([brand, items]) => {
                     const all = byBrand[brand]
-                    const inStock = all.filter((i) => i.quantity !== 'out').length
+                    const inStock = all.filter((i) => i.sighting === 'spotted').length
                     const pct = all.length > 0 ? inStock / all.length : 0
                     const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
                     const isExpanded = isSearching || stockFilter !== 'all' || brands.length <= 2 || expandedBrands.has(brand)
-                    const sorted = [...items].sort((a, b) => ((STOCK_ORDER[a.quantity] ?? 4) - (STOCK_ORDER[b.quantity] ?? 4)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()))
+                    // Spotted first (most spotted today, then newest), Not found after.
+                    const sorted = [...items].sort((a, b) => ((a.sighting === 'spotted' ? 0 : 1) - (b.sighting === 'spotted' ? 0 : 1)) || ((todayCounts[b.drink_id] ?? 0) - (todayCounts[a.drink_id] ?? 0)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()))
                     return (
                       <div key={brand} className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
                         <button
@@ -719,7 +704,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                               <span style={{ flex: 1, height: 5, borderRadius: 999, overflow: 'hidden', background: 'var(--fg-08)' }}>
                                 <span className="anim-fill" style={{ display: 'block', height: '100%', width: `${pct * 100}%`, borderRadius: 999, background: barColor }} />
                               </span>
-                              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', flexShrink: 0 }}>{inStock} of {all.length} in stock</span>
+                              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', flexShrink: 0 }}>{inStock} of {all.length} spotted</span>
                             </span>
                           </span>
                           <span style={{ display: 'flex', transition: 'transform 0.2s ease', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
@@ -730,35 +715,39 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                         {isExpanded && (
                           <div className="anim-fade" style={{ borderTop: '1px solid var(--fg-06)' }}>
                             {sorted.map((item, idx) => {
-                              const lvl = LEVEL[item.quantity as Quantity] ?? LEVEL.out
-                              const isOut = item.quantity === 'out'
-                              const freshColor = item.reported_at ? stalenessColor(item.reported_at) : 'var(--text-dim)'
+                              const isOut = item.sighting === 'not_there'
+                              // Older than a day reads as less reliable (muted).
+                              const reliable = isReliable(item.reported_at)
+                              const lineColor = !reliable ? 'var(--text-dim)' : isOut ? NOT_THERE_HEX : SPOTTED_TEXT
+                              const times = todayCounts[item.drink_id] ?? 0
                               const following = drinkAlerts.has(item.drink_id)
                               return (
                                 <div
                                   key={item.drink_id}
                                   className={changedIds.has(item.drink_id) ? 'anim-new' : undefined}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderTop: idx === 0 ? 'none' : '1px solid var(--fg-06)' }}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderTop: idx === 0 ? 'none' : '1px solid var(--fg-06)', opacity: reliable ? 1 : 0.62 }}
                                 >
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 15, fontWeight: 500, color: isOut ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <p style={{ fontSize: 15, fontWeight: 500, color: isOut || !reliable ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                       {item.drink?.flavor ?? item.drink?.name}
                                     </p>
                                     <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 13, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: freshColor }}>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: freshColor }} />
-                                        {stalenessLabel(item.reported_at)} · {timeAgo(item.reported_at)}
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: lineColor, fontWeight: 500 }}>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: !reliable ? 'var(--fg-25)' : isOut ? NOT_THERE_HEX : '#C9F400' }} />
+                                        {isOut ? 'Not found' : 'Spotted'} {agoText(item.reported_at)}
                                       </span>
+                                      {!isOut && times >= 2 && <span style={{ color: 'var(--text-muted)' }}>· {timesToday(times).replace('Spotted ', '')}</span>}
                                       {reporters[item.drink_id] && (
                                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>· by <Link href={`/u/${reporters[item.drink_id]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}><Avatar name={reporters[item.drink_id]} url={reporterAvatars[reporters[item.drink_id]]} size={16} />@{reporters[item.drink_id]}</Link></span>
                                       )}
                                       {item.drink?.caffeine_mg ? <span>· {item.drink.caffeine_mg} mg caffeine</span> : null}
                                     </p>
                                   </div>
-                                  <span key={item.quantity} className={changedIds.has(item.drink_id) ? 'anim-pop' : undefined} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 78, padding: '5px 10px', borderRadius: 999, background: `color-mix(in srgb, ${lvl.color} 10%, transparent)`, color: lvl.color, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: lvl.color }} />
-                                    {lvl.label}
-                                  </span>
+                                  {(isOut || item.amount) && (
+                                    <span key={`${item.sighting}${item.amount}`} className={changedIds.has(item.drink_id) ? 'anim-pop' : undefined} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 10px', borderRadius: 999, background: isOut ? 'rgba(255,69,69,0.1)' : 'var(--fg-06)', color: isOut ? NOT_THERE_HEX : 'var(--text)', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
+                                      {isOut ? 'Not there' : AMOUNT_LABEL[item.amount as 'few' | 'plenty']}
+                                    </span>
+                                  )}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
                                     aria-label={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}

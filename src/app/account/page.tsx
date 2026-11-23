@@ -171,13 +171,6 @@ function GoogleSignInButton({ tier = 'free', onError }: { tier?: TierId; onError
   )
 }
 
-const QUANTITY_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  out:    { label: 'OUT',  color: '#FF4545', bg: 'rgba(255,69,69,0.08)',   border: 'rgba(255,69,69,0.25)'   },
-  low:    { label: 'LOW',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
-  medium: { label: 'MED',  color: '#FFB300', bg: 'rgba(255,179,0,0.08)',   border: 'rgba(255,179,0,0.25)'   },
-  full:   { label: 'FULL', color: 'var(--accent-text)', bg: 'rgba(201,244,0,0.08)',   border: 'rgba(201,244,0,0.25)'   },
-}
-
 type AccountSubpage = 'root' | 'profile' | 'plan' | 'badges' | 'saved' | 'alerts' | 'username' | 'password' | 'appearance' | 'notifications' | 'privacy'
 
 // Small line icons used only by the Account settings list (no equivalent in
@@ -825,7 +818,7 @@ function AccountPageInner() {
     const PAGE_SIZE = 20
     const { data } = await supabase
       .from('stock_reports')
-      .select('id, reported_at, quantity, drink:drinks(name, flavor, brand), store:stores(name)')
+      .select('*, drink:drinks(name, flavor, brand), store:stores(name)')
       .eq('user_id', user.id)
       .order('reported_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
@@ -1169,7 +1162,7 @@ function switchMode(m: Mode) {
         case 'privacy': {
           const OPTIONS: { field: 'hide_from_search' | 'anonymous_reports'; label: string; hint: string }[] = [
             { field: 'hide_from_search', label: 'Hide me from people search', hint: 'You won’t appear in Find people or in suggestions. Anyone with your profile link can still open it.' },
-            { field: 'anonymous_reports', label: 'Keep my reports private', hint: 'Store pages and the Community feed show “a hunter” instead of your name, and your profile hides where you report.' },
+            { field: 'anonymous_reports', label: 'Keep my sightings private', hint: 'Store pages and the Community feed show “a hunter” instead of your name, and your profile hides where you spot things.' },
           ]
           return (
             <>

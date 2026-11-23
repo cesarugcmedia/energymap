@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { AMOUNT_LABEL, amountOf, sightingOf, type SightingRow } from '@/lib/sightings'
 
 // Server-only loaders for shared links: store pages (/store/[id]) and posts
 // (/p/[id]). Used by their link-preview metadata, preview images and the
@@ -6,11 +7,11 @@ import { createClient } from '@supabase/supabase-js'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const admin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-const RANK: Record<string, number> = { full: 3, medium: 2, low: 1, out: 0 }
-
 export type Level = 'full' | 'medium' | 'low' | 'out'
-export const LEVEL_HEX: Record<Level, string> = { full: '#C9F400', medium: '#FFB300', low: '#FFB300', out: '#FF4545' }
-export const LEVEL_WORD: Record<Level, string> = { full: 'Full', medium: 'Medium', low: 'Low', out: 'Out' }
+// community_posts.quantity on a Found it post, read as a sighting amount
+// (see QUANTITY_STYLE in components/community/types.ts).
+export const LEVEL_HEX: Record<Level, string> = { full: '#C9F400', medium: '#C9F400', low: '#C9F400', out: '#FF4545' }
+export const LEVEL_WORD: Record<Level, string> = { full: 'Plenty', medium: 'Just a few', low: 'Just a few', out: 'Not there' }
 
 export type StoreCard = {
   id: string
@@ -20,7 +21,8 @@ export type StoreCard = {
   inStock: number
   total: number
   latestAt: string | null
-  top: { label: string; quantity: Level }[]
+  /** Most recently spotted flavors, with the amount when someone gave one. */
+  top: { label: string; tag: string }[]
 }
 
 export async function loadStoreCard(id: string): Promise<StoreCard | null> {
@@ -28,11 +30,11 @@ export async function loadStoreCard(id: string): Promise<StoreCard | null> {
   const db = admin()
   const { data: store } = await db.from('stores').select('id, name, address, type, status').eq('id', id).maybeSingle()
   if (!store || store.status !== 'approved') return null
-  const { data: stock } = await db.from('latest_stock').select('drink_id, quantity, reported_at').eq('store_id', id).range(0, 999)
-  const rows = stock ?? []
-  const inStockRows = rows.filter((r) => r.quantity !== 'out')
-  // Fullest, then freshest, first.
-  inStockRows.sort((a, b) => (RANK[b.quantity] ?? 0) - (RANK[a.quantity] ?? 0) || String(b.reported_at).localeCompare(String(a.reported_at)))
+  const { data: stock } = await db.from('latest_stock').select('*').eq('store_id', id).range(0, 999)
+  const rows = (stock ?? []) as (SightingRow & { drink_id: string; reported_at: string })[]
+  const inStockRows = rows.filter((r) => sightingOf(r) === 'spotted')
+  // Newest sightings first.
+  inStockRows.sort((a, b) => String(b.reported_at).localeCompare(String(a.reported_at)))
   const topRows = inStockRows.slice(0, 4)
   const { data: drinks } = topRows.length
     ? await db.from('drinks').select('id, brand, name, flavor').in('id', topRows.map((r) => r.drink_id))
@@ -48,7 +50,8 @@ export async function loadStoreCard(id: string): Promise<StoreCard | null> {
     latestAt: rows.reduce<string | null>((m, r) => (!m || r.reported_at > m ? r.reported_at : m), null),
     top: topRows.map((r) => {
       const d = byId.get(r.drink_id)
-      return { label: d ? (d.flavor ? `${d.brand} ${d.flavor}` : d.name) : 'A flavor', quantity: r.quantity as Level }
+      const a = amountOf(r)
+      return { label: d ? (d.flavor ? `${d.brand} ${d.flavor}` : d.name) : 'A flavor', tag: a ? AMOUNT_LABEL[a] : 'Spotted' }
     }),
   }
 }

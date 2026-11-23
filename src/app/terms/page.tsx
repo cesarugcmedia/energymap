@@ -42,7 +42,7 @@ Payments are processed by Stripe. By subscribing, you also agree to Stripe's Ter
           },
           {
             title: '5. User Content',
-            body: `By submitting content to AmpedMap (including stock reports and store listings), you grant us a non-exclusive, royalty-free license to display and use that content on the platform.
+            body: `By submitting content to AmpedMap (including sightings and store listings), you grant us a non-exclusive, royalty-free license to display and use that content on the platform.
 
 You agree not to submit content that is:
 • False, misleading, or inaccurate.
@@ -67,7 +67,7 @@ We reserve the right to remove any content that violates these terms.`,
           },
           {
             title: '8. Disclaimers',
-            body: 'AmpedMap is provided "as is" without warranties of any kind. We do not guarantee the accuracy of stock reports or store information submitted by users. We are not responsible for any decisions made based on information found on the platform.',
+            body: 'AmpedMap is provided "as is" without warranties of any kind. We do not guarantee the accuracy of sightings or store information submitted by users. We are not responsible for any decisions made based on information found on the platform.',
           },
           {
             title: '9. Limitation of Liability',

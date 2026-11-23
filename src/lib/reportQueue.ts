@@ -1,9 +1,9 @@
 'use client'
 
 import { supabase } from '@/lib/supabase'
-import type { Quantity } from '@/lib/types'
+import type { Amount, Sighting } from '@/lib/sightings'
 
-// Stock reports made with no signal (coolers are often at the back of the
+// Sightings logged with no signal (coolers are often at the back of the
 // store) are saved on the device and sent automatically once the phone is
 // back online — see ReportQueueSync, mounted app-wide in layout.tsx.
 //
@@ -16,7 +16,9 @@ export type QueuedReport = {
   id: string
   storeId: string
   storeName: string
-  reports: { drink_id: string; quantity: Quantity }[]
+  // New: sighting (+ optional amount). Items saved by older app versions
+  // carry quantity instead; the server converts those.
+  reports: { drink_id: string; sighting?: Sighting; amount?: Amount | null; quantity?: string }[]
   lat?: number
   lng?: number
   queuedAt: number
@@ -71,7 +73,7 @@ export async function flushQueue(): Promise<{ sent: number; failed: string[] }> 
     for (const item of queue) {
       if (Date.now() - item.queuedAt > MAX_AGE_MS) {
         removeFromQueue(item.id)
-        result.failed.push(`Your saved report for ${item.storeName} was too old to send.`)
+        result.failed.push(`Your saved sightings for ${item.storeName} were too old to send.`)
         continue
       }
       let res: Response
@@ -91,7 +93,7 @@ export async function flushQueue(): Promise<{ sent: number; failed: string[] }> 
       if (transient) break
       removeFromQueue(item.id)
       if (res.ok) result.sent += body.submitted ?? 0
-      else result.failed.push(body.error ? `${item.storeName}: ${body.error}` : `Couldn't send your report for ${item.storeName}.`)
+      else result.failed.push(body.error ? `${item.storeName}: ${body.error}` : `Couldn't send your sightings for ${item.storeName}.`)
     }
   } finally {
     flushing = false

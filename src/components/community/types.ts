@@ -33,11 +33,14 @@ export interface FeedPost {
 
 export interface StoreSummary { inStock: number; total: number; latest: string | null }
 
+// community_posts.quantity keeps its stored values; since sightings
+// (2026-11-22) they read as the optional amount on a "Found it" post:
+// full → Plenty, medium / low → Just a few, out (older posts) → Not there.
 export const QUANTITY_STYLE: Record<string, { label: string; color: string }> = {
-  full: { label: 'Full', color: '#C9F400' },
-  medium: { label: 'Medium', color: '#FFB300' },
-  low: { label: 'Low', color: '#FFB300' },
-  out: { label: 'Out', color: '#FF4545' },
+  full: { label: 'Plenty', color: 'var(--accent-text)' },
+  medium: { label: 'Just a few', color: 'var(--text-muted)' },
+  low: { label: 'Just a few', color: 'var(--text-muted)' },
+  out: { label: 'Not there', color: '#FF4545' },
 }
 
 export function timeAgo(dateStr: string) {

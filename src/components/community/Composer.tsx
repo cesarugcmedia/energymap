@@ -7,7 +7,8 @@ import ui from '@/components/ui/ui.module.css'
 import { Avatar } from './RichText'
 import { useAuth } from '@/contexts/AuthContext'
 import { DrinkPicker, StorePicker } from './Pickers'
-import { QUANTITY_STYLE, type PostType, type Quantity } from './types'
+import { type PostType } from './types'
+import { AMOUNT_LABEL, legacyQuantity, type Amount } from '@/lib/sightings'
 import SlideHighlight from '@/components/ui/SlideHighlight'
 
 const MAX_BODY = 500
@@ -32,7 +33,8 @@ export default function Composer({ username, v3, onPosted, toast }: {
   const [text, setText] = useState('')
   const [store, setStore] = useState<StoreLite | null>(null)
   const [drink, setDrink] = useState<DrinkLite | null>(null)
-  const [quantity, setQuantity] = useState<Quantity>('full')
+  // Optional on a Found it post: "Just a few" / "Plenty".
+  const [amount, setAmount] = useState<Amount | null>(null)
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
   const [posting, setPosting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -40,7 +42,7 @@ export default function Composer({ username, v3, onPosted, toast }: {
 
   function reset() {
     photos.forEach((p) => URL.revokeObjectURL(p.preview))
-    setText(''); setStore(null); setDrink(null); setQuantity('full'); setPhotos([]); setType('post'); setOpen(false)
+    setText(''); setStore(null); setDrink(null); setAmount(null); setPhotos([]); setType('post'); setOpen(false)
   }
 
   function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
@@ -83,26 +85,26 @@ export default function Composer({ username, v3, onPosted, toast }: {
         post_type: type,
         store_id: store?.id ?? null,
         drink_id: drink?.id ?? null,
-        quantity: type === 'found' ? quantity : null,
+        quantity: type === 'found' && amount ? legacyQuantity('spotted', amount) : null,
         photo_urls: urls,
       }),
     })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) { toast(json.error ?? 'Could not post. Please try again.'); setPosting(false); return }
 
-    // "Found it" doubles as a stock report, through the normal report route
-    // (same geofence, daily limit and dedup rules as Report Stock).
+    // "Found it" doubles as a Spotted sighting, through the normal report
+    // route (same geofence, daily limit and 30-minute rule).
     if (type === 'found' && store && drink) {
       const coords = await currentPositionIfGranted()
       const r = await fetch('/api/stock/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ store_id: store.id, reports: [{ drink_id: drink.id, quantity }], ...(coords ?? {}) }),
+        body: JSON.stringify({ store_id: store.id, reports: [{ drink_id: drink.id, sighting: 'spotted', amount }], ...(coords ?? {}) }),
       })
       const rj = await r.json().catch(() => ({}))
-      if (!r.ok) toast(`Posted. The stock report didn’t go through: ${rj.error ?? 'try Report Stock instead.'}`)
-      else if (rj.submitted === 0) toast('Posted. You already reported that drink here recently.')
-      else toast('Posted and reported. Thanks!')
+      if (!r.ok) toast(`Posted. The sighting didn’t go through: ${rj.error ?? 'log it from the store page instead.'}`)
+      else if (rj.submitted === 0) toast('Posted. You logged that drink here in the last 30 minutes.')
+      else toast('Posted and logged as a sighting. Thanks!')
     } else {
       toast('Posted!')
     }
@@ -136,14 +138,11 @@ export default function Composer({ username, v3, onPosted, toast }: {
       {type !== 'post' && <DrinkPicker value={drink} onChange={setDrink} placeholder={type === 'found' ? 'Which drink did you find?' : 'Which drink are you hunting?'} />}
       {type === 'found' && <StorePicker value={store} onChange={setStore} placeholder="Which store?" />}
       {type === 'found' && (
-        <div style={{ display: 'flex', gap: 6 }}>
-          {(['full', 'medium', 'low', 'out'] as Quantity[]).map((q) => {
-            const s = QUANTITY_STYLE[q]
-            const active = quantity === q
-            return (
-              <button key={q} className="press" onClick={() => setQuantity(q)} style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1px solid ${active ? s.color : 'var(--fg-10)'}`, background: active ? `${s.color}1f` : 'transparent', color: active ? s.color : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{s.label}</button>
-            )
-          })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-dim)', marginRight: 2 }}>How many? <span style={{ opacity: 0.8 }}>(optional)</span></span>
+          {(['few', 'plenty'] as Amount[]).map((a) => (
+            <button key={a} className={`${ui.chip} ${amount === a ? ui.chipActive : ''}`} onClick={() => setAmount(amount === a ? null : a)}>{AMOUNT_LABEL[a]}</button>
+          ))}
         </div>
       )}
 

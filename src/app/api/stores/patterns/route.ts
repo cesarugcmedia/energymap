@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { sightingOf, type SightingRow } from '@/lib/sightings'
 
 // GET /api/stores/patterns?store_id=&tz= — Tracker-only restock patterns for
 // one store, worked out from its report history (90 days once
 // scripts/tracker-features.sql has extended retention; 7 days before that).
 //
-// A "restock" is a report where a flavor's level went up from the previous
-// report of that flavor at this store (Out → anything, Low → Medium/Full,
-// Medium → Full). Those are bucketed by weekday and time of day in the
-// viewer's timezone (`tz` = Date#getTimezoneOffset()). With too few restocks
-// it falls back to when the cooler was reported Full.
+// A "restock" is a Spotted sighting that follows a Not there for that flavor
+// at this store, or follows RESTOCK_GAP_MS with no sighting. Those are
+// bucketed by weekday and time of day in the viewer's timezone (`tz` =
+// Date#getTimezoneOffset()). With too few restocks it falls back to when
+// flavors get spotted at all (basis "full", kept for the client).
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const RANK: Record<string, number> = { out: 0, low: 1, medium: 2, full: 3 }
+const RESTOCK_GAP_MS = 3 * 24 * 3600 * 1000
 const DAY_MS = 86400000
 const MIN_SIGNALS = 3
 
-type Row = { drink_id: string; quantity: string; reported_at: string }
+type Row = SightingRow & { drink_id: string; reported_at: string }
 
 function partOf(hour: number) {
   return hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night'
@@ -57,7 +58,7 @@ async function handle(req: NextRequest) {
   const rows: Row[] = []
   for (let from = 0; from < 5000; from += 1000) {
     const { data, error } = await supabaseAdmin.from('stock_reports')
-      .select('drink_id, quantity, reported_at')
+      .select('*')
       .eq('store_id', storeId)
       .gte('reported_at', since)
       .order('reported_at', { ascending: true })
@@ -76,7 +77,7 @@ async function handle(req: NextRequest) {
   const fullDays = [0, 0, 0, 0, 0, 0, 0]
   const fullParts: Record<string, number> = { morning: 0, afternoon: 0, evening: 0, night: 0 }
   const outCount = new Map<string, number>()
-  const last = new Map<string, string>()
+  const last = new Map<string, { s: string; at: number }>()
   let restocks = 0
   let fulls = 0
   const monthAgo = Date.now() - 30 * DAY_MS
@@ -86,23 +87,26 @@ async function handle(req: NextRequest) {
     const day = (d.getUTCDay() + 6) % 7 // Monday = 0
     const part = partOf(d.getUTCHours())
     const prev = last.get(r.drink_id)
-    if (prev !== undefined && (RANK[r.quantity] ?? 0) > (RANK[prev] ?? 0)) {
+    const s = sightingOf(r)
+    const at = new Date(r.reported_at).getTime()
+    if (s === 'spotted' && prev && (prev.s === 'not_there' || at - prev.at > RESTOCK_GAP_MS)) {
       restocks++
       restockDays[day]++
       restockParts[part]++
     }
-    if (r.quantity === 'full') { fulls++; fullDays[day]++; fullParts[part]++ }
-    if (r.quantity === 'out' && prev !== 'out' && new Date(r.reported_at).getTime() >= monthAgo) {
+    if (s === 'spotted') { fulls++; fullDays[day]++; fullParts[part]++ }
+    // Most often not found (counting each fresh Not there once).
+    if (s === 'not_there' && prev?.s !== 'not_there' && at >= monthAgo) {
       outCount.set(r.drink_id, (outCount.get(r.drink_id) ?? 0) + 1)
     }
-    last.set(r.drink_id, r.quantity)
+    last.set(r.drink_id, { s, at })
   }
 
   const basis = restocks >= MIN_SIGNALS ? 'restocks' : fulls >= MIN_SIGNALS ? 'full' : 'none'
   const days = basis === 'restocks' ? restockDays : fullDays
   const parts = basis === 'restocks' ? restockParts : fullParts
 
-  // Flavors that ran out most often in the last 30 days.
+  // Flavors most often marked Not there in the last 30 days.
   const topOut = [...outCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
   let sellsOut: { name: string; times: number }[] = []
   if (topOut.length) {

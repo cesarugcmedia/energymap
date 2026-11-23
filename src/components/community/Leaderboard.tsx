@@ -22,7 +22,7 @@ const UNIT: Record<string, { one: string; many: string }> = {
   points: { one: 'pt', many: 'pts' },
   stores: { one: 'store', many: 'stores' },
   flavors: { one: 'flavor', many: 'flavors' },
-  reports: { one: 'report', many: 'reports' },
+  reports: { one: 'sighting', many: 'sightings' },
 }
 const MEDAL = ['🥇', '🥈', '🥉']
 const PODIUM_COLOR = ['#ffd700', '#c0c0c0', '#cd7f32']
@@ -145,10 +145,10 @@ export default function Leaderboard({ me }: {
     } else if (myEntry) {
       const next = list[myIndex - 1]
       const gap = next.value - myEntry.value + 1
-      const action = unitKey === 'points' ? `Report ${Math.ceil(gap / 2)} drink${Math.ceil(gap / 2) === 1 ? '' : 's'} to pass them.`
+      const action = unitKey === 'points' ? `Log ${Math.ceil(gap / 2)} sighting${Math.ceil(gap / 2) === 1 ? '' : 's'} to pass them.`
         : unitKey === 'stores' ? `Add ${gap} more store${gap === 1 ? '' : 's'} to pass them.`
         : unitKey === 'flavors' ? `Find ${gap} more flavor${gap === 1 ? '' : 's'} to pass them.`
-        : `${gap} more report${gap === 1 ? '' : 's'} to pass them.`
+        : `${gap} more sighting${gap === 1 ? '' : 's'} to pass them.`
       target = { text: `#${myIndex + 1} · ${gap} ${unit(gap)} behind @${next.username}. ${action}`, progress: next.value > 0 ? Math.min(1, myEntry.value / next.value) : 0 }
     } else if (serverMe && scope !== 'following') {
       target = { text: `You're #${serverMe.rank} with ${serverMe.value} ${unit(serverMe.value)}. Climb into the top ${list.length} to show up here.`, progress: 0 }
@@ -176,7 +176,7 @@ export default function Leaderboard({ me }: {
       {/* What */}
       <div className={`${ui.segmented} ${ui.segSlide}`} style={{ display: 'flex', marginBottom: 10 }}>
         <SlideHighlight activeKey={metric} />
-        {([['points', scope === 'near' ? 'Reports' : 'Points'], ['stores', 'Stores added'], ['flavors', 'Flavors found']] as const).map(([key, label]) => (
+        {([['points', scope === 'near' ? 'Sightings' : 'Points'], ['stores', 'Stores added'], ['flavors', 'Flavors found']] as const).map(([key, label]) => (
           <button key={key} data-active={metric === key} className={`${ui.segment} ${metric === key ? ui.segmentActive : ''}`} style={{ flex: 1, padding: '8px 6px', fontSize: 13 }} onClick={() => setMetric(key)}>{label}</button>
         ))}
       </div>
@@ -219,7 +219,7 @@ export default function Leaderboard({ me }: {
           <p className={ui.emptyBody}>
             {scope === 'near' && (me.lat == null || me.lng == null) ? 'Open the map once so we know where “near you” is.'
               : scope === 'following' ? 'Follow people from the feed or their profiles to compete with them here.'
-              : 'Be the first. Report what you see this week.'}
+              : 'Be the first. Log what you spot this week.'}
           </p>
         </div>
       ) : (
@@ -298,7 +298,7 @@ export default function Leaderboard({ me }: {
           <p className={ui.sectionLabel}>How points work</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { Icon: LightningIcon, label: 'Report a drink', desc: 'Each drink you report at a store', pts: '+2', color: 'var(--accent-text)' },
+              { Icon: LightningIcon, label: 'Log a sighting', desc: 'Each Spotted or Not there you log', pts: '+2', color: 'var(--accent-text)' },
               { Icon: GroceryIcon, label: 'Add a store', desc: 'Once an admin approves it', pts: '+5', color: '#FFB300' },
               { Icon: DrinkIcon, label: 'Add a drink', desc: 'Each new flavor you add', pts: '+3', color: '#22d3ee' },
             ].map(({ Icon, label, desc, pts, color }) => (

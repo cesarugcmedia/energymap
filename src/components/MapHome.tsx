@@ -8,7 +8,7 @@ import { useLocation } from '@/hooks/useLocation'
 import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import type { Drink, Quantity, Store } from '@/lib/types'
+import type { Drink, Store } from '@/lib/types'
 import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon, ChevronRightIcon, HeartIcon } from '@/components/Icons'
 import ui from '@/components/ui/ui.module.css'
 import { usePreferences } from '@/lib/preferences'
@@ -19,6 +19,7 @@ import BoltLoader from '@/components/ui/BoltLoader'
 import Burst from '@/components/ui/Burst'
 import { isFresh, stalenessOf, type Staleness } from '@/lib/freshness'
 import { FREE_RADIUS_MILES } from '@/lib/plans'
+import { agoText, amountOf, isReliable, sightingOf, startOfToday, NOT_THERE_HEX, SPOTTED_TEXT, type Sighting } from '@/lib/sightings'
 import FreshnessRing from '@/components/ui/FreshnessRing'
 
 type View = 'map' | 'list'
@@ -42,15 +43,6 @@ function openDirections(destLat: number, destLng: number) {
   }
 }
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
 
 // Same buckets as the store page (src/lib/freshness.ts).
 const STALENESS_COLOR: Record<Staleness, string> = { Fresh: '#C9F400', Aging: '#FFB300', Stale: '#FF4545', Unverified: 'var(--text-dim)' }
@@ -68,13 +60,6 @@ const FRESHNESS_LEGEND = [
   { color: '#FFB300', label: 'Mixed' },
   { color: 'var(--text-dim)', label: 'Mostly stale' },
 ]
-
-const QUANTITY_CONFIG: Record<Quantity, { label: string; color: string }> = {
-  out:    { label: 'OUT',  color: '#FF4545' },
-  low:    { label: 'LOW',  color: '#FFB300' },
-  medium: { label: 'MED',  color: '#FFB300' },
-  full:   { label: 'FULL', color: 'var(--accent-text)' },
-}
 
 const FREE_RADIUS_OPTIONS = [5, 10, 15, FREE_RADIUS_MILES]
 const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, 50, null]
@@ -156,7 +141,7 @@ export default function MapHome() {
   const [storeStock, setStoreStock] = useState<Record<string, any[]>>({})
   const [pinFlash, setPinFlash] = useState<{ id: string; n: number } | null>(null)
   const [locatePing, setLocatePing] = useState(0)
-  const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; quantity: Quantity }[]>>({})
+  const [liveUpdates, setLiveUpdates] = useState<Record<string, { id: string; username: string; drinkName: string; sighting: Sighting }[]>>({})
   const [radius, setRadius] = useState<number | null>(10)
   const [radiusInitialized, setRadiusInitialized] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
@@ -277,11 +262,12 @@ export default function MapHome() {
       for (let from = 0; ; from += PAGE) {
         const { data, error } = await supabase
           .from('latest_stock')
-          .select('store_id, drink_id, quantity, reported_at')
+          .select('*')
           .in('store_id', chunk)
           .range(from, from + PAGE - 1)
         if (error || !data) break
-        rows.push(...data)
+        // sighting / amount from the new columns, or the legacy level.
+        rows.push(...data.map((r: any) => ({ ...r, sighting: sightingOf(r), amount: amountOf(r) })))
         if (data.length < PAGE) break
       }
       return rows
@@ -308,7 +294,7 @@ export default function MapHome() {
       const set = new Set<string>()
       for (const r of rows) {
         const brand = brandOf.get(r.drink_id)
-        if (brand && r.quantity !== 'out') { set.add(brand); all.add(brand) }
+        if (brand && r.sighting === 'spotted') { set.add(brand); all.add(brand) }
       }
       if (set.size) byStore[storeId] = [...set]
     }
@@ -340,7 +326,7 @@ export default function MapHome() {
         setLiveUpdates((prev) => ({
           ...prev,
           [report.store_id]: [
-            { id: updateId, username, drinkName, quantity: report.quantity },
+            { id: updateId, username, drinkName, sighting: sightingOf(report) },
             ...(prev[report.store_id] ?? []),
           ].slice(0, 3),
         }))
@@ -393,7 +379,7 @@ export default function MapHome() {
     if (!drinkFilter) return null
     const ids = new Set<string>()
     for (const [storeId, rows] of Object.entries(storeStock)) {
-      if (rows.some((r) => r.drink_id === drinkFilter.id && r.quantity !== 'out')) ids.add(storeId)
+      if (rows.some((r) => r.drink_id === drinkFilter.id && r.sighting === 'spotted')) ids.add(storeId)
     }
     return ids
   }, [drinkFilter, storeStock])
@@ -408,26 +394,35 @@ export default function MapHome() {
     return ids
   }, [prefs.brands, storeBrands])
 
-  // Per-store at-a-glance stock: counts + the top 3 in-stock flavors
-  // (fullest first, then freshest) for the map popup and list cards.
+  // Per-store at a glance: how many flavors were last seen as Spotted, the
+  // newest sighting, and the top 3 spotted flavors (favorite brands, then
+  // newest) for the map popup and list cards.
   const drinkById = useMemo(() => new Map(allDrinks.map((d) => [d.id, d])), [allDrinks])
   const storeSummary = useMemo(() => {
-    const order: Record<string, number> = { full: 0, medium: 1, low: 2 }
-    const out: Record<string, { inStock: number; total: number; top: { label: string; quantity: Quantity }[] }> = {}
+    const out: Record<string, { inStock: number; total: number; lastSpotted: string | null; top: { label: string; reliable: boolean }[] }> = {}
     for (const [storeId, rows] of Object.entries(storeStock)) {
-      const inStock = rows.filter((r) => r.quantity !== 'out')
-      const top = [...inStock]
-        .sort((a, b) => {
-          const fa = prefs.brands.includes(drinkById.get(a.drink_id)?.brand ?? '') ? 0 : 1
-          const fb = prefs.brands.includes(drinkById.get(b.drink_id)?.brand ?? '') ? 0 : 1
-          return (fa - fb) || (order[a.quantity] - order[b.quantity]) || b.reported_at.localeCompare(a.reported_at)
-        })
-        .slice(0, 3)
-        .map((r) => { const d = drinkById.get(r.drink_id); return { label: d ? `${d.brand} ${d.flavor || d.name}` : 'Drink', quantity: r.quantity as Quantity } })
-      out[storeId] = { inStock: inStock.length, total: rows.length, top }
+      const spotted = rows.filter((r) => r.sighting === 'spotted')
+      const sortedSpotted = [...spotted].sort((a, b) => {
+        const fa = prefs.brands.includes(drinkById.get(a.drink_id)?.brand ?? '') ? 0 : 1
+        const fb = prefs.brands.includes(drinkById.get(b.drink_id)?.brand ?? '') ? 0 : 1
+        return (fa - fb) || b.reported_at.localeCompare(a.reported_at)
+      })
+      const top = sortedSpotted.slice(0, 3)
+        .map((r) => { const d = drinkById.get(r.drink_id); return { label: d ? `${d.brand} ${d.flavor || d.name}` : 'Drink', reliable: isReliable(r.reported_at) } })
+      const lastSpotted = spotted.reduce<string | null>((m, r) => (!m || r.reported_at > m ? r.reported_at : m), null)
+      out[storeId] = { inStock: spotted.length, total: rows.length, lastSpotted, top }
     }
     return out
   }, [storeStock, drinkById, prefs.brands])
+
+  // "12 sightings near you today": stores in range whose latest report for a
+  // flavor is a Spotted from today.
+  const sightingsToday = useMemo(() => {
+    const since = startOfToday()
+    let n = 0
+    for (const rows of Object.values(storeStock)) for (const r of rows) if (r.sighting === 'spotted' && new Date(r.reported_at).getTime() >= since) n++
+    return n
+  }, [storeStock])
 
   // List sort order
   const listStores = useMemo(() => {
@@ -456,7 +451,7 @@ export default function MapHome() {
   // never filters down to zero results.
   const inStockDrinkIds = useMemo(() => {
     const set = new Set<string>()
-    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.quantity !== 'out') set.add(r.drink_id) }))
+    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.sighting === 'spotted') set.add(r.drink_id) }))
     return set
   }, [storeStock])
 
@@ -496,7 +491,7 @@ export default function MapHome() {
   }
   const popularNearby = useMemo(() => {
     const count = new Map<string, number>()
-    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.quantity !== 'out') count.set(r.drink_id, (count.get(r.drink_id) ?? 0) + 1) }))
+    Object.values(storeStock).forEach((rows) => rows.forEach((r) => { if (r.sighting === 'spotted') count.set(r.drink_id, (count.get(r.drink_id) ?? 0) + 1) }))
     const byId = new Map(allDrinks.map((d) => [d.id, d]))
     return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ drink: byId.get(id), n })).filter((x): x is { drink: Drink; n: number } => !!x.drink).slice(0, 6)
   }, [storeStock, allDrinks])
@@ -730,9 +725,9 @@ export default function MapHome() {
       const withBrand = nearby.filter((s) => (storeBrands[s.id] ?? []).some((b) => brands.includes(b)))
       const label = brands.length === 1 ? brands[0] : brands.length === 2 ? `${brands[0]} or ${brands[1]}` : 'your brands'
       if (withBrand.length > 0) {
-        return { text: `${withBrand.length} store${withBrand.length === 1 ? '' : 's'} within 5 miles ${withBrand.length === 1 ? 'has' : 'have'} ${label} in stock right now.`, reportStore }
+        return { text: `${withBrand.length} store${withBrand.length === 1 ? '' : 's'} within 5 miles ${withBrand.length === 1 ? 'has' : 'have'} ${label} spotted lately.`, reportStore }
       }
-      return { text: `No recent ${label} reports nearby yet. Tap “My brands” on the map anytime to spot them, or be the first to report.`, reportStore }
+      return { text: `No recent ${label} sightings nearby yet. Tap “My brands” on the map anytime to find them, or be the first to log one.`, reportStore }
     }
     return { text: `${nearby.length} store${nearby.length === 1 ? '' : 's'} within 5 miles. Tap any pin to see what’s in the cooler.`, reportStore }
   }
@@ -743,7 +738,7 @@ export default function MapHome() {
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {sum.top.slice(0, max).map((t, i) => {
-          const c = t.quantity === 'full' ? '#C9F400' : t.quantity === 'low' ? '#FF8A3D' : '#FFB300'
+          const c = t.reliable ? '#C9F400' : 'var(--fg-25)'
           return (
             <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: '100%', padding: '4px 9px', borderRadius: 999, background: 'var(--fg-06)', fontSize: 13, color: 'var(--text)' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: c, flexShrink: 0 }} />
@@ -805,7 +800,7 @@ export default function MapHome() {
             <div>
               <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', lineHeight: 1.1 }}>AmpedMap</p>
               <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
-                {storesLoading ? 'Loading stores…' : `${nearbyCount} store${nearbyCount === 1 ? '' : 's'} nearby`}
+                {storesLoading ? 'Loading stores…' : `${nearbyCount} store${nearbyCount === 1 ? '' : 's'} nearby${sightingsToday > 0 ? ` · ${sightingsToday} sighting${sightingsToday === 1 ? '' : 's'} today` : ''}`}
               </p>
             </div>
           </div>
@@ -928,16 +923,16 @@ export default function MapHome() {
               </div>
             )}
 
-            {/* At-store prompt — the cards lead with "View stock", so someone
+            {/* At-store prompt — the cards lead with "View sightings", so someone
                 standing in a store gets a direct path to reporting here. */}
             {isAtStore && nearest && !selected && dismissedAtStore !== nearest.id && (
               <div className={`absolute z-10 ${ui.card} anim-rise`} style={{ top: 12, left: 12, right: 12, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px 12px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>You&apos;re at {nearest.name}</p>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Seen the cooler? Report what&apos;s there.</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Seen the cooler? Log what you spot.</p>
                 </div>
                 <button className={ui.btnPrimary} style={{ minHeight: 38, padding: '8px 14px', fontSize: 14 }} onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
-                  Report stock
+                  Log sighting
                 </button>
                 <button aria-label="Dismiss" className={ui.iconBtn} style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0 }} onClick={() => { setDismissedAtStore(nearest.id); try { sessionStorage.setItem('at_store_dismissed', nearest.id) } catch {} }}>
                   <CloseIcon size={11} color="var(--text-muted)" />
@@ -1018,7 +1013,7 @@ export default function MapHome() {
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ display: 'block', fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
                             <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)' }}>
-                              {sum?.total ? `${sum.inStock} of ${sum.total} in stock` : 'No reports yet'}
+                              {sum?.lastSpotted ? `${sum.inStock} spotted · last ${agoText(sum.lastSpotted)}` : sum?.total ? 'Nothing spotted lately' : 'No sightings yet'}
                             </span>
                           </span>
                           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>{getDistance(lat, lng, s.lat, s.lng).toFixed(1)} mi</span>
@@ -1068,7 +1063,7 @@ export default function MapHome() {
                 <div className="flex items-center flex-wrap" style={{ gap: '4px 14px', marginBottom: 16, fontSize: 14, color: 'var(--text-muted)' }}>
                   <span className="flex items-center gap-1.5"><PinIcon size={13} color="var(--text-dim)" />{getDistance(lat, lng, selected.lat, selected.lng).toFixed(1)} mi away</span>
                   {lastUpdated && (
-                    <span className="flex items-center gap-1.5"><ClockIcon size={13} color="var(--text-dim)" />Updated {timeAgo(lastUpdated)}</span>
+                    <span className="flex items-center gap-1.5"><ClockIcon size={13} color="var(--text-dim)" />Last sighting {agoText(lastUpdated)}</span>
                   )}
                 </div>
 
@@ -1077,12 +1072,12 @@ export default function MapHome() {
                   {storeSummary[selected.id]?.total ? (
                     <>
                       <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 8 }}>
-                        <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{storeSummary[selected.id].inStock} of {storeSummary[selected.id].total}</strong> flavors in stock
+                        <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{storeSummary[selected.id].inStock}</strong> flavor{storeSummary[selected.id].inStock === 1 ? '' : 's'} spotted
                       </p>
                       {stockChips(selected.id)}
                     </>
                   ) : (
-                    <p style={{ fontSize: 14, color: 'var(--text-dim)' }}>No stock reports yet. Be the first.</p>
+                    <p style={{ fontSize: 14, color: 'var(--text-dim)' }}>No sightings yet. Be the first.</p>
                   )}
                 </div>
 
@@ -1091,7 +1086,7 @@ export default function MapHome() {
                     Directions
                   </button>
                   <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/store/${selected.id}?name=${encodeURIComponent(selected.name)}`)}>
-                    View stock
+                    View sightings
                   </button>
                 </div>
                 <div style={{ textAlign: 'center', marginTop: 12 }}>
@@ -1151,7 +1146,7 @@ export default function MapHome() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
                         Filters{activeFilters > 0 ? ` · ${activeFilters}` : ''}
                       </button>
-                      {([['nearest', 'Nearest'], ['freshest', 'Freshest'], ['most', 'Most in stock']] as const).map(([key, label]) => (
+                      {([['nearest', 'Nearest'], ['freshest', 'Freshest'], ['most', 'Most spotted']] as const).map(([key, label]) => (
                         <button key={key} onClick={() => setSortMode(key)} className={`${ui.chip} ${sortMode === key ? ui.chipActive : ''}`}>{label}</button>
                       ))}
                     </div>
@@ -1190,7 +1185,7 @@ export default function MapHome() {
                     </div>
                     {availableBrands.length > 0 && (
                       <>
-                        <p className={ui.sectionLabel}>Brand in stock</p>
+                        <p className={ui.sectionLabel}>Brand spotted</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
                           <button onClick={() => setBrandFilter(null)} className={`${ui.chip} ${brandFilter === null ? ui.chipActive : ''}`}>All brands</button>
                           {availableBrands.map((brand) => (
@@ -1235,11 +1230,11 @@ export default function MapHome() {
                     </button>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/store/${nearest.id}?name=${encodeURIComponent(nearest.name)}`)}>
-                        View stock
+                        View sightings
                       </button>
                       {isAtStore ? (
                         <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${nearest.id}&storeName=${encodeURIComponent(nearest.name)}`)}>
-                          Report stock
+                          Log sighting
                         </button>
                       ) : (
                         <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(nearest.lat, nearest.lng)}>
@@ -1271,7 +1266,7 @@ export default function MapHome() {
                   <GroceryIcon size={36} color="var(--text-dim)" />
                   <p className={ui.emptyTitle}>No stores found</p>
                   <p className={ui.emptyBody}>
-                    {brandFilter ? `No stores with ${brandFilter} in stock nearby.` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area.` : search ? `No stores matching "${search}".` : 'No stores in range. Try a wider distance.'}
+                    {brandFilter ? `No stores with ${brandFilter} spotted nearby.` : typeFilter ? `No ${typeFilter.replace('_', ' ')} stores in this area.` : search ? `No stores matching "${search}".` : 'No stores in range. Try a wider distance.'}
                   </p>
                   <button className={ui.btnSecondary} style={{ marginTop: 6 }} onClick={() => router.push('/add-store')}>Add a missing store</button>
                 </div>
@@ -1281,10 +1276,8 @@ export default function MapHome() {
                     const stock = storeStock[store.id] ?? []
                     const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
                     const latestReport = getLatestReport(stock)
-                    const inStockCount = stock.filter((s) => s.quantity !== 'out').length
-                    const pct = stock.length > 0 ? (inStockCount / stock.length) * 100 : 0
+                    const inStockCount = stock.filter((s) => s.sighting === 'spotted').length
                     const hasReports = stock.length > 0
-                    const barColor = pct === 0 ? '#FF4545' : pct >= 75 ? '#C9F400' : '#FFB300'
                     const daysSinceReport = latestReport ? (Date.now() - new Date(latestReport.reported_at).getTime()) / 86400000 : null
                     const isDormant = hasReports && daysSinceReport !== null && daysSinceReport > 7
                     const storeHref = `/store/${store.id}?name=${encodeURIComponent(store.name)}`
@@ -1308,41 +1301,34 @@ export default function MapHome() {
 
                         {hasReports ? (
                           <div style={{ marginBottom: 12 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                              <div style={{ flex: 1, height: 6, backgroundColor: 'var(--fg-06)', borderRadius: 3, overflow: 'hidden' }}>
-                                <div className="anim-fill" style={{ height: '100%', width: `${pct}%`, backgroundColor: barColor, borderRadius: 3, transition: 'width 0.4s ease' }} />
-                              </div>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: barColor, flexShrink: 0 }}>
-                                {inStockCount} of {stock.length} in stock
-                              </span>
-                            </div>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: inStockCount > 0 ? 'var(--text)' : 'var(--text-dim)', marginBottom: 8 }}>
+                              {inStockCount > 0 ? `${inStockCount} flavor${inStockCount === 1 ? '' : 's'} spotted` : 'Nothing spotted lately'}
+                            </p>
                             {stockChips(store.id) && <div style={{ marginBottom: 8 }}>{stockChips(store.id)}</div>}
                             {latestReport && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
                                 <FreshnessRing reportedAt={latestReport.reported_at} color={stalenessColor(latestReport.reported_at)} />
-                                Reported {timeAgo(latestReport.reported_at)}
+                                {sightingOf(latestReport) === 'spotted' ? 'Spotted' : 'Not found'} {agoText(latestReport.reported_at)}
                               </div>
                             )}
                             {isDormant && (
                               <p style={{ margin: '8px 0 0', fontSize: 13, color: '#FFB300' }}>
-                                No one&apos;s checked in over {Math.floor(daysSinceReport!)} days. Be the one to confirm it.
+                                No sightings in over {Math.floor(daysSinceReport!)} days. Be the one to check.
                               </p>
                             )}
                           </div>
                         ) : (
-                          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-dim)' }}>No reports yet. Be the first to report here.</p>
+                          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-dim)' }}>No sightings yet. Be the first to log one here.</p>
                         )}
 
                         {(liveUpdates[store.id] ?? []).map((update) => {
-                          const qColor = update.quantity === 'full' ? '#C9F400' : update.quantity === 'out' ? '#FF4545' : '#FFB300'
-                          const qLabel = QUANTITY_CONFIG[update.quantity]?.label ?? update.quantity.toUpperCase()
+                          const qColor = update.sighting === 'spotted' ? '#C9F400' : NOT_THERE_HEX
                           return (
                             <div key={update.id} className="anim-rise" style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, padding: '8px 12px', marginBottom: 10, backgroundColor: 'var(--fg-04)' }}>
                               <div className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: qColor, flexShrink: 0 }} />
                               <p style={{ fontSize: 13, color: 'var(--text-muted)', flex: 1 }}>
-                                <span style={{ fontWeight: 600, color: 'var(--text)' }}>@{update.username}</span> reported{' '}
-                                <span style={{ fontWeight: 500, color: 'var(--text)' }}>{update.drinkName}</span> as{' '}
-                                <span style={{ fontWeight: 600, color: qColor }}>{qLabel}</span>
+                                <span style={{ fontWeight: 600, color: 'var(--text)' }}>@{update.username}</span> {update.sighting === 'spotted' ? 'spotted' : 'couldn’t find'}{' '}
+                                <span style={{ fontWeight: 600, color: update.sighting === 'spotted' ? SPOTTED_TEXT : NOT_THERE_HEX }}>{update.drinkName}</span>
                               </p>
                             </div>
                           )
@@ -1350,7 +1336,7 @@ export default function MapHome() {
 
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(storeHref)}>
-                            View stock
+                            View sightings
                           </button>
                           <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(store.lat, store.lng)}>
                             Directions

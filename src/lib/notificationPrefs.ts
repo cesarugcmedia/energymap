@@ -13,8 +13,8 @@ import { isMissingSchema } from '@/lib/community'
 // mirrored to localStorage so it works per device before that runs.
 
 export const NOTIFICATION_GROUPS: { key: string; label: string; hint: string; types: string[] }[] = [
-  { key: 'restocks', label: 'Flavor restocks', hint: 'When a flavor you follow is back in stock', types: ['drink_alert'] },
-  { key: 'stock', label: 'Stock updates', hint: 'New reports at stores you’re watching', types: ['stock_update'] },
+  { key: 'restocks', label: 'Flavor restocks', hint: 'When a flavor you follow is spotted again', types: ['drink_alert'] },
+  { key: 'stock', label: 'Sightings nearby', hint: 'When someone spots a flavor at a store near you', types: ['stock_update'] },
   { key: 'community', label: 'Community', hint: 'Replies, comments, mentions and new followers', types: ['comment', 'reply', 'mention', 'follow'] },
   { key: 'stores', label: 'Stores & drinks', hint: 'Store approvals and new stores or drinks', types: ['store_approved', 'store_rejected', 'new_store', 'new_drink'] },
   { key: 'badges', label: 'Badges', hint: 'When you unlock a badge or win the week', types: ['badge'] },

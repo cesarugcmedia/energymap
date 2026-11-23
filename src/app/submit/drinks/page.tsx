@@ -4,12 +4,18 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Drink, Quantity } from '@/lib/types'
-import { SearchIcon, PinIcon, CloseIcon, ChevronDownIcon, ChevronLeftIcon } from '@/components/Icons'
+import type { Drink } from '@/lib/types'
+import { SearchIcon, PinIcon, CloseIcon, ChevronDownIcon, ChevronLeftIcon, CheckIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
-import { addToQueue, removeFromQueue, isNetworkFailure, type QueuedReport } from '@/lib/reportQueue'
+import { addToQueue, removeFromQueue, isNetworkFailure } from '@/lib/reportQueue'
 import { haptic } from '@/lib/haptics'
+import { AMOUNT_LABEL, NOT_THERE_HEX, SPOTTED_TEXT, isReliable, sightingLine, sightingOf, type Amount, type Sighting, type SightingRow } from '@/lib/sightings'
+
+// Log sightings at one store. Each flavor has two one-tap actions —
+// Spotted and Not there — that save immediately. After a Spotted saves, an
+// optional "Just a few / Plenty" choice appears on that row (skippable);
+// it's added to the saved sighting afterwards, never blocking the save.
 
 const MAX_DISTANCE_M = 500
 
@@ -22,25 +28,6 @@ function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// Left to right the way people read a cooler: full → out.
-const LEVELS: { value: Quantity; label: string; color: string; bg: string; border: string }[] = [
-  { value: 'full',   label: 'Full', color: 'var(--accent-text)', bg: 'rgba(201,244,0,0.14)', border: 'rgba(201,244,0,0.5)' },
-  { value: 'medium', label: 'Med',  color: '#FFB300', bg: 'rgba(255,179,0,0.12)', border: 'rgba(255,179,0,0.45)' },
-  { value: 'low',    label: 'Low',  color: '#FF8A3D', bg: 'rgba(255,138,61,0.12)', border: 'rgba(255,138,61,0.45)' },
-  { value: 'out',    label: 'Out',  color: '#FF4545', bg: 'rgba(255,69,69,0.12)', border: 'rgba(255,69,69,0.45)' },
-]
-const LEVEL_WORD: Record<Quantity, string> = { full: 'Full', medium: 'Medium', low: 'Low', out: 'Out' }
-
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
-
 function groupByBrand(list: Drink[]) {
   return list.reduce<Record<string, Drink[]>>((acc, d) => {
     if (!acc[d.brand]) acc[d.brand] = []
@@ -48,6 +35,18 @@ function groupByBrand(list: Drink[]) {
     return acc
   }, {})
 }
+
+// What happened to each flavor tapped on this visit.
+type Logged = {
+  sighting: Sighting
+  amount: Amount | null
+  status: 'saving' | 'saved' | 'queued' | 'error'
+  reportId?: string
+  queueId?: string
+  error?: string
+}
+
+type LastReport = { ids: string[]; storeId: string; at: number; collection: { newFlavors: string[]; found: number; total: number } | null }
 
 function DrinksContent() {
   const router = useRouter()
@@ -63,28 +62,19 @@ function DrinksContent() {
 
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [loading, setLoading] = useState(true)
-  const [storeReports, setStoreReports] = useState<Record<string, { quantity: Quantity; reported_at: string }>>({})
+  const [storeReports, setStoreReports] = useState<Record<string, SightingRow>>({})
   const [search, setSearch] = useState('')
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [autoExpanded, setAutoExpanded] = useState(false)
   const [showOther, setShowOther] = useState(false)
-  const [selections, setSelections] = useState<Record<string, Quantity>>({})
-  const [submitting, setSubmitting] = useState(false)
-  // Brief checkmark on the button before moving to the success screen.
-  const [sent, setSent] = useState(false)
-  const [limitError, setLimitError] = useState<string | null>(null)
-  // Set when the phone had no signal: the reports are saved on the device
-  // and ReportQueueSync sends them once it's back online.
-  const [savedOffline, setSavedOffline] = useState<QueuedReport | null>(null)
-  const [offlineUndone, setOfflineUndone] = useState(false)
+  const [logged, setLogged] = useState<Record<string, Logged>>({})
+  const [pageError, setPageError] = useState<string | null>(null)
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [storeCoords, setStoreCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationChecking, setLocationChecking] = useState(true)
-  // True once we've decided not to auto-request GPS — permission was never
-  // granted, so a user who doesn't want to share location never gets an
-  // unwanted browser prompt just for opening this page. They can still tap
-  // to verify if they change their mind; skipping is not a blocker either
-  // way, since the server-side geofence check is skipped without GPS.
+  // True once we've decided not to auto-request GPS (permission was never
+  // granted), so opening this page never triggers a surprise prompt. Logging
+  // without location is allowed; the server skips the geofence then.
   const [locationSkipped, setLocationSkipped] = useState(false)
   const distanceM = gpsCoords && storeCoords ? getDistanceMeters(gpsCoords.lat, gpsCoords.lng, storeCoords.lat, storeCoords.lng) : null
 
@@ -99,18 +89,17 @@ function DrinksContent() {
       })
   }, [])
 
-  // Which brands this store actually carries, so those flavors lead the page
-  // instead of the full catalog competing for space with what's real here.
+  // The latest sighting per flavor here, so this store's brands lead the page.
   useEffect(() => {
     if (!storeId) return
     supabase
       .from('latest_stock')
-      .select('drink_id, quantity, reported_at')
+      .select('*')
       .eq('store_id', storeId)
       .then(({ data }) => {
         if (!data) return
-        const map: Record<string, { quantity: Quantity; reported_at: string }> = {}
-        data.forEach((r) => { map[r.drink_id] = { quantity: r.quantity, reported_at: r.reported_at } })
+        const map: Record<string, SightingRow> = {}
+        data.forEach((r: SightingRow & { drink_id: string }) => { map[r.drink_id] = r })
         setStoreReports(map)
       })
   }, [storeId])
@@ -145,19 +134,13 @@ function DrinksContent() {
   useEffect(() => {
     if (!storeId) { setLocationChecking(false); return }
     // Only auto-request GPS if permission is already granted (same pattern
-    // as useLocation.ts on the main map) — otherwise wait for an explicit
-    // tap, so opening this page never surprises someone with a permission
-    // prompt they didn't ask for.
+    // as useLocation.ts) — otherwise wait for an explicit tap.
     (async () => {
       if (!navigator.geolocation) { setLocationChecking(false); setLocationSkipped(true); return }
       try {
         const result = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
-        if (result.state === 'granted') {
-          checkLocation()
-        } else {
-          setLocationChecking(false)
-          setLocationSkipped(true)
-        }
+        if (result.state === 'granted') checkLocation()
+        else { setLocationChecking(false); setLocationSkipped(true) }
       } catch {
         checkLocation()
       }
@@ -173,87 +156,105 @@ function DrinksContent() {
     })
   }
 
-  // Tapping the already-selected level clears it.
-  function pick(drinkId: string, qty: Quantity) {
-    haptic(8)
-    setLimitError(null)
-    setSelections((prev) => {
-      if (prev[drinkId] === qty) {
-        const next = { ...prev }
-        delete next[drinkId]
-        return next
-      }
-      return { ...prev, [drinkId]: qty }
+  const setRow = (drinkId: string, patch: Partial<Logged> | null) =>
+    setLogged((prev) => {
+      const next = { ...prev }
+      if (patch === null) delete next[drinkId]
+      else next[drinkId] = { ...(prev[drinkId] as Logged), ...patch }
+      return next
     })
-  }
 
-  function saveOffline(entries: [string, Quantity][]) {
-    const q = addToQueue({
-      storeId, storeName,
-      reports: entries.map(([drinkId, quantity]) => ({ drink_id: drinkId, quantity })),
-      lat: gpsCoords?.lat, lng: gpsCoords?.lng,
-    })
-    haptic([12, 40, 12])
-    setSubmitting(false)
-    setSavedOffline(q)
-  }
-
-  async function handleSubmit() {
-    const entries = Object.entries(selections) as [string, Quantity][]
-    if (entries.length === 0 || submitting) return
-    setSubmitting(true)
-    setLimitError(null)
-    if (typeof navigator !== 'undefined' && !navigator.onLine) { saveOffline(entries); return }
-
+  // Undo + the thank-you screen read this (ids, collection progress).
+  function remember(ids: string[], collection: LastReport['collection']) {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        setLimitError('Session expired. Please sign in again.')
-        setSubmitting(false)
-        return
+      const prev = JSON.parse(sessionStorage.getItem('last_report') ?? 'null') as LastReport | null
+      const same = prev && prev.storeId === storeId && Date.now() - prev.at < 10 * 60 * 1000
+      const merged: LastReport = {
+        ids: [...(same ? prev!.ids : []), ...ids],
+        storeId,
+        at: same ? prev!.at : Date.now(),
+        collection: collection
+          ? { ...collection, newFlavors: [...new Set([...(same && prev!.collection ? prev!.collection.newFlavors : []), ...collection.newFlavors])] }
+          : same ? prev!.collection : null,
       }
+      sessionStorage.setItem('last_report', JSON.stringify(merged))
+    } catch { /* ignore */ }
+  }
 
+  function forget(id: string) {
+    try {
+      const prev = JSON.parse(sessionStorage.getItem('last_report') ?? 'null') as LastReport | null
+      if (prev) sessionStorage.setItem('last_report', JSON.stringify({ ...prev, ids: prev.ids.filter((x) => x !== id) }))
+    } catch { /* ignore */ }
+  }
+
+  async function authHeaders() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` } : null
+  }
+
+  function queueOffline(drinkId: string, sighting: Sighting) {
+    const q = addToQueue({ storeId, storeName, reports: [{ drink_id: drinkId, sighting, amount: null }], lat: gpsCoords?.lat, lng: gpsCoords?.lng })
+    setRow(drinkId, { status: 'queued', queueId: q.id })
+  }
+
+  // One tap = saved. The amount choice appears afterwards.
+  async function log(drinkId: string, sighting: Sighting) {
+    if (logged[drinkId] && logged[drinkId].status !== 'error') return
+    haptic(sighting === 'spotted' ? [12, 30, 12] : 10)
+    setPageError(null)
+    setLogged((prev) => ({ ...prev, [drinkId]: { sighting, amount: null, status: 'saving' } }))
+    if (typeof navigator !== 'undefined' && !navigator.onLine) { queueOffline(drinkId, sighting); return }
+    try {
+      const headers = await authHeaders()
+      if (!headers) { setRow(drinkId, { status: 'error', error: 'Session expired. Sign in again.' }); return }
       const res = await fetch('/api/stock/report', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          store_id: storeId,
-          reports: entries.map(([drinkId, quantity]) => ({ drink_id: drinkId, quantity })),
-          lat: gpsCoords?.lat,
-          lng: gpsCoords?.lng,
-        }),
+        headers,
+        body: JSON.stringify({ store_id: storeId, reports: [{ drink_id: drinkId, sighting }], lat: gpsCoords?.lat, lng: gpsCoords?.lng }),
       })
-
       const body = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
-        setLimitError(body.error ?? 'Could not submit reports. Please try again.')
-        setSubmitting(false)
-        return
-      }
-
-      if (!body.submitted) {
-        setLimitError('You already reported these drinks here in the last 30 minutes. Come back later!')
-        setSubmitting(false)
-        return
-      }
-
-      // Remembered for the success screen's Undo (5 minutes).
-      try { sessionStorage.setItem('last_report', JSON.stringify({ ids: body.ids ?? [], storeId, at: Date.now(), collection: body.collection ?? null })) } catch { /* ignore */ }
-      haptic([12, 40, 12])
-      setSent(true)
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      setTimeout(() => router.replace(
-        `/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${body.submitted}`
-      ), reduce ? 0 : 480)
+      if (!res.ok) { setRow(drinkId, { status: 'error', error: body.error ?? 'Could not save. Try again.' }); return }
+      if (!body.submitted) { setRow(drinkId, { status: 'error', error: 'You logged this here in the last 30 minutes.' }); return }
+      const reportId = body.byDrink?.[drinkId] ?? body.ids?.[0]
+      remember(reportId ? [reportId] : [], body.collection ?? null)
+      setRow(drinkId, { status: 'saved', reportId })
     } catch (err) {
-      if (isNetworkFailure(err)) { saveOffline(entries); return }
-      setLimitError('Could not submit reports. Please try again.')
-      setSubmitting(false)
+      if (isNetworkFailure(err)) { queueOffline(drinkId, sighting); return }
+      setRow(drinkId, { status: 'error', error: 'Could not save. Try again.' })
     }
+  }
+
+  // Optional, after the save. Tapping the chosen amount again clears it.
+  async function setAmount(drinkId: string, amount: Amount) {
+    const row = logged[drinkId]
+    if (!row || row.sighting !== 'spotted') return
+    const next = row.amount === amount ? null : amount
+    haptic(8)
+    setRow(drinkId, { amount: next })
+    if (row.status === 'queued' && row.queueId) {
+      // Not sent yet: rewrite the queued item with the amount.
+      removeFromQueue(row.queueId)
+      const q = addToQueue({ storeId, storeName, reports: [{ drink_id: drinkId, sighting: 'spotted', amount: next }], lat: gpsCoords?.lat, lng: gpsCoords?.lng })
+      setRow(drinkId, { queueId: q.id })
+      return
+    }
+    if (!row.reportId) return
+    const headers = await authHeaders()
+    if (!headers) return
+    fetch('/api/stock/amount', { method: 'POST', headers, body: JSON.stringify({ id: row.reportId, amount: next }) }).catch(() => {})
+  }
+
+  async function undo(drinkId: string) {
+    const row = logged[drinkId]
+    if (!row) return
+    if (row.status === 'queued' && row.queueId) { removeFromQueue(row.queueId); setRow(drinkId, null); return }
+    if (!row.reportId) { setRow(drinkId, null); return }
+    const headers = await authHeaders()
+    if (!headers) return
+    const res = await fetch('/api/stock/undo', { method: 'POST', headers, body: JSON.stringify({ ids: [row.reportId] }) }).catch(() => null)
+    if (res?.ok) { forget(row.reportId); setRow(drinkId, null) }
+    else setPageError('Too late to undo that one.')
   }
 
   const q = search.trim().toLowerCase()
@@ -262,10 +263,8 @@ function DrinksContent() {
     d.name.toLowerCase().includes(q) || d.brand.toLowerCase().includes(q) || (d.flavor ?? '').toLowerCase().includes(q)
   ))
 
-  // A brand counts as "this store's" once any of its flavors has ever been
-  // reported here — every other catalog flavor of that brand joins it too,
-  // since a store carrying a brand plausibly carries flavors nobody's
-  // specifically reported yet. Flavors with a report come first.
+  // A brand counts as "this store's" once any of its flavors has been logged
+  // here; its other catalog flavors join it. Flavors with sightings first.
   const storeBrands = new Set(
     Object.keys(storeReports)
       .map((drinkId) => drinks.find((d) => d.id === drinkId)?.brand)
@@ -279,61 +278,89 @@ function DrinksContent() {
   const otherGrouped = groupByBrand(drinks.filter((d) => !storeBrands.has(d.brand)))
   const storeBrandNames = Object.keys(storeGrouped)
 
-  // Open the store's brands straight away when there are only a couple.
   useEffect(() => {
     if (autoExpanded || storeBrandNames.length === 0) return
     setAutoExpanded(true)
     if (storeBrandNames.length <= 2) setExpandedBrands(new Set(storeBrandNames))
   }, [autoExpanded, storeBrandNames])
 
-  const selectionCount = Object.keys(selections).length
+  const done = Object.values(logged).filter((r) => r.status === 'saved' || r.status === 'queued')
+  const savedCount = done.filter((r) => r.status === 'saved').length
+  const queuedCount = done.filter((r) => r.status === 'queued').length
   const tooFar = !profile?.is_admin && !locationChecking && distanceM !== null && distanceM > MAX_DISTANCE_M
-  const blocked = submitting || !!limitError || tooFar
 
   // ── Render helpers (plain functions, so nothing remounts on re-render) ──
 
+  const actionBtn = (label: string, color: string, bg: string, border: string, onClick: () => void, disabled: boolean) => (
+    <button
+      className="press"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        minHeight: 42, borderRadius: 11, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: disabled ? 'default' : 'pointer',
+        border: `1px solid ${border}`, background: bg, color, opacity: disabled ? 0.45 : 1,
+      }}
+    >
+      {label}
+    </button>
+  )
+
   const flavorRow = (drink: Drink, i: number) => {
-    const report = storeReports[drink.id]
-    const selected = selections[drink.id]
+    const last = storeReports[drink.id]
+    const row = logged[drink.id]
+    const lastSeen = last ? sightingOf(last) : null
     return (
       <div key={drink.id} style={{ padding: '12px 0', borderTop: i ? '1px solid var(--fg-06)' : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
           <p style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {drink.flavor ?? drink.name}
           </p>
-          <span style={{ fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>
-            {report ? `Last: ${LEVEL_WORD[report.quantity]} · ${timeAgo(report.reported_at)}` : 'No reports yet'}
+          <span style={{ fontSize: 12, flexShrink: 0, color: !last ? 'var(--text-dim)' : !isReliable(last.reported_at) ? 'var(--text-dim)' : lastSeen === 'spotted' ? SPOTTED_TEXT : NOT_THERE_HEX }}>
+            {last ? sightingLine(last) : 'No sightings yet'}
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-          {LEVELS.map((lvl) => {
-            const on = selected === lvl.value
-            return (
-              <button
-                key={lvl.value}
-                className="press"
-                onClick={() => pick(drink.id, lvl.value)}
-                aria-pressed={on}
-                style={{
-                  minHeight: 38, borderRadius: 10, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  border: `1px solid ${on ? lvl.border : 'var(--fg-08)'}`,
-                  background: on ? lvl.bg : 'transparent',
-                  color: on ? lvl.color : 'var(--text-muted)',
-                  transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-                }}
-              >
-                {lvl.label}
+
+        {!row || row.status === 'error' ? (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8 }}>
+              {actionBtn('Spotted', 'var(--accent-text)', 'rgba(201,244,0,0.12)', 'rgba(201,244,0,0.45)', () => log(drink.id, 'spotted'), tooFar)}
+              {actionBtn('Not there', 'var(--text-muted)', 'transparent', 'var(--fg-10)', () => log(drink.id, 'not_there'), tooFar)}
+            </div>
+            {row?.error && <p style={{ fontSize: 12, color: '#FF6B6B', marginTop: 6 }}>{row.error}</p>}
+          </>
+        ) : (
+          <div className="anim-fade" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '8px 10px', borderRadius: 11, background: row.sighting === 'spotted' ? 'rgba(201,244,0,0.08)' : 'rgba(255,69,69,0.07)', border: `1px solid ${row.sighting === 'spotted' ? 'rgba(201,244,0,0.3)' : 'rgba(255,69,69,0.25)'}` }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: row.sighting === 'spotted' ? SPOTTED_TEXT : NOT_THERE_HEX }}>
+              {row.status === 'saving'
+                ? <span style={{ width: 12, height: 12, border: '2px solid var(--fg-15)', borderTopColor: 'currentColor', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                : <CheckIcon size={14} color="currentColor" />}
+              {row.sighting === 'spotted' ? 'Spotted' : 'Not there'}
+              {row.status === 'queued' && <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>· sends when online</span>}
+            </span>
+            {row.sighting === 'spotted' && row.status !== 'saving' && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>How many?</span>
+                {(['few', 'plenty'] as Amount[]).map((a) => (
+                  <button key={a} onClick={() => setAmount(drink.id, a)} className={`${ui.chip} ${row.amount === a ? ui.chipActive : ''}`} style={{ minHeight: 30, padding: '0 10px', fontSize: 12 }}>
+                    {AMOUNT_LABEL[a]}
+                  </button>
+                ))}
+              </span>
+            )}
+            {row.status !== 'saving' && (
+              <button onClick={() => undo(drink.id)} style={{ marginLeft: row.sighting === 'spotted' ? 0 : 'auto', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}>
+                Undo
               </button>
-            )
-          })}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     )
   }
 
   const brandCard = (brand: string, list: Drink[], forceOpen = false) => {
     const open = forceOpen || expandedBrands.has(brand)
-    const picked = list.filter((d) => selections[d.id]).length
+    const picked = list.filter((d) => logged[d.id] && logged[d.id].status !== 'error').length
     return (
       <div key={brand} className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden', borderColor: picked ? 'rgba(201,244,0,0.4)' : undefined }}>
         <button
@@ -347,7 +374,7 @@ function DrinksContent() {
             </span>
           </span>
           {picked > 0 && (
-            <span key={picked} className="anim-bump" style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 999, padding: '3px 9px' }}>{picked} picked</span>
+            <span key={picked} className="anim-bump" style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 999, padding: '3px 9px' }}>{picked} logged</span>
           )}
           {!forceOpen && (
             <span style={{ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
@@ -360,37 +387,9 @@ function DrinksContent() {
     )
   }
 
-  if (savedOffline) {
-    const n = savedOffline.reports.length
-    return (
-      <div style={{ minHeight: '100dvh', background: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px)' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', maxWidth: 360, width: '100%', margin: '0 auto' }}>
-          <div className="anim-pop" style={{ width: 80, height: 80, borderRadius: '50%', marginBottom: 22, background: offlineUndone ? 'var(--fg-06)' : 'rgba(255,179,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={offlineUndone ? 'var(--text-muted)' : '#FFB300'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              {offlineUndone
-                ? <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
-                : <><path d="M7 18a4.5 4.5 0 0 1-.5-8.97A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 7.97" /><path d="M12 12v8M9 17l3 3 3-3" /></>}
-            </svg>
-          </div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>{offlineUndone ? 'Report undone' : `${n} report${n === 1 ? '' : 's'} saved`}</h1>
-          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            {offlineUndone
-              ? 'Nothing was sent.'
-              : n === 1
-                ? 'No signal right now, so it’s saved on your phone. We’ll send it automatically as soon as you’re back online.'
-                : 'No signal right now, so they’re saved on your phone. We’ll send them automatically as soon as you’re back online.'}
-          </p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 360, width: '100%', margin: '0 auto' }}>
-          <button className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => router.replace('/')}>Done</button>
-          {offlineUndone ? (
-            <button className={`${ui.btnSecondary} ${ui.btnBlock} ${ui.btnLarge}`} onClick={() => { setSavedOffline(null); setOfflineUndone(false) }}>Report again</button>
-          ) : (
-            <button className={ui.btnGhost} onClick={() => { removeFromQueue(savedOffline.id); setOfflineUndone(true) }}>Undo</button>
-          )}
-        </div>
-      </div>
-    )
+  function finish() {
+    if (savedCount === 0) { router.replace(`/store/${storeId}?name=${encodeURIComponent(storeName)}`); return }
+    router.replace(`/submit/result?storeId=${storeId}&storeName=${encodeURIComponent(storeName)}&count=${savedCount}`)
   }
 
   return (
@@ -403,7 +402,7 @@ function DrinksContent() {
             <ChevronLeftIcon size={20} color="var(--text)" />
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>Report stock</p>
+            <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>Log sightings</p>
             {storeName && <p style={{ fontSize: 13, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{storeName}</p>}
           </div>
         </div>
@@ -411,8 +410,12 @@ function DrinksContent() {
 
       <div style={{ padding: '16px 16px 180px' }}>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.45 }}>
-          Tap how full each flavor looks in the cooler. Only report what you can see.
+          Tap <strong style={{ color: 'var(--text)' }}>Spotted</strong> for each flavor you see, or <strong style={{ color: 'var(--text)' }}>Not there</strong> if you looked and it&apos;s missing. Each tap saves right away.
         </p>
+
+        {tooFar && (
+          <p style={{ ...statusStyle('#FF6B6B'), marginBottom: 14 }}><PinIcon size={13} color="#FF6B6B" /> You need to be at the store to log sightings.</p>
+        )}
 
         {/* ── Search ── */}
         <div style={{ position: 'relative', marginBottom: 18 }}>
@@ -466,7 +469,7 @@ function DrinksContent() {
               <>
                 <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>{storeBrandNames.length > 0 ? 'Other brands' : 'All brands'}</p>
                 {storeBrandNames.length === 0 && (
-                  <p style={{ fontSize: 14, color: 'var(--text-dim)', margin: '-4px 2px 12px' }}>No one has reported here yet. Open a brand to start.</p>
+                  <p style={{ fontSize: 14, color: 'var(--text-dim)', margin: '-4px 2px 12px' }}>No sightings here yet. Open a brand to start.</p>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {Object.entries(otherGrouped).map(([brand, list]) => brandCard(brand, list))}
@@ -477,8 +480,8 @@ function DrinksContent() {
         )}
       </div>
 
-      {/* ── Submit bar ── */}
-      {selectionCount > 0 && (
+      {/* ── Done bar ── */}
+      {(done.length > 0 || pageError) && (
         <div
           className="anim-sheet"
           style={{
@@ -488,38 +491,26 @@ function DrinksContent() {
           }}
         >
           <div style={{ maxWidth: 448, margin: '0 auto', padding: '12px 16px calc(env(safe-area-inset-bottom) + 14px)' }}>
-          {locationChecking ? (
-            <p style={statusStyle('var(--text-dim)')}><PinIcon size={13} color="var(--text-dim)" /> Checking your location…</p>
-          ) : tooFar ? (
-            <p style={statusStyle('#FF6B6B')}><PinIcon size={13} color="#FF6B6B" /> You need to be at the store to report stock.</p>
-          ) : distanceM !== null && !profile?.is_admin ? (
-            <p style={statusStyle('var(--accent-text)')}><PinIcon size={13} color="var(--accent-text)" /> You&apos;re at the store</p>
-          ) : locationSkipped && !profile?.is_admin ? (
-            <p style={statusStyle('var(--text-dim)')}>
-              Reporting without location is okay.
-              <button onClick={checkLocation} style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                Verify location
-              </button>
-            </p>
-          ) : null}
-
-          {limitError && <p style={{ fontSize: 13, color: '#FF6B6B', textAlign: 'center', marginBottom: 10 }}>{limitError}</p>}
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className={ui.btnSecondary} onClick={() => { setSelections({}); setLimitError(null) }} disabled={submitting} style={{ flexShrink: 0 }}>
-              Clear
-            </button>
-            <button className={`${ui.btnPrimary} ${ui.btnLarge}`} style={{ flex: 1 }} onClick={handleSubmit} disabled={blocked && !sent}>
-              {sent ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1210" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-label="Sent"><path className="anim-draw" style={{ animationDelay: '0s' }} d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-              ) : submitting ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 16, height: 16, border: '2px solid rgba(13,18,16,0.35)', borderTopColor: '#0D1210', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                  Sending…
-                </span>
-              ) : <span key={selectionCount} className="anim-bump" style={{ display: 'inline-block' }}>{`Submit ${selectionCount} report${selectionCount !== 1 ? 's' : ''}`}</span>}
-            </button>
-          </div>
+            {locationChecking ? (
+              <p style={statusStyle('var(--text-dim)')}><PinIcon size={13} color="var(--text-dim)" /> Checking your location…</p>
+            ) : distanceM !== null && !tooFar && !profile?.is_admin ? (
+              <p style={statusStyle('var(--accent-text)')}><PinIcon size={13} color="var(--accent-text)" /> You&apos;re at the store</p>
+            ) : locationSkipped && !profile?.is_admin ? (
+              <p style={statusStyle('var(--text-dim)')}>
+                Logging without location is okay.
+                <button onClick={checkLocation} style={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  Verify location
+                </button>
+              </p>
+            ) : null}
+            {pageError && <p style={{ fontSize: 13, color: '#FF6B6B', textAlign: 'center', marginBottom: 10 }}>{pageError}</p>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span key={done.length} className="anim-bump" style={{ flex: 1, fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                {done.length} sighting{done.length === 1 ? '' : 's'} logged
+                {queuedCount > 0 && <span style={{ display: 'block', fontSize: 12, fontWeight: 400, color: 'var(--text-dim)' }}>{queuedCount} saved on your phone until you&apos;re back online</span>}
+              </span>
+              <button className={`${ui.btnPrimary} ${ui.btnLarge}`} onClick={finish} style={{ minWidth: 120 }}>Done</button>
+            </div>
           </div>
         </div>
       )}

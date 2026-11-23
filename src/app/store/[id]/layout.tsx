@@ -8,11 +8,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const card = await loadStoreCard(id).catch(() => null)
   if (!card) return { title: 'Store on AmpedMap' }
-  const title = `${card.name}: what's in stock`
+  const title = `${card.name}: what's been spotted`
   const fresh = ago(card.latestAt)
   const description = card.total > 0
-    ? `${card.inStock} of ${card.total} energy drink flavors in stock${fresh ? `, last reported ${fresh}` : ''}.${card.top.length ? ` ${card.top.slice(0, 3).map((t) => t.label).join(', ')}.` : ''}`
-    : `See what energy drinks are in stock at ${card.name} on AmpedMap.`
+    ? `${card.inStock} energy drink flavor${card.inStock === 1 ? '' : 's'} spotted${fresh ? `, last sighting ${fresh}` : ''}.${card.top.length ? ` ${card.top.slice(0, 3).map((t) => t.label).join(', ')}.` : ''}`
+    : `See which energy drinks have been spotted at ${card.name} on AmpedMap.`
   return {
     title,
     description,

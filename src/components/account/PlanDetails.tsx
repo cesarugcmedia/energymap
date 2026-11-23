@@ -33,7 +33,7 @@ const COMPARE: { label: string; free: string | boolean; tracker: string | boolea
   { label: 'Restock patterns', free: false, tracker: true },
   { label: 'Saved store lists', free: false, tracker: true },
   { label: 'Tracker badge', free: false, tracker: true },
-  { label: 'Stock reports', free: '25 a day', tracker: '25 a day' },
+  { label: 'Sightings', free: '25 a day', tracker: '25 a day' },
   { label: 'Stores you can add', free: '10 a day', tracker: 'Unlimited' },
   { label: 'Community & leaderboard', free: true, tracker: true },
 ]
@@ -148,7 +148,7 @@ export default function PlanDetails({ betaSpotsLeft, checkoutLoading, checkoutEr
       {/* Today's usage */}
       {section('Today', (
         <div className={ui.card} style={{ padding: 0 }}>
-          {usageBar('Stock reports', usage.reportsToday, usage.reportsLimit)}
+          {usageBar('Sightings', usage.reportsToday, usage.reportsLimit)}
           <div style={{ height: 1, background: 'var(--fg-06)', margin: '0 16px' }} />
           {usageBar('Stores added', usage.storesToday, usage.storesLimit)}
           <p style={{ padding: '0 16px 12px', fontSize: 13, color: 'var(--text-dim)' }}>

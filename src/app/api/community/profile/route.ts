@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { amountOf, isSpotted } from '@/lib/sightings'
 import { computeBadges, streakFrom } from '@/lib/badges'
 
 // Public profile summary for /u/[username]: identity, counts, and whether the
@@ -49,11 +50,12 @@ export async function GET(req: NextRequest) {
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('followed_id', profile.id)),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', profile.id)),
     count(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id).eq('followed_id', profile.id)),
-    supabaseAdmin.from('stock_reports').select('drink_id, store_id, quantity, reported_at').eq('user_id', profile.id).order('reported_at', { ascending: false }).limit(1000),
+    supabaseAdmin.from('stock_reports').select('*').eq('user_id', profile.id).order('reported_at', { ascending: false }).limit(1000),
     // Permanent flavor collection (profile-v2); errors until that script runs.
     supabaseAdmin.from('flavor_finds').select('drink_id').eq('user_id', profile.id).limit(5000),
   ])
-  const reportRows: { drink_id: string; store_id: string; quantity: string; reported_at: string }[] = rows ?? []
+  // Sightings: new columns when present, else the legacy level (src/lib/sightings.ts).
+  const reportRows: { drink_id: string; store_id: string; quantity?: string | null; sighting?: string | null; amount?: string | null; reported_at: string }[] = rows ?? []
 
   // Night owl / early bird use the viewer's UTC offset (minutes, from
   // Date#getTimezoneOffset) as a stand-in for the owner's local time.
@@ -64,7 +66,7 @@ export async function GET(req: NextRequest) {
   // Flavors found = flavors ever reported in stock. Without flavor_finds,
   // fall back to the reports that survive the 7-day pruning.
   const collection = finds_.error
-    ? [...new Set(reportRows.filter((r) => r.quantity !== 'out').map((r) => r.drink_id))]
+    ? [...new Set(reportRows.filter((r) => isSpotted(r)).map((r) => r.drink_id))]
     : (finds_.data ?? []).map((f: { drink_id: string }) => f.drink_id)
   const uniqueFlavors = collection.length
   const weeklyChampion = Array.isArray(profile.badges) && profile.badges.includes('weekly_champion')
@@ -78,7 +80,7 @@ export async function GET(req: NextRequest) {
   const perStore: Record<string, number> = {}
   for (const r of reportRows) perStore[r.store_id] = (perStore[r.store_id] ?? 0) + 1
   const topStoreIds = Object.entries(perStore).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id]) => id)
-  const finds = reportRows.filter((r) => r.quantity !== 'out').slice(0, 6)
+  const finds = reportRows.filter((r) => isSpotted(r)).slice(0, 6)
   const storeIds = [...new Set([...topStoreIds, ...finds.map((f) => f.store_id)])]
   const drinkIds = [...new Set(finds.map((f) => f.drink_id))]
   const [{ data: stores }, { data: drinks }] = await Promise.all([
@@ -96,7 +98,7 @@ export async function GET(req: NextRequest) {
     topStores: privateReports ? [] : topStoreIds.filter((id) => storeById.has(id)).map((id) => ({ id, name: storeById.get(id).name, type: storeById.get(id).type, reports: perStore[id] })),
     recentFinds: privateReports ? [] : finds.filter((f) => storeById.has(f.store_id) && drinkById.has(f.drink_id)).map((f) => {
       const d = drinkById.get(f.drink_id)
-      return { drink: `${d.brand} ${d.flavor ?? d.name}`, quantity: f.quantity, storeId: f.store_id, storeName: storeById.get(f.store_id).name, at: f.reported_at }
+      return { drink: `${d.brand} ${d.flavor ?? d.name}`, amount: amountOf(f), storeId: f.store_id, storeName: storeById.get(f.store_id).name, at: f.reported_at }
     }),
     profile: {
       id: profile.id,

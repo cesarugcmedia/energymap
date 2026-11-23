@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
 
-// Undo a stock report you just sent: deletes the given report ids, but only
+// Undo a sighting you just logged: deletes the given report ids, but only
 // your own and only within UNDO_WINDOW_MS of being reported. latest_stock
 // then falls back to whatever was reported before. Notifications that the
 // report already triggered (restock alerts, stock updates, badges) are not
@@ -35,6 +35,6 @@ export async function POST(req: NextRequest) {
     .gte('reported_at', since)
     .select('id')
   if (error) return NextResponse.json({ error: 'Could not undo' }, { status: 500 })
-  if (!data || data.length === 0) return NextResponse.json({ error: 'Too late to undo these reports.' }, { status: 410 })
+  if (!data || data.length === 0) return NextResponse.json({ error: 'Too late to undo this.' }, { status: 410 })
   return NextResponse.json({ undone: data.length })
 }

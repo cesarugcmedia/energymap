@@ -5,7 +5,7 @@ import Landing, { type LandingStats } from '@/components/landing/Landing'
 
 export const metadata: Metadata = {
   title: 'AmpedMap — Find energy drinks in stock near you',
-  description: 'See which stores near you have your favorite energy drinks in stock, reported by people who just saw the shelf. Free to use.',
+  description: 'See which stores near you have your favorite energy drinks in stock, spotted by people who just saw the shelf. Free to use.',
   alternates: { canonical: 'https://ampedmap.com' },
 }
 

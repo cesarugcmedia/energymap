@@ -9,7 +9,7 @@ export default function SubmitPage() {
         <LightningIcon size={26} color="var(--accent-text)" />
       </span>
       <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginTop: 4 }}>Coming soon</p>
-      <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Quick reporting is on its way.</p>
+      <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Quick sightings are on their way.</p>
     </div>
   )
 }

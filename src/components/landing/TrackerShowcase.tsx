@@ -64,10 +64,10 @@ export default function TrackerShowcase() {
                   </div>
                 ))}
               </div>
-              <p className={styles.patternFoot}>Sells out fastest: Ultra Paradise, Rio Punch</p>
+              <p className={styles.patternFoot}>Most often not found: Ultra Paradise, Rio Punch</p>
             </div>
             <h3 className={styles.h3}>Know when to go <span className={`${styles.planTag} ${styles.planTagTracker}`}>Tracker</span></h3>
-            <p className={styles.body}>See which days each store usually restocks, and which flavors sell out first, so you show up at the right time.</p>
+            <p className={styles.body}>See which days each store usually restocks, and which flavors are most often missing, so you show up at the right time.</p>
           </div>
         </div>
 

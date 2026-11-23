@@ -3,12 +3,13 @@ import styles from './landing.module.css'
 
 // Static illustration of the map screen for the landing page — drawn with the
 // app's real palette, pin styles and freshness colors rather than a screenshot,
-// so it stays sharp at any size and needs no image asset. The store and stock
-// shown are illustrative, not live data.
+// so it stays sharp at any size and needs no image asset. The store and
+// sightings shown are illustrative, not live data.
 
 const LIME = '#C9F400'
 const AMBER = '#FFB300'
 const GRAY = '#6B7468'
+const RED = '#FF6B6B'
 
 // Pin/cluster coordinates are in the map SVG's 270×330 space; the map fills
 // the top MAP_H of the screen, so convert to screen percentages with these.
@@ -24,14 +25,14 @@ const PINS: { x: number; y: number; color: string; Icon: typeof GasIcon }[] = [
 ]
 
 const STOCK = [
-  { brand: 'Celsius', flavor: 'Sparkling Kiwi Guava', level: 'FULL', color: LIME },
-  { brand: 'Ghost', flavor: 'Sour Patch Kids Blue Raspberry', level: 'LOW', color: AMBER },
-  { brand: 'Alani Nu', flavor: 'Cherry Slush', level: 'FULL', color: LIME },
+  { brand: 'Celsius', flavor: 'Sparkling Kiwi Guava', level: 'Plenty', color: LIME },
+  { brand: 'Alani Nu', flavor: 'Cherry Slush', level: 'Spotted', color: LIME },
+  { brand: 'Ghost', flavor: 'Sour Patch Kids Blue Raspberry', level: 'Not there', color: RED },
 ]
 
 export default function PhoneMockup() {
   return (
-    <div className={styles.phone} role="img" aria-label="AmpedMap on a phone: a map of nearby stores with color-coded pins, and a store card listing which energy drinks are in stock">
+    <div className={styles.phone} role="img" aria-label="AmpedMap on a phone: a map of nearby stores with color-coded pins, and a store card listing which energy drinks were spotted">
       <div className={styles.phoneScreen}>
         {/* Map */}
         <svg viewBox="0 0 270 330" className={styles.phoneMap} aria-hidden="true">
@@ -88,7 +89,7 @@ export default function PhoneMockup() {
           <div className={styles.phoneCardHeader}>
             <div>
               <p className={styles.phoneStore}>Quick Stop #12</p>
-              <p className={styles.phoneMeta}><span className={styles.freshDot} /> Updated 18 min ago · 0.4 mi</p>
+              <p className={styles.phoneMeta}><span className={styles.freshDot} /> Spotted 18 min ago · 0.4 mi</p>
             </div>
           </div>
           {STOCK.map((s, i) => (

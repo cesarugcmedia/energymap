@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
   const rawPhotos: unknown[] = Array.isArray(input.photo_urls) ? input.photo_urls : input.photo_url ? [input.photo_url] : []
   const photos = rawPhotos.filter((u): u is string => typeof u === 'string' && u.startsWith(expectedPrefix)).slice(0, MAX_PHOTOS)
 
-  if (postType === 'found' && (!storeId || !drinkId || !quantity)) {
-    return NextResponse.json({ error: 'A "Found it" post needs a store, a drink and a stock level.' }, { status: 400 })
+  if (postType === 'found' && (!storeId || !drinkId)) {
+    return NextResponse.json({ error: 'A "Found it" post needs a store and a drink.' }, { status: 400 })
   }
   if (postType === 'looking' && !drinkId) {
     return NextResponse.json({ error: 'A "Looking for" post needs a drink.' }, { status: 400 })

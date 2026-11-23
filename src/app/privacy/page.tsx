@@ -21,8 +21,8 @@ export default function PrivacyPage() {
 
 • Account information: email address, username, and password when you register.
 • Profile data: your tier/plan, badges, and activity stats.
-• Location data: your device's GPS coordinates, used to show nearby stores on the map and verify your proximity when submitting stock reports. Location is only accessed while you are actively using the app and is never stored on our servers.
-• User-generated content: stock reports, store submissions, community confirmations, and store lists you create.
+• Location data: your device's GPS coordinates, used to show nearby stores on the map and verify your proximity when logging sightings. Location is only accessed while you are actively using the app and is never stored on our servers.
+• User-generated content: sightings (stock reports), store submissions, community confirmations, and store lists you create.
 • Payment information: processed securely by Stripe. We do not store your credit card details.
 • Usage data: pages visited, features used, and general interaction with the platform.`,
           },
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
 
 • Provide and improve the AmpedMap platform.
 • Show stores near your current location on the map.
-• Verify your proximity to a store when you submit a stock report.
+• Verify your proximity to a store when you log a sighting.
 • Process payments and manage your subscription.
 • Send transactional emails such as account confirmation and password reset.
 • Display leaderboard rankings and community features.
@@ -53,7 +53,7 @@ These providers are contractually obligated to protect your data and may not use
           },
           {
             title: '5. Data Retention',
-            body: 'We retain your data for as long as your account is active. If you delete your account, your personal information is removed from our systems. Content you submitted (such as store listings and stock reports) may be retained in anonymized form to preserve the integrity of the platform.',
+            body: 'We retain your data for as long as your account is active. If you delete your account, your personal information is removed from our systems. Content you submitted (such as store listings and sightings) may be retained in anonymized form to preserve the integrity of the platform.',
           },
           {
             title: '6. Security',

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
-import { ago, LEVEL_HEX, LEVEL_WORD, loadStoreCard } from '@/lib/shareCards'
+import { ago, loadStoreCard } from '@/lib/shareCards'
 
-export const alt = 'What’s in stock on AmpedMap'
+export const alt = 'Recent sightings on AmpedMap'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 // Stock changes through the day; previews refresh every 10 minutes.
@@ -28,7 +28,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           {fresh && (
             <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, fontSize: 26, color: '#A4B0A6' }}>
               <span style={{ width: 14, height: 14, borderRadius: 7, background: freshColor }} />
-              Reported {fresh}
+              Last sighting {fresh}
             </span>
           )}
         </div>
@@ -40,20 +40,20 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 30 }}>
           <span style={{ fontSize: 72, fontWeight: 800, color: '#C9F400' }}>{card?.inStock ?? 0}</span>
-          <span style={{ fontSize: 32, color: '#A4B0A6' }}>{card && card.total > 0 ? `of ${card.total} flavors in stock` : 'flavors reported yet'}</span>
+          <span style={{ fontSize: 32, color: '#A4B0A6' }}>{card && card.inStock > 0 ? `flavor${card.inStock === 1 ? '' : 's'} spotted here` : 'flavors spotted yet'}</span>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 18 }}>
           {(card?.top ?? []).map((t) => (
             <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <span style={{ fontSize: 26, color: '#F0F4E8' }}>{t.label.slice(0, 32)}</span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: LEVEL_HEX[t.quantity] }}>{LEVEL_WORD[t.quantity]}</span>
+              <span style={{ fontSize: 24, fontWeight: 700, color: '#C9F400' }}>{t.tag}</span>
             </div>
           ))}
         </div>
 
         <div style={{ display: 'flex', marginTop: 'auto', fontSize: 24, color: '#A4B0A6' }}>
-          <span>Live energy drink stock, reported by hunters</span>
+          <span>Live energy drink sightings from hunters</span>
           <span style={{ marginLeft: 'auto', color: '#C9F400', fontWeight: 600 }}>ampedmap.com</span>
         </div>
       </div>
