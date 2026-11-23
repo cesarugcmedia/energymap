@@ -7,7 +7,7 @@ import styles from './landing.module.css'
 // sightings shown are illustrative, not live data.
 
 const LIME = '#C9F400'
-const RED = '#FF6B6B'
+const RED = '#FF5A78'
 
 // Pin/cluster coordinates are in the map SVG's 270×330 space; the map fills
 // the top MAP_H of the screen, so convert to screen percentages with these.
@@ -16,19 +16,22 @@ const px = (x: number) => `${(x / 270) * 100}%`
 const py = (y: number) => `${(y / 330) * MAP_H * 100}%`
 
 // Same pin language as the real map (MapView): fresh = lime eye + today's
-// count, older = gray age, Not there = red Out, bounty = dashed +50.
-const PINS: { x: number; y: number; kind: 'fresh' | 'older' | 'out' | 'bounty'; n?: number; label?: string }[] = [
+// count, older = quiet gray dot, Not there = red Out, bounty = dashed +50
+// (the drawing is zoomed in, where Out / Bounty show their labels).
+const PINS: { x: number; y: number; kind: 'fresh' | 'dot' | 'out' | 'bounty'; n?: number; label?: string }[] = [
   { x: 150, y: 80, kind: 'fresh', n: 8 },
   { x: 222, y: 236, kind: 'fresh', n: 3 },
   { x: 52, y: 126, kind: 'bounty', label: '+50' },
-  { x: 62, y: 270, kind: 'older', label: '1d' },
+  { x: 62, y: 270, kind: 'dot' },
+  { x: 236, y: 40, kind: 'dot' },
+  { x: 30, y: 196, kind: 'dot' },
   { x: 214, y: 156, kind: 'out' },
 ]
 
 const STOCK = [
-  { brand: 'Celsius', flavor: 'Sparkling Kiwi Guava', level: 'Plenty', color: LIME },
-  { brand: 'Alani Nu', flavor: 'Cherry Slush', level: 'Spotted', color: LIME },
-  { brand: 'Ghost', flavor: 'Sour Patch Kids Blue Raspberry', level: 'Not there', color: RED },
+  { brand: 'Celsius', ago: '12 min ago', flavor: 'Sparkling Kiwi Guava', level: 'Plenty', color: LIME },
+  { brand: 'Alani Nu', ago: '1 hr ago', flavor: 'Cherry Slush', level: 'Just a few', color: LIME },
+  { brand: 'Ghost', ago: '2 hrs ago', flavor: 'Sour Patch Kids Blue Raspberry', level: 'Not found', color: RED },
 ]
 
 export default function PhoneMockup() {
@@ -74,7 +77,7 @@ export default function PhoneMockup() {
             className={`${styles.pin} ${styles['sp_' + p.kind]} ${p.kind === 'fresh' && (p.n ?? 0) >= 5 ? styles.sp_busy : ''}`}
             style={{ left: px(p.x), top: py(p.y), ['--i' as string]: i } as React.CSSProperties}
           >
-            {p.kind === 'fresh' ? <><EyeIcon size={11} color="#0D1210" />{p.n}</> : p.kind === 'out' ? '✕ Out' : p.label}
+            {p.kind === 'fresh' ? <><EyeIcon size={11} color="#0D1210" />{p.n}</> : p.kind === 'out' ? '✕ Out' : p.kind === 'dot' ? null : p.label}
           </span>
         ))}
 
@@ -95,7 +98,7 @@ export default function PhoneMockup() {
           {STOCK.map((s, i) => (
             <div key={s.flavor} className={styles.phoneRow} style={{ ['--i' as string]: i } as React.CSSProperties}>
               <div style={{ minWidth: 0 }}>
-                <p className={styles.phoneBrand}>{s.brand}</p>
+                <p className={styles.phoneBrand}>{s.brand} · {s.ago}</p>
                 <p className={styles.phoneFlavor}>{s.flavor}</p>
               </div>
               <span className={styles.phonePill} style={{ color: s.color, borderColor: `${s.color}55`, backgroundColor: `${s.color}14` }}>{s.level}</span>

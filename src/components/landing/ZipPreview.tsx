@@ -31,8 +31,8 @@ function ago(iso: string) {
 }
 
 function freshColor(iso: string | null) {
-  if (!iso) return '#6B7468'
-  return isFresh(iso) ? '#C9F400' : '#FFB300'
+  if (!iso) return '#7E8A80'
+  return isFresh(iso) ? '#C9F400' : '#7E8A80'
 }
 
 export default function ZipPreview() {

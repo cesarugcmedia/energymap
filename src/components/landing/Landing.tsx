@@ -1,6 +1,6 @@
 import CountUp from '@/components/ui/CountUp'
 import Link from 'next/link'
-import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon, DiscordIcon } from '@/components/Icons'
+import { PinIcon, DrinkIcon, LightningIcon, CheckIcon, MailIcon, TiktokIcon, DiscordIcon, EyeIcon } from '@/components/Icons'
 import PhoneMockup from './PhoneMockup'
 import ZipPreview from './ZipPreview'
 import LiveTicker from './LiveTicker'
@@ -29,9 +29,9 @@ function LogoMark({ size = 30 }: { size?: number }) {
 }
 
 const STEPS = [
-  { Icon: PinIcon, title: 'Find a store', body: 'Open the map to see gas stations, convenience stores and grocery stores around you.' },
-  { Icon: DrinkIcon, title: "See what's been spotted", body: 'Each store shows which flavors people spotted, how many times today, and how long ago.' },
-  { Icon: LightningIcon, title: 'Tap Spotted', body: 'Standing at a cooler? One tap per flavor logs a sighting. Not there counts too. Every sighting earns XP, and quiet stores pay bounties.' },
+  { Icon: PinIcon, title: 'Open the map', body: 'Lime pins are stores where flavors were spotted today. Gas stations, convenience stores and grocery stores, all around you.' },
+  { Icon: DrinkIcon, title: 'See what was spotted', body: 'Tap a store to see every flavor people spotted there, how long ago, and which ones they couldn’t find.' },
+  { Icon: LightningIcon, title: 'Log what you see', body: 'At the cooler? Tap Spotted or Not there for each flavor. Both help the next hunter, and both earn XP.' },
 ]
 
 
@@ -39,6 +39,7 @@ const FAQ = [
   { q: 'Is AmpedMap free?', a: 'Yes. Seeing sightings, logging them and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, sighting patterns for each store, and saved store lists. Every sighting earns XP toward badges and the leaderboard.' },
   { q: 'Where do sightings come from?', a: 'From people. When someone spots a flavor in a store’s cooler, they tap Spotted. If they looked and it was missing, they tap Not there. Every sighting shows how long ago it was, and older ones fade, so you can judge how fresh it is.' },
   { q: 'What are XP, bounties and the Plug?', a: 'Every sighting earns 10 XP (a photo adds 15), and XP ranks you on the leaderboard. Stores nobody has checked in two days carry a 50 XP bounty for the next sighting. Whoever logs the most sightings at a store in a week is its Plug.' },
+  { q: 'Do I have to be at the store to log a sighting?', a: 'Sightings are for what you see in person, so log them while you’re at the store. It takes a tap per flavor, and you can add how many were there or a photo if you like.' },
   { q: 'Which areas are covered?', a: 'Anywhere people log sightings. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
   { q: 'Do I have to share my location?', a: 'No. You can search by ZIP code instead. Sharing your location just makes it quicker to see what is closest.' },
 ]
@@ -124,11 +125,11 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
                 </div>
               ))}
             </div>
-            <div className={styles.legend}>
-              <span><i style={{ background: '#C9F400' }} /> Fresh: spotted today</span>
-              <span><i style={{ background: '#6B7468' }} /> Older</span>
+            <div className={`${styles.legend} reveal`} aria-label="What the map pins mean">
+              <span><b className={styles.legendFresh}><EyeIcon size={11} color="#0D1210" />3</b> Spotted today</span>
               <span><i style={{ background: '#FF5A78' }} /> Not found</span>
-              <span className={styles.legendBounty}>+50 Bounty</span>
+              <span><i className={styles.legendBountyDot} /> +50 XP bounty</span>
+              <span><i style={{ background: '#7E8A80' }} /> Older or no sightings</span>
             </div>
           </div>
         </section>
@@ -143,7 +144,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         <section className={styles.section} aria-labelledby="pricing">
           <div className={styles.container}>
             <h2 id="pricing" className={`${styles.h2} reveal`}>Simple pricing</h2>
-            <p className={styles.sectionLead}>Start free. Upgrade if you want the whole map.</p>
+            <p className={styles.sectionLead}>Free has everything you need to hunt near home. Tracker is for hunting further and hearing first.</p>
             <div className={styles.plans}>
               <div className={`${styles.plan} reveal`}>
                 <h3 className={styles.planName}>Free</h3>
@@ -176,9 +177,9 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         <Socials />
 
         {/* Closing CTA */}
-
         <section id="lp-join" className={`${styles.container} ${styles.closing} reveal`}>
           <h2 className={styles.h2}>Stop guessing. Start finding.</h2>
+          <p className={styles.sectionLead} style={{ margin: 0 }}>Free to join. Your first sighting takes a few seconds.</p>
           <Link href="/account?mode=signup" className={styles.btnPrimary}>Get started free</Link>
         </section>
 
