@@ -421,3 +421,11 @@ html[data-authed="1"] .home-auth-spinner { display: block; }
 
 /* Notifications: the stock-level glow on drink names smudges on light backgrounds. */
 html[data-theme="light"] .lvl-glow { text-shadow: none !important; }
+
+/* Map "?" legend button: a soft lime glow pulse so it's easy to find. */
+@keyframes legend-glow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(201,244,0,0.25), 0 0 14px rgba(201,244,0,0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(201,244,0,0.12), 0 0 26px rgba(201,244,0,0.75); }
+}
+.legend-glow { animation: legend-glow 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .legend-glow { animation: none; } }

@@ -95,7 +95,7 @@ export default function MapHome() {
   const lat = manualLocation?.lat ?? location?.coords.latitude ?? 0
   const lng = manualLocation?.lng ?? location?.coords.longitude ?? 0
   const tierKey = !user ? 'anon' : isTracker ? 'tracker' : 'free'
-  const { stores, nearbyCount, loading: storesLoading, error: storesError, refetch } = useNearbyStores(lat, lng, tierKey, !authLoading)
+  const { stores, loading: storesLoading, error: storesError, refetch } = useNearbyStores(lat, lng, tierKey, !authLoading)
 
   async function searchByZip() {
     const zip = zipInput.trim()
@@ -162,7 +162,6 @@ export default function MapHome() {
     try { if (!localStorage.getItem('map_legend_seen_v1')) { setLegendOpen(true); localStorage.setItem('map_legend_seen_v1', '1') } } catch { /* storage unavailable */ }
   }, [])
   const [listLimit, setListLimit] = useState(30)
-  const [sheetExpanded, setSheetExpanded] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState<Map<string, string>>(new Map())
   const listScrollRef = useRef<HTMLDivElement>(null)
   const listSentinelRef = useRef<HTMLDivElement>(null)
@@ -753,10 +752,6 @@ export default function MapHome() {
   const nearest = byDistance[0] ?? null
   const nearestDist = nearest ? getDistance(lat, lng, nearest.lat, nearest.lng) : null
   const isAtStore = nearestDist !== null && nearestDist < 0.15
-  // Swipe-up "nearby stores" sheet on the map — hidden while a store popup,
-  // the welcome sheet, or the at-store banner's store popup is showing.
-  const showMapSheet = view === 'map' && !selected && !showWelcome && !storesLoading && mapStores.length > 0
-  const sheetStores = (drinkStoreIds ? mapStores.filter((s) => drinkStoreIds.has(s.id)) : mapStores).slice(0, 25)
 
   // Personalized line for the welcome flow's finish screen, from real data.
   function onboardingSummary(brands: string[]): OnboardingSummary {
@@ -842,14 +837,7 @@ export default function MapHome() {
             <span style={{ width: 30, height: 30, borderRadius: 8, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.5h6.2L9.8 22l9-11.6h-6.3L13.5 2z" fill="#0D1210" /></svg>
             </span>
-            <div>
-              <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', lineHeight: 1.1 }}>AmpedMap</p>
-              <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
-                {storesLoading ? 'Loading stores…' : sightingsToday > 0
-                  ? <><strong style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{sightingsToday} sighting{sightingsToday === 1 ? '' : 's'}</strong> near you today</>
-                  : `${nearbyCount} store${nearbyCount === 1 ? '' : 's'} nearby`}
-              </p>
-            </div>
+            <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', lineHeight: 1.1 }}>AmpedMap</p>
           </div>
           <div className={`${ui.segmented} ${ui.segSlide}`} role="tablist" aria-label="View">
             <SlideHighlight activeKey={view} />
@@ -954,7 +942,7 @@ export default function MapHome() {
             {leafletMap && (
               <div
                 className="absolute z-10 flex flex-col gap-2"
-                style={{ bottom: `calc(${showMapSheet ? 224 : 160}px + env(safe-area-inset-bottom))`, right: 16, transition: 'bottom 0.2s ease' }}
+                style={{ bottom: 'calc(148px + env(safe-area-inset-bottom))', right: 16 }}
               >
                 {[{ label: '+', aria: 'Zoom in', fn: () => leafletMap.zoomIn() }, { label: '−', aria: 'Zoom out', fn: () => leafletMap.zoomOut() }].map(({ label, aria, fn }) => (
                   <button key={label} onClick={fn} aria-label={aria} className={ui.iconBtn} style={{ fontSize: 22, fontWeight: 300, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
@@ -1004,14 +992,14 @@ export default function MapHome() {
                 Opens by itself once per device (localStorage map_legend_seen_v1). */}
             <div
               className="absolute z-10"
-              style={{ bottom: `calc(${showMapSheet ? 154 : 90}px + env(safe-area-inset-bottom))`, left: 12, transition: 'bottom 0.2s ease', display: 'flex', alignItems: 'flex-end', gap: 8 }}
+              style={{ bottom: 'calc(90px + env(safe-area-inset-bottom))', right: 16, display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 8 }}
             >
               <button
                 onClick={() => { setLegendOpen((v) => !v); try { localStorage.setItem('map_legend_seen_v1', '1') } catch {} }}
                 aria-label="What the pins mean"
                 aria-expanded={legendOpen}
-                className={ui.iconBtn}
-                style={{ width: 36, height: 36, borderRadius: 999, fontSize: 16, fontWeight: 700, color: legendOpen ? '#0D1210' : 'var(--text)', background: legendOpen ? '#C9F400' : 'var(--header-bg)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+                className={`${ui.iconBtn} ${legendOpen ? '' : 'legend-glow'}`}
+                style={{ width: 44, height: 44, borderRadius: 999, fontSize: 18, fontWeight: 800, color: '#0D1210', background: '#C9F400', border: 'none', boxShadow: '0 0 0 3px rgba(201,244,0,0.25), 0 0 16px rgba(201,244,0,0.55)' }}
               >
                 ?
               </button>
@@ -1030,72 +1018,6 @@ export default function MapHome() {
                 </div>
               )}
             </div>
-
-            {/* Swipe-up nearby stores sheet */}
-            {showMapSheet && (
-              <div
-                className="absolute left-0 right-0 bottom-0 z-20 anim-sheet"
-                style={{
-                  background: 'var(--surface)',
-                  borderTop: '1px solid var(--fg-08)',
-                  borderRadius: '22px 22px 0 0',
-                  boxShadow: '0 -10px 30px rgba(0,0,0,0.4)',
-                  paddingBottom: 'calc(70px + env(safe-area-inset-bottom))',
-                  maxHeight: sheetExpanded ? '62%' : undefined,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'max-height 0.25s ease',
-                }}
-              >
-                <button
-                  onClick={() => setSheetExpanded((v) => !v)}
-                  onTouchStart={(e) => { sheetTouchY.current = e.touches[0].clientY }}
-                  onTouchEnd={(e) => {
-                    if (sheetTouchY.current === null) return
-                    const dy = e.changedTouches[0].clientY - sheetTouchY.current
-                    if (dy < -30) setSheetExpanded(true)
-                    if (dy > 30) setSheetExpanded(false)
-                    sheetTouchY.current = null
-                  }}
-                  aria-expanded={sheetExpanded}
-                  style={{ display: 'block', width: '100%', padding: '10px 16px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', flexShrink: 0 }}
-                >
-                  <span style={{ display: 'block', width: 36, height: 4, borderRadius: 2, background: 'var(--fg-20)', margin: '0 auto 10px' }} />
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                      {drinkFilter ? `${sheetStores.length} store${sheetStores.length === 1 ? '' : 's'} with ${drinkFilter.label}` : `${mapStores.length} store${mapStores.length === 1 ? '' : 's'} nearby`}
-                    </span>
-                    <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{sheetExpanded ? 'Swipe down' : 'Swipe up'}</span>
-                  </span>
-                </button>
-                {sheetExpanded && (
-                  <div className="anim-fade" style={{ overflowY: 'auto', padding: '0 12px 8px', minHeight: 0 }}>
-                    {sheetStores.map((s) => {
-                      const sum = storeSummary[s.id]
-                      const fresh = storeFreshness[s.id] === 'fresh'
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={() => { setSelected(s); setSheetExpanded(false); leafletMap?.flyTo({ center: [s.lng, s.lat], zoom: Math.max(leafletMap.getZoom(), 14) }) }}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 4px', background: 'none', border: 'none', borderTop: '1px solid var(--fg-06)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
-                        >
-                          <span style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--fg-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <StoreTypeIcon type={s.type} size={18} color={fresh ? 'var(--accent-text)' : 'var(--text-muted)'} />
-                          </span>
-                          <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: 15, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
-                            <span style={{ display: 'block', fontSize: 13, color: 'var(--text-dim)' }}>
-                              {sum?.lastSpotted ? `${sum.inStock} spotted · last ${agoText(sum.lastSpotted)}` : sum?.total ? 'Nothing spotted lately' : 'No sightings yet'}
-                            </span>
-                          </span>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>{getDistance(lat, lng, s.lat, s.lng).toFixed(1)} mi</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Bottom sheet when store selected */}
             {selected && (
