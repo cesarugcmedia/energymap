@@ -157,6 +157,10 @@ export default function MapHome() {
   // incremental rendering. Map sheet: swipe-up nearby list. Saved stores.
   const [sortMode, setSortMode] = useState<'nearest' | 'today' | 'bounties'>('nearest')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [legendOpen, setLegendOpen] = useState(false)
+  useEffect(() => {
+    try { if (!localStorage.getItem('map_legend_seen_v1')) { setLegendOpen(true); localStorage.setItem('map_legend_seen_v1', '1') } } catch { /* storage unavailable */ }
+  }, [])
   const [listLimit, setListLimit] = useState(30)
   const [sheetExpanded, setSheetExpanded] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState<Map<string, string>>(new Map())
@@ -640,8 +644,13 @@ export default function MapHome() {
   }, [stores, storeStock])
 
   // What the map plots: every filter except the drink pick (that only
-  // highlights). The pins themselves show fresh / older / out / bounty.
-  const mapStores = sortedBase
+  // highlights), narrowed by the Spotted today / Bounties chips — the same
+  // choice as List view's chips. The pins show fresh / older / out / bounty.
+  const mapStores = useMemo(() => {
+    if (sortMode === 'today') return sortedBase.filter((s) => storePins[s.id]?.kind === 'fresh')
+    if (sortMode === 'bounties') return sortedBase.filter((s) => storePins[s.id]?.kind === 'bounty')
+    return sortedBase
+  }, [sortedBase, sortMode, storePins])
 
   if (authLoading || !user) {
     return (
@@ -869,20 +878,27 @@ export default function MapHome() {
               {searchSuggestions}
             </div>
             <div className={ui.chipRow}>
+              {(() => {
+                const defaultRadius = isTracker ? 25 : FREE_RADIUS_MILES
+                const activeFilters = (radius !== defaultRadius ? 1 : 0) + (typeFilter ? 1 : 0) + (brandFilter ? 1 : 0)
+                return (
+                  <button onClick={() => setFiltersOpen(true)} className={`${ui.chip} ${activeFilters > 0 ? ui.chipActive : ''}`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+                    Filters{activeFilters > 0 ? ` · ${activeFilters}` : ''}
+                  </button>
+                )
+              })()}
+              <button onClick={() => setSortMode(sortMode === 'today' ? 'nearest' : 'today')} className={`${ui.chip} ${sortMode === 'today' ? ui.chipActive : ''}`} aria-pressed={sortMode === 'today'}>
+                <EyeIcon size={14} color="currentColor" />Spotted today
+              </button>
+              <button onClick={() => setSortMode(sortMode === 'bounties' ? 'nearest' : 'bounties')} className={`${ui.chip} ${sortMode === 'bounties' ? ui.chipActive : ''}`} aria-pressed={sortMode === 'bounties'}>
+                <LightningIcon size={14} color="currentColor" />Bounties
+              </button>
               {prefs.brands.length > 0 && (
                 <button onClick={() => setMyBrandsOn((v) => !v)} className={`${ui.chip} ${myBrandsOn ? ui.chipActive : ''}`} aria-pressed={myBrandsOn} title={prefs.brands.join(', ')}>
                   <DrinkIcon size={14} color={myBrandsOn ? '#0D1210' : 'var(--text-muted)'} />My brands
                 </button>
               )}
-              {TYPE_FILTERS.map((f) => {
-                const active = typeFilter === f.value
-                return (
-                  <button key={f.value ?? 'all'} onClick={() => setTypeFilter(f.value)} className={`${ui.chip} ${active ? ui.chipActive : ''}`}>
-                    {f.value && <StoreTypeIcon type={f.value} size={14} color={active ? '#0D1210' : 'var(--text-muted)'} />}
-                    {f.label}
-                  </button>
-                )
-              })}
             </div>
           </div>
         )}
@@ -984,25 +1000,35 @@ export default function MapHome() {
               </div>
             )}
 
-            {/* Pin legend — always visible; the pins themselves carry the meaning. */}
+            {/* Pin legend, behind a "?" — the pins mostly speak for themselves.
+                Opens by itself once per device (localStorage map_legend_seen_v1). */}
             <div
               className="absolute z-10"
-              style={{
-                bottom: `calc(${showMapSheet ? 154 : 90}px + env(safe-area-inset-bottom))`, left: 12, right: 64, transition: 'bottom 0.2s ease',
-                display: 'flex', flexWrap: 'wrap', gap: 6, pointerEvents: 'none',
-              }}
+              style={{ bottom: `calc(${showMapSheet ? 154 : 90}px + env(safe-area-inset-bottom))`, left: 12, transition: 'bottom 0.2s ease', display: 'flex', alignItems: 'flex-end', gap: 8 }}
             >
-              {([
-                ['Fresh', '#C9F400', 'solid'],
-                ['Older', '#7E8A80', 'solid'],
-                ['Not found', '#FF5A78', 'solid'],
-                ['Bounty', null, 'dashed'],
-              ] as const).map(([label, color, style]) => (
-                <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 11px', borderRadius: 999, background: 'var(--header-bg)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: style === 'dashed' ? '1.5px dashed rgba(255,200,80,0.8)' : '1px solid var(--fg-10)', fontSize: 12, fontWeight: 600, color: style === 'dashed' ? '#FFB300' : 'var(--text)' }}>
-                  {color && <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />}
-                  {label}
-                </span>
-              ))}
+              <button
+                onClick={() => { setLegendOpen((v) => !v); try { localStorage.setItem('map_legend_seen_v1', '1') } catch {} }}
+                aria-label="What the pins mean"
+                aria-expanded={legendOpen}
+                className={ui.iconBtn}
+                style={{ width: 36, height: 36, borderRadius: 999, fontSize: 16, fontWeight: 700, color: legendOpen ? '#0D1210' : 'var(--text)', background: legendOpen ? '#C9F400' : 'var(--header-bg)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+              >
+                ?
+              </button>
+              {legendOpen && (
+                <div className="anim-rise" style={{ padding: '10px 12px', borderRadius: 14, background: 'var(--header-bg)', border: '1px solid var(--fg-10)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 6px 18px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {([
+                    ['Spotted today', <span key="f" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 6px', borderRadius: 999, background: '#C9F400', color: '#0D1210', fontSize: 10, fontWeight: 800 }}><EyeIcon size={10} color="#0D1210" />3</span>],
+                    ['Not found (zoom in for “Out”)', <span key="o" style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5A78' }} />],
+                    ['+50 XP bounty', <span key="b" style={{ width: 11, height: 11, borderRadius: '50%', border: '2px dashed #FFC94D', background: 'rgba(255,179,0,0.25)' }} />],
+                    ['Older or no sightings', <span key="g" style={{ width: 9, height: 9, borderRadius: '50%', background: '#7E8A80' }} />],
+                  ] as const).map(([label, icon]) => (
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>
+                      <span style={{ width: 28, display: 'flex', justifyContent: 'center' }}>{icon}</span>{label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Swipe-up nearby stores sheet */}

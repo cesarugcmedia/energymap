@@ -67,6 +67,18 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
 // `animate` adds a one-time drop-in on an INNER wrapper — Mapbox positions
 // markers by setting a transform on the outer element, so animating that
 // element itself would fight the positioning.
+// Sighting-style cluster: "👁 N" (N = stores in it spotted today) in lime
+// when any were, otherwise a plain gray count of the stores.
+function createSightingClusterEl(count: number, freshCount: number, animate = false): HTMLElement {
+  const el = document.createElement('div')
+  el.style.cssText = 'cursor:pointer;pointer-events:auto;display:flex;align-items:center;justify-content:center;'
+  const font = 'font-family:system-ui,-apple-system,sans-serif;font-weight:800;'
+  el.innerHTML = freshCount > 0
+    ? `<div class="${animate ? 'pin-drop' : ''}" style="padding:5px;border-radius:999px;background:rgba(201,244,0,0.16);"><div style="display:flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:999px;background:#C9F400;color:#0D1210;${font}font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.35);">${EYE_SVG('#0D1210')}<span>${freshCount}</span></div></div>`
+    : `<div class="${animate ? 'pin-drop' : ''}" style="display:flex;align-items:center;justify-content:center;width:${count >= 100 ? 44 : 38}px;height:${count >= 100 ? 44 : 38}px;border-radius:50%;background:#2A2D29;border:1.5px solid rgba(255,255,255,0.14);color:#C9CEC6;${font}font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.35);">${count}</div>`
+  return el
+}
+
 function createClusterEl(count: number, freshness: MarkerFreshness, animate = false): HTMLElement {
   const size = count >= 100 ? 54 : count >= 10 ? 46 : 40
   const fontSize = count >= 100 ? 13 : 14
@@ -126,6 +138,23 @@ export type PinInfo = { kind: 'fresh' | 'older' | 'out' | 'bounty'; count?: numb
 
 const EYE_SVG = (c: string) => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>`
 
+/** Out / Bounty pins show their labels from this zoom in; below it they're dots. */
+export const PIN_DETAIL_ZOOM = 14
+
+// A quiet pin: just a small dot (older / no sightings always; Out and
+// Bounty until you zoom in). Keeps the map about the fresh sightings.
+function createDotPinEl(pin: PinInfo, animate = false): HTMLElement {
+  const el = document.createElement('div')
+  el.style.cssText = 'display:flex;align-items:center;justify-content:center;width:22px;height:22px;cursor:pointer;pointer-events:auto;'
+  const style = pin.kind === 'out'
+    ? 'width:11px;height:11px;background:#FF5A78;border:2px solid rgba(10,11,10,0.85);'
+    : pin.kind === 'bounty'
+      ? 'width:12px;height:12px;background:rgba(255,179,0,0.25);border:2px dashed #FFC94D;'
+      : 'width:9px;height:9px;background:#7E8A80;border:2px solid rgba(10,11,10,0.85);'
+  el.innerHTML = `<div class="${animate ? 'pin-drop' : ''}" style="${style}border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`
+  return el
+}
+
 function createSightingPinEl(store: Store, pin: PinInfo, isSelected: boolean, animate = false): HTMLElement {
   const font = 'font-family:system-ui,-apple-system,sans-serif;font-weight:800;'
   let bubble = ''
@@ -178,6 +207,7 @@ interface MapViewProps {
 
 export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds, flash, locatePing, storePins }: MapViewProps) {
   const storePinsRef = useRef<Record<string, PinInfo>>(storePins ?? {})
+  const detailRef = useRef<boolean | null>(null)
   storePinsRef.current = storePins ?? {}
   const highlightRef = useRef<Set<string> | null>(highlightIds ?? null)
   highlightRef.current = highlightIds ?? null
@@ -244,6 +274,13 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
       bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth(),
     ]
     const zoom = Math.floor(map.getZoom())
+    // Crossing the detail zoom changes how Out / Bounty pins look: rebuild.
+    const detail = map.getZoom() >= PIN_DETAIL_ZOOM
+    if (detailRef.current !== detail) {
+      detailRef.current = detail
+      markersRef.current.forEach((m) => m.remove())
+      markersRef.current.clear()
+    }
 
     // When selection changes, force-recreate the two affected store markers
     const prev = prevSelectedRef.current
@@ -273,8 +310,11 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         newKeys.add(key)
         if (!markersRef.current.has(key)) {
           const leaves = sc!.getLeaves(cp.cluster_id, Infinity)
-          const freshness = aggregateFreshness(leaves.map((l) => storeFreshnessRef.current[(l.properties as Store).id]))
-          const el = createClusterEl(cp.point_count, freshness, Date.now() < dropInUntilRef.current)
+          const pins = storePinsRef.current
+          const usePins = Object.keys(pins).length > 0
+          const el = usePins
+            ? createSightingClusterEl(cp.point_count, leaves.filter((l) => pins[(l.properties as Store).id]?.kind === 'fresh').length, Date.now() < dropInUntilRef.current)
+            : createClusterEl(cp.point_count, aggregateFreshness(leaves.map((l) => storeFreshnessRef.current[(l.properties as Store).id])), Date.now() < dropInUntilRef.current)
           const hl = highlightRef.current
           if (hl && !leaves.some((l) => hl.has((l.properties as Store).id))) el.style.opacity = '0.3'
           el.addEventListener('click', () => {
@@ -298,7 +338,10 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
           const freshness = storeFreshnessRef.current[store.id] ?? 'stale'
           const pin = storePinsRef.current[store.id]
           const dropIn = Date.now() < dropInUntilRef.current
-          const el = pin ? createSightingPinEl(store, pin, isSelected, dropIn) : createStoreEl(store, isSelected, freshness, dropIn)
+          const quiet = pin && !isSelected && (pin.kind === 'older' || (pin.kind !== 'fresh' && !detail))
+          const el = !pin ? createStoreEl(store, isSelected, freshness, dropIn)
+            : quiet ? createDotPinEl(pin, dropIn)
+            : createSightingPinEl(store, pin, isSelected, dropIn)
           const hl = highlightRef.current
           if (hl && !isSelected) {
             if (hl.has(store.id)) el.style.zIndex = '2'
