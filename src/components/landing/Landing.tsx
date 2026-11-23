@@ -6,6 +6,7 @@ import ZipPreview from './ZipPreview'
 import LiveTicker from './LiveTicker'
 import TrackerShowcase from './TrackerShowcase'
 import StickyCta from './StickyCta'
+import EarnShowcase from './EarnShowcase'
 import Socials, { SOCIAL } from './Socials'
 import { FREE_FEATURES, TRACKER_FEATURES } from '@/lib/plans'
 import styles from './landing.module.css'
@@ -37,6 +38,7 @@ const STEPS = [
 const FAQ = [
   { q: 'Is AmpedMap free?', a: 'Yes. Seeing sightings, logging them and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, sighting patterns for each store, and saved store lists. Every sighting earns XP toward badges and the leaderboard.' },
   { q: 'Where do sightings come from?', a: 'From people. When someone spots a flavor in a store’s cooler, they tap Spotted. If they looked and it was missing, they tap Not there. Every sighting shows how long ago it was, and older ones fade, so you can judge how fresh it is.' },
+  { q: 'What are XP, bounties and the Plug?', a: 'Every sighting earns 10 XP (a photo adds 15), and XP ranks you on the leaderboard. Stores nobody has checked in two days carry a 50 XP bounty for the next sighting. Whoever logs the most sightings at a store in a week is its Plug.' },
   { q: 'Which areas are covered?', a: 'Anywhere people log sightings. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
   { q: 'Do I have to share my location?', a: 'No. You can search by ZIP code instead. Sharing your location just makes it quicker to see what is closest.' },
 ]
@@ -123,12 +125,16 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
               ))}
             </div>
             <div className={styles.legend}>
-              <span><i style={{ background: '#C9F400' }} /> Spotted in the last day</span>
-              <span><i style={{ background: '#FFB300' }} /> Mixed</span>
-              <span><i style={{ background: '#6B7468' }} /> Older or no sightings</span>
+              <span><i style={{ background: '#C9F400' }} /> Fresh: spotted today</span>
+              <span><i style={{ background: '#6B7468' }} /> Older</span>
+              <span><i style={{ background: '#FF5A78' }} /> Not found</span>
+              <span className={styles.legendBounty}>+50 Bounty</span>
             </div>
           </div>
         </section>
+
+        {/* XP, bounties, Plug */}
+        <EarnShowcase />
 
         {/* Tracker features, drawn */}
         <TrackerShowcase />

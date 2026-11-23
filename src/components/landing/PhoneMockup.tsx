@@ -1,4 +1,4 @@
-import { ConvenienceIcon, GasIcon, GroceryIcon, SearchIcon } from '@/components/Icons'
+import { EyeIcon, SearchIcon } from '@/components/Icons'
 import styles from './landing.module.css'
 
 // Static illustration of the map screen for the landing page — drawn with the
@@ -7,8 +7,6 @@ import styles from './landing.module.css'
 // sightings shown are illustrative, not live data.
 
 const LIME = '#C9F400'
-const AMBER = '#FFB300'
-const GRAY = '#6B7468'
 const RED = '#FF6B6B'
 
 // Pin/cluster coordinates are in the map SVG's 270×330 space; the map fills
@@ -17,11 +15,14 @@ const MAP_H = 0.58
 const px = (x: number) => `${(x / 270) * 100}%`
 const py = (y: number) => `${(y / 330) * MAP_H * 100}%`
 
-const PINS: { x: number; y: number; color: string; Icon: typeof GasIcon }[] = [
-  { x: 52, y: 118, color: LIME, Icon: GasIcon },
-  { x: 196, y: 96, color: GRAY, Icon: ConvenienceIcon },
-  { x: 214, y: 236, color: AMBER, Icon: GroceryIcon },
-  { x: 70, y: 262, color: LIME, Icon: ConvenienceIcon },
+// Same pin language as the real map (MapView): fresh = lime eye + today's
+// count, older = gray age, Not there = red Out, bounty = dashed +50.
+const PINS: { x: number; y: number; kind: 'fresh' | 'older' | 'out' | 'bounty'; n?: number; label?: string }[] = [
+  { x: 150, y: 80, kind: 'fresh', n: 8 },
+  { x: 222, y: 236, kind: 'fresh', n: 3 },
+  { x: 52, y: 126, kind: 'bounty', label: '+50' },
+  { x: 62, y: 270, kind: 'older', label: '1d' },
+  { x: 214, y: 156, kind: 'out' },
 ]
 
 const STOCK = [
@@ -32,7 +33,7 @@ const STOCK = [
 
 export default function PhoneMockup() {
   return (
-    <div className={styles.phone} role="img" aria-label="AmpedMap on a phone: a map of nearby stores with color-coded pins, and a store card listing which energy drinks were spotted">
+    <div className={styles.phone} role="img" aria-label="AmpedMap on a phone: a map of nearby stores with sighting pins, and a store card listing which energy drinks were spotted today">
       <div className={styles.phoneScreen}>
         {/* Map */}
         <svg viewBox="0 0 270 330" className={styles.phoneMap} aria-hidden="true">
@@ -66,17 +67,16 @@ export default function PhoneMockup() {
           <circle cx="142" cy="170" r="6" fill="#60a5fa" stroke="#0E110D" strokeWidth="2.5" />
         </svg>
 
-        {/* Pins (HTML so they can use the shared line icons) */}
+        {/* Sighting pins */}
         {PINS.map((p, i) => (
           <span
             key={i}
-            className={styles.pin}
-            style={{ left: px(p.x), top: py(p.y), borderColor: p.color, boxShadow: `0 0 12px ${p.color}55`, ['--i' as string]: i } as React.CSSProperties}
+            className={`${styles.pin} ${styles['sp_' + p.kind]} ${p.kind === 'fresh' && (p.n ?? 0) >= 5 ? styles.sp_busy : ''}`}
+            style={{ left: px(p.x), top: py(p.y), ['--i' as string]: i } as React.CSSProperties}
           >
-            <p.Icon size={13} color={p.color} />
+            {p.kind === 'fresh' ? <><EyeIcon size={11} color="#0D1210" />{p.n}</> : p.kind === 'out' ? '✕ Out' : p.label}
           </span>
         ))}
-        <span className={styles.cluster} style={{ left: px(150), top: py(84) }}>4</span>
 
         {/* Search bar */}
         <div className={styles.phoneSearch}>
@@ -89,7 +89,7 @@ export default function PhoneMockup() {
           <div className={styles.phoneCardHeader}>
             <div>
               <p className={styles.phoneStore}>Quick Stop #12</p>
-              <p className={styles.phoneMeta}><span className={styles.freshDot} /> Spotted 18 min ago · 0.4 mi</p>
+              <p className={styles.phoneMeta}><span className={styles.freshDot} /> 8 sightings today · 0.4 mi</p>
             </div>
           </div>
           {STOCK.map((s, i) => (

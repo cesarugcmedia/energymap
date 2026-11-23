@@ -14,10 +14,10 @@ export const FREE_ALERT_LIMIT = 5
 export const TRACKER_PRICE = '$5/month'
 
 export const FREE_FEATURES = [
-  `See stock within ${FREE_RADIUS_MILES} miles, with exact report times`,
-  'Report stock and add missing stores',
+  `See sightings within ${FREE_RADIUS_MILES} miles, with exact times`,
+  'Log sightings in one tap and add missing stores',
   `Follow up to ${FREE_ALERT_LIMIT} flavors for restock alerts`,
-  'Community, profiles, badges and leaderboard',
+  'XP, bounties, badges and the leaderboard',
 ]
 
 export const TRACKER_FEATURES = [

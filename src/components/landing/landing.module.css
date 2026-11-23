@@ -1221,3 +1221,63 @@ a.socialCard:active { transform: scale(0.98); }
 .collectMock { min-height: 280px; }
 .patternBars { flex: none; height: 150px; }
 .patternFoot { margin-top: auto; }
+
+/* ── Sighting pins in the hero phone (same language as MapView) ── */
+.sp_fresh, .sp_older, .sp_out, .sp_bounty {
+  width: auto;
+  height: 24px;
+  margin: -12px 0 0 0;
+  /* translate (not transform) so the lpPin drop-in animation can't undo the centering */
+  translate: -50% 0;
+  padding: 0 8px;
+  gap: 3px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+.sp_fresh { background: #C9F400; border: none; color: #0D1210; }
+.sp_busy { height: 28px; padding: 0 10px; font-size: 12px; box-shadow: 0 0 0 5px rgba(201, 244, 0, 0.18), 0 0 18px rgba(201, 244, 0, 0.45); }
+.sp_older { background: #2A2D29; border: 1.5px solid rgba(255, 255, 255, 0.14); color: #C9CEC6; }
+.sp_out { background: rgba(255, 90, 120, 0.16); border: 1.5px solid rgba(255, 90, 120, 0.75); color: #FFC2CE; }
+.sp_bounty { background: rgba(255, 179, 0, 0.1); border: 1.5px dashed rgba(255, 200, 80, 0.8); color: #FFD27A; }
+
+/* How it works legend: the Bounty item is a dashed chip, like the map. */
+.legendBounty {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1.5px dashed rgba(255, 200, 80, 0.8);
+  color: #FFD27A;
+  font-weight: 600;
+}
+
+/* ── Earn as you hunt (EarnShowcase) ── */
+.earn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 760px) {
+  .earn { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.earnCard {
+  background: var(--lp-card);
+  border: 1px solid var(--lp-line);
+  border-radius: 18px;
+  padding: 18px;
+}
+.earnBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.earnXp { background: #C9F400; color: #0D1210; }
+.earnBounty { background: rgba(255, 179, 0, 0.1); border: 1.5px dashed rgba(255, 200, 80, 0.8); color: #FFD27A; }
+.earnPlug { background: rgba(201, 244, 0, 0.12); color: var(--lp-lime); border: 1px solid rgba(201, 244, 0, 0.4); }

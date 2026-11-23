@@ -155,7 +155,6 @@ export default function MapHome() {
   const [searchFocused, setSearchFocused] = useState(false)
   // Map: show only stores reported in the last day. List: sort, filter sheet,
   // incremental rendering. Map sheet: swipe-up nearby list. Saved stores.
-  const [freshOnly, setFreshOnly] = useState(false)
   const [sortMode, setSortMode] = useState<'nearest' | 'today' | 'bounties'>('nearest')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [listLimit, setListLimit] = useState(30)
@@ -641,11 +640,8 @@ export default function MapHome() {
   }, [stores, storeStock])
 
   // What the map plots: every filter except the drink pick (that only
-  // highlights), plus the optional "Fresh only" toggle.
-  const mapStores = useMemo(
-    () => (freshOnly ? sortedBase.filter((s) => storeFreshness[s.id] === 'fresh') : sortedBase),
-    [sortedBase, freshOnly, storeFreshness]
-  )
+  // highlights). The pins themselves show fresh / older / out / bounty.
+  const mapStores = sortedBase
 
   if (authLoading || !user) {
     return (
@@ -873,9 +869,6 @@ export default function MapHome() {
               {searchSuggestions}
             </div>
             <div className={ui.chipRow}>
-              <button onClick={() => setFreshOnly((v) => !v)} className={`${ui.chip} ${freshOnly ? ui.chipActive : ''}`} aria-pressed={freshOnly}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: freshOnly ? '#0D1210' : '#C9F400' }} />Fresh only
-              </button>
               {prefs.brands.length > 0 && (
                 <button onClick={() => setMyBrandsOn((v) => !v)} className={`${ui.chip} ${myBrandsOn ? ui.chipActive : ''}`} aria-pressed={myBrandsOn} title={prefs.brands.join(', ')}>
                   <DrinkIcon size={14} color={myBrandsOn ? '#0D1210' : 'var(--text-muted)'} />My brands
