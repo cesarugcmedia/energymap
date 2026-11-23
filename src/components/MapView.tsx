@@ -116,6 +116,46 @@ function createStoreEl(store: Store, isSelected: boolean, freshness: StoreFreshn
   return el
 }
 
+// Sighting pins (2026-11-22): what a store's pin says at a glance.
+//  fresh  — spotted in the last 24 h: lime bubble with an eye and today's
+//           sighting count (glows when busy)
+//  older  — last sighting 1–2 days ago: gray bubble with its age ("1d")
+//  out    — the latest check in the last day was Not there: red "× Out"
+//  bounty — nobody's checked in 48 h+ (or ever): dashed amber "+50"
+export type PinInfo = { kind: 'fresh' | 'older' | 'out' | 'bounty'; count?: number; label?: string }
+
+const EYE_SVG = (c: string) => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>`
+
+function createSightingPinEl(store: Store, pin: PinInfo, isSelected: boolean, animate = false): HTMLElement {
+  const font = 'font-family:system-ui,-apple-system,sans-serif;font-weight:800;'
+  let bubble = ''
+  let dot = '#6B7468'
+  if (pin.kind === 'fresh') {
+    const n = pin.count ?? 0
+    const busy = n >= 5
+    dot = '#C9F400'
+    const inner = `<div style="display:flex;align-items:center;gap:5px;height:${busy ? 40 : 34}px;padding:0 ${n > 0 ? (busy ? 14 : 11) : 10}px;border-radius:999px;background:#C9F400;color:#0D1210;${font}font-size:${busy ? 16 : 14}px;box-shadow:0 4px 14px rgba(0,0,0,0.35);">${EYE_SVG('#0D1210')}${n > 0 ? `<span>${n}</span>` : ''}</div>`
+    bubble = busy ? `<div style="padding:6px;border-radius:999px;background:rgba(201,244,0,0.22);box-shadow:0 0 22px rgba(201,244,0,0.35);">${inner}</div>` : inner
+  } else if (pin.kind === 'older') {
+    bubble = `<div style="display:flex;align-items:center;justify-content:center;min-width:38px;height:38px;padding:0 8px;border-radius:999px;background:#2A2D29;border:1.5px solid rgba(255,255,255,0.14);color:#C9CEC6;${font}font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.35);">${pin.label ?? ''}</div>`
+  } else if (pin.kind === 'out') {
+    dot = '#FF5A78'
+    bubble = `<div style="display:flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:999px;background:rgba(255,90,120,0.16);border:1.5px solid rgba(255,90,120,0.75);color:#FFC2CE;${font}font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.35);">✕ Out</div>`
+  } else {
+    bubble = `<div style="display:flex;align-items:center;height:34px;padding:0 12px;border-radius:999px;background:rgba(255,179,0,0.1);border:1.5px dashed rgba(255,200,80,0.8);color:#FFD27A;${font}font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.35);">${pin.label ?? '+50'}</div>`
+  }
+  const ring = isSelected ? 'outline:2px solid #fff;outline-offset:3px;border-radius:999px;' : ''
+  const el = document.createElement('div')
+  el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;pointer-events:auto;'
+  el.innerHTML = `
+    <div class="${animate ? 'pin-drop' : ''}" style="display:flex;flex-direction:column;align-items:center;">
+      <div class="${isSelected ? 'anim-pop' : ''}" style="${ring}">${bubble}</div>
+      ${isSelected ? `<div style="margin-top:6px;background:rgba(10,10,18,0.92);border:1px solid rgba(255,255,255,0.18);border-radius:7px;padding:4px 8px;max-width:130px;text-align:center;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;line-height:1.3;color:#fff;pointer-events:none;">${store.name}</div>` : ''}
+      <div style="width:8px;height:8px;border-radius:50%;background:${dot};margin-top:6px;box-shadow:0 0 0 2px rgba(0,0,0,0.35);pointer-events:none;"></div>
+    </div>`
+  return el
+}
+
 interface MapViewProps {
   lat: number
   lng: number
@@ -131,9 +171,14 @@ interface MapViewProps {
   flash?: { id: string; n: number } | null
   /** Bump to send a ring out from the user's dot (after the map stops moving). */
   locatePing?: number
+  /** Sighting pin per store (fresh / older / out / bounty). Stores without
+   *  one fall back to the plain store-type orb. */
+  storePins?: Record<string, PinInfo>
 }
 
-export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds, flash, locatePing }: MapViewProps) {
+export default function MapView({ lat, lng, stores, selected, onSelectStore, onMapReady, storeFreshness, highlightIds, flash, locatePing, storePins }: MapViewProps) {
+  const storePinsRef = useRef<Record<string, PinInfo>>(storePins ?? {})
+  storePinsRef.current = storePins ?? {}
   const highlightRef = useRef<Set<string> | null>(highlightIds ?? null)
   highlightRef.current = highlightIds ?? null
   const containerRef = useRef<HTMLDivElement>(null)
@@ -251,7 +296,9 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
         if (!markersRef.current.has(key)) {
           const isSelected = selectedRef.current?.id === store.id
           const freshness = storeFreshnessRef.current[store.id] ?? 'stale'
-          const el = createStoreEl(store, isSelected, freshness, Date.now() < dropInUntilRef.current)
+          const pin = storePinsRef.current[store.id]
+          const dropIn = Date.now() < dropInUntilRef.current
+          const el = pin ? createSightingPinEl(store, pin, isSelected, dropIn) : createStoreEl(store, isSelected, freshness, dropIn)
           const hl = highlightRef.current
           if (hl && !isSelected) {
             if (hl.has(store.id)) el.style.zIndex = '2'
@@ -329,7 +376,7 @@ export default function MapView({ lat, lng, stores, selected, onSelectStore, onM
     markersRef.current.clear()
     prevSelectedRef.current = null
     updateMarkers()
-  }, [storeFreshness, highlightIds]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeFreshness, highlightIds, storePins]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Switching Appearance swaps the base style; style.load re-applies the palette.
   const appliedThemeRef = useRef(theme)

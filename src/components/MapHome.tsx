@@ -63,12 +63,6 @@ function getLatestReport(stock: any[]) {
   }, null)
 }
 
-const FRESHNESS_LEGEND = [
-  { color: '#C9F400', label: 'Mostly fresh' }, // must match the lime pins in both themes
-  { color: '#FFB300', label: 'Mixed' },
-  { color: 'var(--text-dim)', label: 'Mostly stale' },
-]
-
 const FREE_RADIUS_OPTIONS = [5, 10, 15, FREE_RADIUS_MILES]
 const HUNTER_RADIUS_OPTIONS = [5, 10, 15, 20, 25, 50, null]
 
@@ -81,6 +75,7 @@ const TYPE_FILTERS = [
 ]
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
+type PinInfo = import('@/components/MapView').PinInfo
 
 // Rendered by HomeGate (src/app/page.tsx) for signed-in users only; logged-out
 // visitors get the marketing landing page at / instead.
@@ -448,6 +443,36 @@ export default function MapHome() {
     }
     return out
   }, [storeStock])
+
+  // Map pin per store (see PinInfo in MapView): fresh (spotted < 24 h, with
+  // today's count) → out (Not there in the last day) → bounty (no check in
+  // 48 h+) → older (last check 1–2 days ago).
+  const storePins = useMemo(() => {
+    const out: Record<string, PinInfo> = {}
+    for (const st of stores) {
+      const rows = storeStock[st.id] ?? []
+      const t = storeToday[st.id]
+      const lastSpot = rows.filter((r) => r.sighting === 'spotted').reduce<string | null>((m, r) => (!m || r.reported_at > m ? r.reported_at : m), null)
+      const lastAny = t?.lastAny ?? null
+      if (lastSpot && isReliable(lastSpot)) out[st.id] = { kind: 'fresh', count: t?.today.length ?? 0 }
+      else if (t?.notFound) out[st.id] = { kind: 'out' }
+      else if (hasBounty(lastAny)) out[st.id] = { kind: 'bounty', label: `+${XP_BOUNTY}` }
+      else out[st.id] = { kind: 'older', label: shortAgo(lastAny!) }
+    }
+    return out
+  }, [stores, storeStock, storeToday])
+
+  // The bottom card: the nearest store with a fresh sighting.
+  const nearestFresh = useMemo(() => {
+    for (const st of byDistance) {
+      if (storePins[st.id]?.kind !== 'fresh') continue
+      const latest = (storeStock[st.id] ?? []).filter((r) => r.sighting === 'spotted').sort((a, b) => b.reported_at.localeCompare(a.reported_at))[0]
+      if (!latest) continue
+      const d = drinkById.get(latest.drink_id)
+      return { store: st, drink: d ? (d.flavor || d.name) : 'A flavor', at: latest.reported_at as string }
+    }
+    return null
+  }, [byDistance, storePins, storeStock, drinkById])
 
   const listStores = useMemo(() => {
     if (sortMode === 'nearest') return sorted
@@ -922,6 +947,7 @@ export default function MapHome() {
                 onSelectStore={setSelected}
                 onMapReady={setLeafletMap}
                 storeFreshness={storeFreshness}
+                storePins={storePins}
                 flash={pinFlash}
                 locatePing={locatePing}
               />
@@ -931,7 +957,7 @@ export default function MapHome() {
             {leafletMap && (
               <div
                 className="absolute z-10 flex flex-col gap-2"
-                style={{ bottom: `calc(${showMapSheet ? 224 : 160}px + env(safe-area-inset-bottom))`, right: 16, transition: 'bottom 0.2s ease' }}
+                style={{ bottom: `calc(${showMapSheet ? (nearestFresh ? 262 : 224) : 160}px + env(safe-area-inset-bottom))`, right: 16, transition: 'bottom 0.2s ease' }}
               >
                 {[{ label: '+', aria: 'Zoom in', fn: () => leafletMap.zoomIn() }, { label: '−', aria: 'Zoom out', fn: () => leafletMap.zoomOut() }].map(({ label, aria, fn }) => (
                   <button key={label} onClick={fn} aria-label={aria} className={ui.iconBtn} style={{ fontSize: 22, fontWeight: 300, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
@@ -969,22 +995,32 @@ export default function MapHome() {
               </div>
             )}
 
-            {/* Freshness legend — always visible, no toggle needed now that
-                markers themselves are colored by freshness */}
+            {/* "12 sightings near you today" */}
+            {sightingsToday > 0 && !(isAtStore && nearest && !selected && dismissedAtStore !== nearest.id) && (
+              <div className="absolute z-10 anim-rise" style={{ top: 12, left: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 999, background: 'var(--header-bg)', border: '1px solid var(--fg-10)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 4px 14px rgba(0,0,0,0.3)' }}>
+                <span className="live-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#C9F400' }} />
+                <span style={{ fontSize: 14, color: 'var(--text)' }}><strong style={{ color: 'var(--accent-text)' }}>{sightingsToday} sighting{sightingsToday === 1 ? '' : 's'}</strong> near you today</span>
+              </div>
+            )}
+
+            {/* Pin legend — always visible; the pins themselves carry the meaning. */}
             <div
-              className="absolute z-10 rounded-xl p-2.5 flex flex-col gap-1.5"
+              className="absolute z-10"
               style={{
-                bottom: `calc(${showMapSheet ? 154 : 90}px + env(safe-area-inset-bottom))`, left: 16, transition: 'bottom 0.2s ease',
-                backgroundColor: 'var(--header-bg)',
-                border: '1px solid var(--fg-10)',
-                backdropFilter: 'blur(12px)',
+                bottom: `calc(${showMapSheet ? (nearestFresh ? 192 : 154) : 90}px + env(safe-area-inset-bottom))`, left: 12, right: 64, transition: 'bottom 0.2s ease',
+                display: 'flex', flexWrap: 'wrap', gap: 6, pointerEvents: 'none',
               }}
             >
-              {FRESHNESS_LEGEND.map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{item.label}</span>
-                </div>
+              {([
+                ['Fresh', '#C9F400', 'solid'],
+                ['Older', '#7E8A80', 'solid'],
+                ['Not found', '#FF5A78', 'solid'],
+                ['Bounty', null, 'dashed'],
+              ] as const).map(([label, color, style]) => (
+                <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 11px', borderRadius: 999, background: 'var(--header-bg)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: style === 'dashed' ? '1.5px dashed rgba(255,200,80,0.8)' : '1px solid var(--fg-10)', fontSize: 12, fontWeight: 600, color: style === 'dashed' ? '#FFB300' : 'var(--text)' }}>
+                  {color && <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />}
+                  {label}
+                </span>
               ))}
             </div>
 
@@ -1018,6 +1054,24 @@ export default function MapHome() {
                   style={{ display: 'block', width: '100%', padding: '10px 16px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', flexShrink: 0 }}
                 >
                   <span style={{ display: 'block', width: 36, height: 4, borderRadius: 2, background: 'var(--fg-20)', margin: '0 auto 10px' }} />
+                  {nearestFresh && !sheetExpanded && !drinkFilter && (
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); router.push(`/store/${nearestFresh.store.id}?name=${encodeURIComponent(nearestFresh.store.name)}`) }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/store/${nearestFresh.store.id}?name=${encodeURIComponent(nearestFresh.store.name)}`) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, marginBottom: 10, borderRadius: 16, background: 'var(--fg-04)', border: '1px solid var(--fg-08)' }}
+                    >
+                      <span style={{ width: 44, height: 44, borderRadius: 12, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <EyeIcon size={22} color="#0D1210" />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearestFresh.store.name} · {getDistance(lat, lng, nearestFresh.store.lat, nearestFresh.store.lng).toFixed(1)} mi</span>
+                        <span style={{ display: 'block', fontSize: 14, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearestFresh.drink} spotted {agoText(nearestFresh.at)}</span>
+                      </span>
+                      <ChevronRightIcon size={16} color="var(--text-dim)" />
+                    </span>
+                  )}
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                       {drinkFilter ? `${sheetStores.length} store${sheetStores.length === 1 ? '' : 's'} with ${drinkFilter.label}` : `${mapStores.length} store${mapStores.length === 1 ? '' : 's'} nearby`}
