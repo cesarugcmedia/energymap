@@ -462,18 +462,6 @@ export default function MapHome() {
     return out
   }, [stores, storeStock, storeToday])
 
-  // The bottom card: the nearest store with a fresh sighting.
-  const nearestFresh = useMemo(() => {
-    for (const st of byDistance) {
-      if (storePins[st.id]?.kind !== 'fresh') continue
-      const latest = (storeStock[st.id] ?? []).filter((r) => r.sighting === 'spotted').sort((a, b) => b.reported_at.localeCompare(a.reported_at))[0]
-      if (!latest) continue
-      const d = drinkById.get(latest.drink_id)
-      return { store: st, drink: d ? (d.flavor || d.name) : 'A flavor', at: latest.reported_at as string }
-    }
-    return null
-  }, [byDistance, storePins, storeStock, drinkById])
-
   const listStores = useMemo(() => {
     if (sortMode === 'nearest') return sorted
     if (sortMode === 'today') {
@@ -957,7 +945,7 @@ export default function MapHome() {
             {leafletMap && (
               <div
                 className="absolute z-10 flex flex-col gap-2"
-                style={{ bottom: `calc(${showMapSheet ? (nearestFresh ? 262 : 224) : 160}px + env(safe-area-inset-bottom))`, right: 16, transition: 'bottom 0.2s ease' }}
+                style={{ bottom: `calc(${showMapSheet ? 224 : 160}px + env(safe-area-inset-bottom))`, right: 16, transition: 'bottom 0.2s ease' }}
               >
                 {[{ label: '+', aria: 'Zoom in', fn: () => leafletMap.zoomIn() }, { label: '−', aria: 'Zoom out', fn: () => leafletMap.zoomOut() }].map(({ label, aria, fn }) => (
                   <button key={label} onClick={fn} aria-label={aria} className={ui.iconBtn} style={{ fontSize: 22, fontWeight: 300, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
@@ -1007,7 +995,7 @@ export default function MapHome() {
             <div
               className="absolute z-10"
               style={{
-                bottom: `calc(${showMapSheet ? (nearestFresh ? 192 : 154) : 90}px + env(safe-area-inset-bottom))`, left: 12, right: 64, transition: 'bottom 0.2s ease',
+                bottom: `calc(${showMapSheet ? 154 : 90}px + env(safe-area-inset-bottom))`, left: 12, right: 64, transition: 'bottom 0.2s ease',
                 display: 'flex', flexWrap: 'wrap', gap: 6, pointerEvents: 'none',
               }}
             >
@@ -1054,24 +1042,6 @@ export default function MapHome() {
                   style={{ display: 'block', width: '100%', padding: '10px 16px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', flexShrink: 0 }}
                 >
                   <span style={{ display: 'block', width: 36, height: 4, borderRadius: 2, background: 'var(--fg-20)', margin: '0 auto 10px' }} />
-                  {nearestFresh && !sheetExpanded && !drinkFilter && (
-                    <span
-                      role="link"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); router.push(`/store/${nearestFresh.store.id}?name=${encodeURIComponent(nearestFresh.store.name)}`) }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/store/${nearestFresh.store.id}?name=${encodeURIComponent(nearestFresh.store.name)}`) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, marginBottom: 10, borderRadius: 16, background: 'var(--fg-04)', border: '1px solid var(--fg-08)' }}
-                    >
-                      <span style={{ width: 44, height: 44, borderRadius: 12, background: '#C9F400', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <EyeIcon size={22} color="#0D1210" />
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearestFresh.store.name} · {getDistance(lat, lng, nearestFresh.store.lat, nearestFresh.store.lng).toFixed(1)} mi</span>
-                        <span style={{ display: 'block', fontSize: 14, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nearestFresh.drink} spotted {agoText(nearestFresh.at)}</span>
-                      </span>
-                      <ChevronRightIcon size={16} color="var(--text-dim)" />
-                    </span>
-                  )}
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                       {drinkFilter ? `${sheetStores.length} store${sheetStores.length === 1 ? '' : 's'} with ${drinkFilter.label}` : `${mapStores.length} store${mapStores.length === 1 ? '' : 's'} nearby`}

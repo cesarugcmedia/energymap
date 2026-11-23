@@ -115,7 +115,9 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
   const [search, setSearch] = useState('')
   const { prefs } = usePreferences()
-  const [stockFilter, setStockFilter] = useState<'all' | 'today' | 'not_there'>('all')
+  const [stockFilter, setStockFilter] = useState<'today' | 'spotted' | 'not_there'>('today')
+  // Opens on Spotted today; falls back to Spotted once if nothing's from today.
+  const filterChosen = useRef(false)
   // How many times each flavor was spotted here today (/api/stores/sightings).
   const [todayCounts, setTodayCounts] = useState<Record<string, number>>({})
   const [todayTotal, setTodayTotal] = useState(0)
@@ -595,6 +597,12 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }, {})
 
   const inStockTotal = stock.filter((i) => i.sighting === 'spotted').length
+  useEffect(() => {
+    if (loading || filterChosen.current || stockFilter !== 'today' || stock.length === 0) return
+    const since = startOfToday()
+    if (!stock.some((i) => i.sighting === 'spotted' && new Date(i.reported_at).getTime() >= since)) setStockFilter('spotted')
+    filterChosen.current = true
+  }, [loading, stock, stockFilter])
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', position: 'relative', overflowX: 'hidden' }}>
@@ -782,8 +790,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               )}
             </div>
             <div className={ui.chipRow} style={{ marginBottom: 16 }}>
-              {([['all', 'All'], ['today', 'Spotted today'], ['not_there', 'Not found']] as const).map(([key, label]) => (
-                <button key={key} className={`${ui.chip} ${stockFilter === key ? ui.chipActive : ''}`} onClick={() => setStockFilter(key)}>{label}</button>
+              {([['today', 'Spotted today'], ['spotted', 'Spotted'], ['not_there', 'Not found']] as const).map(([key, label]) => (
+                <button key={key} className={`${ui.chip} ${stockFilter === key ? ui.chipActive : ''}`} onClick={() => { filterChosen.current = true; setStockFilter(key) }}>{label}</button>
               ))}
             </div>
 
@@ -791,7 +799,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               const today0 = startOfToday()
               const isToday = (i: any) => i.sighting === 'spotted' && new Date(i.reported_at).getTime() >= today0
               const brands = Object.entries(byBrand)
-                .map(([brand, items]) => [brand, items.filter((i) => stockFilter === 'all' || (stockFilter === 'today' ? isToday(i) : i.sighting === 'not_there'))] as const)
+                .map(([brand, items]) => [brand, items.filter((i) => (stockFilter === 'today' ? isToday(i) : i.sighting === stockFilter))] as const)
                 .filter(([, items]) => items.length > 0)
 
               if (brands.length === 0) {
@@ -799,7 +807,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   <div className={ui.emptyState} style={{ paddingTop: 24 }}>
                     <SearchIcon size={32} color="var(--text-dim)" />
                     <p className={ui.emptyTitle}>No matching flavors</p>
-                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'not_there' ? 'Nothing marked not found.' : 'Nothing spotted here today yet.'}</p>
+                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'not_there' ? 'Nothing marked not found.' : stockFilter === 'today' ? 'Nothing spotted here today yet.' : 'Nothing spotted here yet.'}</p>
                   </div>
                 )
               }
@@ -810,7 +818,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                     const all = byBrand[brand]
                     const todayCount = all.filter(isToday).length
                     const pct = all.length > 0 ? todayCount / all.length : 0
-                    const isExpanded = isSearching || stockFilter !== 'all' || brands.length <= 2 || expandedBrands.has(brand)
+                    // Brands start collapsed in every filter; tap to open. Searching opens them.
+                    const isExpanded = isSearching || expandedBrands.has(brand)
                     // Spotted today first (most times today, then newest), older
                     // sightings next, Not found last.
                     const rank = (i: any) => (isToday(i) ? 0 : i.sighting === 'spotted' ? 1 : 2)
@@ -875,6 +884,13 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                                         )}
                                       </p>
                                       {seenBefore && <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 3 }}>Last spotted {agoText(seenBefore)}</p>}
+                                      {reporters[item.drink_id] && (
+                                        <p style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4, fontSize: 13, color: 'var(--text-dim)' }}>
+                                          by <Link href={`/u/${reporters[item.drink_id]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}>
+                                            <Avatar name={reporters[item.drink_id]} url={reporterAvatars[reporters[item.drink_id]]} size={16} />@{reporters[item.drink_id]}
+                                          </Link>
+                                        </p>
+                                      )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                       {!isOut && item.amount && (
