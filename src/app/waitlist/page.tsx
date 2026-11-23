@@ -44,7 +44,7 @@ export const revalidate = 60
 
 const FEATURES = [
   { Icon: PinIcon, title: 'Every store near you', body: 'Gas stations, convenience and grocery stores on one live map.' },
-  { Icon: LightningIcon, title: 'What’s in the cooler', body: 'Flavors and stock levels reported by people who just saw the shelf.' },
+  { Icon: LightningIcon, title: 'What’s in the cooler', body: 'Flavors spotted by people who just saw the shelf.' },
   { Icon: BellIcon, title: 'Restock alerts', body: 'Follow a flavor and get told when it’s back.' },
 ]
 

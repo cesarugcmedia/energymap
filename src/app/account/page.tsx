@@ -1,6 +1,7 @@
 'use client'
 
 import { BADGE_DEFS, isFoundingMember } from '@/lib/badges'
+import { sightingOf } from '@/lib/sightings'
 import PlanDetails from '@/components/account/PlanDetails'
 import { usePresence } from '@/contexts/PresenceContext'
 import { isMissingSchema } from '@/lib/community'
@@ -628,18 +629,19 @@ function AccountPageInner() {
 
   async function fetchStats(userId: string) {
     setStatsLoading(true)
-    // One read of the report history serves both unique flavors and dates.
+    // One read of the sighting history serves both unique flavors and dates.
     const [{ count: rCount }, { count: sCount }, { data: history }, { data: lb }] = await Promise.all([
       supabase.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('stores').select('id', { count: 'exact', head: true }).eq('submitted_by', userId).eq('status', 'approved'),
-      supabase.from('stock_reports').select('drink_id, reported_at').eq('user_id', userId).order('reported_at', { ascending: false }),
+      supabase.from('stock_reports').select('*').eq('user_id', userId).order('reported_at', { ascending: false }),
       supabase.rpc('get_leaderboard', { p_timeframe: 'All Time' }),
     ])
     const flavors = history
     const dates = history
     setReportCount(rCount ?? 0)
     setStoreCount(sCount ?? 0)
-    if (flavors) setUniqueFlavors(new Set(flavors.map((r: any) => r.drink_id)).size)
+    // Flavors count once Spotted (a Not there isn't a find).
+    if (flavors) setUniqueFlavors(new Set(flavors.filter((r: any) => sightingOf(r) === 'spotted').map((r: any) => r.drink_id)).size)
 
     // Streak: count consecutive days ending today or yesterday
     if (dates && dates.length > 0) {
@@ -889,15 +891,15 @@ function switchMode(m: Mode) {
     if (profile.badges?.includes('weekly_champion'))     earned.add('weekly_champion')
 
     function progressHint(id: string): string | null {
-      if (id === 'reporter_10'    && reportCount < 10)    return `${reportCount}/10 reports`
-      if (id === 'reporter_50'    && reportCount < 50)    return `${reportCount}/50 reports`
-      if (id === 'reporter_100'   && reportCount < 100)   return `${reportCount}/100 reports`
-      if (id === 'reporter_200'   && reportCount < 200)   return `${reportCount}/200 reports`
-      if (id === 'reporter_500'   && reportCount < 500)   return `${reportCount}/500 reports`
+      if (id === 'reporter_10'    && reportCount < 10)    return `${reportCount}/10 sightings`
+      if (id === 'reporter_50'    && reportCount < 50)    return `${reportCount}/50 sightings`
+      if (id === 'reporter_100'   && reportCount < 100)   return `${reportCount}/100 sightings`
+      if (id === 'reporter_200'   && reportCount < 200)   return `${reportCount}/200 sightings`
+      if (id === 'reporter_500'   && reportCount < 500)   return `${reportCount}/500 sightings`
       if (id === 'pathfinder'     && storeCount < 5)      return `${storeCount}/5 stores`
       if (id === 'store_builder'  && storeCount < 10)     return `${storeCount}/10 stores`
-      if (id === 'flavor_hunter'  && uniqueFlavors < 5)   return `${uniqueFlavors}/5 drinks`
-      if (id === 'flavor_master'  && uniqueFlavors < 20)  return `${uniqueFlavors}/20 drinks`
+      if (id === 'flavor_hunter'  && uniqueFlavors < 5)   return `${uniqueFlavors}/5 flavors`
+      if (id === 'flavor_master'  && uniqueFlavors < 20)  return `${uniqueFlavors}/20 flavors`
       if (id === 'on_fire'        && streak < 3)          return `${streak}/3 days`
       if (id === 'unstoppable'    && streak < 7)          return `${streak}/7 days`
       return null
@@ -1383,7 +1385,7 @@ function switchMode(m: Mode) {
           {mode === 'signin' ? (
             <>
               <h1 className={authStyles.title}>Welcome back</h1>
-              <p className={authStyles.subtitle}>Sign in to see what&apos;s in stock near you.</p>
+              <p className={authStyles.subtitle}>Sign in to see what&apos;s been spotted near you.</p>
 
               {searchParams.get('confirmed') === '1' && (
                 <p className={authStyles.notice}>Email confirmed! Sign in to finish setting up your account.</p>
@@ -1455,7 +1457,7 @@ function switchMode(m: Mode) {
                   ) : usernameStatus === 'checking' ? (
                     <p className={authStyles.hint}>Checking…</p>
                   ) : (
-                    <p className={authStyles.hint}>Shown on reports and the leaderboard. Lowercase letters, numbers and underscores.</p>
+                    <p className={authStyles.hint}>Shown on your sightings and the leaderboard. Lowercase letters, numbers and underscores.</p>
                   )}
                 </div>
                 <div className={authStyles.field}>

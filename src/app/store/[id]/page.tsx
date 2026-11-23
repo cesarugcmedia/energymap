@@ -766,7 +766,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         ) : stock.length === 0 ? (
           <div className={ui.emptyState}>
             <DrinkIcon size={36} color="var(--text-dim)" />
-            <p className={ui.emptyTitle}>No reports yet</p>
+            <p className={ui.emptyTitle}>No sightings yet</p>
             <p className={ui.emptyBody}>Be the first to log a sighting here.</p>
             <button onClick={() => setShowAddDrink(true)} style={addLinkStyle}>Flavor not in our list? Add it</button>
           </div>
@@ -978,7 +978,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                       style={{ backgroundColor: '#C9F400', color: '#0D1210' }}
                       onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}
                     >
-                      <LightningIcon size={14} color="#0D1210" /> Report Stock
+                      <EyeIcon size={14} color="#0D1210" /> Log a sighting
                     </button>
                   )}
                   <button
@@ -1052,7 +1052,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                               {exists ? (
                                 <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '-2px 0 10px', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,179,0,0.1)' }}>
                                   <p style={{ flex: 1, fontSize: 13, color: 'var(--text-muted)' }}><strong style={{ color: 'var(--text)', fontWeight: 600 }}>{knownBrand} {exists.flavor ?? exists.name}</strong> is already in the catalog.</p>
-                                  <button className={ui.linkQuiet} style={{ color: 'var(--accent-text)', fontWeight: 600, textDecoration: 'none', flexShrink: 0 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>Report it</button>
+                                  <button className={ui.linkQuiet} style={{ color: 'var(--accent-text)', fontWeight: 600, textDecoration: 'none', flexShrink: 0 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>Log it</button>
                                 </div>
                               ) : suggestFor?.id === entry.id && suggestFor.field === 'flavor' && flavorMatches.length > 0 && (
                                 <div className="anim-rise" style={{ margin: '-2px 0 10px' }}>
@@ -1145,8 +1145,8 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               </div>
               <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-4">
                 {drinkDuplicatePopup.length === 1
-                  ? `"${drinkDuplicatePopup[0]}" is already in our drinks database. If it's at this store, use Report Stock to update its status.`
-                  : 'These drinks are already in our database. Use Report Stock to update their status instead.'}
+                  ? `"${drinkDuplicatePopup[0]}" is already in our drinks database. If it's at this store, tap Spotted on it instead.`
+                  : 'These drinks are already in our database. Tap Spotted on them instead.'}
               </p>
               {drinkDuplicatePopup.length > 1 && (
                 <div className="flex flex-col gap-1.5 mb-4">

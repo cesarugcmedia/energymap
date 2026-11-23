@@ -180,7 +180,7 @@ export default function Composer({ username, v3, onPosted, toast }: {
         <span style={{ marginLeft: 'auto', fontSize: 13, color: text.length >= MAX_BODY ? '#FF4545' : 'var(--text-dim)' }}>{text.length}/{MAX_BODY}</span>
         {!posting && <button className={ui.btnGhost} style={{ minHeight: 38 }} onClick={reset}>Cancel</button>}
         <button className={ui.btnPrimary} style={{ minHeight: 38 }} onClick={submit} disabled={!canPost || posting}>
-          {posting ? 'Posting…' : type === 'found' ? 'Post & report' : 'Post'}
+          {posting ? 'Posting…' : type === 'found' ? 'Post & log sighting' : 'Post'}
         </button>
       </div>
     </div>

@@ -40,7 +40,7 @@ export default async function Image({ params }: { params: Promise<{ username: st
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0
   const hue = AVATAR_HUES[h % AVATAR_HUES.length]
   const stats: [string, number][] = p
-    ? [['reports', p.reports], ...(p.flavors != null ? [['flavors found', p.flavors] as [string, number]] : []), ['followers', p.followers]]
+    ? [['sightings', p.reports], ...(p.flavors != null ? [['flavors found', p.flavors] as [string, number]] : []), ['followers', p.followers]]
     : []
 
   return new ImageResponse(

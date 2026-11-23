@@ -85,7 +85,7 @@ export default async function SharedPostPage({ params }: { params: Promise<{ id:
 
         <div className={ui.card} style={{ marginTop: 14, padding: 18, textAlign: 'center' }}>
           <p style={{ fontSize: 17, fontWeight: 600 }}>Hunting energy drinks?</p>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '6px 0 14px', lineHeight: 1.5 }}>See what&apos;s in stock at stores near you, follow your favorite flavors and join the conversation. Free.</p>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '6px 0 14px', lineHeight: 1.5 }}>See what&apos;s been spotted at stores near you, follow your favorite flavors and join the conversation. Free.</p>
           <Link href="/account?mode=signup" className={`${ui.btnPrimary} ${ui.btnBlock}`} style={{ textDecoration: 'none' }}>Join AmpedMap</Link>
           <Link href={`/account?mode=signin`} className={ui.linkQuiet} style={{ display: 'inline-block', marginTop: 12 }}>I already have an account</Link>
         </div>

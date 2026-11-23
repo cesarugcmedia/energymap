@@ -154,7 +154,7 @@ export default function Leaderboard({ me }: {
     } else if (serverMe && scope !== 'following') {
       target = { text: `You're #${serverMe.rank} with ${serverMe.value} ${unit(serverMe.value)}. Climb into the top ${list.length} to show up here.`, progress: 0 }
     } else {
-      target = { text: unitKey === 'stores' ? 'Add a store to get on this board.' : 'Report a drink to get on this board.', progress: 0 }
+      target = { text: unitKey === 'stores' ? 'Add a store to get on this board.' : 'Log a sighting to get on this board.', progress: 0 }
     }
   }
 
@@ -198,7 +198,7 @@ export default function Leaderboard({ me }: {
         <div className={ui.card} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>👑</span>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-            Resets in <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{untilText(nextWeeklyReset())}</strong>. The week&apos;s top reporter earns the Weekly Champion badge.
+            Resets in <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{untilText(nextWeeklyReset())}</strong>. The week&apos;s top spotter earns the Weekly Champion badge.
           </p>
         </div>
       )}
@@ -280,7 +280,7 @@ export default function Leaderboard({ me }: {
                       <span style={{ fontSize: 15, fontWeight: 500, color: isMe ? 'var(--accent-text)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{e.username}</span>
                       {isMe && <span style={{ fontSize: 11, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 6, padding: '1px 6px' }}>You</span>}
                       {isMe && climbChip}
-                      {e.is_verified_reporter && <span title="Verified reporter" style={{ display: 'flex' }}><CheckIcon size={13} color="#60a5fa" /></span>}
+                      {e.is_verified_reporter && <span title="Verified spotter" style={{ display: 'flex' }}><CheckIcon size={13} color="#60a5fa" /></span>}
                       {e.tier === 'tracker' && <span title="Tracker" style={{ display: 'flex' }}><LightningIcon size={13} color="var(--accent-text)" /></span>}
                       {e.badges.includes('weekly_champion') && <span title="Weekly champion" style={{ fontSize: 13 }}>👑</span>}
                     </span>

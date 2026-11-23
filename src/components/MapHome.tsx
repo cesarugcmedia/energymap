@@ -693,7 +693,7 @@ export default function MapHome() {
         <div>
           <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Find stores near you</p>
           <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            Share your location to see what&apos;s in stock around you.
+            Share your location to see what&apos;s been spotted around you.
           </p>
         </div>
         <button onClick={retry} className={`${ui.btnPrimary} ${ui.btnBlock} ${ui.btnLarge}`}>

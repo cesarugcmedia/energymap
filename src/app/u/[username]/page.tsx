@@ -308,7 +308,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             </div>
 
             <div className={`${ui.card} anim-rise`} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', rowGap: 16, padding: '16px 8px', marginBottom: 22 }}>
-              {stat(data.counts.reports, 'Reports')}
+              {stat(data.counts.reports, 'Sightings')}
               {stat(data.stats?.uniqueFlavors ?? 0, 'Flavors found')}
               {stat(data.counts.storesAdded, 'Stores added')}
               {stat(data.counts.followers, 'Followers', () => setPeopleList('followers'))}
@@ -380,7 +380,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                     )}
                     {!!data.topStores?.length && (
                       <div style={{ marginBottom: 22 }}>
-                        <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Reports most at</p>
+                        <p className={ui.sectionLabel} style={{ margin: '0 2px 10px' }}>Most sightings at</p>
                         <div className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
                           {data.topStores.map((st, i) => (
                             <Link key={st.id} href={`/store/${st.id}?name=${encodeURIComponent(st.name)}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? '1px solid var(--fg-06)' : 'none', textDecoration: 'none', color: 'inherit' }}>

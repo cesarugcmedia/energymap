@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { sightingOf } from '@/lib/sightings'
 
-// Extra leaderboards beyond the points board (which comes from the
+// Extra leaderboards beyond the XP board (which comes from the
 // get_leaderboard RPC):
 //   board=stores   → approved stores added (any timeframe; stores aren't pruned)
-//   board=flavors  → different drinks reported, this week
-//   board=near     → stock reports at stores within 10 mi of lat/lng, this week
-// Weekly-only boards are weekly because automation-stale-cleanup.sql deletes
-// non-latest stock reports older than 7 days, so longer windows undercount.
+//   board=flavors  → different flavors Spotted (not Not there), this week
+//   board=near     → sightings (Spotted or Not there) at stores within 10 mi, this week
+// Weekly-only boards are weekly because the nightly cleanup prunes non-latest
+// sightings (7 days, or 90 once tracker-features.sql runs).
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,13 +57,16 @@ export async function GET(req: NextRequest) {
     const lng = parseFloat(sp.get('lng') ?? '')
     if (board === 'near' && (isNaN(lat) || isNaN(lng))) return NextResponse.json({ error: 'Location required' }, { status: 400 })
     const { data: reports, error } = await supabaseAdmin
-      .from('stock_reports').select('user_id, drink_id, store_id')
+      .from('stock_reports').select('*')
       .gte('reported_at', new Date(Date.now() - 7 * DAY).toISOString()).limit(10000)
     if (error) return NextResponse.json({ error: 'Failed to load' }, { status: 500 })
 
     if (board === 'flavors') {
       const seen = new Map<string, Set<string>>()
-      for (const r of reports ?? []) { const s = seen.get(r.user_id) ?? new Set(); s.add(r.drink_id); seen.set(r.user_id, s) }
+      for (const r of reports ?? []) {
+        if (sightingOf(r) !== 'spotted') continue
+        const s = seen.get(r.user_id) ?? new Set(); s.add(r.drink_id); seen.set(r.user_id, s)
+      }
       for (const [uid, s] of seen) counts.set(uid, s.size)
     } else {
       const storeIds = [...new Set((reports ?? []).map((r) => r.store_id))]

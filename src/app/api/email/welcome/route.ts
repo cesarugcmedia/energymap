@@ -102,13 +102,13 @@ export async function POST(req: NextRequest) {
                 <tr>
                   <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
                     <span style="color:#22c55e;margin-right:10px;">✓</span>
-                    <span style="font-size:14px;color:rgba(255,255,255,0.7);">Report stock availability at stores</span>
+                    <span style="font-size:14px;color:rgba(255,255,255,0.7);">Log what you spot at stores in one tap</span>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:8px 0;">
                     <span style="color:#22c55e;margin-right:10px;">✓</span>
-                    <span style="font-size:14px;color:rgba(255,255,255,0.7);">Get real-time stock alerts</span>
+                    <span style="font-size:14px;color:rgba(255,255,255,0.7);">Get alerts when a flavor you follow is spotted</span>
                   </td>
                 </tr>
               </table>

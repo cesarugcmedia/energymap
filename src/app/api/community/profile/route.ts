@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const extras = profile as { bio?: string | null; favorite_drink_id?: string | null; avatar_url?: string | null; anonymous_reports?: boolean }
-  // "Keep my reports private": others don't see where this person reports.
+  // "Keep my sightings private": others don't see where this person spots things.
   const privateReports = !!extras.anonymous_reports && profile.id !== user.id
   let favoriteDrink: string | null = null
   if (extras.favorite_drink_id) {

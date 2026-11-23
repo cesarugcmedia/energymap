@@ -43,7 +43,7 @@ export default async function Image() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 28, fontSize: 24, color: '#A4B0A6' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 14, height: 14, borderRadius: 7, background: '#C9F400', display: 'flex' }} /> Fresh reports
+            <span style={{ width: 14, height: 14, borderRadius: 7, background: '#C9F400', display: 'flex' }} /> Fresh sightings
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 14, height: 14, borderRadius: 7, background: '#FFB300', display: 'flex' }} /> Nearby stores

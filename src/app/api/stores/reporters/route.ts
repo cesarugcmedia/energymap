@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   const names = new Map<string, string>()
   const avatars: Record<string, string> = {}
   if (userIds.length) {
-    // Skip anyone who turned on "Hide my name on stock reports" (profile-v2).
+    // Skip anyone who turned on "Keep my sightings private" (profile-v2).
     const ids = userIds.slice(0, 500)
     let res: { data: any[] | null; error: unknown } = await supabaseAdmin.from('profiles').select('id, username, anonymous_reports, avatar_url').in('id', ids)
     if (res.error) res = await supabaseAdmin.from('profiles').select('id, username').in('id', ids)

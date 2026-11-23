@@ -198,7 +198,7 @@ export default function Landing({ stats }: { stats: LandingStats | null }) {
         </section>
       </main>
 
-      <StickyCta note="See what’s in stock near you" />
+      <StickyCta note="See what’s been spotted near you" />
 
       {/* Footer */}
       <footer id="lp-footer" className={styles.footer}>

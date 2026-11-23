@@ -15,7 +15,7 @@ export const BADGE_DEFS = [
   { id: 'founding_hunter', icon: '🎖️', name: 'Founding Hunter', desc: 'Joined before ' + FOUNDING_CUTOFF_LABEL + ', 2027. Yours forever', color: '#C9F400', glow: 'rgba(201,244,0,0.25)' },
   { id: 'early_adopter',   icon: '🌟', name: 'Early Adopter',   desc: 'Joined in the founding era',          color: '#f59e0b', glow: 'rgba(245,158,11,0.25)'  },
   { id: 'first_report',    icon: '⚡', name: 'First Sighting',    desc: 'Logged your first sighting',   color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
-  { id: 'reporter_10',     icon: '📊', name: 'Reporter',        desc: '10 sightings logged',          color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
+  { id: 'reporter_10',     icon: '📊', name: 'Spotter',        desc: '10 sightings logged',          color: '#C9F400', glow: 'rgba(201,244,0,0.25)'   },
   { id: 'reporter_50',     icon: '🏆', name: 'Veteran',         desc: '50 sightings logged',          color: '#f97316', glow: 'rgba(249,115,22,0.25)'  },
   { id: 'reporter_100',    icon: '💎', name: 'Elite',           desc: '100 sightings logged',         color: '#a855f7', glow: 'rgba(168,85,247,0.25)'  },
   { id: 'reporter_200',    icon: '📈', name: 'Dedicated',       desc: '200 sightings logged',         color: '#f97316', glow: 'rgba(249,115,22,0.25)'  },
