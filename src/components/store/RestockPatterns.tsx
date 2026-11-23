@@ -69,7 +69,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
   const header = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <ClockIcon size={16} color="var(--accent-text)" />
-      <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', flex: 1 }}>Restock patterns</span>
+      <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', flex: 1 }}>Sighting patterns</span>
       {!isTracker && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'rgba(201,244,0,0.14)', color: 'var(--accent-text)' }}>Tracker</span>}
     </div>
   )
@@ -78,7 +78,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
     return (
       <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
         {header}
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>See which days and times this store usually restocks, and which flavors are most often missing.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>See which days and times flavors get spotted here, and which ones are most often missing.</p>
         <Bars days={SAMPLE} highlight={4} dim />
         <button className={`${ui.btnSecondary} ${ui.btnBlock}`} style={{ marginTop: 14 }} onClick={() => router.push('/account?page=plan')}>
           <LightningIcon size={15} color="var(--accent-text)" /> Unlock with Tracker
@@ -91,7 +91,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
     return (
       <div className={ui.card} style={{ margin: '14px 16px 0' }}>
         {header}
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6 }}>Couldn&apos;t load restock patterns right now.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6 }}>Couldn&apos;t load sighting patterns right now.</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
           <button className={ui.btnSecondary} onClick={() => setAttempt((a) => a + 1)}>Try again</button>
           <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Error {failed}</span>
@@ -113,7 +113,7 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
       <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
         {header}
         <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
-          Not enough history here yet. Patterns show up after a few restocks are spotted, so every sighting helps.
+          Not enough history here yet. Patterns show up after a few sightings, so every one helps.
         </p>
       </div>
     )
@@ -122,22 +122,19 @@ export default function RestockPatterns({ storeId, isTracker }: { storeId: strin
   const top = data.days.indexOf(Math.max(...data.days))
   const topPart = Object.entries(data.parts).sort((a, b) => b[1] - a[1])[0]?.[0]
   const sinceText = data.since ? new Date(data.since).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null
-  const headline = data.basis === 'restocks'
-    ? `Usually restocked on ${DAY_NAMES[top]}${topPart ? `, mostly ${PART_LABEL[topPart]}` : ''}`
-    : `Flavors are most often spotted on ${DAY_NAMES[top]}${topPart ? `, ${PART_LABEL[topPart]}` : ''}`
-
   return (
     <div className={`${ui.card} reveal`} style={{ margin: '14px 16px 0' }}>
       {header}
-      <p style={{ fontSize: 15, color: 'var(--text)', marginTop: 8, lineHeight: 1.45, fontWeight: 600 }}>{headline}</p>
-      <Bars days={data.days} highlight={top} />
+      <p style={{ fontSize: 16, color: 'var(--text)', marginTop: 8, lineHeight: 1.45 }}>
+        Most sightings on <strong style={{ fontWeight: 700 }}>{DAY_NAMES[top]}{topPart ? `, ${PART_LABEL[topPart]}` : ''}</strong>
+      </p>
       {data.sellsOut.length > 0 && (
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
           Most often not found: {data.sellsOut.map((s) => s.name).join(', ')}
         </p>
       )}
-      <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}>
-        Based on {data.signals} {data.basis === 'restocks' ? 'restock ' : ''}sighting{data.signals === 1 ? '' : 's'}{sinceText ? ` since ${sinceText}` : ''}.
+      <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 6 }}>
+        Based on {data.signals} sighting{data.signals === 1 ? '' : 's'}{sinceText ? ` since ${sinceText}` : ''}.
       </p>
     </div>
   )

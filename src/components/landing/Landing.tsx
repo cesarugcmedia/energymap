@@ -30,12 +30,12 @@ function LogoMark({ size = 30 }: { size?: number }) {
 const STEPS = [
   { Icon: PinIcon, title: 'Find a store', body: 'Open the map to see gas stations, convenience stores and grocery stores around you.' },
   { Icon: DrinkIcon, title: "See what's been spotted", body: 'Each store shows which flavors people spotted, how many times today, and how long ago.' },
-  { Icon: LightningIcon, title: 'Tap Spotted', body: 'Standing at a cooler? One tap per flavor logs a sighting. Not there counts too, it saves the next person a wasted trip.' },
+  { Icon: LightningIcon, title: 'Tap Spotted', body: 'Standing at a cooler? One tap per flavor logs a sighting. Not there counts too. Every sighting earns XP, and quiet stores pay bounties.' },
 ]
 
 
 const FAQ = [
-  { q: 'Is AmpedMap free?', a: 'Yes. Seeing sightings, logging them and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, restock patterns for each store, and saved store lists.' },
+  { q: 'Is AmpedMap free?', a: 'Yes. Seeing sightings, logging them and adding stores are all free. Tracker ($5/month) is for serious hunters: push notifications when a flavor restocks, unlimited range and flavor alerts, sighting patterns for each store, and saved store lists. Every sighting earns XP toward badges and the leaderboard.' },
   { q: 'Where do sightings come from?', a: 'From people. When someone spots a flavor in a store’s cooler, they tap Spotted. If they looked and it was missing, they tap Not there. Every sighting shows how long ago it was, and older ones fade, so you can judge how fresh it is.' },
   { q: 'Which areas are covered?', a: 'Anywhere people log sightings. Coverage is strongest where the community is most active, and if a store is missing you can add it in a few seconds.' },
   { q: 'Do I have to share my location?', a: 'No. You can search by ZIP code instead. Sharing your location just makes it quicker to see what is closest.' },

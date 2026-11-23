@@ -24,12 +24,12 @@ export const TRACKER_FEATURES = [
   'Unlimited map range: hunt in any town',
   'Push notifications the minute a flavor restocks',
   'Unlimited flavor alerts',
-  'Restock patterns: when each store usually restocks',
+  'Sighting patterns: which days each store gets spotted',
   'Saved store lists and a Tracker badge',
 ]
 
 /** Short one-liner for upsell cards. */
-export const TRACKER_PITCH = 'Push restock alerts, unlimited range and flavor alerts, and restock patterns'
+export const TRACKER_PITCH = 'Push restock alerts, unlimited range and flavor alerts, and sighting patterns'
 
 export function isTrackerProfile(profile: { tier?: string | null; is_admin?: boolean | null } | null | undefined): boolean {
   return !!profile && (profile.is_admin === true || profile.tier === 'tracker' || profile.tier === 'admin')

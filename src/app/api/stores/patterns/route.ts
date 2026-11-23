@@ -102,9 +102,12 @@ async function handle(req: NextRequest) {
     last.set(r.drink_id, { s, at })
   }
 
-  const basis = restocks >= MIN_SIGNALS ? 'restocks' : fulls >= MIN_SIGNALS ? 'full' : 'none'
-  const days = basis === 'restocks' ? restockDays : fullDays
-  const parts = basis === 'restocks' ? restockParts : fullParts
+  // "Sighting patterns": when flavors get spotted here (all Spotted sightings).
+  // Restocks are still counted and returned for reference.
+  const basis = fulls >= MIN_SIGNALS ? 'full' : 'none'
+  const days = fullDays
+  const parts = fullParts
+  void restockDays; void restockParts
 
   // Flavors most often marked Not there in the last 30 days.
   const topOut = [...outCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
@@ -122,7 +125,8 @@ async function handle(req: NextRequest) {
     basis,
     days,
     parts,
-    signals: basis === 'restocks' ? restocks : fulls,
+    signals: fulls,
+    restocks,
     reports: rows.length,
     since: rows[0]?.reported_at ?? null,
     sellsOut,

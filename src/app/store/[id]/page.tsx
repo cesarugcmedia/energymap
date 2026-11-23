@@ -7,11 +7,11 @@ import Link from 'next/link'
 import { Avatar } from '@/components/community/RichText'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { AMOUNT_LABEL, NOT_THERE_HEX, SPOTTED_TEXT, agoText, amountOf, isReliable, sightingOf, timesToday, type Sighting } from '@/lib/sightings'
+import { AMOUNT_LABEL, NOT_THERE_HEX, SPOTTED_TEXT, agoText, amountOf, isReliable, sightingOf, startOfToday, type Amount, type Sighting } from '@/lib/sightings'
 import Toast from '@/components/Toast'
 import CountUp from '@/components/ui/CountUp'
 import ui from '@/components/ui/ui.module.css'
-import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon, ShareIcon } from '@/components/Icons'
+import { StoreTypeIcon, HeartIcon, FlagIcon, SearchIcon, CheckIcon, CloseIcon, BellIcon, DrinkIcon, LightningIcon, GroceryIcon, ChevronLeftIcon, ChevronDownIcon, DirectionsIcon, ShareIcon, EyeIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import { usePreferences } from '@/lib/preferences'
 import Burst from '@/components/ui/Burst'
@@ -20,6 +20,10 @@ import { FREE_ALERT_LIMIT } from '@/lib/plans'
 import UpgradeSheet, { ALERT_LIMIT_COPY } from '@/components/ui/UpgradeSheet'
 import RestockPatterns from '@/components/store/RestockPatterns'
 import { shareLink } from '@/lib/share'
+import SightingSavedSheet, { type SavedSheetState } from '@/components/store/SightingSavedSheet'
+import { addSightingPhoto } from '@/lib/sightingPhoto'
+import { XP_BOUNTY, XP_SIGHTING, daysSince, hasBounty } from '@/lib/xp'
+import { haptic } from '@/lib/haptics'
 import { stalenessOf, type Staleness } from '@/lib/freshness'
 
 const BRAND_ALIASES: Record<string, string> = {
@@ -111,10 +115,20 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   }
   const [search, setSearch] = useState('')
   const { prefs } = usePreferences()
-  const [stockFilter, setStockFilter] = useState<'all' | 'spotted' | 'not_there'>('all')
+  const [stockFilter, setStockFilter] = useState<'all' | 'today' | 'not_there'>('all')
   // How many times each flavor was spotted here today (/api/stores/sightings).
   const [todayCounts, setTodayCounts] = useState<Record<string, number>>({})
   const [todayTotal, setTodayTotal] = useState(0)
+  // Newest Spotted per flavor (30 days) — "Last spotted yesterday" under Not found.
+  const [lastSpotted, setLastSpotted] = useState<Record<string, string>>({})
+  // Newest sighting of any kind here (drives the bounty) and this week's Plug.
+  const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null)
+  const [storePlug, setStorePlug] = useState<{ username: string; count: number } | null>(null)
+  const [todayLoaded, setTodayLoaded] = useState(false)
+  // One-tap logging right on the store page.
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [saved, setSaved] = useState<(SavedSheetState & { drinkId: string }) | null>(null)
   const [showAddDrink, setShowAddDrink] = useState(false)
   const [drinkEntries, setDrinkEntries] = useState<{ id: string; brand: string; flavor: string; caffeine_mg: string; duplicate: boolean }[]>([{ id: '1', brand: '', flavor: '', caffeine_mg: '', duplicate: false }])
   const [drinkSubmitting, setDrinkSubmitting] = useState(false)
@@ -296,10 +310,91 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     justTimer.current = setTimeout(() => setJustReported(null), 4500)
   }
 
+  // ── One-tap sightings ──
+  async function positionIfGranted(): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const st = await navigator.permissions?.query({ name: 'geolocation' as PermissionName })
+      if (st?.state !== 'granted') return null
+      return await new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+        (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }), () => resolve(null), { timeout: 8000, maximumAge: 60000 }))
+    } catch { return null }
+  }
+
+  async function authJson() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` } : null
+  }
+
+  async function logSighting(item: any, sighting: Sighting) {
+    if (!user) { router.push('/account?mode=signin'); return }
+    if (savingId) return
+    setSavingId(item.drink_id)
+    haptic(sighting === 'spotted' ? [12, 30, 12] : 10)
+    try {
+      const [headers, coords] = await Promise.all([authJson(), positionIfGranted()])
+      if (!headers) { showToast('Session expired. Sign in again.'); return }
+      const res = await fetch('/api/stock/report', {
+        method: 'POST', headers,
+        body: JSON.stringify({ store_id: id, reports: [{ drink_id: item.drink_id, sighting }], ...(coords ?? {}) }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { showToast(body.error ?? 'Could not save. Try again.'); return }
+      if (!body.submitted) { showToast('You logged this here in the last 30 minutes.'); return }
+      const reportId = body.byDrink?.[item.drink_id] ?? body.ids?.[0] ?? null
+      const label = item.drink ? `${item.drink.brand} ${item.drink.flavor ?? item.drink.name}` : 'Sighting'
+      if (sighting === 'spotted') {
+        setSaved({ drinkId: item.drink_id, drinkLabel: label, reportId, xp: body.xp ?? XP_SIGHTING, bounty: body.bounty ?? 0, amount: null, plug: body.plug ?? null, photo: { state: 'idle' } })
+      } else {
+        showToast(`Marked not there · +${body.xp ?? XP_SIGHTING} XP${body.bounty ? ' (bounty!)' : ''}`)
+      }
+      window.dispatchEvent(new Event('check-badges'))
+      fetchStock()
+    } catch {
+      showToast('No connection. Try again, or log it from Report sighting to save it offline.')
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  async function setSavedAmount(a: Amount) {
+    if (!saved) return
+    const next = saved.amount === a ? null : a
+    setSaved({ ...saved, amount: next })
+    const headers = await authJson()
+    if (headers && saved.reportId) {
+      await fetch('/api/stock/amount', { method: 'POST', headers, body: JSON.stringify({ id: saved.reportId, amount: next }) }).catch(() => {})
+      fetchStock()
+    }
+  }
+
+  async function addSavedPhoto(file: File) {
+    if (!saved?.reportId || !user) return
+    setSaved((p) => (p ? { ...p, photo: { state: 'uploading' } } : p))
+    const r = await addSightingPhoto(user.id, saved.reportId, file)
+    setSaved((p) => (p ? { ...p, photo: r.ok ? { state: 'done', url: r.url } : { state: 'error', message: r.message } } : p))
+    if (r.ok) fetchStock()
+  }
+
+  async function undoSaved() {
+    if (!saved?.reportId) { setSaved(null); return }
+    const headers = await authJson()
+    const res = headers ? await fetch('/api/stock/undo', { method: 'POST', headers, body: JSON.stringify({ ids: [saved.reportId] }) }).catch(() => null) : null
+    setSaved(null)
+    showToast(res?.ok ? 'Sighting removed' : 'Too late to undo that one.')
+    fetchStock()
+  }
+
   async function fetchToday() {
     const res = await fetch(`/api/stores/sightings?store_id=${encodeURIComponent(id)}&tz=${new Date().getTimezoneOffset()}`).catch(() => null)
     const body = res?.ok ? await res.json().catch(() => null) : null
-    if (body) { setTodayCounts(body.spotted ?? {}); setTodayTotal(body.total ?? 0) }
+    if (body) {
+      setTodayCounts(body.spotted ?? {})
+      setTodayTotal(body.total ?? 0)
+      setLastSpotted(body.lastSpotted ?? {})
+      setLastCheckedAt(body.lastCheckedAt ?? null)
+      setStorePlug(body.plug ?? null)
+    }
+    setTodayLoaded(true)
   }
 
   async function fetchStock(): Promise<Record<string, string>> {
@@ -499,7 +594,6 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
     return acc
   }, {})
 
-  const staleColor = latestReport ? stalenessColor(latestReport.reported_at) : null
   const inStockTotal = stock.filter((i) => i.sighting === 'spotted').length
 
   return (
@@ -574,35 +668,62 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
         {/* ── Sightings overview ── */}
         {!storeError && !stockError && !loading && stock.length > 0 && (() => {
-          const notThere = stock.filter((s) => s.sighting === 'not_there').length
+          const today0 = startOfToday()
+          const weekAgo = Date.now() - 7 * 86400000
+          const spottedRows = stock.filter((s) => s.sighting === 'spotted')
+          const todayN = spottedRows.filter((s) => new Date(s.reported_at).getTime() >= today0).length
+          const olderN = spottedRows.length - todayN
+          const notN = stock.length - spottedRows.length
+          const weekN = spottedRows.filter((s) => new Date(s.reported_at).getTime() >= weekAgo).length
+          const lastSpot = spottedRows.reduce<string | null>((m, r) => (!m || r.reported_at > m ? r.reported_at : m), null)
+          const seg = (n: number, color: string) => n > 0 && <span style={{ flex: n, background: color, borderRadius: 999 }} />
           return (
             <div className={`${ui.card} anim-rise`} style={{ margin: '16px 16px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}><CountUp value={inStockTotal} duration={600} /></span>
-                <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>flavor{inStockTotal === 1 ? '' : 's'} spotted here</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 34, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}><CountUp value={weekN} duration={600} /></span>
+                <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>flavor{weekN === 1 ? '' : 's'} spotted this week</span>
               </div>
-              {latestReport && (
-                <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
-                  <span className={Date.now() - new Date(latestReport.reported_at).getTime() < 2 * 3600000 ? 'live-dot' : ''} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: staleColor ?? 'var(--fg-25)', flexShrink: 0 }} />
-                  {`Last checked ${agoText(latestReport.reported_at)}`}
-                  {todayTotal > 0 && <span>· {todayTotal} sighting{todayTotal === 1 ? '' : 's'} today</span>}
+              {lastSpot && (
+                <p style={{ display: 'flex', alignItems: 'center', gap: 7, margin: '10px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
+                  <span className={Date.now() - new Date(lastSpot).getTime() < 2 * 3600000 ? 'live-dot' : ''} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: isReliable(lastSpot) ? '#C9F400' : 'var(--fg-25)', flexShrink: 0 }} />
+                  Last sighting <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{agoText(lastSpot)}</strong>
                 </p>
               )}
-              {notThere > 0 && (
-                <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 0', fontSize: 13, color: 'var(--text-dim)' }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: NOT_THERE_HEX }} />
-                  {notThere} flavor{notThere === 1 ? '' : 's'} not found last time someone checked
+              <div className="anim-fill" style={{ display: 'flex', gap: 4, height: 7, margin: '14px 0 10px' }}>
+                {seg(todayN, '#C9F400')}
+                {seg(olderN, 'var(--fg-20)')}
+                {seg(notN, NOT_THERE_HEX)}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 13, color: 'var(--text-muted)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9F400' }} />{todayN} today</span>
+                {olderN > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--fg-25)' }} />{olderN} older</span>}
+                {notN > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: NOT_THERE_HEX }} />{notN} not found</span>}
+              </div>
+              {storePlug && (
+                <p style={{ display: 'flex', alignItems: 'center', gap: 7, margin: '12px 0 0', paddingTop: 12, borderTop: '1px solid var(--fg-06)', fontSize: 13, color: 'var(--text-muted)' }}>
+                  <LightningIcon size={14} color="var(--accent-text)" />
+                  <span><Link href={`/u/${storePlug.username}`} style={{ color: 'var(--text)', fontWeight: 600, textDecoration: 'none' }}>@{storePlug.username}</Link> is this store&apos;s Plug · {storePlug.count} sighting{storePlug.count === 1 ? '' : 's'} this week</span>
                 </p>
               )}
             </div>
           )
         })()}
 
+        {/* Bounty: nobody's checked this store lately */}
+        {!storeError && todayLoaded && hasBounty(lastCheckedAt) && (
+          <div className="anim-rise" style={{ margin: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 14, border: '1px dashed rgba(255,179,0,0.55)', background: 'rgba(255,179,0,0.07)' }}>
+            <LightningIcon size={18} color="#FFB300" />
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              <strong style={{ color: '#FFB300' }}>+{XP_BOUNTY} XP bounty</strong> · {lastCheckedAt ? `Nobody's checked this store in ${daysSince(lastCheckedAt)} days` : 'Nobody has checked this store yet'}
+            </p>
+          </div>
+        )}
+
         {/* ── Actions ── */}
         {!storeError && (
           <div style={{ display: 'flex', gap: 10, margin: '14px 16px 0' }}>
             <button className={ui.btnPrimary} style={{ flex: 1 }} onClick={() => router.push(`/submit/drinks?storeId=${id}&storeName=${encodeURIComponent(name)}`)}>
-              Log a sighting
+              <EyeIcon size={18} color="#0D1210" /> Report sighting
             </button>
             {store?.lat != null && store?.lng != null && (
               <button className={ui.btnSecondary} style={{ flex: 1 }} onClick={() => openDirections(store.lat, store.lng)}>
@@ -661,14 +782,16 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
               )}
             </div>
             <div className={ui.chipRow} style={{ marginBottom: 16 }}>
-              {([['all', 'All'], ['spotted', 'Spotted'], ['not_there', 'Not found']] as const).map(([key, label]) => (
+              {([['all', 'All'], ['today', 'Spotted today'], ['not_there', 'Not found']] as const).map(([key, label]) => (
                 <button key={key} className={`${ui.chip} ${stockFilter === key ? ui.chipActive : ''}`} onClick={() => setStockFilter(key)}>{label}</button>
               ))}
             </div>
 
             {(() => {
+              const today0 = startOfToday()
+              const isToday = (i: any) => i.sighting === 'spotted' && new Date(i.reported_at).getTime() >= today0
               const brands = Object.entries(byBrand)
-                .map(([brand, items]) => [brand, items.filter((i) => stockFilter === 'all' || i.sighting === stockFilter)] as const)
+                .map(([brand, items]) => [brand, items.filter((i) => stockFilter === 'all' || (stockFilter === 'today' ? isToday(i) : i.sighting === 'not_there'))] as const)
                 .filter(([, items]) => items.length > 0)
 
               if (brands.length === 0) {
@@ -676,7 +799,7 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                   <div className={ui.emptyState} style={{ paddingTop: 24 }}>
                     <SearchIcon size={32} color="var(--text-dim)" />
                     <p className={ui.emptyTitle}>No matching flavors</p>
-                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'not_there' ? 'Nothing marked not found.' : 'Nothing spotted here yet.'}</p>
+                    <p className={ui.emptyBody}>{isSearching ? 'Try a different brand or flavor name.' : stockFilter === 'not_there' ? 'Nothing marked not found.' : 'Nothing spotted here today yet.'}</p>
                   </div>
                 )
               }
@@ -685,79 +808,103 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {brands.map(([brand, items]) => {
                     const all = byBrand[brand]
-                    const inStock = all.filter((i) => i.sighting === 'spotted').length
-                    const pct = all.length > 0 ? inStock / all.length : 0
-                    const barColor = pct === 0 ? '#FF4545' : pct >= 0.75 ? '#C9F400' : '#FFB300'
+                    const todayCount = all.filter(isToday).length
+                    const pct = all.length > 0 ? todayCount / all.length : 0
                     const isExpanded = isSearching || stockFilter !== 'all' || brands.length <= 2 || expandedBrands.has(brand)
-                    // Spotted first (most spotted today, then newest), Not found after.
-                    const sorted = [...items].sort((a, b) => ((a.sighting === 'spotted' ? 0 : 1) - (b.sighting === 'spotted' ? 0 : 1)) || ((todayCounts[b.drink_id] ?? 0) - (todayCounts[a.drink_id] ?? 0)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()))
+                    // Spotted today first (most times today, then newest), older
+                    // sightings next, Not found last.
+                    const rank = (i: any) => (isToday(i) ? 0 : i.sighting === 'spotted' ? 1 : 2)
+                    const sorted = [...items].sort((a, b) => (rank(a) - rank(b)) || ((todayCounts[b.drink_id] ?? 0) - (todayCounts[a.drink_id] ?? 0)) || (new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()))
                     return (
                       <div key={brand} className={`${ui.card} reveal`} style={{ padding: 0, overflow: 'hidden' }}>
                         <button
                           onClick={() => toggleBrand(brand)}
                           aria-expanded={isExpanded}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
                         >
                           <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>{brand}</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                            <span style={{ display: 'block', fontSize: 19, fontWeight: 700, color: 'var(--text)' }}>{brand}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
                               <span style={{ flex: 1, height: 5, borderRadius: 999, overflow: 'hidden', background: 'var(--fg-08)' }}>
-                                <span className="anim-fill" style={{ display: 'block', height: '100%', width: `${pct * 100}%`, borderRadius: 999, background: barColor }} />
+                                <span className="anim-fill" style={{ display: 'block', height: '100%', width: `${pct * 100}%`, borderRadius: 999, background: '#C9F400' }} />
                               </span>
-                              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', flexShrink: 0 }}>{inStock} of {all.length} spotted</span>
+                              <span style={{ fontSize: 14, color: 'var(--text-muted)', flexShrink: 0 }}>{todayCount} of {all.length} spotted today</span>
                             </span>
                           </span>
-                          <span style={{ display: 'flex', transition: 'transform 0.2s ease', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
+                          <span style={{ display: 'flex', alignSelf: 'flex-start', transition: 'transform 0.2s ease', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
                             <ChevronDownIcon size={18} color="var(--text-dim)" />
                           </span>
                         </button>
 
                         {isExpanded && (
-                          <div className="anim-fade" style={{ borderTop: '1px solid var(--fg-06)' }}>
-                            {sorted.map((item, idx) => {
+                          <div className="anim-fade" style={{ padding: '0 16px 4px' }}>
+                            {sorted.map((item) => {
                               const isOut = item.sighting === 'not_there'
-                              // Older than a day reads as less reliable (muted).
+                              // Older than a day reads as less reliable.
                               const reliable = isReliable(item.reported_at)
-                              const lineColor = !reliable ? 'var(--text-dim)' : isOut ? NOT_THERE_HEX : SPOTTED_TEXT
                               const times = todayCounts[item.drink_id] ?? 0
                               const following = drinkAlerts.has(item.drink_id)
+                              const seenBefore = isOut ? lastSpotted[item.drink_id] : null
+                              const busy = savingId === item.drink_id
                               return (
                                 <div
                                   key={item.drink_id}
                                   className={changedIds.has(item.drink_id) ? 'anim-new' : undefined}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderTop: idx === 0 ? 'none' : '1px solid var(--fg-06)', opacity: reliable ? 1 : 0.62 }}
+                                  style={{ padding: '16px 0', borderTop: '1px solid var(--fg-06)' }}
                                 >
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 15, fontWeight: 500, color: isOut || !reliable ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      {item.drink?.flavor ?? item.drink?.name}
-                                    </p>
-                                    <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 13, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: lineColor, fontWeight: 500 }}>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: !reliable ? 'var(--fg-25)' : isOut ? NOT_THERE_HEX : '#C9F400' }} />
-                                        {isOut ? 'Not found' : 'Spotted'} {agoText(item.reported_at)}
-                                      </span>
-                                      {!isOut && times >= 2 && <span style={{ color: 'var(--text-muted)' }}>· {timesToday(times).replace('Spotted ', '')}</span>}
-                                      {reporters[item.drink_id] && (
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>· by <Link href={`/u/${reporters[item.drink_id]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}><Avatar name={reporters[item.drink_id]} url={reporterAvatars[reporters[item.drink_id]]} size={16} />@{reporters[item.drink_id]}</Link></span>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                    {item.photo_url && (
+                                      <button onClick={() => setLightbox(item.photo_url)} aria-label="See photo" style={{ padding: 0, border: 'none', background: 'none', cursor: 'zoom-in', flexShrink: 0 }}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={item.photo_url} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', display: 'block' }} />
+                                      </button>
+                                    )}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <p style={{ fontSize: 17, fontWeight: 600, color: !reliable && !isOut ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {item.drink?.flavor ?? item.drink?.name}
+                                      </p>
+                                      <p style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4, fontSize: 14, flexWrap: 'wrap', color: 'var(--text-muted)' }}>
+                                        <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isOut ? NOT_THERE_HEX : reliable ? '#C9F400' : 'var(--fg-25)' }} />
+                                        {isOut ? (
+                                          <span style={{ color: NOT_THERE_HEX }}><strong style={{ fontWeight: 700 }}>Not found</strong> {agoText(item.reported_at)}</span>
+                                        ) : (
+                                          <span style={{ color: reliable ? 'var(--text)' : 'var(--text-dim)' }}>
+                                            Spotted {agoText(item.reported_at)}{!reliable && ' · may be outdated'}
+                                            {reliable && times >= 2 && <> · <strong style={{ fontWeight: 700 }}>{times}× today</strong></>}
+                                          </span>
+                                        )}
+                                      </p>
+                                      {seenBefore && <p style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 3 }}>Last spotted {agoText(seenBefore)}</p>}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                      {!isOut && item.amount && (
+                                        <span key={`${item.sighting}${item.amount}`} className={changedIds.has(item.drink_id) ? 'anim-pop' : undefined}
+                                          style={{ padding: '4px 11px', borderRadius: 999, fontSize: 13, fontWeight: 700, ...(item.amount === 'plenty' && reliable ? { background: '#C9F400', color: '#0D1210' } : { border: '1px solid var(--fg-15)', color: 'var(--text-muted)' }) }}>
+                                          {AMOUNT_LABEL[item.amount as 'few' | 'plenty']}
+                                        </span>
                                       )}
-                                      {item.drink?.caffeine_mg ? <span>· {item.drink.caffeine_mg} mg caffeine</span> : null}
-                                    </p>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
+                                        aria-label={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}
+                                        title={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}
+                                        style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: following ? 'rgba(201,244,0,0.14)' : 'transparent', border: `1px solid ${following ? 'rgba(201,244,0,0.5)' : 'var(--fg-10)'}` }}
+                                      >
+                                        <span key={bellAnim && bellAnim.id === item.drink_id ? bellAnim.n : 0} className={bellAnim?.id === item.drink_id && following ? 'anim-wiggle' : ''} style={{ display: 'flex' }}>
+                                          <BellIcon size={13} color={following ? 'var(--accent-text)' : 'var(--text-dim)'} filled={following} />
+                                        </span>
+                                      </button>
+                                    </div>
                                   </div>
-                                  {(isOut || item.amount) && (
-                                    <span key={`${item.sighting}${item.amount}`} className={changedIds.has(item.drink_id) ? 'anim-pop' : undefined} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 10px', borderRadius: 999, background: isOut ? 'rgba(255,69,69,0.1)' : 'var(--fg-06)', color: isOut ? NOT_THERE_HEX : 'var(--text)', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
-                                      {isOut ? 'Not there' : AMOUNT_LABEL[item.amount as 'few' | 'plenty']}
-                                    </span>
-                                  )}
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); toggleDrinkAlert(item.drink_id) }}
-                                    aria-label={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}
-                                    title={following ? 'Stop watching this flavor' : 'Get notified when this restocks'}
-                                    style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: following ? 'rgba(201,244,0,0.14)' : 'transparent', border: `1px solid ${following ? 'rgba(201,244,0,0.5)' : 'var(--fg-10)'}` }}
-                                  >
-                                    <span key={bellAnim && bellAnim.id === item.drink_id ? bellAnim.n : 0} className={bellAnim?.id === item.drink_id && following ? 'anim-wiggle' : ''} style={{ display: 'flex' }}>
-                                      <BellIcon size={14} color={following ? 'var(--accent-text)' : 'var(--text-dim)'} filled={following} />
-                                    </span>
-                                  </button>
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+                                    <button className="press" disabled={busy} onClick={() => logSighting(item, 'spotted')}
+                                      style={{ minHeight: 46, borderRadius: 13, border: 'none', background: '#C9F400', color: '#0D1210', fontFamily: 'inherit', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                                      <EyeIcon size={18} color="#0D1210" /> Spotted
+                                    </button>
+                                    <button className="press" disabled={busy} onClick={() => logSighting(item, 'not_there')}
+                                      style={{ minHeight: 46, borderRadius: 13, border: '1px solid var(--fg-15)', background: 'transparent', color: 'var(--text)', fontFamily: 'inherit', fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                                      <CloseIcon size={12} color="var(--text-muted)" /> Not there
+                                    </button>
+                                  </div>
                                 </div>
                               )
                             })}
@@ -1173,6 +1320,14 @@ const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
         )}
 
       </div>
+      {saved && <SightingSavedSheet s={saved} storeName={name || store?.name || 'this store'} onAmount={setSavedAmount} onPhoto={addSavedPhoto} onUndo={undoSaved} onClose={() => setSaved(null)} />}
+      {lightbox && createPortal(
+        <div className="anim-fade" onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, cursor: 'zoom-out' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="Sighting photo" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12 }} />
+        </div>,
+        document.body
+      )}
       {alertLimitOpen && <UpgradeSheet {...ALERT_LIMIT_COPY(FREE_ALERT_LIMIT)} onClose={() => setAlertLimitOpen(false)} />}
     </div>
   )

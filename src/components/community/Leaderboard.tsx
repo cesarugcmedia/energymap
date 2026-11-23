@@ -7,10 +7,11 @@ import { supabase } from '@/lib/supabase'
 import CountUp from '@/components/ui/CountUp'
 import ui from '@/components/ui/ui.module.css'
 import SkeletonList from '@/components/ui/SkeletonList'
-import { CheckIcon, LightningIcon, GroceryIcon, DrinkIcon, TrophyIcon, UsersIcon, PinIcon } from '@/components/Icons'
+import { CheckIcon, LightningIcon, GroceryIcon, TrophyIcon, UsersIcon, PinIcon, EyeIcon, CameraIcon } from '@/components/Icons'
 import { Avatar } from './RichText'
 import SlideHighlight from '@/components/ui/SlideHighlight'
 import { TRACKER_PITCH } from '@/lib/plans'
+import { XP_BOUNTY, XP_PHOTO, XP_SIGHTING, XP_STORE } from '@/lib/xp'
 import { fetchProfileLites } from '@/lib/avatar'
 
 type Scope = 'everyone' | 'following' | 'near'
@@ -19,7 +20,7 @@ type Timeframe = 'All Time' | 'This Month' | 'This Week'
 type Entry = { id: string; username: string; value: number; is_verified_reporter: boolean; tier: string | null; badges: string[] }
 
 const UNIT: Record<string, { one: string; many: string }> = {
-  points: { one: 'pt', many: 'pts' },
+  points: { one: 'XP', many: 'XP' },
   stores: { one: 'store', many: 'stores' },
   flavors: { one: 'flavor', many: 'flavors' },
   reports: { one: 'sighting', many: 'sightings' },
@@ -145,7 +146,7 @@ export default function Leaderboard({ me }: {
     } else if (myEntry) {
       const next = list[myIndex - 1]
       const gap = next.value - myEntry.value + 1
-      const action = unitKey === 'points' ? `Log ${Math.ceil(gap / 2)} sighting${Math.ceil(gap / 2) === 1 ? '' : 's'} to pass them.`
+      const action = unitKey === 'points' ? `Log ${Math.ceil(gap / XP_SIGHTING)} sighting${Math.ceil(gap / XP_SIGHTING) === 1 ? '' : 's'} to pass them.`
         : unitKey === 'stores' ? `Add ${gap} more store${gap === 1 ? '' : 's'} to pass them.`
         : unitKey === 'flavors' ? `Find ${gap} more flavor${gap === 1 ? '' : 's'} to pass them.`
         : `${gap} more sighting${gap === 1 ? '' : 's'} to pass them.`
@@ -176,7 +177,7 @@ export default function Leaderboard({ me }: {
       {/* What */}
       <div className={`${ui.segmented} ${ui.segSlide}`} style={{ display: 'flex', marginBottom: 10 }}>
         <SlideHighlight activeKey={metric} />
-        {([['points', scope === 'near' ? 'Sightings' : 'Points'], ['stores', 'Stores added'], ['flavors', 'Flavors found']] as const).map(([key, label]) => (
+        {([['points', scope === 'near' ? 'Sightings' : 'XP'], ['stores', 'Stores added'], ['flavors', 'Flavors found']] as const).map(([key, label]) => (
           <button key={key} data-active={metric === key} className={`${ui.segment} ${metric === key ? ui.segmentActive : ''}`} style={{ flex: 1, padding: '8px 6px', fontSize: 13 }} onClick={() => setMetric(key)}>{label}</button>
         ))}
       </div>
@@ -292,15 +293,16 @@ export default function Leaderboard({ me }: {
         </>
       )}
 
-      {/* How points work */}
+      {/* How XP works (matches get_leaderboard in scripts/xp-bounties.sql) */}
       {metric === 'points' && scope !== 'near' && (
         <div className={ui.card} style={{ marginTop: 16 }}>
-          <p className={ui.sectionLabel}>How points work</p>
+          <p className={ui.sectionLabel}>How XP works</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { Icon: LightningIcon, label: 'Log a sighting', desc: 'Each Spotted or Not there you log', pts: '+2', color: 'var(--accent-text)' },
-              { Icon: GroceryIcon, label: 'Add a store', desc: 'Once an admin approves it', pts: '+5', color: '#FFB300' },
-              { Icon: DrinkIcon, label: 'Add a drink', desc: 'Each new flavor you add', pts: '+3', color: '#22d3ee' },
+              { Icon: EyeIcon, label: 'Log a sighting', desc: 'Each Spotted or Not there', pts: `+${XP_SIGHTING}`, color: 'var(--accent-text)' },
+              { Icon: CameraIcon, label: 'Add a photo', desc: 'On a Spotted sighting (optional)', pts: `+${XP_PHOTO}`, color: '#60a5fa' },
+              { Icon: LightningIcon, label: 'Claim a bounty', desc: 'First sighting at a store nobody checked in 2 days', pts: `+${XP_BOUNTY}`, color: '#FFB300' },
+              { Icon: GroceryIcon, label: 'Add a store', desc: 'Once an admin approves it', pts: `+${XP_STORE}`, color: '#22d3ee' },
             ].map(({ Icon, label, desc, pts, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ width: 34, height: 34, borderRadius: 10, background: `color-mix(in srgb, ${color} 10%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} color={color} /></span>

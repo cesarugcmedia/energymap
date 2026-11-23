@@ -9,7 +9,7 @@ import { useNearbyStores } from '@/hooks/useNearbyStores'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Drink, Store } from '@/lib/types'
-import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon, ChevronRightIcon, HeartIcon } from '@/components/Icons'
+import { StoreTypeIcon, SearchIcon, PinIcon, ClockIcon, CloseIcon, GroceryIcon, DrinkIcon, ChevronRightIcon, HeartIcon, EyeIcon, LightningIcon } from '@/components/Icons'
 import ui from '@/components/ui/ui.module.css'
 import { usePreferences } from '@/lib/preferences'
 import Onboarding, { type OnboardingSummary } from '@/components/onboarding/Onboarding'
@@ -20,7 +20,7 @@ import Burst from '@/components/ui/Burst'
 import { isFresh, stalenessOf, type Staleness } from '@/lib/freshness'
 import { FREE_RADIUS_MILES } from '@/lib/plans'
 import { agoText, amountOf, isReliable, sightingOf, startOfToday, NOT_THERE_HEX, SPOTTED_TEXT, type Sighting } from '@/lib/sightings'
-import FreshnessRing from '@/components/ui/FreshnessRing'
+import { XP_BOUNTY, daysSince, hasBounty } from '@/lib/xp'
 
 type View = 'map' | 'list'
 
@@ -47,6 +47,14 @@ function openDirections(destLat: number, destLng: number) {
 // Same buckets as the store page (src/lib/freshness.ts).
 const STALENESS_COLOR: Record<Staleness, string> = { Fresh: '#C9F400', Aging: '#FFB300', Stale: '#FF4545', Unverified: 'var(--text-dim)' }
 const stalenessColor = (dateStr: string) => STALENESS_COLOR[stalenessOf(dateStr)]
+
+// "12m", "1h", "3d" for compact chips.
+function shortAgo(iso: string) {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000))
+  if (mins < 60) return `${Math.max(1, mins)}m`
+  const h = Math.floor(mins / 60)
+  return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`
+}
 
 function getLatestReport(stock: any[]) {
   return stock.reduce<any>((latest, item) => {
@@ -153,7 +161,7 @@ export default function MapHome() {
   // Map: show only stores reported in the last day. List: sort, filter sheet,
   // incremental rendering. Map sheet: swipe-up nearby list. Saved stores.
   const [freshOnly, setFreshOnly] = useState(false)
-  const [sortMode, setSortMode] = useState<'nearest' | 'freshest' | 'most'>('nearest')
+  const [sortMode, setSortMode] = useState<'nearest' | 'today' | 'bounties'>('nearest')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [listLimit, setListLimit] = useState(30)
   const [sheetExpanded, setSheetExpanded] = useState(false)
@@ -425,12 +433,31 @@ export default function MapHome() {
   }, [storeStock])
 
   // List sort order
+  // Per store: flavors spotted today (newest first), the newest check of any
+  // kind (bounties) and a Not there from the last day.
+  const storeToday = useMemo(() => {
+    const since = startOfToday()
+    const out: Record<string, { today: any[]; lastAny: string | null; notFound: any | null }> = {}
+    for (const [id, rows] of Object.entries(storeStock)) {
+      const today = rows.filter((r) => r.sighting === 'spotted' && new Date(r.reported_at).getTime() >= since)
+        .sort((a, b) => b.reported_at.localeCompare(a.reported_at))
+      const lastAny = rows.reduce<string | null>((m, r) => (!m || r.reported_at > m ? r.reported_at : m), null)
+      const notFound = rows.filter((r) => r.sighting === 'not_there' && isReliable(r.reported_at))
+        .sort((a, b) => b.reported_at.localeCompare(a.reported_at))[0] ?? null
+      out[id] = { today, lastAny, notFound }
+    }
+    return out
+  }, [storeStock])
+
   const listStores = useMemo(() => {
     if (sortMode === 'nearest') return sorted
-    const latestAt = (id: string) => getLatestReport(storeStock[id] ?? [])?.reported_at ?? ''
-    if (sortMode === 'freshest') return [...sorted].sort((a, b) => latestAt(b.id).localeCompare(latestAt(a.id)))
-    return [...sorted].sort((a, b) => (storeSummary[b.id]?.inStock ?? 0) - (storeSummary[a.id]?.inStock ?? 0))
-  }, [sorted, sortMode, storeStock, storeSummary])
+    if (sortMode === 'today') {
+      return sorted.filter((s) => (storeToday[s.id]?.today.length ?? 0) > 0)
+        .sort((a, b) => (storeToday[b.id].today.length - storeToday[a.id].today.length) || storeToday[b.id].today[0].reported_at.localeCompare(storeToday[a.id].today[0].reported_at))
+    }
+    if (sortMode === 'bounties') return sorted.filter((s) => hasBounty(storeToday[s.id]?.lastAny))
+    return sorted
+  }, [sorted, sortMode, storeToday])
 
   // Render the list 30 at a time (Tracker's unlimited radius can mean 1,000+
   // stores); reset when the result set changes.
@@ -800,7 +827,9 @@ export default function MapHome() {
             <div>
               <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', lineHeight: 1.1 }}>AmpedMap</p>
               <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
-                {storesLoading ? 'Loading stores…' : `${nearbyCount} store${nearbyCount === 1 ? '' : 's'} nearby${sightingsToday > 0 ? ` · ${sightingsToday} sighting${sightingsToday === 1 ? '' : 's'} today` : ''}`}
+                {storesLoading ? 'Loading stores…' : sightingsToday > 0
+                  ? <><strong style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{sightingsToday} sighting{sightingsToday === 1 ? '' : 's'}</strong> near you today</>
+                  : `${nearbyCount} store${nearbyCount === 1 ? '' : 's'} nearby`}
               </p>
             </div>
           </div>
@@ -1079,6 +1108,11 @@ export default function MapHome() {
                   ) : (
                     <p style={{ fontSize: 14, color: 'var(--text-dim)' }}>No sightings yet. Be the first.</p>
                   )}
+                  {hasBounty(storeToday[selected.id]?.lastAny) && (
+                    <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 13, color: 'var(--text-muted)' }}>
+                      <LightningIcon size={14} color="#FFB300" /><strong style={{ color: '#FFB300' }}>+{XP_BOUNTY} XP bounty</strong> for the next sighting here
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-2.5">
@@ -1146,8 +1180,10 @@ export default function MapHome() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
                         Filters{activeFilters > 0 ? ` · ${activeFilters}` : ''}
                       </button>
-                      {([['nearest', 'Nearest'], ['freshest', 'Freshest'], ['most', 'Most spotted']] as const).map(([key, label]) => (
-                        <button key={key} onClick={() => setSortMode(key)} className={`${ui.chip} ${sortMode === key ? ui.chipActive : ''}`}>{label}</button>
+                      {([['nearest', 'Nearest'], ['today', 'Spotted today'], ['bounties', 'Bounties']] as const).map(([key, label]) => (
+                        <button key={key} onClick={() => setSortMode(key)} className={`${ui.chip} ${sortMode === key ? ui.chipActive : ''}`}>
+                          {key === 'today' && <EyeIcon size={14} color="currentColor" />}{label}
+                        </button>
                       ))}
                     </div>
                   )
@@ -1270,16 +1306,23 @@ export default function MapHome() {
                   </p>
                   <button className={ui.btnSecondary} style={{ marginTop: 6 }} onClick={() => router.push('/add-store')}>Add a missing store</button>
                 </div>
+              ) : listStores.length === 0 ? (
+                <div className={ui.emptyState}>
+                  {sortMode === 'today' ? <EyeIcon size={36} color="var(--text-dim)" /> : <LightningIcon size={36} color="var(--text-dim)" />}
+                  <p className={ui.emptyTitle}>{sortMode === 'today' ? 'Nothing spotted nearby today' : 'No bounties right now'}</p>
+                  <p className={ui.emptyBody}>{sortMode === 'today' ? 'Be the first. Open a store and tap Spotted on what you see.' : 'Every store nearby was checked in the last 2 days. Nice work, hunters.'}</p>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {sortMode !== 'nearest' && (
+                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '2px 2px 2px' }}>
+                      {sortMode === 'today' ? 'Spotted today' : `Bounties · +${XP_BOUNTY} XP each`} <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>({listStores.length} store{listStores.length === 1 ? '' : 's'})</span>
+                    </p>
+                  )}
                   {listStores.slice(0, listLimit).map((store) => {
                     const stock = storeStock[store.id] ?? []
                     const dist = getDistance(lat, lng, store.lat, store.lng).toFixed(1)
                     const latestReport = getLatestReport(stock)
-                    const inStockCount = stock.filter((s) => s.sighting === 'spotted').length
-                    const hasReports = stock.length > 0
-                    const daysSinceReport = latestReport ? (Date.now() - new Date(latestReport.reported_at).getTime()) / 86400000 : null
-                    const isDormant = hasReports && daysSinceReport !== null && daysSinceReport > 7
                     const storeHref = `/store/${store.id}?name=${encodeURIComponent(store.name)}`
 
                     return (
@@ -1299,27 +1342,58 @@ export default function MapHome() {
                           <ChevronRightIcon size={16} color="var(--text-dim)" />
                         </button>
 
-                        {hasReports ? (
-                          <div style={{ marginBottom: 12 }}>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: inStockCount > 0 ? 'var(--text)' : 'var(--text-dim)', marginBottom: 8 }}>
-                              {inStockCount > 0 ? `${inStockCount} flavor${inStockCount === 1 ? '' : 's'} spotted` : 'Nothing spotted lately'}
-                            </p>
-                            {stockChips(store.id) && <div style={{ marginBottom: 8 }}>{stockChips(store.id)}</div>}
-                            {latestReport && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
-                                <FreshnessRing reportedAt={latestReport.reported_at} color={stalenessColor(latestReport.reported_at)} />
-                                {sightingOf(latestReport) === 'spotted' ? 'Spotted' : 'Not found'} {agoText(latestReport.reported_at)}
-                              </div>
-                            )}
-                            {isDormant && (
-                              <p style={{ margin: '8px 0 0', fontSize: 13, color: '#FFB300' }}>
-                                No sightings in over {Math.floor(daysSinceReport!)} days. Be the one to check.
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-dim)' }}>No sightings yet. Be the first to log one here.</p>
-                        )}
+                        {(() => {
+                          const t = storeToday[store.id]
+                          const today = t?.today ?? []
+                          const lastAny = t?.lastAny ?? null
+                          const bounty = hasBounty(lastAny)
+                          return (
+                            <div style={{ marginBottom: 12 }}>
+                              {today.length > 0 ? (
+                                <>
+                                  <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, marginBottom: 10, color: 'var(--text-muted)' }}>
+                                    <span className="live-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#C9F400', flexShrink: 0 }} />
+                                    <span><strong style={{ color: 'var(--text)', fontWeight: 700 }}>{today.length} sighting{today.length === 1 ? '' : 's'} today</strong> · last {agoText(today[0].reported_at)}</span>
+                                  </p>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: t?.notFound ? 10 : 0 }}>
+                                    {today.slice(0, 3).map((r) => {
+                                      const d = drinkById.get(r.drink_id)
+                                      return (
+                                        <span key={r.drink_id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%', padding: '6px 11px', borderRadius: 999, background: 'var(--fg-06)', fontSize: 14, color: 'var(--text)' }}>
+                                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9F400', flexShrink: 0 }} />
+                                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d ? `${d.brand} ${d.flavor || d.name}` : 'Drink'}</span>
+                                          <span style={{ color: 'var(--text-dim)', fontSize: 12, flexShrink: 0 }}>{shortAgo(r.reported_at)}</span>
+                                        </span>
+                                      )
+                                    })}
+                                    {today.length > 3 && <span style={{ alignSelf: 'center', fontSize: 14, color: 'var(--text-dim)' }}>+{today.length - 3} more</span>}
+                                  </div>
+                                </>
+                              ) : (
+                                <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, color: 'var(--text-muted)', marginBottom: bounty ? 10 : 0 }}>
+                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--fg-25)', flexShrink: 0 }} />
+                                  {lastAny ? `Last sighting ${agoText(lastAny)}` : 'No sightings yet'}
+                                </p>
+                              )}
+                              {t?.notFound && (
+                                <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: NOT_THERE_HEX }}>
+                                  <CloseIcon size={11} color={NOT_THERE_HEX} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    Not found {shortAgo(t.notFound.reported_at)} ago: {(() => { const d = drinkById.get(t.notFound.drink_id); return d ? `${d.brand} ${d.flavor || d.name}` : 'a flavor' })()}
+                                  </span>
+                                </p>
+                              )}
+                              {bounty && today.length === 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 14, border: '1px dashed rgba(255,179,0,0.55)', background: 'rgba(255,179,0,0.07)', marginTop: 10 }}>
+                                  <LightningIcon size={18} color="#FFB300" />
+                                  <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                                    <strong style={{ color: '#FFB300' }}>+{XP_BOUNTY} XP bounty</strong> · {lastAny ? `Nobody's checked this store in ${daysSince(lastAny)} days` : 'Nobody has checked this store yet'}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
 
                         {(liveUpdates[store.id] ?? []).map((update) => {
                           const qColor = update.sighting === 'spotted' ? '#C9F400' : NOT_THERE_HEX

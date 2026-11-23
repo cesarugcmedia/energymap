@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/rateLimit'
 import { amountOf, isSpotted } from '@/lib/sightings'
+import { XP_PHOTO, XP_SIGHTING, XP_STORE, plugFrom, weekStartUtc } from '@/lib/xp'
 import { computeBadges, streakFrom } from '@/lib/badges'
 
 // Public profile summary for /u/[username]: identity, counts, and whether the
@@ -54,6 +55,25 @@ export async function GET(req: NextRequest) {
     // Permanent flavor collection (profile-v2); errors until that script runs.
     supabaseAdmin.from('flavor_finds').select('drink_id').eq('user_id', profile.id).limit(5000),
   ])
+  // XP (scripts/xp-bounties.sql adds photo_url / bounty_xp; both count as 0
+  // before that) and the stores where they're this week's Plug.
+  const [photoCount, bountyRows, weekMine] = await Promise.all([
+    supabaseAdmin.from('stock_reports').select('id', { count: 'exact', head: true }).eq('user_id', profile.id).not('photo_url', 'is', null).then((r) => (r.error ? 0 : r.count ?? 0)),
+    supabaseAdmin.from('stock_reports').select('bounty_xp').eq('user_id', profile.id).gt('bounty_xp', 0).limit(5000).then((r) => (r.error ? [] : r.data ?? [])),
+    supabaseAdmin.from('stock_reports').select('store_id').eq('user_id', profile.id).gte('reported_at', weekStartUtc().toISOString()).limit(1000),
+  ])
+  const bountyXp = (bountyRows as { bounty_xp: number }[]).reduce((n, r) => n + (r.bounty_xp ?? 0), 0)
+  const xp = reports * XP_SIGHTING + photoCount * XP_PHOTO + bountyXp + storesAdded * XP_STORE
+  let plugStores = 0
+  const myWeekStores = [...new Set((weekMine.data ?? []).map((r) => r.store_id))].slice(0, 60)
+  if (myWeekStores.length) {
+    const { data: weekAll } = await supabaseAdmin.from('stock_reports').select('store_id, user_id, reported_at')
+      .in('store_id', myWeekStores).gte('reported_at', weekStartUtc().toISOString()).range(0, 4999)
+    const byStore = new Map<string, { user_id: string | null; reported_at: string }[]>()
+    for (const w of weekAll ?? []) (byStore.get(w.store_id) ?? byStore.set(w.store_id, []).get(w.store_id)!).push(w)
+    for (const rowsHere of byStore.values()) if (plugFrom(rowsHere, profile.id, () => null).isPlug) plugStores++
+  }
+
   // Sightings: new columns when present, else the legacy level (src/lib/sightings.ts).
   const reportRows: { drink_id: string; store_id: string; quantity?: string | null; sighting?: string | null; amount?: string | null; reported_at: string }[] = rows ?? []
 
@@ -113,6 +133,8 @@ export async function GET(req: NextRequest) {
       favoriteDrink,
     },
     counts: { reports, storesAdded, followers, following },
+    xp,
+    plugStores,
     following: iFollow > 0,
   })
 }

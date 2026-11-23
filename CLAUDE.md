@@ -83,6 +83,16 @@ Community stock reports are **sightings**: per flavor per store, **Spotted** (on
 - **Community "Found it"** posts store the optional amount in `community_posts.quantity` (plenty → `full`, few → `low`, skipped → null); `QUANTITY_STYLE` reads stored values as Plenty / Just a few / Not there.
 - Store-owner check-ins don't exist, so there's no separate In stock / Low / Out flow.
 
+### XP, Bounties, Plug & Photos (2026-11-22)
+
+Rules in `src/lib/xp.ts`; the leaderboard formula in `get_leaderboard` (`scripts/xp-bounties.sql`, run after `sightings.sql`).
+- **XP** replaced Points everywhere: sighting (Spotted or Not there) +10, photo +15, bounty +50, approved store +25 — exactly 5× the old points, so totals converted automatically. `get_leaderboard` still returns the column `points` (now XP). Profiles show an XP chip (`/api/community/profile` → `xp`); Leaderboard says XP and has a "How XP works" card.
+- **Bounty**: a store with no sighting for `BOUNTY_AFTER_HOURS` (48) or never pays `XP_BOUNTY` to the next sighting there, stored in `stock_reports.bounty_xp` on that row; capped at `BOUNTY_DAILY_CAP` (3) per person per day. Shown on store pages, map popups and List view cards; List has a **Bounties** chip.
+- **Plug**: most sightings at a store this week (Mon 00:00 UTC; ties → first to log). `plugFrom()`; `/api/stores/sightings` returns the store's Plug, `/api/stock/report` returns the caller's progress (`toBecome`), profiles show "Plug at N stores".
+- **Photos** (optional): after Spotted, `addSightingPhoto()` (`src/lib/sightingPhoto.ts`) shrinks to 1280px JPEG, uploads to the `sighting-photos` bucket at `<uid>/<reportId>.jpg`, and `POST /api/stock/photo` attaches it (own Spotted, within 30 min; URL must be in your folder; a CHECK constraint enforces it). `latest_stock` exposes `photo_url`; store rows show a thumbnail that opens full size.
+- **Store page (one-tap)**: every flavor row has **Spotted** / **Not there** buttons that save immediately (`logSighting`). A Spotted opens `SightingSavedSheet` (`src/components/store/SightingSavedSheet.tsx`): +XP, bounty claimed, optional How many / photo, Plug progress, Undo/Skip. Overview card: "N flavors spotted this week", last sighting, today / older / not found bar, Plug line; bounty banner below; filters All / Spotted today / Not found; brand cards "N of M spotted today"; Not found rows add "Last spotted …" (`lastSpotted` from `/api/stores/sightings`); rows older than 24 h say "may be outdated". **Sighting patterns** (renamed; Tracker) is one line: "Most sightings on Saturdays, mornings".
+- **List view**: header "N sightings near you today"; chips Filters / Nearest / Spotted today / Bounties; cards show "N sightings today · last …" with flavor chips (age), a red "Not found 30m ago: X" line, or "Last sighting …" plus a bounty box.
+
 **Storage**: `community-photos` bucket (public read, created by `create-community-v2-tables.sql`) holds `/community` post photos, uploaded client-side to a `<user_id>/...` path enforced by storage RLS. `/api/community/post` only accepts a `photo_url` that matches the caller's own bucket path — never an arbitrary external URL.
 
 **Supabase row cap**: The server-side `max_rows` is 1,000. Any query fetching all stores must paginate using `.range(from, from + BATCH - 1)` in a loop — never rely on `.limit()` alone.

@@ -316,14 +316,14 @@ export default function Onboarding({ userId, initial, mode, getSummary, onSave, 
           },
           {
             title: 'That’s it',
-            body: 'Everyone nearby sees it right away. Every sighting, Spotted or Not there, earns 2 points toward badges and the leaderboard.',
+            body: 'Everyone nearby sees it right away. Every sighting, Spotted or Not there, earns 10 XP toward badges and the leaderboard. Add a photo for 15 more.',
             demo: (
               <div style={{ ...mock, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(201,244,0,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
                 </span>
                 <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>3 sightings logged</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-text)' }}>+6 pts</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-text)' }}>+30 XP</span>
               </div>
             ),
           },

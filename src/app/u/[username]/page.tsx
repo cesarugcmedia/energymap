@@ -27,6 +27,8 @@ type ProfileData = {
   profile: { id: string; username: string; joined: string; verified: boolean; weeklyChampion: boolean; tracker?: boolean; bio?: string | null; favoriteDrink?: string | null; avatarUrl?: string | null }
   counts: { reports: number; storesAdded: number; followers: number; following: number }
   following: boolean
+  xp?: number
+  plugStores?: number
   stats?: { uniqueFlavors: number; streak: number }
   badges?: string[]
   topStores?: { id: string; name: string; type: string; reports: number }[]
@@ -285,6 +287,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {isLive && !isMe && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className="live-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9F400' }} /> Live now</span>}
                 {data.profile.tracker && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 8, padding: '3px 8px' }}><LightningIcon size={12} color="#0D1210" /> Tracker</span>}
+                {typeof data.xp === 'number' && data.xp > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: 'var(--accent-text)', background: 'rgba(201,244,0,0.12)', borderRadius: 8, padding: '3px 8px' }}><LightningIcon size={12} color="var(--accent-text)" /> {data.xp.toLocaleString('en-US')} XP</span>}
+                {(data.plugStores ?? 0) > 0 && <span title="Most sightings at these stores this week" style={{ fontSize: 12, fontWeight: 700, color: '#0D1210', background: '#C9F400', borderRadius: 8, padding: '3px 8px' }}>Plug at {data.plugStores} store{data.plugStores === 1 ? '' : 's'}</span>}
                 {data.profile.weeklyChampion && <span style={{ fontSize: 12, fontWeight: 700, color: '#ffd700', background: 'rgba(255,215,0,0.12)', borderRadius: 8, padding: '3px 8px' }}>👑 Weekly champion</span>}
                 {(data.stats?.streak ?? 0) >= 2 && <span style={{ fontSize: 12, fontWeight: 700, color: '#FF8A3D', background: 'rgba(255,138,61,0.12)', borderRadius: 8, padding: '3px 8px' }}><span className={flameGrow ? 'flame flame-grow' : 'flame'}>🔥</span> {data.stats!.streak}-day streak</span>}
               </div>

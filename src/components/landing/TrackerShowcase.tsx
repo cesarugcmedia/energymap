@@ -21,7 +21,7 @@ export default function TrackerShowcase() {
     <section className={styles.section} aria-labelledby="tracker">
       <div className={styles.container}>
         <h2 id="tracker" className={`${styles.h2} reveal`}>Hunt smarter</h2>
-        <p className={styles.sectionLead}>Fill your flavor collection one cooler at a time. With Tracker, see when each store usually restocks.</p>
+        <p className={styles.sectionLead}>Fill your flavor collection one cooler at a time. With Tracker, see which days each store gets spotted.</p>
 
         <div className={styles.showcase}>
           {/* Flavor collection (free) */}
@@ -51,11 +51,11 @@ export default function TrackerShowcase() {
             <p className={styles.body}>Every flavor you find lights up in your collection. Finish a brand and it&apos;s marked complete on your profile.</p>
           </div>
 
-          {/* Restock patterns (Tracker) */}
+          {/* Sighting patterns (Tracker) */}
           <div className={`${styles.showcaseCard} reveal`}>
             <div className={styles.patternMock} aria-hidden="true">
-              <p className={styles.patternLabel}>Restock patterns</p>
-              <p className={styles.patternHeadline}>Usually restocked on Tuesdays, mostly mornings</p>
+              <p className={styles.patternLabel}>Sighting patterns</p>
+              <p className={styles.patternHeadline}>Most sightings on Tuesdays, mornings</p>
               <div className={styles.patternBars}>
                 {BARS.map((v, i) => (
                   <div key={i} className={styles.patternCol}>
@@ -67,7 +67,7 @@ export default function TrackerShowcase() {
               <p className={styles.patternFoot}>Most often not found: Ultra Paradise, Rio Punch</p>
             </div>
             <h3 className={styles.h3}>Know when to go <span className={`${styles.planTag} ${styles.planTagTracker}`}>Tracker</span></h3>
-            <p className={styles.body}>See which days each store usually restocks, and which flavors are most often missing, so you show up at the right time.</p>
+            <p className={styles.body}>See which days flavors get spotted at each store, and which ones are most often missing, so you show up at the right time.</p>
           </div>
         </div>
 

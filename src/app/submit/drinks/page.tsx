@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drink } from '@/lib/types'
-import { SearchIcon, PinIcon, CloseIcon, ChevronDownIcon, ChevronLeftIcon, CheckIcon } from '@/components/Icons'
+import { SearchIcon, PinIcon, CloseIcon, ChevronDownIcon, ChevronLeftIcon, CheckIcon, CameraIcon } from '@/components/Icons'
+import { addSightingPhoto } from '@/lib/sightingPhoto'
+import { XP_PHOTO } from '@/lib/xp'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
 import { addToQueue, removeFromQueue, isNetworkFailure } from '@/lib/reportQueue'
@@ -44,6 +46,9 @@ type Logged = {
   reportId?: string
   queueId?: string
   error?: string
+  xp?: number
+  bounty?: number
+  photo?: 'uploading' | 'done' | 'error'
 }
 
 type LastReport = { ids: string[]; storeId: string; at: number; collection: { newFlavors: string[]; found: number; total: number } | null }
@@ -218,7 +223,7 @@ function DrinksContent() {
       if (!body.submitted) { setRow(drinkId, { status: 'error', error: 'You logged this here in the last 30 minutes.' }); return }
       const reportId = body.byDrink?.[drinkId] ?? body.ids?.[0]
       remember(reportId ? [reportId] : [], body.collection ?? null)
-      setRow(drinkId, { status: 'saved', reportId })
+      setRow(drinkId, { status: 'saved', reportId, xp: body.xp ?? 10, bounty: body.bounty ?? 0 })
     } catch (err) {
       if (isNetworkFailure(err)) { queueOffline(drinkId, sighting); return }
       setRow(drinkId, { status: 'error', error: 'Could not save. Try again.' })
@@ -243,6 +248,16 @@ function DrinksContent() {
     const headers = await authHeaders()
     if (!headers) return
     fetch('/api/stock/amount', { method: 'POST', headers, body: JSON.stringify({ id: row.reportId, amount: next }) }).catch(() => {})
+  }
+
+  // Optional photo on a saved Spotted (+15 XP).
+  async function attachPhoto(drinkId: string, file: File) {
+    const row = logged[drinkId]
+    if (!row?.reportId || !user) return
+    setRow(drinkId, { photo: 'uploading' })
+    const res = await addSightingPhoto(user.id, row.reportId, file)
+    if (res.ok) setRow(drinkId, { photo: 'done', xp: (row.xp ?? 10) + XP_PHOTO })
+    else { setRow(drinkId, { photo: 'error' }); setPageError(res.message) }
   }
 
   async function undo(drinkId: string) {
@@ -287,6 +302,7 @@ function DrinksContent() {
   const done = Object.values(logged).filter((r) => r.status === 'saved' || r.status === 'queued')
   const savedCount = done.filter((r) => r.status === 'saved').length
   const queuedCount = done.filter((r) => r.status === 'queued').length
+  const xpTotal = done.reduce((n, r) => n + (r.xp ?? 0), 0)
   const tooFar = !profile?.is_admin && !locationChecking && distanceM !== null && distanceM > MAX_DISTANCE_M
 
   // ── Render helpers (plain functions, so nothing remounts on re-render) ──
@@ -336,6 +352,8 @@ function DrinksContent() {
                 : <CheckIcon size={14} color="currentColor" />}
               {row.sighting === 'spotted' ? 'Spotted' : 'Not there'}
               {row.status === 'queued' && <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>· sends when online</span>}
+              {row.status === 'saved' && row.xp ? <span style={{ fontWeight: 700, color: 'var(--accent-text)' }}>+{row.xp} XP</span> : null}
+              {row.status === 'saved' && row.bounty ? <span style={{ fontWeight: 600, color: '#FFB300' }}>· bounty!</span> : null}
             </span>
             {row.sighting === 'spotted' && row.status !== 'saving' && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
@@ -346,6 +364,13 @@ function DrinksContent() {
                   </button>
                 ))}
               </span>
+            )}
+            {row.sighting === 'spotted' && row.status === 'saved' && row.reportId && (
+              <label title="Add a photo (+15 XP)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: row.photo === 'done' ? 'var(--accent-text)' : 'var(--text-dim)', cursor: row.photo ? 'default' : 'pointer', padding: '4px 2px' }}>
+                <CameraIcon size={14} color="currentColor" />
+                {row.photo === 'uploading' ? 'Uploading…' : row.photo === 'done' ? 'Photo added' : 'Photo'}
+                {!row.photo && <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) attachPhoto(drink.id, file); e.target.value = '' }} />}
+              </label>
             )}
             {row.status !== 'saving' && (
               <button onClick={() => undo(drink.id)} style={{ marginLeft: row.sighting === 'spotted' ? 0 : 'auto', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}>
@@ -506,7 +531,7 @@ function DrinksContent() {
             {pageError && <p style={{ fontSize: 13, color: '#FF6B6B', textAlign: 'center', marginBottom: 10 }}>{pageError}</p>}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span key={done.length} className="anim-bump" style={{ flex: 1, fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                {done.length} sighting{done.length === 1 ? '' : 's'} logged
+                {done.length} sighting{done.length === 1 ? '' : 's'} logged{xpTotal > 0 && <span style={{ color: 'var(--accent-text)' }}> · +{xpTotal} XP</span>}
                 {queuedCount > 0 && <span style={{ display: 'block', fontSize: 12, fontWeight: 400, color: 'var(--text-dim)' }}>{queuedCount} saved on your phone until you&apos;re back online</span>}
               </span>
               <button className={`${ui.btnPrimary} ${ui.btnLarge}`} onClick={finish} style={{ minWidth: 120 }}>Done</button>

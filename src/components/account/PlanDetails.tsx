@@ -30,7 +30,7 @@ const COMPARE: { label: string; free: string | boolean; tracker: string | boolea
   { label: 'Exact report times', free: true, tracker: true },
   { label: 'Flavor alerts', free: `${FREE_ALERT_LIMIT} flavors`, tracker: 'Unlimited' },
   { label: 'Push notifications', free: false, tracker: true },
-  { label: 'Restock patterns', free: false, tracker: true },
+  { label: 'Sighting patterns', free: false, tracker: true },
   { label: 'Saved store lists', free: false, tracker: true },
   { label: 'Tracker badge', free: false, tracker: true },
   { label: 'Sightings', free: '25 a day', tracker: '25 a day' },

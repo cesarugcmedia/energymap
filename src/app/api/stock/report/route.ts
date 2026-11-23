@@ -4,6 +4,7 @@ import { checkRateLimit } from '@/lib/rateLimit'
 import { sendPush, trackerIds, pushConfigured } from '@/lib/push'
 import { isMissingSchema } from '@/lib/community'
 import { legacyQuantity, type Amount, type Sighting } from '@/lib/sightings'
+import { BOUNTY_AFTER_HOURS, BOUNTY_DAILY_CAP, XP_BOUNTY, XP_SIGHTING, plugFrom, weekStartUtc } from '@/lib/xp'
 
 // POST /api/stock/report — saves community sightings for one store.
 // Body: { store_id, reports: [{ drink_id, sighting: 'spotted' | 'not_there',
@@ -170,12 +171,33 @@ export async function POST(req: NextRequest) {
   }
   const newFlavorIds = spottedIds.filter((id) => !alreadyFound.has(id))
 
+  // Bounty: the first sighting at a store nobody has checked in
+  // BOUNTY_AFTER_HOURS (or ever) earns XP_BOUNTY — at most BOUNTY_DAILY_CAP
+  // a day per person. Needs stock_reports.bounty_xp (scripts/xp-bounties.sql).
+  let bounty = 0
+  const { data: lastHere } = await supabaseAdmin.from('stock_reports').select('reported_at')
+    .eq('store_id', store_id).order('reported_at', { ascending: false }).limit(1)
+  const lastAt = lastHere?.[0]?.reported_at ?? null
+  if (!lastAt || Date.now() - new Date(lastAt).getTime() >= BOUNTY_AFTER_HOURS * 3600000) {
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+    const claimed = await supabaseAdmin.from('stock_reports').select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id).gt('bounty_xp', 0).gte('reported_at', dayStart.toISOString())
+    if (!claimed.error && (claimed.count ?? 0) < BOUNTY_DAILY_CAP) bounty = XP_BOUNTY
+  }
+
   // Restock alerts are written by a DB trigger during this insert; anything
   // newer than this moment for this store is from this report.
   const insertStartedAt = new Date(Date.now() - 2000).toISOString()
-  let ins = await supabaseAdmin.from('stock_reports').insert(
-    toSubmit.map((r) => ({ store_id, drink_id: r.drink_id, user_id: user.id, sighting: r.sighting, amount: r.amount }))
-  ).select('id, drink_id')
+  const rowsFor = (withBounty: boolean) => toSubmit.map((r, i) => ({
+    store_id, drink_id: r.drink_id, user_id: user.id, sighting: r.sighting, amount: r.amount,
+    ...(withBounty && bounty && i === 0 ? { bounty_xp: bounty } : {}),
+  }))
+  let ins = await supabaseAdmin.from('stock_reports').insert(rowsFor(true)).select('id, drink_id')
+  if (ins.error && isMissingSchema(ins.error) && bounty) {
+    // xp-bounties.sql not run yet: no bounty column.
+    bounty = 0
+    ins = await supabaseAdmin.from('stock_reports').insert(rowsFor(false)).select('id, drink_id')
+  }
   if (ins.error && isMissingSchema(ins.error)) {
     // scripts/sightings.sql not run yet: store as the old level for now.
     ins = await supabaseAdmin.from('stock_reports').insert(
@@ -242,7 +264,23 @@ export async function POST(req: NextRequest) {
   }
 
   const rows = (ins.data ?? []) as { id: string; drink_id: string }[]
+
+  // Plug: most sightings at this store this week (after this one).
+  let plug = null
+  try {
+    const { data: week } = await supabaseAdmin.from('stock_reports').select('user_id, reported_at')
+      .eq('store_id', store_id).gte('reported_at', weekStartUtc().toISOString()).range(0, 1999)
+    plug = plugFrom(week ?? [], user.id, (id) => (id === user.id ? profile?.username ?? null : null))
+    if (plug.plugId && !plug.isPlug) {
+      const { data: lp } = await supabaseAdmin.from('profiles').select('username').eq('id', plug.plugId).maybeSingle()
+      plug = { ...plug, plugName: lp?.username ?? null }
+    }
+  } catch { /* nice-to-have */ }
+
   return NextResponse.json({
+    xp: rows.length * XP_SIGHTING + bounty,
+    bounty,
+    plug: plug ? { ...plug, plugId: undefined } : null,
     submitted: rows.length,
     ids: rows.map((r) => r.id),
     // Which report id belongs to which flavor (for Undo and adding an amount).
