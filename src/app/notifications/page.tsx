@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMutedNotifications, mutedFilter } from '@/lib/notificationPrefs'
 import { notificationIcon } from '@/components/NotificationIcons'
-import { BellIcon, ChevronRightIcon } from '@/components/Icons'
+import { BellIcon, ChevronRightIcon, PinIcon } from '@/components/Icons'
 import SkeletonList from '@/components/ui/SkeletonList'
 import ui from '@/components/ui/ui.module.css'
 import BoltLoader from '@/components/ui/BoltLoader'
@@ -32,6 +32,21 @@ const CATEGORY: Record<string, Exclude<FilterMode, 'all' | 'unread'>> = {
   new_store: 'stores',
   new_drink: 'stores',
   badge: 'badges',
+}
+
+// Small label on each card saying what kind of notification it is.
+const KIND_LABEL: Record<string, string> = {
+  stock_update: 'Sighting nearby',
+  drink_alert: 'Flavor restock',
+  comment: 'Comment',
+  reply: 'Reply',
+  mention: 'Mention',
+  follow: 'New follower',
+  store_approved: 'Store approved',
+  store_rejected: 'Store not approved',
+  new_store: 'New store',
+  new_drink: 'New flavor',
+  badge: 'Badge unlocked',
 }
 
 const FILTERS: { mode: FilterMode; label: string }[] = [
@@ -70,10 +85,6 @@ function dateLabel(dateStr: string) {
   if (diffDays === 1) return 'Yesterday'
   if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' })
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
-}
-
-function sameDay(a: string, b: string) {
-  return new Date(a).toDateString() === new Date(b).toDateString()
 }
 
 // The line icon already says what kind of notification it is, so drop the
@@ -185,31 +196,6 @@ function hrefFor(n: any): string | null {
   return null
 }
 
-type Item = { kind: 'single'; n: any } | { kind: 'group'; ns: any[] }
-
-// Collapses consecutive same-store, same-day stock_update notifications
-// into one row instead of repeating the store name over and over. Uses each
-// notification's own message text as-is for the sub-lines rather than
-// re-parsing drink names out of it — notify_stock_update's exact message
-// format isn't defined anywhere in this repo (it's an RPC created directly
-// in Supabase), so this doesn't assume a wording it can't verify.
-function buildItems(list: any[]): Item[] {
-  const result: Item[] = []
-  for (const n of list) {
-    const last = result[result.length - 1]
-    const lastN = last ? (last.kind === 'group' ? last.ns[0] : last.n) : null
-    const canJoin = n.type === 'stock_update' && n.store_id && lastN &&
-      lastN.type === 'stock_update' && lastN.store_id === n.store_id && sameDay(lastN.created_at, n.created_at)
-    if (canJoin && last) {
-      if (last.kind === 'group') last.ns.push(n)
-      else result[result.length - 1] = { kind: 'group', ns: [last.n, n] }
-    } else {
-      result.push({ kind: 'single', n })
-    }
-  }
-  return result
-}
-
 // Last list shown, kept in memory so reopening the Alerts tab paints it
 // instantly while refresh() fetches the latest in the background.
 let listCache: { uid: string; muted: string; list: any[]; hasMore: boolean } | null = null
@@ -227,7 +213,6 @@ export default function NotificationsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   // Mark all read: unread dots pop out top to bottom before the rows settle.
   const [sweeping, setSweeping] = useState(false)
   const [clearing, setClearing] = useState(false)
@@ -400,19 +385,17 @@ export default function NotificationsPage() {
 
   const unreadCount = notifications.filter((n) => !n.read).length
   const filtered = useMemo(() => notifications.filter((n) => matchesFilter(n, filterMode)), [notifications, filterMode])
-  const items = useMemo(() => buildItems(filtered), [filtered])
 
   // Section the rows by day.
   const sections = useMemo(() => {
-    const out: { label: string; items: Item[] }[] = []
-    for (const it of items) {
-      const first = it.kind === 'single' ? it.n : it.ns[0]
-      const label = dateLabel(first.created_at)
-      if (out.length && out[out.length - 1].label === label) out[out.length - 1].items.push(it)
-      else out.push({ label, items: [it] })
+    const out: { label: string; items: any[] }[] = []
+    for (const n of filtered) {
+      const label = dateLabel(n.created_at)
+      if (out.length && out[out.length - 1].label === label) out[out.length - 1].items.push(n)
+      else out.push({ label, items: [n] })
     }
     return out
-  }, [items])
+  }, [filtered])
 
   if (authLoading || !user) {
     return (
@@ -420,85 +403,47 @@ export default function NotificationsPage() {
     )
   }
 
-  // Same compact card as the old Community activity cards: icon tile,
-  // message, time, chevron. Unread cards get a lime tint and a dot.
+  // One roomy card per notification: icon tile, a small kind label with the
+  // time, the message, and the store as a chip. Unread cards get a lime
+  // tint and a dot on the icon.
   let sweepOrder = 0
-  const iconTile = (type: string, unread: boolean) => (
-    <span style={{ position: 'relative', width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: unread ? 'rgba(201,244,0,0.12)' : 'var(--fg-06)' }}>
-      {notificationIcon(type)}
-      {unread && <span className={sweeping ? 'dot-out' : undefined} style={{ ['--d' as string]: `${Math.min(sweepOrder++, 12) * 60}ms`, position: 'absolute', top: -3, right: -3, width: 9, height: 9, borderRadius: '50%', background: '#C9F400', border: '2px solid var(--bg)' }} />}
-    </span>
-  )
-
-  const rowShell = (key: string, unread: boolean, onClick: () => void, href: string | null, children: React.ReactNode) => (
-    <button
-      key={key}
-      onClick={onClick}
-      className={`reveal ${arrivedIds.has(key) ? 'anim-new' : ''}`}
-      style={{
-        width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', textAlign: 'left', borderRadius: 14,
-        background: unread ? 'rgba(201,244,0,0.05)' : 'var(--fg-03)', border: `1px solid ${unread ? 'rgba(201,244,0,0.22)' : 'var(--fg-06)'}`,
-        cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', transition: 'background 0.35s ease, border-color 0.35s ease',
-      }}
-    >
-      {children}
-      {href && <span style={{ alignSelf: 'center', display: 'flex', flexShrink: 0 }}><ChevronRightIcon size={14} color="var(--text-dim)" /></span>}
-    </button>
-  )
-
-  const singleRow = (n: any) => {
+  const card = (n: any) => {
+    const unread = !n.read
     const href = hrefFor(n)
-    return rowShell(n.id, !n.read, () => open([n.id], href), href, (
-      <>
-        {iconTile(n.type, !n.read)}
+    const kind = KIND_LABEL[n.type] ?? 'Update'
+    return (
+      <button
+        key={n.id}
+        onClick={() => open([n.id], href)}
+        className={`reveal ${arrivedIds.has(n.id) ? 'anim-new' : ''}`}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: 14, textAlign: 'left', borderRadius: 16,
+          background: unread ? 'rgba(201,244,0,0.06)' : 'var(--surface)', border: `1px solid ${unread ? 'rgba(201,244,0,0.25)' : 'var(--fg-08)'}`,
+          cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', transition: 'background 0.35s ease, border-color 0.35s ease',
+        }}
+      >
+        <span style={{ position: 'relative', width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: unread ? 'rgba(201,244,0,0.14)' : 'var(--fg-06)' }}>
+          {notificationIcon(n.type)}
+          {unread && <span className={sweeping ? 'dot-out' : undefined} style={{ ['--d' as string]: `${Math.min(sweepOrder++, 12) * 60}ms`, position: 'absolute', top: -3, right: -3, width: 10, height: 10, borderRadius: '50%', background: '#C9F400', border: '2px solid var(--bg)' }} />}
+        </span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: n.read ? 400 : 600, color: n.read ? 'var(--text-muted)' : 'var(--text)' }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: unread ? 'var(--accent-text)' : 'var(--text-dim)' }}>{kind}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', flexShrink: 0 }}>{timeAgo(n.created_at)}</span>
+          </span>
+          <span style={{ display: 'block', fontSize: 15, lineHeight: 1.45, marginTop: 3, fontWeight: unread ? 600 : 400, color: unread ? 'var(--text)' : 'var(--text-muted)' }}>
             {isStock(n.type) || stockDetails[n.id] ? <StockText text={cleanMessage(n.message)} matcher={matcher} reported={reportedFor(n)} /> : cleanMessage(n.message)}
           </span>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {n.store?.name ? `${n.store.name} · ` : ''}{timeAgo(n.created_at)}
-          </span>
+          {n.store?.name && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: '100%', marginTop: 9, padding: '4px 9px', borderRadius: 8, background: 'var(--fg-06)', fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>
+              <PinIcon size={12} color="var(--text-dim)" />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.store.name}</span>
+            </span>
+          )}
         </span>
-      </>
-    ))
-  }
-
-  const groupRow = (ns: any[]) => {
-    const first = ns[0]
-    const unread = ns.some((n) => !n.read)
-    const href = hrefFor(first)
-    const expanded = expandedGroups.has(first.id)
-    const shown = expanded ? ns : ns.slice(0, 3)
-    return rowShell(first.id, unread, () => open(ns.map((n) => n.id), href), href, (
-      <>
-        {iconTile('stock_update', unread)}
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 14, lineHeight: 1.45, fontWeight: unread ? 600 : 400, color: unread ? 'var(--text)' : 'var(--text-muted)' }}>
-            {ns.length} sightings{first.store?.name ? ` at ${first.store.name}` : ''}
-          </span>
-          <span style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
-            {shown.map((n) => (
-              <span key={n.id} style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, background: 'var(--fg-06)', color: 'var(--text)', lineHeight: 1.35, alignSelf: 'flex-start' }}>
-                <StockText text={cleanMessage(n.message)} matcher={matcher} reported={reportedFor(n)} />
-              </span>
-            ))}
-            {ns.length > 3 && (
-              <span
-                role="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setExpandedGroups((prev) => { const next = new Set(prev); if (next.has(first.id)) next.delete(first.id); else next.add(first.id); return next })
-                }}
-                style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-text)', marginTop: 2, alignSelf: 'flex-start' }}
-              >
-                {expanded ? 'Show less' : `+${ns.length - 3} more`}
-              </span>
-            )}
-          </span>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>{timeAgo(first.created_at)}</span>
-        </span>
-      </>
-    ))
+        {href && <span style={{ alignSelf: 'center', display: 'flex', flexShrink: 0 }}><ChevronRightIcon size={14} color="var(--text-dim)" /></span>}
+      </button>
+    )
   }
 
   return (
@@ -552,7 +497,7 @@ export default function NotificationsPage() {
               <p className={ui.emptyBody}>Follow a flavor to hear when it&apos;s back in stock. Replies, badges and store updates show up here too.</p>
               <button className={ui.btnSecondary} style={{ marginTop: 14 }} onClick={() => router.push('/account?page=alerts')}>Follow a flavor</button>
             </div>
-          ) : items.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className={ui.emptyState} style={{ marginTop: 40 }}>
               <p className={ui.emptyTitle}>{filterMode === 'unread' ? 'No unread notifications' : 'Nothing here yet'}</p>
               <p className={ui.emptyBody}>{filterMode === 'unread' ? 'You’re all caught up.' : 'Try another filter.'}</p>
@@ -562,8 +507,8 @@ export default function NotificationsPage() {
               {sections.map((sec) => (
                 <div key={sec.label} style={{ marginBottom: 20 }}>
                   <p className={ui.sectionLabel} style={{ margin: '0 4px 8px' }}>{sec.label}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {sec.items.map((it) => (it.kind === 'single' ? singleRow(it.n) : groupRow(it.ns)))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {sec.items.map((n) => card(n))}
                   </div>
                 </div>
               ))}
